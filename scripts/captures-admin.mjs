@@ -21,7 +21,12 @@ import fs from "node:fs"
 import path from "node:path"
 import puppeteer from "puppeteer-core"
 import { ROOT } from "../preview/server.mjs"
-import { DEMO_TOKEN, demoIds, demoResponse, demoSession } from "./admin-demo.mjs"
+import {
+  DEMO_TOKEN,
+  demoIds,
+  demoResponse,
+  demoSession,
+} from "./admin-demo.mjs"
 
 const SCREENS = [
   ["connexion", "Connexion", null],
@@ -51,11 +56,20 @@ const CHROMIUM = process.env.CHROME_PATH || "/usr/bin/chromium"
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 function parseArgs(argv) {
-  const opts = { screens: [], label: "admin", theme: "clair", size: [1440, 900], upload: false, url: null, demo: true }
+  const opts = {
+    screens: [],
+    label: "admin",
+    theme: "clair",
+    size: [1440, 900],
+    upload: false,
+    url: null,
+    demo: true,
+  }
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]
     const value = () => {
-      if (argv[i + 1] === undefined) throw new Error(`${arg} attend une valeur.`)
+      if (argv[i + 1] === undefined)
+        throw new Error(`${arg} attend une valeur.`)
       i += 1
       return argv[i]
     }
@@ -72,37 +86,66 @@ function parseArgs(argv) {
     } else if (arg.startsWith("--")) throw new Error(`Option inconnue : ${arg}`)
     else opts.screens.push(arg)
   }
-  const unknown = opts.screens.filter((s) => !SCREENS.some(([slug]) => slug === s))
-  if (unknown.length) throw new Error(`Écran inconnu : ${unknown.join(", ")}. Écrans : ${SCREENS.map(([s]) => s).join(", ")}.`)
-  if (!["clair", "sombre"].includes(opts.theme)) throw new Error("--theme attend « clair » ou « sombre ».")
-  opts.list = opts.screens.length ? SCREENS.filter(([slug]) => opts.screens.includes(slug)) : SCREENS
+  const unknown = opts.screens.filter(
+    (s) => !SCREENS.some(([slug]) => slug === s),
+  )
+  if (unknown.length)
+    throw new Error(
+      `Écran inconnu : ${unknown.join(", ")}. Écrans : ${SCREENS.map(([s]) => s).join(", ")}.`,
+    )
+  if (!["clair", "sombre"].includes(opts.theme))
+    throw new Error("--theme attend « clair » ou « sombre ».")
+  opts.list = opts.screens.length
+    ? SCREENS.filter(([slug]) => opts.screens.includes(slug))
+    : SCREENS
   return opts
 }
 
 function previewUrl(explicit) {
   if (explicit) return explicit
   if (process.env.NEXORA_PREVIEW_URL) return process.env.NEXORA_PREVIEW_URL
-  const r = spawnSync("figma", ["make", "preview", "get-local-url"], { encoding: "utf8" })
-  return (r.status === 0 && /https?:\/\/\S+/.exec(r.stdout || "")?.[0]) || "http://localhost:3000"
+  const r = spawnSync("figma", ["make", "preview", "get-local-url"], {
+    encoding: "utf8",
+  })
+  return (
+    (r.status === 0 && /https?:\/\/\S+/.exec(r.stdout || "")?.[0]) ||
+    "http://localhost:3000"
+  )
 }
 
 function outputDir(label) {
-  const slug = label.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "admin"
+  const slug =
+    label
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "admin"
   const base = `${new Date().toISOString().slice(0, 10)}-${slug}`
   let dir = path.join(ROOT, "captures", base)
-  for (let n = 2; fs.existsSync(dir); n += 1) dir = path.join(ROOT, "captures", `${base}-${n}`)
+  for (let n = 2; fs.existsSync(dir); n += 1)
+    dir = path.join(ROOT, "captures", `${base}-${n}`)
   fs.mkdirSync(dir, { recursive: true })
   return dir
 }
 
 function upload(file) {
-  const r = spawnSync("figma", ["artifacts", "upload", file], { encoding: "utf8" })
-  return (r.status === 0 && /figma-blob:\/\/\S+/.exec(r.stdout || "")?.[0]) || null
+  const r = spawnSync("figma", ["artifacts", "upload", file], {
+    encoding: "utf8",
+  })
+  return (
+    (r.status === 0 && /figma-blob:\/\/\S+/.exec(r.stdout || "")?.[0]) || null
+  )
 }
 
 async function settle(page) {
   await sleep(600)
-  await page.waitForFunction(() => !document.querySelector("[aria-busy='true']"), { timeout: 15000, polling: 200 }).catch(() => console.warn("Chargement encore en cours après 15 s."))
+  await page
+    .waitForFunction(() => !document.querySelector("[aria-busy='true']"), {
+      timeout: 15000,
+      polling: 200,
+    })
+    .catch(() => console.warn("Chargement encore en cours après 15 s."))
   await sleep(500)
 }
 
@@ -113,7 +156,13 @@ async function main() {
   const browser = await puppeteer.launch({
     executablePath: CHROMIUM,
     headless: true,
-    args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage", `--window-size=${width},${height}`, "--ignore-certificate-errors"],
+    args: [
+      "--no-sandbox",
+      "--disable-gpu",
+      "--disable-dev-shm-usage",
+      `--window-size=${width},${height}`,
+      "--ignore-certificate-errors",
+    ],
   })
   const shots = []
   const issues = []
@@ -121,27 +170,61 @@ async function main() {
   try {
     const page = await browser.newPage()
     await page.setViewport({ width, height })
-    page.on("pageerror", (err) => issues.push({ where, kind: "exception", text: err.message }))
+    page.on("pageerror", (err) =>
+      issues.push({ where, kind: "exception", text: err.message }),
+    )
     // Le bac à sable bloque le WebSocket du temps réel de Supabase (abonnement du ticket ouvert) : attendu ici.
     const noise = (text) => opts.demo && /realtime\/v1\/websocket/.test(text)
-    page.on("console", (msg) => msg.type() === "error" && !noise(msg.text()) && issues.push({ where, kind: "console", text: msg.text() }))
+    page.on(
+      "console",
+      (msg) =>
+        msg.type() === "error" &&
+        !noise(msg.text()) &&
+        issues.push({ where, kind: "console", text: msg.text() }),
+    )
     // Une requête HEAD servie par l'interception aboutit (statut et en-têtes reçus) mais Puppeteer la
     // signale en échec (net::ERR_ABORTED) : vérifié à part, ce n'est pas une erreur de la page.
     const servedHead = new Set()
-    page.on("requestfailed", (req) => !servedHead.has(req) && issues.push({ where, kind: "requête", text: `${req.url()} (${req.failure()?.errorText})` }))
+    page.on(
+      "requestfailed",
+      (req) =>
+        !servedHead.has(req) &&
+        issues.push({
+          where,
+          kind: "requête",
+          text: `${req.url()} (${req.failure()?.errorText})`,
+        }),
+    )
     if (opts.demo) {
       await page.setRequestInterception(true)
       page.on("request", (req) => {
         if (req.isInterceptResolutionHandled()) return
         if (req.method() === "OPTIONS" && /supabase\.(co|com)/.test(req.url()))
-          return req.respond({ status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*" } })
-        const res = demoResponse(req.method(), req.url(), req.headers(), req.postData())
+          return req.respond({
+            status: 204,
+            headers: {
+              "access-control-allow-origin": "*",
+              "access-control-allow-headers": "*",
+              "access-control-allow-methods": "*",
+            },
+          })
+        const res = demoResponse(
+          req.method(),
+          req.url(),
+          req.headers(),
+          req.postData(),
+        )
         if (!res) return req.continue()
-        const body = typeof res.body === "string" ? res.body : JSON.stringify(res.body)
+        const body =
+          typeof res.body === "string" ? res.body : JSON.stringify(res.body)
         if (req.method() === "HEAD") servedHead.add(req)
         req.respond({
           status: res.status,
-          headers: { "access-control-allow-origin": "*", "access-control-expose-headers": "content-range", ...(res.headers || {}) },
+          headers: {
+            "access-control-allow-origin": "*",
+            "access-control-expose-headers": "content-range",
+            ...(res.headers || {}),
+          },
           ...(req.method() === "HEAD" || res.status === 204 ? {} : { body }),
         })
       })
@@ -164,10 +247,16 @@ async function main() {
         session,
         route === "supabase" ? DEMO_TOKEN : "",
       )
-      await page.goto(`${base}${route ? `#/${route}` : ""}`, { waitUntil: "load", timeout: 30000 })
+      await page.goto(`${base}${route ? `#/${route}` : ""}`, {
+        waitUntil: "load",
+        timeout: 30000,
+      })
       await settle(page)
       await page.removeScriptToEvaluateOnNewDocument(init.identifier)
-      const file = path.join(dir, `${String(index + 1).padStart(2, "0")}-${slug}.png`)
+      const file = path.join(
+        dir,
+        `${String(index + 1).padStart(2, "0")}-${slug}.png`,
+      )
       await page.screenshot({ path: file, fullPage: false })
       shots.push({ file, label })
     }
@@ -175,15 +264,32 @@ async function main() {
     await browser.close()
   }
 
-  console.log(`${shots.length} capture(s) dans ${path.relative(ROOT, path.dirname(shots[0]?.file ?? ROOT))}/ (${opts.demo ? "données de démonstration" : "données réelles"}, thème ${opts.theme}) :`)
+  console.log(
+    `${shots.length} capture(s) dans ${path.relative(ROOT, path.dirname(shots[0]?.file ?? ROOT))}/ (${
+      opts.demo ? "données de démonstration" : "données réelles"
+    }, thème ${opts.theme}) :`,
+  )
   for (const shot of shots) console.log(`  ${path.relative(ROOT, shot.file)}`)
-  console.log(issues.length ? "\nErreurs relevées dans la page :" : "\nErreurs relevées dans la page : aucune.")
-  for (const issue of issues) console.log(`  [${issue.where}] ${issue.kind} : ${issue.text.slice(0, 300)}`)
+  console.log(
+    issues.length
+      ? "\nErreurs relevées dans la page :"
+      : "\nErreurs relevées dans la page : aucune.",
+  )
+  for (const issue of issues)
+    console.log(
+      `  [${issue.where}] ${issue.kind} : ${issue.text.slice(0, 300)}`,
+    )
   if (opts.upload) {
-    console.log("\nImages envoyées dans le chat (Markdown à copier dans la réponse) :")
+    console.log(
+      "\nImages envoyées dans le chat (Markdown à copier dans la réponse) :",
+    )
     for (const shot of shots) {
       const ref = upload(shot.file)
-      console.log(ref ? `![Back office — ${shot.label}](${ref})` : `  Échec de l'envoi : ${path.relative(ROOT, shot.file)}`)
+      console.log(
+        ref
+          ? `![Back office — ${shot.label}](${ref})`
+          : `  Échec de l'envoi : ${path.relative(ROOT, shot.file)}`,
+      )
     }
   }
   if (issues.some((i) => i.kind === "exception")) process.exitCode = 1

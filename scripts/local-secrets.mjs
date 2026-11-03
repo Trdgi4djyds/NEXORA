@@ -8,7 +8,11 @@ export const SECRETS_FILE = "token proj nexora.txt"
 
 function fromFile(pattern) {
   try {
-    return pattern.exec(fs.readFileSync(path.join(ROOT, SECRETS_FILE), "utf8"))?.[0] || ""
+    return (
+      pattern.exec(
+        fs.readFileSync(path.join(ROOT, SECRETS_FILE), "utf8"),
+      )?.[0] || ""
+    )
   } catch {
     return ""
   }
