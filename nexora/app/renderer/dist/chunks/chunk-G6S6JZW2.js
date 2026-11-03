@@ -1,0 +1,23 @@
+import{b as f,c as b}from"./chunk-TA22IXIF.js";import{a as c,e as h,g as d,i as v}from"./chunk-6ZWS5EFO.js";import{b as i}from"./chunk-S4I2LXHS.js";import{a as m,d as g}from"./chunk-GKSXEY5K.js";import{a as r}from"./chunk-V3CX37JL.js";import{a as o,c as n,o as p}from"./chunk-VBMWAH3C.js";var $=[["z","Galaxy Z (Fold, Flip, TriFold)"],["s","Galaxy S"],["a","Galaxy A"],["tab","Galaxy Tab"],["watch","Galaxy Watch"]],x=t=>t.replace(/_/g," ").replace(/\b(pixel|wearos|automotive|tv)\b/g,e=>({pixel:"Pixel",wearos:"Wear OS",automotive:"Automotive",tv:"TV"})[e]).replace(/\bxl\b/g,"XL").replace(/\bpro\b/g,"Pro").replace(/\bfold\b/g,"Fold"),l=[];function k(){let t=b(),e=Object.values(f());return`
+    <div class="sheet-head"><span class="sheet-icon">${i("frame",22)}</span><div><h2>Cadres officiels</h2>
+      <p>Images des fabricants, aux mesures exactes de l'\xE9cran. Quand un cadre officiel existe pour un appareil, il remplace le cadre dessin\xE9 (pastille verte dans la liste).</p></div></div>
+    <div class="sheet-body sk-body">
+      ${v("officialFrames","Utiliser les cadres officiels","Sinon, tous les appareils gardent le cadre dessin\xE9 par NEXORA.",m.officialFrames!==!1)}
+      <section class="sk-sec">
+        <h3>Samsung Galaxy</h3>
+        <p class="sk-note">Samsung publie ses cadres sur Samsung Developers, r\xE9serv\xE9s aux personnes connect\xE9es avec un compte Samsung (gratuit). Ouvre une gamme, connecte-toi, puis clique sur \xAB Download \xBB : chaque cadre t\xE9l\xE9charg\xE9 est import\xE9 tout seul.</p>
+        <div class="sk-row" style="margin-top:8px">${$.map(([s,a])=>`<button class="btn" data-samsung="${s}">${i("download",14)}<span>${n(a)}</span></button>`).join("")}</div>
+        ${l.length?`<div class="sk-log" style="margin-top:8px">${l.map(s=>`<div class="${s.cls}">${n(s.text)}</div>`).join("")}</div>`:""}
+      </section>
+      <section class="sk-sec">
+        <h3>Cadres import\xE9s (${e.length})</h3>
+        ${e.length?`<div class="sk-grid">${e.map(s=>`<div class="sk-chip"><span title="${n(s.name)}">${n(s.name)}</span><small>${Object.keys(s.variants).length} vue${Object.keys(s.variants).length>1?"s":""}</small><button class="icon-btn small" data-rm="${n(s.id)}" title="Retirer" aria-label="Retirer ${n(s.name)}">${i("trash",13)}</button></div>`).join("")}</div>`:'<p class="sk-note">Aucun pour l\u2019instant.</p>'}
+        <div class="sk-row" style="margin-top:8px"><button class="btn" data-act="import">${i("upload",14)}<span>Importer un cadre (.zip)</span></button></div>
+      </section>
+      <section class="sk-sec">
+        <h3>Fournis avec NEXORA (${Object.keys(t).length})</h3>
+        <div class="sk-grid">${Object.entries(t).map(([s,a])=>`<div class="sk-chip"><span>${n(x(s))}</span><small>${Object.keys(a.variants).length>1?`${Object.keys(a.variants).length} vues`:"Google"}</small></div>`).join("")}</div>
+        <p class="sk-note" style="margin-top:6px">Cadres d'Android Studio (Android Open Source Project, licence Apache 2.0) : Pixel, Pixel Fold, Pixel Tablet, Wear OS, Android Automotive, Google TV.</p>
+      </section>
+    </div>
+    <div class="sheet-foot"><span class="grow"></span><button class="btn primary" data-sheet="close">Termin\xE9</button></div>`}function u(){if(d()!=="skins")return;let t=o("#sheet"),e=o(".sheet-body",t)?.scrollTop||0;t.innerHTML=k();let s=o(".sheet-body",t);s&&(s.scrollTop=e)}function y(){let t=h("skins",k(),{wide:!0,refresh:()=>u()});t.dataset.skinsWired||(t.dataset.skinsWired="1",t.addEventListener("change",e=>{d()!=="skins"||e.target.dataset.toggle!=="officialFrames"||(m.officialFrames=e.target.checked,g(),p.emit("skins-changed"))}),t.addEventListener("click",async e=>{if(d()!=="skins")return;let s=e.target.closest("[data-samsung],[data-rm],[data-act]");if(s){if(s.dataset.samsung)r.invoke("skins:samsung",{page:s.dataset.samsung});else if(s.dataset.rm)await r.invoke("skins:remove",s.dataset.rm);else if(s.dataset.act==="import")try{let a=await r.invoke("skins:import");a&&a.length&&c(`${a.length} cadre${a.length>1?"s":""} import\xE9${a.length>1?"s":""}.`)}catch(a){c(a.message.replace(/^Error invoking remote method '[^']+': (Error: )?/,""),{kind:"bad"})}}}))}function F(){let t=o("#skinsBtn");t&&(t.innerHTML=i("frame",15),t.addEventListener("click",y)),r.on("skins:progress",e=>{let s=e.state==="imported"?`Import\xE9 : ${e.name} (${e.variants} vue${e.variants>1?"s":""})`:e.state==="start"?`T\xE9l\xE9chargement : ${e.name}\u2026`:`\xC9chec : ${e.name}${e.error?` \u2014 ${e.error}`:""}`;l.unshift({text:s,cls:e.state==="imported"?"ok":e.state==="failed"?"bad":""}),l.length=Math.min(l.length,12),e.state==="imported"&&c(`Cadre officiel import\xE9 : ${e.name}`),u()}),p.on("skins-changed",u)}export{y as a,F as b};

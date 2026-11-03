@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Scanner</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;color:#fff;font:15px/1.4 system-ui,-apple-system,Roboto,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
+  video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover}
+  .mask{position:fixed;inset:0;pointer-events:none;display:grid;place-items:center}
+  .win{width:min(72vw,300px);aspect-ratio:1;border-radius:22px;box-shadow:0 0 0 200vmax rgba(0,0,0,.55);position:relative}
+  .win::before,.win::after{content:"";position:absolute;inset:-2px;border-radius:24px;border:3px solid rgba(255,255,255,.95);
+    -webkit-mask:linear-gradient(#000 0 0) top left/34px 34px no-repeat,linear-gradient(#000 0 0) top right/34px 34px no-repeat,linear-gradient(#000 0 0) bottom left/34px 34px no-repeat,linear-gradient(#000 0 0) bottom right/34px 34px no-repeat;
+            mask:linear-gradient(#000 0 0) top left/34px 34px no-repeat,linear-gradient(#000 0 0) top right/34px 34px no-repeat,linear-gradient(#000 0 0) bottom left/34px 34px no-repeat,linear-gradient(#000 0 0) bottom right/34px 34px no-repeat}
+  .win::after{border:0;inset:12px;border-radius:0;-webkit-mask:none;mask:none;background:linear-gradient(transparent 48%,rgba(80,170,255,.9) 50%,transparent 52%);background-size:100% 200%;animation:scan 2.2s ease-in-out infinite}
+  @keyframes scan{0%{background-position:0 100%}50%{background-position:0 0}100%{background-position:0 100%}}
+  .top{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + var(--top,24px)) 16px 0;display:flex;justify-content:space-between;align-items:center}
+  .btn{width:44px;height:44px;border-radius:22px;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:20px;display:grid;place-items:center;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+  .btn[aria-pressed="true"]{background:#fff;color:#000}
+  .hint{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 48px);text-align:center;padding:0 24px;opacity:.9}
+  .err{position:fixed;inset:0;display:none;place-items:center;text-align:center;padding:32px}
+</style>
+</head>
+<body>
+<video id="v" playsinline muted autoplay></video>
+<div class="mask"><div class="win"></div></div>
+<div class="top">
+  <button class="btn" id="close" aria-label="Fermer">✕</button>
+  <button class="btn" id="torch" aria-label="Lampe" aria-pressed="false" hidden>⚡</button>
+</div>
+<div class="hint" id="hint">Place le code dans le cadre</div>
+<div class="err" id="err"></div>
+<script src="zxing.min.js"></script>
+<script>
+(function () {
+  var N = window.VitrineScan || { result: function () {}, cancel: function () {} };
+  var v = document.getElementById('v');
+  var done = false, stream = null, track = null;
+  var cfg = {};
+  try { cfg = JSON.parse(decodeURIComponent(location.hash.slice(1)) || '{}'); } catch (e) {}
+  if (cfg.top) document.documentElement.style.setProperty('--top', (cfg.top + 12) + 'px');
+  if (cfg.hint) document.getElementById('hint').textContent = cfg.hint;
+
+  function finish(text, format) {
+    if (done) return;
+    done = true;
+    try { navigator.vibrate && navigator.vibrate(40); } catch (e) {}
+    stop();
+    N.result(String(text), String(format || ''));
+  }
+  function stop() { if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); }
+  function fail(msg) {
+    var e = document.getElementById('err');
+    e.textContent = msg;
+    e.style.display = 'grid';
+  }
+  document.getElementById('close').onclick = function () { done = true; stop(); N.cancel(); };
+
+  var torchOn = false;
+  document.getElementById('torch').onclick = function () {
+    torchOn = !torchOn;
+    this.setAttribute('aria-pressed', String(torchOn));
+    try { track.applyConstraints({ advanced: [{ torch: torchOn }] }); } catch (e) {}
+  };
+
+  var NATIVE_FORMATS = ['qr_code', 'ean_13', 'ean_8', 'code_128', 'code_39', 'code_93', 'codabar', 'itf', 'upc_a', 'upc_e', 'pdf417', 'aztec', 'data_matrix'];
+
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }).then(function (s) {
+    stream = s;
+    track = s.getVideoTracks()[0];
+    v.srcObject = s;
+    try {
+      var caps = track.getCapabilities ? track.getCapabilities() : {};
+      if (caps.torch) document.getElementById('torch').hidden = false;
+      if (caps.focusMode && caps.focusMode.indexOf('continuous') >= 0) track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+    } catch (e) {}
+    return v.play();
+  }).then(function () {
+    if ('BarcodeDetector' in window) {
+      window.BarcodeDetector.getSupportedFormats().then(function (sup) {
+        var det = new window.BarcodeDetector({ formats: NATIVE_FORMATS.filter(function (f) { return sup.indexOf(f) >= 0; }) });
+        (function loop() {
+          if (done) return;
+          det.detect(v).then(function (codes) {
+            if (codes && codes.length) finish(codes[0].rawValue, codes[0].format.toUpperCase());
+            else setTimeout(loop, 120);
+          }, function () { zxing(); });
+        })();
+      }, zxing);
+    } else zxing();
+  }).catch(function (e) {
+    fail('Caméra indisponible : ' + (e && e.message ? e.message : e));
+  });
+
+  function zxing() {
+    if (!window.ZXing) { fail('Lecteur de codes indisponible.'); return; }
+    var hints = new Map();
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+    var reader = new ZXing.MultiFormatReader();
+    reader.setHints(hints);
+    var c = document.createElement('canvas');
+    var ctx = c.getContext('2d', { willReadFrequently: true });
+    (function loop() {
+      if (done) return;
+      var w = v.videoWidth, h = v.videoHeight;
+      if (w && h) {
+        // On ne lit que le carré central (zone du cadre), réduit : plus rapide.
+        var side = Math.min(w, h) * 0.8, size = Math.min(720, side);
+        c.width = c.height = size;
+        ctx.drawImage(v, (w - side) / 2, (h - side) / 2, side, side, 0, 0, size, size);
+        try {
+          var src = new ZXing.HTMLCanvasElementLuminanceSource(c);
+          var r = reader.decodeWithState(new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(src)));
+          if (r) { finish(r.getText(), ZXing.BarcodeFormat[r.getBarcodeFormat()]); return; }
+        } catch (e) { /* aucun code sur cette image */ }
+      }
+      setTimeout(loop, 150);
+    })();
+  }
+})();
+</script>
+</body>
+</html>

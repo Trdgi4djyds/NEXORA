@@ -1,0 +1,2 @@
+import{c}from"./chunk-VBMWAH3C.js";import"./chunk-6DHFEWGX.js";function t(n){return String(n||"").split(/```/).map((e,l)=>{if(l%2){let r=e.indexOf(`
+`);return`<pre class="ai-code">${c(r>0&&r<24?e.slice(r+1):e)}</pre>`}return c(e).replace(/^### (.*)$/gm,"<h4>$1</h4>").replace(/^## (.*)$/gm,"<h3>$1</h3>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/^[-*] (.*)$/gm,"\u2022 $1").replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\n/g,"<br>")}).join("")}export{t as renderMd};

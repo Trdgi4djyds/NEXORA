@@ -1,0 +1,36 @@
+{
+  "name": "nexora",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Espace de travail Figma Make de NEXORA : aperçu navigateur de l'interface et reconstruction de l'application Windows.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "node scripts/build-web.mjs",
+    "preview": "vite preview",
+    "check": "node scripts/pack-windows.mjs --check",
+    "pack:windows": "node scripts/pack-windows.mjs",
+    "captures": "node scripts/captures.mjs",
+    "captures:admin": "node scripts/captures-admin.mjs",
+    "format": "oxfmt vite.config.ts preview scripts",
+    "supabase": "node scripts/supabase.mjs",
+    "github:push": "node scripts/github-push.mjs"
+  },
+  "devDependencies": {
+    "@electron/asar": "^4.3.1",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "oxfmt": "^0.2.0",
+    "puppeteer-core": "^25.16.0",
+    "typescript": "^5.7.0",
+    "vite": "^8.0.5",
+    "yazl": "^3.3.1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  }
+}
