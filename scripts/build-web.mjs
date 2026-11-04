@@ -91,6 +91,8 @@ await build({
   publicDir: false,
   logLevel: "warn",
   plugins: [react()],
+  // Date de publication affichée par le back office (section Supabase, #027).
+  define: { __ADMIN_BUILD__: JSON.stringify(new Date().toISOString()) },
   build: {
     outDir: path.join(OUT_DIR, "admin"),
     emptyOutDir: true,

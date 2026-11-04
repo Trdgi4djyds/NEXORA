@@ -178,6 +178,13 @@ select.input { padding-right: 26px; appearance: none; background-image: url("dat
 .body h3 { font-size: 14px; font-weight: 650; margin-top: 4px; }
 .banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--r); background: var(--tint-warn); color: var(--text); }
 .banner.bad { background: var(--tint-bad); }
+/* NEXORA #027 : résultat durable d'une action (confirmation ou erreur complète, sélectionnable). */
+.banner.ok { background: var(--tint-ok); }
+.banner.ok .ico { color: var(--ok); }
+.banner.outcome { margin-bottom: 12px; user-select: text; }
+.banner.outcome .grow { overflow-wrap: anywhere; }
+.migration-error { margin-top: 4px; color: var(--bad); overflow-wrap: anywhere; user-select: text; }
+.tag .spinner { display: inline-block; vertical-align: -2px; margin-right: 4px; }
 .banner.info { background: var(--accent-soft); }
 .banner .ico { color: var(--warn); }
 .banner.bad .ico { color: var(--bad); }

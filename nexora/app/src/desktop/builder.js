@@ -28,6 +28,9 @@ const IS_WIN = process.platform === 'win32';
 const OWNER_FILE = '.nexora-desktop.json';
 const MIN_NODE = 18;
 const MIN_ELECTRON = 30;
+// Jetons qui font choisir un service de publication à electron-builder (app-builder-lib 26.18.1,
+// resolvePublishConfigurations). NEXORA construit sans publier : ils sont retirés de l'environnement d'electron-builder.
+const PUBLISH_TOKENS = ['GH_TOKEN', 'GITHUB_TOKEN', 'GITLAB_TOKEN', 'KEYGEN_TOKEN', 'BITBUCKET_TOKEN', 'BT_TOKEN'];
 
 function defaultHome(userData) {
   if (process.env.NEXORA_DESKTOP_HOME) return process.env.NEXORA_DESKTOP_HOME;
@@ -103,7 +106,7 @@ function explain(tail, fallback) {
     const detail = tail.slice(idx + 1, idx + 4).find((l) => /^\s*-\s/.test(l));
     return `${fallback} : ${tail[idx].replace(/^\s*⨯\s*/, '').slice(0, 220)}${detail ? ` (${detail.trim().replace(/^-\s*/, '').slice(0, 160)})` : ''}`;
   }
-  const line = tail.slice().reverse().find((l) => /⨯|error|erreur|failed|échec/i.test(l));
+  const line = tail.slice().reverse().find((l) => /⨯|error|erreur|failed|échec|not found|introuvable|is not recognized|n.est pas reconnu/i.test(l));
   return line ? `${fallback} : ${line.replace(/^\s*⨯\s*/, '').slice(0, 280)}` : `${fallback}.`;
 }
 
@@ -349,16 +352,20 @@ class DesktopBuilder extends EventEmitter {
     const a = analyzeDesktopSource(dir);
     if (a.kind === 'unsupported') throw new Error(a.unsupported.message);
     if (c.source.build && c.source.buildCmd) {
-      const env = projectEnv(dir, { CI: '1', NODE_ENV: 'production', BROWSER: 'none' });
+      // Installation sans NODE_ENV=production : npm, Yarn et pnpm sauteraient les devDependencies, dont l'outil de
+      // construction (« vite: not found »). Pas de CI non plus : Create React App traiterait chaque avertissement comme
+      // une erreur, pnpm et Yarn refuseraient un fichier de verrouillage pas tout à fait à jour.
+      const base = { ...process.env, BROWSER: 'none' };
+      delete base.NODE_ENV;
       if (a.kind === 'web' && fs.existsSync(path.join(dir, 'package.json'))) {
         await this.ensurePm(a.pm);
         if (!fs.existsSync(path.join(dir, 'node_modules'))) {
           this.step('source', 'Installation des dépendances du projet', from);
-          await this.cmd(this.pmInstall(a.pm), 'Installation des dépendances du projet', { cwd: dir, env, timeout: 30 * 60000 });
+          await this.cmd(this.pmInstall(a.pm), 'Installation des dépendances du projet', { cwd: dir, env: projectEnv(dir, {}, base), timeout: 30 * 60000 });
         }
       }
       this.step('source', `Construction du site : ${c.source.buildCmd}`, from + (to - from) * 0.4);
-      await this.cmd(c.source.buildCmd, 'Construction du site', { cwd: dir, env, timeout: 30 * 60000 });
+      await this.cmd(c.source.buildCmd, 'Construction du site', { cwd: dir, env: projectEnv(dir, { NODE_ENV: 'production' }, base), timeout: 30 * 60000 });
     }
     const candidates = [c.source.webDir, ...(a.webDirs || [])].filter((d) => d !== undefined && d !== null);
     for (const rel of candidates) {
@@ -388,25 +395,49 @@ class DesktopBuilder extends EventEmitter {
   async runBuilder(cli, args, { cwd, env, from, to, title }) {
     this.pkgAt = from;
     const command = `node "${cli}" ${args.map((a) => (/[\s"]/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a)).join(' ')}`;
+    // Construction sans publication (--publish never) : un jeton GH_TOKEN présent sur le PC ferait pourtant choisir
+    // GitHub à electron-builder, qui échoue à la fin (« Cannot read properties of null (reading 'provider') ») quand le
+    // projet n'a pas de dépôt GitHub.
+    let runEnv = Object.fromEntries(Object.entries(env).filter(([k]) => !PUBLISH_TOKENS.includes(k.toUpperCase())));
     for (let attempt = 0; attempt < 2; attempt++) {
       this.checkAbort();
       this.log(`> electron-builder ${args.filter((a) => !a.startsWith('-c.electronDist')).join(' ')}`);
       // eslint-disable-next-line no-await-in-loop
       const r = await runCommand(command, {
-        cwd, env, signal: this.abort && this.abort.signal, onLine: (l) => { this.log(l); this.progressFromLine(l, from, to); },
+        cwd, env: runEnv, signal: this.abort && this.abort.signal, onLine: (l) => { this.log(l); this.progressFromLine(l, from, to); },
       });
       this.checkAbort();
       if (r.code === 0) return r;
+      const text = r.tail.join('\n');
       // Coupure réseau ou limite du serveur pendant le téléchargement des outils d'installation : un nouvel essai.
-      if (attempt === 0 && /\b429\b|ETIMEDOUT|ECONNRESET|EAI_AGAIN|socket hang up/i.test(r.tail.join('\n'))) {
+      if (attempt === 0 && /\b429\b|ETIMEDOUT|ECONNRESET|EAI_AGAIN|socket hang up/i.test(text)) {
         this.log('Problème de réseau : nouvel essai dans 15 secondes.');
         // eslint-disable-next-line no-await-in-loop
         await wait(15000);
         continue;
       }
+      // 7-Zip arrêté faute de mémoire : electron-builder compresse l'application au niveau 9 (2,7 Go de mémoire pour un
+      // logiciel de 350 Mo, mesuré) ; le niveau 7 en demande deux fois moins, pour des fichiers à peine plus gros (+ 1 %).
+      if (attempt === 0 && !runEnv.ELECTRON_BUILDER_COMPRESSION_LEVEL && /7za/.test(text) && /Exit code: (null|8)\b|allocate|not enough memory|\bKilled\b/i.test(text)) {
+        this.log('Mémoire insuffisante pour la compression : nouvel essai avec une compression un peu plus légère.');
+        runEnv = { ...runEnv, ELECTRON_BUILDER_COMPRESSION_LEVEL: '7' };
+        continue;
+      }
       throw new Error(explain(r.tail, title));
     }
     return null;
+  }
+  /** Paquet MSI construit à part (x64 seulement) : s'il échoue, les autres formats restent prêts. */
+  async buildMsi(cli, common, {
+    cwd, env, from, to, warnings, required,
+  }) {
+    this.step('msi', 'Création du paquet MSI', from);
+    try {
+      await this.runBuilder(cli, ['--win', 'msi', '--x64', ...common], { cwd, env, from, to, title: 'Le paquet MSI n’a pas pu être créé' });
+    } catch (err) {
+      if (err.cancelled || required) throw err;
+      warnings.push(`MSI non créé : ${err.message} Les autres formats sont prêts.`);
+    }
   }
   collect(dist) {
     let names = [];
@@ -545,27 +576,25 @@ class DesktopBuilder extends EventEmitter {
     const common = ['--projectDir', projectDir, '--publish', 'never', `-c.directories.output=${dist}`, `-c.electronDist=${this.electronDir}`];
     this.step('package', 'Emballage de l’application', 0.6);
     if (main.length) await this.runBuilder(cli, ['--win', ...main, ...archFlags, ...common], { cwd: projectDir, env, from: 0.6, to: 0.9, title: 'La construction a échoué' });
-    if (c.install.formats.msi) {
-      this.step('msi', 'Création du paquet MSI', 0.9);
-      try {
-        await this.runBuilder(cli, ['--win', 'msi', '--x64', ...common], { cwd: projectDir, env, from: 0.9, to: 0.96, title: 'Le paquet MSI n’a pas pu être créé' });
-      } catch (err) {
-        if (err.cancelled) throw err;
-        warnings.push(`MSI non créé : ${err.message} Les autres formats sont prêts.`);
-        if (!main.length) throw err;
-      }
-    }
+    if (c.install.formats.msi) await this.buildMsi(cli, common, { cwd: projectDir, env, from: 0.9, to: 0.96, warnings, required: !main.length });
     return { artifacts: this.collect(dist), electron, builder: project.BUILDER_VERSION, projectDir };
   }
 
-  /** Projet Electron existant : dépendances, préparation, puis sa propre configuration (ou celle de NEXORA). */
+  /**
+   * Projet Electron existant : dépendances, préparation, puis sa propre configuration (icône, installateur, fichiers)
+   * ou celle de NEXORA (sections Icône, Installation, Sécurité et Mises à jour). Formats et processeurs : section
+   * Installation dans les deux cas. Le projet n'est pas modifié (configuration de NEXORA dans le dossier de travail).
+   */
   async buildElectronProject(c, assets, {
     work, dist, archs, warnings,
   }) {
     const dir = c.source.dir;
     const a = analyzeDesktopSource(dir);
     if (a.kind !== 'electron') throw new Error('Ce dossier n’est pas un projet Electron (aucune dépendance « electron » dans package.json).');
-    const env = projectEnv(dir, this.env(c.signing.enabled ? await this.certEnv(c.appId) : {}));
+    // Environnement de NEXORA comme base (ses retraits, NODE_OPTIONS ou CSC_LINK, restent faits) ; le certificat et son
+    // mot de passe ne vont qu'à electron-builder, pas aux scripts d'installation des dépendances.
+    const certVars = c.signing.enabled ? await this.certEnv(c.appId) : {};
+    const env = projectEnv(dir, {}, this.env());
     await this.ensurePm(a.pm);
     this.step('source', 'Installation des dépendances du projet', 0.12);
     await this.cmd(this.pmInstall(a.pm), 'Installation des dépendances du projet', { cwd: dir, env, timeout: 30 * 60000 });
@@ -591,49 +620,49 @@ class DesktopBuilder extends EventEmitter {
     // donné à electron-builder : pas de second téléchargement.
     const electronDist = /^\d+\.\d+\.\d+$/.test(electron) ? this.electronDir : '';
     if (electronDist) await this.ensureElectron(electron, archs, 0.4, 0.44);
+    const projectConfig = Boolean(c.source.useProjectConfig && a.electron.builder);
+    // electron-builder du projet pour sa propre configuration ; kit de NEXORA pour celle de NEXORA (écrite pour lui).
     const own = path.join(dir, 'node_modules', 'electron-builder', 'cli.js');
-    const cli = fs.existsSync(own) ? own : path.join(this.kitDir, 'node_modules', 'electron-builder', 'cli.js');
+    const useOwn = projectConfig && fs.existsSync(own);
+    const cli = useOwn ? own : path.join(this.kitDir, 'node_modules', 'electron-builder', 'cli.js');
+    const buildEnv = projectEnv(dir, {}, this.env(certVars));
     const archFlags = archs.map((x) => `--${x}`);
-    const args = ['--projectDir', dir, '--publish', 'never', `-c.directories.output=${dist}`, ...(electronDist ? [`-c.electronDist=${electronDist}`] : [])];
-    let targets = ['nsis', 'portable', 'zip'].filter((t) => c.install.formats[t]);
-    if (!(c.source.useProjectConfig && a.electron.builder)) {
-      // Pas de configuration dans le projet (ou choix de NEXORA) : réglages recommandés, ressources dans le dossier de travail.
+    const common = ['--projectDir', dir, '--publish', 'never', `-c.directories.output=${dist}`, ...(electronDist ? [`-c.electronDist=${electronDist}`] : [])];
+    if (!projectConfig) {
+      // Pas de configuration dans le projet (ou choix de NEXORA) : icône, image et licence de l'installateur dans le
+      // dossier de travail, désignées par des chemins absolus.
       const res = path.join(work, 'ressources');
+      fs.rmSync(res, { recursive: true, force: true });
       fs.mkdirSync(res, { recursive: true });
-      const ico = assets.ico && assets.ico.length ? path.join(res, 'icon.ico') : '';
-      if (ico) fs.writeFileSync(ico, Buffer.from(assets.ico));
-      const cfg = project.builderConfig({ ...c, install: { ...c.install, formats: { ...c.install.formats, msi: false } }, updates: { ...c.updates, mode: 'none' } }, { electronVersion: electron });
+      const put = (name, data) => {
+        if (!data || !data.length) return '';
+        const f = path.join(res, name);
+        fs.writeFileSync(f, typeof data === 'string' ? data : Buffer.from(data));
+        return f;
+      };
+      const cfg = project.builderConfig(c, { electronVersion: electron });
       cfg.directories = { buildResources: res, output: dist };
       cfg.npmRebuild = true;
       delete cfg.$schema;
+      const ico = put('icon.ico', assets.ico);
       if (ico) cfg.win.icon = ico;
       else delete cfg.win.icon;
-      if (cfg.nsis) { delete cfg.nsis.installerSidebar; delete cfg.nsis.uninstallerSidebar; delete cfg.nsis.license; }
+      if (cfg.nsis) {
+        const sidebar = cfg.nsis.installerSidebar ? put('installerSidebar.bmp', assets.sidebar) : '';
+        if (sidebar) { cfg.nsis.installerSidebar = sidebar; cfg.nsis.uninstallerSidebar = sidebar; } else { delete cfg.nsis.installerSidebar; delete cfg.nsis.uninstallerSidebar; }
+        if (cfg.nsis.license) cfg.nsis.license = put('license.txt', project.licenseText(c.install.license));
+      }
       const file = path.join(work, 'electron-builder.nexora.json');
       fs.writeFileSync(file, JSON.stringify(cfg, null, 2));
-      args.push('--config', file);
+      common.push('--config', file);
     } else {
-      warnings.push('Configuration de construction du projet utilisée telle quelle (formats, icône et installateur du projet).');
-      targets = targets.length ? targets : ['nsis'];
-      // Sans service de publication ni dépôt Git, electron-builder 26 échoue à la toute fin (fichiers de mise à jour) :
-      // la publication est alors désactivée pour cette construction seulement.
-      let pkg = {};
-      try { pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')); } catch { pkg = {}; }
-      let text = JSON.stringify(pkg.build || {});
-      const file = a.electron.configFile && !a.electron.configFile.startsWith('package.json') ? path.join(dir, a.electron.configFile) : '';
-      if (file) { try { text = fs.readFileSync(file, 'utf8'); } catch { /* fichier illisible */ } }
-      if (!/publish/.test(text) && !pkg.repository && !fs.existsSync(path.join(dir, '.git'))) {
-        // Fichier de configuration à côté, dans le dossier de travail : celui du projet (hérité) plus « publish: null ».
-        // Le projet lui-même n'est pas modifié.
-        fs.mkdirSync(work, { recursive: true });
-        const cfgFile = path.join(work, 'electron-builder.projet.json');
-        fs.writeFileSync(cfgFile, JSON.stringify(file ? { extends: path.relative(dir, file).replace(/\\/g, '/'), publish: null } : { ...(pkg.build || {}), publish: null }, null, 2));
-        args.push('--config', cfgFile);
-      }
+      warnings.push('Configuration de construction du projet utilisée : icône, installateur et réglages du projet ; formats et processeurs de la section Installation.');
     }
+    const main = ['nsis', 'portable', 'zip'].filter((t) => c.install.formats[t]);
     this.step('package', 'Emballage de l’application', 0.45);
-    await this.runBuilder(cli, ['--win', ...targets, ...archFlags, ...args], { cwd: dir, env, from: 0.45, to: 0.95, title: 'La construction a échoué' });
-    return { artifacts: this.collect(dist), electron, builder: fs.existsSync(own) ? 'electron-builder du projet' : project.BUILDER_VERSION };
+    if (main.length) await this.runBuilder(cli, ['--win', ...main, ...archFlags, ...common], { cwd: dir, env: buildEnv, from: 0.45, to: 0.9, title: 'La construction a échoué' });
+    if (c.install.formats.msi) await this.buildMsi(cli, common, { cwd: dir, env: buildEnv, from: 0.9, to: 0.96, warnings, required: !main.length });
+    return { artifacts: this.collect(dist), electron, builder: useOwn ? 'electron-builder du projet' : project.BUILDER_VERSION };
   }
 
   /** Code source du logiciel écrit dans un dossier choisi, sans construction (pour le modifier ou le publier). */

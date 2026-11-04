@@ -325,6 +325,10 @@ function copyTemplate(rel, dest, replace = null) {
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.writeFileSync(dest, data);
 }
+/** Texte de la licence pour NSIS (Unicode) : UTF-8 avec marque d'ordre des octets, fins de ligne Windows. */
+function licenseText(license) {
+  return `\ufeff${String(license || '').replace(/\r?\n/g, '\r\n')}\r\n`;
+}
 const SKIP_WEB = new Set(['node_modules', '.git', '.svn', '.hg', '.DS_Store', 'Thumbs.db', 'desktop.ini', '.nexora-desktop.json']);
 /** Copie le site construit dans app/web : sans dépendances, dépôt Git ni cartes de code source (.map). */
 function copyWeb(src, dest) {
@@ -405,10 +409,7 @@ function writeProject(projectDir, c, assets = {}, { electronVersion, nexoraVersi
   writeBytes(path.join(app, 'assets', 'icon.png'), png256);
   writeBytes(path.join(app, 'pages', 'icon.png'), png256);
   if (c.install.mode === 'assisted') writeBytes(path.join(projectDir, 'build', 'installerSidebar.bmp'), assets.sidebar);
-  if (c.install.license) {
-    // NSIS (Unicode) lit le texte de la licence en UTF-8 avec marque d'ordre des octets.
-    fs.writeFileSync(path.join(projectDir, 'build', 'license.txt'), `\ufeff${c.install.license.replace(/\r?\n/g, '\r\n')}\r\n`);
-  }
+  if (c.install.license) fs.writeFileSync(path.join(projectDir, 'build', 'license.txt'), licenseText(c.install.license));
   const builder = builderConfig(c, { electronVersion });
   if (c.install.mode !== 'assisted' && builder.nsis) { delete builder.nsis.installerSidebar; delete builder.nsis.uninstallerSidebar; }
   if (c.install.mode === 'assisted' && builder.nsis && !assets.sidebar) { delete builder.nsis.installerSidebar; delete builder.nsis.uninstallerSidebar; }
@@ -430,5 +431,5 @@ function writeProject(projectDir, c, assets = {}, { electronVersion, nexoraVersi
 }
 
 module.exports = {
-  sanitize, builderConfig, appConfig, writeProject, slug, packageName, LOGINS, BUILDER_VERSION, UPDATER_VERSION, TEMPLATE,
+  sanitize, builderConfig, appConfig, writeProject, licenseText, slug, packageName, LOGINS, BUILDER_VERSION, UPDATER_VERSION, TEMPLATE,
 };

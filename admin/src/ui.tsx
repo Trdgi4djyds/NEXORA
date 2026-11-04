@@ -139,7 +139,7 @@ export function UiProvider({ children }: { children: ReactNode }) {
   const toast = useCallback((text: string, kind: Toast["kind"] = "ok") => {
     const id = Date.now() + Math.random()
     setToasts((t) => [...t.slice(-3), { id, text, kind }])
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), kind === "bad" ? 5200 : 2600)
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), kind === "bad" ? 10000 : 4500)
   }, [])
   const api = useRef<UiApi>({
     toast,

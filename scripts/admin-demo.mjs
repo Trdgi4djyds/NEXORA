@@ -1175,8 +1175,9 @@ export function demoResponse(method, rawUrl, headers, postData) {
     )
     if (p === "" || p === "/") return json(mgmtProject)
     if (p === "/config/auth")
+      // Gardée comme sur Supabase : la relecture après un enregistrement renvoie les valeurs envoyées (#027).
       return method === "PATCH"
-        ? json({ ...mgmtAuth, ...JSON.parse(postData || "{}") })
+        ? json(Object.assign(mgmtAuth, JSON.parse(postData || "{}")))
         : json(mgmtAuth)
     if (p === "/functions") return json(mgmtFunctions)
     if (p === "/database/query") {

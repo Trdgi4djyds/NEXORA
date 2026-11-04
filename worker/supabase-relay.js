@@ -14,12 +14,15 @@ export const RELAY_PREFIX = "/__supabase-api"
 const API = "https://api.supabase.com"
 const METHODS = new Set(["GET", "POST", "PATCH", "PUT", "DELETE"])
 
+// Toutes les réponses du relais portent X-Nexora-Relay : le back office distingue ainsi une erreur de
+// Supabase d'une page qui ne vient pas du relais (NEXORA #027).
 const json = (status, message) =>
   new Response(JSON.stringify({ message }), {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": "no-store",
+      "X-Nexora-Relay": "1",
     },
   })
 
@@ -54,8 +57,16 @@ export async function relaySupabaseApi(request, { project, path }) {
   } catch (err) {
     return json(502, `Supabase injoignable : ${(err && err.message) || err}`)
   }
-  const out = new Headers({ "Cache-Control": "no-store" })
-  const type = res.headers.get("Content-Type")
+  const type = res.headers.get("Content-Type") || ""
+  // Page d'erreur HTML (protection, panne) : message court plutôt que la page entière.
+  if (!res.ok && /text\/html/i.test(type)) {
+    const title = /<title>([^<]*)<\/title>/i.exec(await res.text())?.[1]?.trim()
+    return json(
+      res.status,
+      `Supabase a refusé la requête transmise par le relais (HTTP ${res.status}${title ? ` : ${title}` : ""}).`,
+    )
+  }
+  const out = new Headers({ "Cache-Control": "no-store", "X-Nexora-Relay": "1" })
   if (type) out.set("Content-Type", type)
   return new Response(res.body, { status: res.status, headers: out })
 }

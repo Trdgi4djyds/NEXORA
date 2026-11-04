@@ -27,6 +27,26 @@ type AuthConfig = {
 type Fn = { slug: string; status: string; version: number; verify_jwt: boolean; updated_at: number }
 
 /** Adresse du back office (sans le fragment), pour les liens de réinitialisation envoyés par e-mail. */
+declare const __ADMIN_BUILD__: string | undefined
+/** Date de la publication du back office (scripts/build-web.mjs, #027) : montre tout de suite si la page est à jour. */
+const ADMIN_BUILD = typeof __ADMIN_BUILD__ === "string" ? `Back office du ${new Date(__ADMIN_BUILD__).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}` : "Back office de l’aperçu"
+
+/** Résultat d'une action, affiché jusqu'à la suivante (NEXORA #027 : confirmation visible, erreur complète). */
+type Outcome = { ok: boolean; text: string; at: number } | null
+const clock = (t: number) => new Date(t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e))
+
+function OutcomeBanner({ outcome, onClose }: { outcome: Outcome; onClose: () => void }) {
+  if (!outcome) return null
+  return (
+    <div className={`banner outcome ${outcome.ok ? "ok" : "bad"}`} role={outcome.ok ? "status" : "alert"}>
+      <Icon name={outcome.ok ? "check" : "error"} size={16} />
+      <span className="grow">{outcome.text} <span className="muted small">— {clock(outcome.at)}</span></span>
+      <button className="icon-btn" title="Masquer" onClick={onClose}><Icon name="close" size={12} /></button>
+    </div>
+  )
+}
+
 export const adminUrl = () => `${location.origin}${location.pathname}`
 export const recommendedRedirects = () => [...new Set([...setup.redirectUrls, `${adminUrl()}**`])]
 
@@ -45,6 +65,9 @@ async function mgmt<T>(token: string, path: string, init: RequestInit = {}): Pro
   const text = await res.text()
   let body: unknown = text
   try { body = JSON.parse(text) } catch { /* texte brut */ }
+  // Réponse qui ne vient pas du relais (page restée ouverte avant la publication, publication en cours…).
+  if (!res.ok && !res.headers.get("X-Nexora-Relay"))
+    throw new Error(`Le relais du back office ne répond pas (HTTP ${res.status}) : recharge la page avec Ctrl + F5, puis réessaie.`)
   if (!res.ok) {
     const m = (body as { message?: string; error?: string })?.message || (body as { error?: string })?.error || text
     throw new Error(res.status === 401 ? "Jeton refusé : vérifie qu’il est valide et qu’il a accès au projet." : `Supabase (${res.status}) : ${m}`)
@@ -61,7 +84,7 @@ export function SupabaseSetup() {
     <>
       <div className="banner info">
         <Icon name="key" size={16} />
-        <span className="grow">Connecté au projet <code>{PROJECT_REF}</code> avec ton jeton d’accès (gardé jusqu’à la fermeture de l’onglet).</span>
+        <span className="grow">Connecté au projet <code>{PROJECT_REF}</code> avec ton jeton d’accès (gardé jusqu’à la fermeture de l’onglet).</span><small className="muted">{ADMIN_BUILD}</small>
         <button className="btn sm" onClick={() => { sessionStorage.removeItem(TOKEN_KEY); setToken("") }}>Oublier le jeton</button>
       </div>
       <Project token={token} />
@@ -195,8 +218,27 @@ function AuthSettings({ token }: { token: string }) {
   const [draft, setDraft] = useState<Partial<AuthConfig>>({})
   const [newUrl, setNewUrl] = useState("")
 
+  const [outcome, setOutcome] = useState<Outcome>(null)
+
+  // Envoi, puis relecture de la configuration : la confirmation n'apparaît que si Supabase a bien gardé les valeurs.
   async function save(patch: Partial<AuthConfig>, ok = "Configuration de l’authentification enregistrée.") {
-    if (await act.run(() => mgmt(token, "/config/auth", { method: "PATCH", body: JSON.stringify(patch) }), ok)) {
+    setOutcome(null)
+    const done = await act.run(async () => {
+      try {
+        await mgmt(token, "/config/auth", { method: "PATCH", body: JSON.stringify(patch) })
+        const fresh = await mgmt<AuthConfig>(token, "/config/auth")
+        const list = (v: unknown) => String(v ?? "").split(",").map((x) => x.trim()).filter(Boolean).sort().join(",")
+        const wrong = (Object.keys(patch) as (keyof AuthConfig)[]).filter((k) =>
+          k === "uri_allow_list" ? list(fresh[k]) !== list(patch[k]) : String(fresh[k]) !== String(patch[k]))
+        if (wrong.length) throw new Error(`Supabase a répondu, mais ces réglages n’ont pas la valeur envoyée : ${wrong.join(", ")}.`)
+        const n = list(fresh.uri_allow_list).split(",").filter(Boolean).length
+        setOutcome({ ok: true, text: `${ok} Vérifié sur Supabase : adresse du site ${fresh.site_url}, ${n} adresse${n > 1 ? "s" : ""} de redirection.`, at: Date.now() })
+      } catch (e) {
+        setOutcome({ ok: false, text: `Échec de l’enregistrement : ${errMsg(e)}`, at: Date.now() })
+        throw e
+      }
+    }, ok)
+    if (done) {
       setDraft({})
       setTick((n) => n + 1)
     }
@@ -205,6 +247,7 @@ function AuthSettings({ token }: { token: string }) {
   return (
     <div className="card">
       <div className="card-head"><Icon name="lock" size={16} /><h3 className="grow">Authentification</h3></div>
+      <OutcomeBanner outcome={outcome} onClose={() => setOutcome(null)} />
       <Loaded q={q}>
         {(a) => {
           const cur = { ...a, ...draft }
@@ -284,44 +327,67 @@ function Functions({ token }: { token: string }) {
   )
 }
 
+type MigrationState = { state: "run" | "ok" | "bad"; at: number; msg?: string }
+
 function Migrations({ token }: { token: string }) {
   const ui = useUi()
   const act = useAction()
-  const [done, setDone] = useState<string[]>([])
+  const [status, setStatus] = useState<Record<string, MigrationState>>({})
+  const [outcome, setOutcome] = useState<Outcome>(null)
   const files = Object.entries(MIGRATIONS).map(([path, text]) => ({ name: path.split("/").pop()!, text, desc: (text.split("\n")[0] || "").replace(/^--\s*/, "") })).sort((a, b) => a.name.localeCompare(b.name))
+  const mark = (name: string, st: MigrationState) => setStatus((s) => ({ ...s, [name]: st }))
+
+  // Applique dans l'ordre et s'arrête à la première erreur ; chaque fichier garde son état (NEXORA #027).
+  async function apply(list: typeof files) {
+    setOutcome(null)
+    await act.run(async () => {
+      for (const f of list) {
+        mark(f.name, { state: "run", at: Date.now() })
+        try {
+          await sql(token, f.text)
+        } catch (e) {
+          const msg = errMsg(e)
+          mark(f.name, { state: "bad", at: Date.now(), msg })
+          const rest = list.length - list.indexOf(f) - 1
+          setOutcome({ ok: false, text: `Échec de ${f.name} : ${msg}${/[.!?]$/.test(msg) ? "" : "."}${rest > 1 ? ` Les ${rest} migrations suivantes n’ont pas été lancées.` : rest === 1 ? " La migration suivante n’a pas été lancée." : ""}`, at: Date.now() })
+          throw new Error(`${f.name} : ${msg}`)
+        }
+        mark(f.name, { state: "ok", at: Date.now() })
+      }
+      setOutcome({ ok: true, text: list.length > 1 ? `Les ${list.length} migrations ont été appliquées sur Supabase.` : `${list[0].name} a été appliquée sur Supabase.`, at: Date.now() })
+    }, list.length > 1 ? "Toutes les migrations sont appliquées." : "Migration appliquée.")
+  }
+
   return (
     <div className="card">
       <div className="card-head"><Icon name="layers" size={16} /><h3 className="grow">Migrations du dépôt</h3>
-        {/* NEXORA #025 : toutes les migrations d'un coup, dans l'ordre, arrêt à la première erreur. */}
         <button className="btn sm primary" disabled={act.busy || !files.length} onClick={async () => {
           if (!(await ui.confirm({ title: "Appliquer toutes les migrations ?", body: <>Dans l’ordre : {files.map((f) => f.name).join(", ")}. Chacune peut être appliquée plusieurs fois sans effet en double ; en cas d’erreur, les suivantes ne sont pas lancées.</>, confirm: "Tout appliquer" }))) return
-          await act.run(async () => {
-            for (const f of files) {
-              try {
-                await sql(token, f.text)
-              } catch (e) {
-                throw new Error(`${f.name} : ${e instanceof Error ? e.message : String(e)}`)
-              }
-              setDone((d) => (d.includes(f.name) ? d : [...d, f.name]))
-            }
-          }, "Toutes les migrations sont appliquées.")
-        }}>Tout appliquer</button>
+          await apply(files)
+        }}>{act.busy ? <span className="spinner sm" /> : "Tout appliquer"}</button>
       </div>
+      <OutcomeBanner outcome={outcome} onClose={() => setOutcome(null)} />
       <p className="muted small" style={{ marginTop: 0 }}>Fichiers <code>supabase/migrations/</code>. Chacun peut être appliqué plusieurs fois sans effet en double.</p>
       <div className="list">
-        {files.map((f) => (
-          <div key={f.name} style={{ alignItems: "flex-start" }}>
-            <div className="grow" style={{ minWidth: 0 }}>
-              <code>{f.name}</code>
-              <div className="muted small">{f.desc}</div>
+        {files.map((f) => {
+          const st = status[f.name]
+          return (
+            <div key={f.name} style={{ alignItems: "flex-start" }}>
+              <div className="grow" style={{ minWidth: 0 }}>
+                <code>{f.name}</code>
+                <div className="muted small">{f.desc}</div>
+                {st?.state === "bad" && <div className="small migration-error">{st.msg}</div>}
+              </div>
+              {st?.state === "run" && <Tag tone="info"><span className="spinner sm" /> en cours</Tag>}
+              {st?.state === "ok" && <Tag tone="ok">appliquée à {clock(st.at)}</Tag>}
+              {st?.state === "bad" && <Tag tone="bad">échec</Tag>}
+              <button className="btn sm" disabled={act.busy} onClick={async () => {
+                if (!(await ui.confirm({ title: `Appliquer ${f.name} ?`, body: f.desc, confirm: "Appliquer" }))) return
+                await apply([f])
+              }}>Appliquer</button>
             </div>
-            {done.includes(f.name) && <Tag tone="ok">appliquée</Tag>}
-            <button className="btn sm" disabled={act.busy} onClick={async () => {
-              if (!(await ui.confirm({ title: `Appliquer ${f.name} ?`, body: f.desc, confirm: "Appliquer" }))) return
-              if (await act.run(() => sql(token, f.text), "Migration appliquée.")) setDone((d) => [...d, f.name])
-            }}>Appliquer</button>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
