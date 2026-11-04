@@ -5,6 +5,8 @@ import fs from "node:fs"
 import { createRequire } from "node:module"
 import path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
+import setup from "../supabase/nexora.json" with { type: "json" }
+import { RELAY_PREFIX, relaySupabaseApi } from "../worker/supabase-relay.js"
 
 export const ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -172,6 +174,28 @@ function demoMain(req, res) {
   })
 }
 
+/** Relais de l'API de gestion de Supabase (NEXORA #026), comme le Worker Cloudflare de la publication. */
+function supabaseRelay(req, res, rel) {
+  const chunks = []
+  req.on("data", (c) => chunks.push(c))
+  req.on("end", async () => {
+    const headers = new Headers()
+    for (const name of ["authorization", "content-type"])
+      if (req.headers[name]) headers.set(name, String(req.headers[name]))
+    const body = Buffer.concat(chunks)
+    const out = await relaySupabaseApi(
+      new Request(`http://localhost${req.url}`, {
+        method: req.method,
+        headers,
+        body: req.method === "GET" || req.method === "HEAD" ? undefined : body,
+      }),
+      { project: setup.projectRef, path: `/${rel.slice(RELAY_PREFIX.length)}` },
+    )
+    res.writeHead(out.status, Object.fromEntries(out.headers))
+    res.end(Buffer.from(await out.arrayBuffer()))
+  })
+}
+
 /** Données calculées à partir des sources de NEXORA et servies à côté du pont (chemin relatif à la page). */
 export const PREVIEW_DATA = {
   "__nexora-preview/tab-icons.json": tabIcons,
@@ -239,6 +263,10 @@ export function nexoraPreview() {
         }
         if (rel === DEMO_EVENTS_PATH && req.method === "GET") {
           demoModule().then(({ demoEvents }) => demoEvents(res, appVersion()))
+          return
+        }
+        if (rel.startsWith(`${RELAY_PREFIX.slice(1)}/`)) {
+          supabaseRelay(req, res, rel)
           return
         }
         if (req.method !== "GET" && req.method !== "HEAD") return next()

@@ -1166,8 +1166,13 @@ export function demoResponse(method, rawUrl, headers, postData) {
     headers: { "content-type": "application/json", ...extra },
     body,
   })
-  if (url.hostname === "api.supabase.com") {
-    const p = url.pathname.replace(/^\/v1\/projects\/[^/]+/, "")
+  // API de gestion : appelée par le relais du back office (/__supabase-api, #026) ou directement.
+  const relayed = /\/__supabase-api(\/v1\/.*)$/.exec(url.pathname)
+  if (url.hostname === "api.supabase.com" || relayed) {
+    const p = (relayed ? relayed[1] : url.pathname).replace(
+      /^\/v1\/projects\/[^/]+/,
+      "",
+    )
     if (p === "" || p === "/") return json(mgmtProject)
     if (p === "/config/auth")
       return method === "PATCH"

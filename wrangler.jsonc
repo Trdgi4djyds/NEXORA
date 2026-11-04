@@ -1,10 +1,13 @@
-// Publication sur Cloudflare Workers (Workers Builds relié au dépôt GitHub) : site statique, sans
-// script Worker. Sans ce fichier, `wrangler deploy` configure le projet tout seul comme une app Vite
+// Publication sur Cloudflare Workers (Workers Builds relié au dépôt GitHub) : site statique servi
+// depuis dist/, plus un petit script (worker/index.js, NEXORA #026) limité aux adresses
+// /__supabase-api/* : relais de l'API de gestion de Supabase pour le back office.
+// Sans ce fichier, `wrangler deploy` configure le projet tout seul comme une app Vite
 // standard (plugin Cloudflare pour Vite) et produit `assets` sans `directory` : échec du déploiement.
 // NEXORA est assemblé par scripts/build-web.mjs (interface dans dist/, back office dans dist/admin/).
 {
   // Si le Worker porte un autre nom dans Cloudflare, Workers Builds utilise le sien (simple avertissement).
   "name": "nexora",
+  "main": "worker/index.js",
   "compatibility_date": "2026-10-01",
   // Lancée par `wrangler deploy` avant l'envoi, même si aucune commande de build n'est réglée dans
   // Cloudflare : dist/ est toujours reconstruit à partir des sources du commit.
@@ -13,6 +16,9 @@
   },
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
+    // Le script ne tourne que pour le relais ; toutes les autres adresses sont servies directement.
+    "run_worker_first": ["/__supabase-api/*"],
     // NEXORA et le back office utilisent des routes après # : pas de repli sur index.html, une
     // adresse inconnue répond 404. /admin redirige vers /admin/ (traitement des barres obliques par défaut).
     "not_found_handling": "none",

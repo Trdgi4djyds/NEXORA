@@ -1,7 +1,9 @@
 // Configuration du projet Supabase depuis le navigateur, par l'API de gestion
-// (https://api.supabase.com, ouverte aux navigateurs). Réservé aux super-administrateurs.
+// (https://api.supabase.com). Réservé aux super-administrateurs.
+// Cette API n'accepte les appels de navigateur que depuis supabase.com : le back office passe donc par
+// le relais de sa propre adresse, /__supabase-api (Worker Cloudflare et aperçu, worker/supabase-relay.js, #026).
 // Le jeton d'accès personnel (sbp_…) est saisi ici et gardé seulement pour la session de l'onglet
-// (sessionStorage) : il n'est jamais écrit dans le code ni envoyé ailleurs qu'à Supabase.
+// (sessionStorage) : il n'est jamais écrit dans le code ; le relais le transmet à Supabase sans le garder.
 import { useState, type FormEvent, type ReactNode } from "react"
 import { useRefresh } from "../App"
 import { Icon } from "../icons"
@@ -29,10 +31,17 @@ export const adminUrl = () => `${location.origin}${location.pathname}`
 export const recommendedRedirects = () => [...new Set([...setup.redirectUrls, `${adminUrl()}**`])]
 
 async function mgmt<T>(token: string, path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`https://api.supabase.com/v1/projects/${PROJECT_REF}${path}`, {
-    ...init,
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init.headers || {}) },
-  })
+  // Relais à la racine du site (le back office est servi sous /admin/).
+  const url = new URL(`../__supabase-api/v1/projects/${PROJECT_REF}${path}`, document.baseURI)
+  let res: Response
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers: { Authorization: `Bearer ${token}`, ...(init.body ? { "Content-Type": "application/json" } : {}), ...(init.headers || {}) },
+    })
+  } catch {
+    throw new Error("Impossible de joindre Supabase par le relais du back office : vérifie ta connexion, puis réessaie.")
+  }
   const text = await res.text()
   let body: unknown = text
   try { body = JSON.parse(text) } catch { /* texte brut */ }
