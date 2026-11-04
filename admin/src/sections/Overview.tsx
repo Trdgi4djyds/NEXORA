@@ -82,7 +82,8 @@ export function Overview() {
             <Kpi icon="user" label="Utilisateurs" value={fmtNum(a.users)} hint={`+${fmtNum(a.users_new_30d)} sur 30 jours`} onClick={() => go("users")} />
             <Kpi icon="pass" label="Actifs (7 j)" value={fmtNum(a.users_active_7d)} hint={a.users ? `${Math.round((a.users_active_7d / a.users) * 100)} % des comptes` : undefined} />
             <Kpi icon="group" label="Équipes" value={fmtNum(a.teams)} hint={`${fmtNum(a.organizations)} espaces au total`} onClick={() => go("orgs")} />
-            <Kpi icon="star" label="Revenu mensuel" value={fmtMoney(a.mrr_cents)} hint={`${fmtNum(a.paid_orgs)} espace(s) payant(s)`} tone="good" />
+            {/* NEXORA #037 : offres en dollars (Standard 10 $, Pro 25 $). */}
+            <Kpi icon="star" label="Revenu mensuel" value={fmtMoney(a.mrr_cents, "USD")} hint={`${fmtNum(a.paid_orgs)} espace(s) payant(s)`} tone="good" />
             <Kpi icon="folder" label="Projets" value={fmtNum(a.projects)} onClick={() => go("content")} />
             <Kpi icon="palette" label="Designs" value={fmtNum(a.designs)} hint={`${fmtNum(a.studio_items)} créations Studio`} onClick={() => go("content", "designs")} />
             <Kpi icon="cloud" label="Stockage" value={fmtBytes((a.storage_mb || 0) * 1048576)} onClick={() => go("files")} />
@@ -106,7 +107,7 @@ export function Overview() {
           <div className="card-head">
             <h3 className="grow">Offres</h3>
           </div>
-          {stats.data && <Distribution data={stats.data.plans || {}} labels={{ free: "Gratuit", pro: "Pro", team: "Équipe" }} />}
+          {stats.data && <Distribution data={stats.data.plans || {}} labels={{ free: "Gratuit", standard: "Standard", pro: "Pro", team: "Équipe (ancienne)", enterprise: "Entreprise (ancienne)" }} />}
         </div>
         <div className="card">
           <div className="card-head">

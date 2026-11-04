@@ -15,6 +15,9 @@ const { plain, techLog } = require('./src/plain');
     }
   });
 }
+// NEXORA #037 : offres Gratuit, Standard et Pro : les canaux réservés à une offre ou soumis à un quota
+// demandent l'accord des serveurs NEXORA avant de s'exécuter (src/plan.js). Posé avant tout enregistrement.
+require('./src/plan').guardIpc(ipcMain);
 
 // Une seule boîte de dialogue système à la fois : un double-clic (ou deux actions rapprochées) ouvrait
 // plusieurs fenêtres Importer / Exporter l'une derrière l'autre. Les demandes faites pendant qu'une boîte

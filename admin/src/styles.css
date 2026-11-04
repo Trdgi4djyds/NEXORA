@@ -572,3 +572,58 @@ fieldset { border: 0; margin: 0; min-width: 0; }
   .inv-num, .inv-due, .inv-go { display: none; }
   .inv-timeline { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 }
+
+/* Offres (NEXORA #037) : panneaux de tarifs comme dans l'application (bande illustrée, prix, limites clés,
+   avantages), Standard mis en avant par le dégradé de la marque, Pro en carte sombre et dorée. */
+.po { gap: 16px; }
+.po-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.po-old { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.po-plan { display: flex; flex-direction: column; gap: 12px; padding: 7px 7px 14px; border-radius: 20px; background: var(--surface); box-shadow: var(--card-shadow), 0 10px 28px rgba(25, 28, 60, .06); min-width: 0; }
+.po-plan.off { opacity: .85; }
+.po-plan.po-standard { background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--brand-grad) border-box; border: 2px solid transparent; box-shadow: 0 16px 36px rgba(211, 75, 213, .16); }
+.po-top { position: relative; min-height: 112px; padding: 14px 15px; border-radius: 15px; display: flex; flex-direction: column; align-items: flex-start; gap: 9px; background: color-mix(in srgb, var(--nxi-s, var(--fill)) 70%, var(--surface)); }
+.po-name { display: flex; align-items: center; gap: 8px; }
+.po-name b { font-size: 16px; font-weight: 720; letter-spacing: -0.015em; }
+.po-name code { font-size: 11px; color: var(--text-2); }
+.po-ic { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; color: #fff; background: var(--nxi-d, var(--accent)); }
+.po-ribbon { padding: 3px 9px; border-radius: 99px; font-size: 10.5px; font-weight: 720; color: #fff; background: var(--brand-grad); }
+.po-body { display: flex; flex-direction: column; gap: 8px; padding: 0 8px; }
+.po-price { display: flex; align-items: baseline; gap: 6px; }
+.po-price b { font-size: 36px; font-weight: 780; letter-spacing: -0.04em; line-height: 1; }
+.po-price span { font-size: 13px; color: var(--text-2); font-weight: 560; }
+.po-desc { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--text-2); }
+.po-keys { display: flex; flex-wrap: wrap; gap: 5px; }
+.po-keys span { padding: 3px 8px; border-radius: 7px; font-size: 11px; font-weight: 600; color: var(--text-2); background: var(--fill-2); }
+.po-feats { list-style: none; margin: 2px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; }
+.po-feats li { display: flex; gap: 7px; align-items: flex-start; line-height: 1.4; }
+.po-feats li > svg { flex-shrink: 0; margin-top: 2px; width: 15px; height: 15px; padding: 2px; border-radius: 50%; color: #fff; background: var(--brand-grad); }
+.po-plan.po-pro { color: #f4f4f7; background: #131319; box-shadow: 0 16px 36px rgba(10, 10, 20, .28); }
+html[data-theme="dark"] .po-plan.po-pro { background: linear-gradient(180deg, #1d1b14, #121216); box-shadow: inset 0 0 0 1px rgba(232, 181, 42, .3), 0 16px 36px rgba(0, 0, 0, .4); }
+.po-plan.po-pro .po-top { background: #1c1c25; }
+.po-plan.po-pro [data-nxi-tone="jaune"] { --nxi-s: #363019; --nxi-m: #7a6219; --nxi-d: #f0c131; --nxi-a: #ff8a4c; }
+.po-plan.po-pro :is(.po-price span, .po-desc, .muted, .po-name code) { color: #c9c9d3; }
+.po-plan.po-pro .po-keys span { color: #e7e7ee; background: rgba(255, 255, 255, .08); }
+.po-plan.po-pro :is(.po-ic, .po-feats li > svg) { color: #241a00; background: #e8b52a; }
+.po-plan.po-pro .po-ribbon { color: #241a00; background: linear-gradient(120deg, #ffe08a, #e8b52a); }
+.po-plan.po-pro .btn { background: rgba(255, 255, 255, .1); color: #fff; box-shadow: none; }
+.po-plan.po-pro .po-edit { color: var(--text); }
+.po-edit { margin: 4px 0 0; padding: 14px; border-radius: 15px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--sep); }
+.po-perms { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.po-perm-group { display: flex; flex-direction: column; gap: 2px; }
+.po-perm-group > small { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); margin-bottom: 3px; }
+.po-perm { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12.5px; box-shadow: 0 1px 0 var(--sep); }
+.po-table-wrap { overflow-x: auto; }
+.po-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.po-table th, .po-table td { padding: 8px 10px; text-align: center; border-top: 1px solid var(--sep); }
+.po-table thead th { border-top: 0; font-size: 13px; }
+.po-table thead th small { display: block; font-weight: 500; color: var(--text-2); font-size: 11px; }
+.po-table tbody th { text-align: left; font-weight: 500; }
+.po-table .hl { background: color-mix(in srgb, #d34bd5 7%, var(--surface)); }
+.po-grp th { padding-top: 14px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-2); text-align: left; border-top: 0; }
+.po-yes { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; color: #fff; background: var(--brand-grad); }
+.po-trials { display: flex; flex-direction: column; }
+.po-trial { display: flex; align-items: center; gap: 10px; padding: 9px 2px; border-top: 1px solid var(--sep); }
+.po-trial:first-child { border-top: 0; }
+.po-trial b { display: block; font-size: 13px; }
+.po-trial small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 1180px) { .po-grid { grid-template-columns: 1fr; } }

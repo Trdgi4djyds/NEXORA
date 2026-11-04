@@ -6,7 +6,8 @@
 import { b as sb, e as cloud, u as avatar } from '../../dist/chunks/chunk-EZKHFSAB.js';
 import { ico, esc } from '../core.js';
 
-const PLANS = { free: 'Gratuit', pro: 'Pro', team: 'Équipe', enterprise: 'Entreprise' };
+// NEXORA #037 : offres Gratuit, Standard et Pro (Équipe et Entreprise : anciennes offres, passées à Pro).
+const PLANS = { free: 'Gratuit', standard: 'Standard', pro: 'Pro', team: 'Équipe', enterprise: 'Entreprise' };
 const MEMBER = { owner: 'Propriétaire', admin: 'Administrateur', editor: 'Éditeur', viewer: 'Lecteur' };
 export const planName = (p) => PLANS[p] || p || PLANS.free;
 const platformRole = (r) => (r === 'superadmin' ? 'Super-administrateur' : r === 'admin' ? 'Administrateur' : 'Utilisateur');
@@ -28,8 +29,8 @@ export function sheet(tab, tabs) {
   const promo = free
     ? `<div class="nxc-promo">
         <span class="nxc-promo-ic">${ico('star', 18)}</span>
-        <b>Passe à Pro</b>
-        <small>Plus de projets, de membres et de sites surveillés jour et nuit.</small>
+        <b>Passe à Standard</b>
+        <small>APK, import de code, Crawler, Dev Lab et applications sans limite d’essai, dès 10 $ par mois.</small>
         <button type="button" class="nxc-promo-btn" data-tab-back="plan">Voir les offres</button>
       </div>`
     : `<button type="button" class="nxc-plan-card" data-tab-back="plan"><span class="nxc-nav-ic">${ico('star', 15)}</span><span><b>Offre ${esc(planName(cloud.plan))}</b><small>${esc(org ? org.name : '')}</small></span>${ico('chevronRight', 13)}</button>`;

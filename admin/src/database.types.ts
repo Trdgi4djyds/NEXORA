@@ -812,6 +812,63 @@ export type Database = {
           },
         ]
       }
+      nx_app_trials: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          local_id: string
+          name: string
+          org_id: string | null
+          plan_at_creation: string
+          source_kind: string
+          source_url: string | null
+          trial_ends_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          local_id: string
+          name?: string
+          org_id?: string | null
+          plan_at_creation?: string
+          source_kind?: string
+          source_url?: string | null
+          trial_ends_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          local_id?: string
+          name?: string
+          org_id?: string | null
+          plan_at_creation?: string
+          source_kind?: string
+          source_url?: string | null
+          trial_ends_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nx_app_trials_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nx_app_trials_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nx_email_log: {
         Row: {
           created_at: string
@@ -836,6 +893,30 @@ export type Database = {
           request_id?: number | null
           to_email?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      nx_quota_usage: {
+        Row: {
+          metric: string
+          period_start: string
+          subject_id: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          metric: string
+          period_start: string
+          subject_id: string
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          metric?: string
+          period_start?: string
+          subject_id?: string
+          updated_at?: string
+          value?: number
         }
         Relationships: []
       }
@@ -940,6 +1021,7 @@ export type Database = {
       plans: {
         Row: {
           active: boolean
+          badge: string
           created_at: string
           currency: string
           description: string
@@ -947,6 +1029,7 @@ export type Database = {
           id: string
           limits: Json
           name: string
+          perms: Json
           price_month_cents: number
           price_year_cents: number
           sort: number
@@ -954,6 +1037,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          badge?: string
           created_at?: string
           currency?: string
           description?: string
@@ -961,6 +1045,7 @@ export type Database = {
           id: string
           limits?: Json
           name: string
+          perms?: Json
           price_month_cents?: number
           price_year_cents?: number
           sort?: number
@@ -968,6 +1053,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          badge?: string
           created_at?: string
           currency?: string
           description?: string
@@ -975,6 +1061,7 @@ export type Database = {
           id?: string
           limits?: Json
           name?: string
+          perms?: Json
           price_month_cents?: number
           price_year_cents?: number
           sort?: number
@@ -1610,6 +1697,12 @@ export type Database = {
         Returns: Json
       }
       nx_is_admin: { Args: never; Returns: boolean }
+      nx_plan_status: { Args: { p_org?: string }; Returns: Json }
+      nx_use_feature: { Args: { p_amount?: number; p_check_only?: boolean; p_feature: string }; Returns: Json }
+      nx_app_claim: { Args: { p_local_id: string; p_name?: string; p_org?: string; p_source_kind?: string; p_url?: string }; Returns: Json }
+      nx_app_status: { Args: { p_local_ids?: string[] }; Returns: Json }
+      nx_app_release: { Args: { p_local_id: string }; Returns: boolean }
+      nx_app_trial_extend: { Args: { p_days: number; p_id: string }; Returns: string }
       org_quota: { Args: { org: string }; Returns: Json }
       run_monitor_checks: { Args: never; Returns: number }
       touch_presence: {

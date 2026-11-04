@@ -9,6 +9,11 @@
 // Teintes : variables CSS --nxi-s (douce), --nxi-m (moyenne), --nxi-d (vive), --nxi-a (vive, autre
 // couleur), posées par cards.css selon data-nxi-tone et le thème.
 // Module autonome (aucune dépendance) : importé aussi par le back office (admin/src/ui.tsx).
+// NEXORA #037 : les cartes reçoivent désormais un objet illustré (objects.js : dossier, équipe, téléphone,
+// bouclier…) choisi d'après le sens de la carte, grand, posé à droite et parfois rogné par le bord ; les
+// motifs du #033 restent disponibles par l'option kind. Même règle de lisibilité : l'objet entier prend la
+// teinte la plus vive qui garde le contraste AA sous les textes qu'il touche.
+import { OBJECTS, objectFor } from './objects.js';
 
 const TAU = Math.PI * 2;
 const HALF = Math.PI / 2;
@@ -73,6 +78,20 @@ class Path {
     return this;
   }
   circle(cx, cy, rad) { return this.arc(cx, cy, rad, 0, TAU, true).Z(); }
+  // NEXORA #037 : formes des objets illustrés.
+  ellipse(cx, cy, rx, ry) {
+    const k = 0.5523;
+    return this.M(cx + rx, cy).C(cx + rx, cy + k * ry, cx + k * rx, cy + ry, cx, cy + ry).C(cx - k * rx, cy + ry, cx - rx, cy + k * ry, cx - rx, cy)
+      .C(cx - rx, cy - k * ry, cx - k * rx, cy - ry, cx, cy - ry).C(cx + k * rx, cy - ry, cx + rx, cy - k * ry, cx + rx, cy).Z();
+  }
+  rect(x, y, w, h) { return this.M(x, y).L(x + w, y).L(x + w, y + h).L(x, y + h).Z(); }
+  star(cx, cy, R, r, n) {
+    for (let i = 0; i < n * 2; i++) {
+      const a = -HALF + (i * Math.PI) / n, d = i % 2 ? r : R;
+      if (i) this.L(cx + d * Math.cos(a), cy + d * Math.sin(a)); else this.M(cx + d * Math.cos(a), cy + d * Math.sin(a));
+    }
+    return this.Z();
+  }
   rrect(x, y, w, h, rx) {
     rx = Math.min(rx, w / 2, h / 2);
     return this.M(x + rx, y).L(x + w - rx, y).arc(x + w - rx, y + rx, rx, -HALF, 0)
@@ -523,7 +542,7 @@ function allowTones(boxes, colors, bg) {
 }
 
 // ---------- Composition : plusieurs placements essayés, le plus lisible est gardé ----------
-const down = (t, step) => (step <= 0 ? t : step === 1 ? (t === 'd' || t === 'a' ? 'm' : 's') : 's');
+const down = (t, step) => (t === 'w' || t === 'k' || step <= 0 ? t : step === 1 ? (t === 'd' || t === 'a' ? 'm' : 's') : 's');
 const tonesOf = (p) => (p.grad ? p.grad.stops.map((s) => s[0]) : [p.lvl]);
 
 let canvas = null, ctx = null;
@@ -588,8 +607,10 @@ function evaluate(parts, boxes, w, h, cap, r) {
   return { score: score + r() * 4, steps };
 }
 
-function toSvg(parts, steps, w, h, colors, dark) {
+const EXTRA = { w: { css: '#fff' }, k: { css: '#000' } };
+function toSvg(parts, steps, w, h, colors, dark, obj = false) {
   const id = `nxi${hash(SESSION + Math.random()).toString(36)}`;
+  colors = { ...EXTRA, ...colors };
   let defs = '', body = '', shadow = false;
   parts.forEach((p, i) => {
     const s = steps[i];
@@ -603,10 +624,16 @@ function toSvg(parts, steps, w, h, colors, dark) {
     } else paint = colors[down(p.lvl, s)].css;
     const fillA = p.mode === 'stroke' ? 'none' : paint;
     const strokeA = p.mode === 'fill' ? '' : ` stroke="${paint}" stroke-width="${f(p.sw)}" stroke-linecap="round" stroke-linejoin="round"`;
+    const alpha = p.alpha != null && p.alpha < 1 ? ` ${p.mode === 'stroke' ? 'stroke' : 'fill'}-opacity="${p.alpha}"` : '';
     if (p.shadow) shadow = true;
-    body += `<path d="${p.d}" fill="${fillA}"${p.rule ? ` fill-rule="${p.rule}"` : ''}${strokeA}${p.shadow ? ` filter="url(#${id}f)"` : ''}/>`;
+    body += `<path d="${p.d}" fill="${fillA}"${p.rule ? ` fill-rule="${p.rule}"` : ''}${strokeA}${alpha}${p.shadow ? ` filter="url(#${id}f)"` : ''}/>`;
   });
   if (shadow) defs += `<filter id="${id}f" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="${dark ? 4 : 3}" stdDeviation="${dark ? 5 : 4}" flood-color="#000" flood-opacity="${dark ? 0.45 : 0.16}"/></filter>`;
+  // Objet : une ombre portée douce sous l'ensemble, pour le relief.
+  if (obj) {
+    defs += `<filter id="${id}o" x="-25%" y="-25%" width="150%" height="160%"><feDropShadow dx="0" dy="${dark ? 6 : 5}" stdDeviation="${dark ? 7 : 6}" flood-color="#000" flood-opacity="${dark ? 0.38 : 0.12}"/></filter>`;
+    body = `<g filter="url(#${id}o)">${body}</g>`;
+  }
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true" focusable="false">${defs ? `<defs>${defs}</defs>` : ''}${body}</svg>`;
 }
 
@@ -636,6 +663,100 @@ export function compose({ w, h, key, kind, boxes = [], colors, bg = null, cap = 
   }
   const chosen = kept && kept.score <= best.score + 25 ? kept : best;
   return { svg: toSvg(chosen.parts, chosen.steps, w, h, colors, dark), pick: chosen.pick };
+}
+
+// ---------- Objets illustrés (NEXORA #037) ----------
+// Un placement : taille, point d'ancrage (en bas à droite, l'objet peut déborder), légère rotation.
+function objectParts(name, r, w, h) {
+  const tall = h > w * 1.1, base = tall ? w : h;
+  // Taille : grande de préférence ; plus petite possible quand les textes laissent peu de place à droite.
+  const S = clamp(base * rnd(r, tall ? 0.62 : 0.72, tall ? 0.92 : 1.34), 54, Math.max(60, Math.min(w * 0.74, h * 1.7)));
+  // Carte haute : l'objet se loge aussi à mi-hauteur, entre l'icône et le titre.
+  const cx = w - S * rnd(r, 0.16, 0.42);
+  const cy = tall && r() < 0.6 ? h * rnd(r, 0.3, 0.55) : h - S * rnd(r, tall ? 0.24 : 0.2, tall ? 0.46 : 0.5);
+  const rot = rnd(r, -0.3, 0.2), cos = Math.cos(rot), sin = Math.sin(rot), sc = S / 100;
+  const map = (x, y) => { const u = (x - 50) * sc, v = (y - 50) * sc; return [cx + u * cos - v * sin, cy + u * sin + v * cos]; };
+  const parts = [];
+  const base0 = (o) => ({ main: !o.deco, deco: !!o.deco, alpha: o.alpha, rule: o.rule });
+  const k = {
+    P: () => new Path(map),
+    fill: (p, lvl, o = {}) => parts.push({ d: p.d, mode: 'fill', lvl, ...base0(o) }),
+    line: (p, lvl, sw, o = {}) => parts.push({ d: p.d, mode: 'stroke', lvl, sw: sw * sc, ...base0(o) }),
+    grad: (p, stops, x1, y1, x2, y2, o = {}) => {
+      const a = map(x1, y1), b = map(x2, y2);
+      parts.push({ d: p.d, mode: 'fill', grad: { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stops }, ...base0(o) });
+    },
+  };
+  OBJECTS[name](k);
+  let inside = 0, n = 0;
+  for (let i = 0; i <= 10; i++) for (let j = 0; j <= 10; j++) {
+    const [x, y] = map(8 + i * 8.4, 8 + j * 8.4);
+    n++;
+    if (x >= 0 && x <= w && y >= 0 && y <= h) inside++;
+  }
+  return { parts, vis: inside / n, S };
+}
+
+function evaluateObject(c, boxes, w, h, cap, r) {
+  const { k, cw, ch } = raster(w, h);
+  const mains = c.parts.filter((p) => p.main);
+  const all = paintParts(mains, k, cw, ch);
+  let px = 0;
+  for (let i = 3; i < all.length; i += 4) if (all[i] > 12) px++;
+  const u = px / (cw * ch);
+  let score = 0, touched = false;
+  if (u < 0.1) score += (0.1 - u) * 300;
+  if (u > 0.5) score += (u - 0.5) * 260;
+  if (c.vis < 0.58) score += (0.58 - c.vis) * 260;
+  for (const b of boxes) {
+    const cv = coverage(all, cw, ch, k, b, 0);
+    if (cv.n < 1) continue;
+    const txt = b.type !== 'object';
+    if (txt) touched = true;
+    score += (cv.n / cv.area) * (b.hard ? 160 : txt ? (b.large ? 70 : 60) : cap ? 50 : 16) + (txt ? 10 : 0);
+  }
+  // Une seule teinte pour tout l'objet : le cran qui convient à chaque texte qu'il touche.
+  let need = cap && mains.some((p) => tonesOf(p).some((t) => t === 'd' || t === 'a')) ? 1 : 0;
+  if (touched) {
+    for (const p of mains) {
+      const data = paintParts([p], k, cw, ch);
+      const hits = boxes.filter((b) => b.type !== 'object' && coverage(data, cw, ch, k, b, 0).n > 0);
+      if (!hits.length) continue;
+      const tones = tonesOf(p);
+      let s = need;
+      while (s <= 2 && !hits.every((b) => tones.every((t) => t === 'w' || t === 'k' || b.ok.has(down(t, s))))) s++;
+      if (s > 2) { score += 1000; s = 2; }
+      need = Math.max(need, s);
+    }
+  }
+  // Un objet éclairci perd ses détails : on préfère nettement un placement qui évite les textes.
+  score += need * 40 - (c.S / Math.max(1, Math.min(w, h))) * 6;
+  // Reflets et détails : retirés s'ils touchent un texte ou un champ.
+  const steps = c.parts.map((p) => {
+    if (p.main || !touched) return need;
+    const data = paintParts([p], k, cw, ch);
+    return boxes.some((b) => b.type !== 'object' && coverage(data, cw, ch, k, b, 6).n > 0) ? -1 : need;
+  });
+  return { score: score + r() * 3, steps };
+}
+
+// Compose l'objet name sur une carte de w × h px (mêmes entrées que compose). Rend { svg, pick }.
+export function composeObject({ w, h, key, object, boxes = [], colors, bg = null, cap = '', dark = false, tries = 22, prefer = '' }) {
+  allowTones(boxes, colors, bg);
+  const name = OBJECTS[object] ? object : 'chart';
+  const candidate = (i) => {
+    const r = rng(`${SESSION}|${key}|${name}|${i}`), c = objectParts(name, r, w, h);
+    return { ...evaluateObject(c, boxes, w, h, cap, r), parts: c.parts, pick: `${name}|${i}` };
+  };
+  let best = null, kept = null;
+  for (let i = 0; i < tries; i++) {
+    const c = candidate(i);
+    if (c.pick === prefer) kept = c;
+    if (!best || c.score < best.score) best = c;
+  }
+  if (prefer && !kept && prefer.startsWith(`${name}|`)) kept = candidate(+prefer.split('|')[1]);
+  const chosen = kept && kept.score <= best.score + 25 ? kept : best;
+  return { svg: toSvg(chosen.parts, chosen.steps, w, h, colors, dark, true), pick: chosen.pick };
 }
 
 // ---------- Pose sur une carte : mesure, dessin au calme, redessin au besoin ----------
@@ -676,7 +797,7 @@ export function toneFor(group, index) { const l = shuffle(TONES, rng(`${SESSION}
 // exemple par React). Rend la fonction de retrait.
 /**
  * @param {HTMLElement} host
- * @param {{ key?: string, tone?: string, kind?: string, cap?: string, avoid?: string, layer?: HTMLElement }} [opts]
+ * @param {{ key?: string, tone?: string, kind?: string, object?: string, cap?: string, avoid?: string, layer?: HTMLElement }} [opts]
  * @returns {() => void}
  */
 export function attach(host, opts = {}) {
@@ -705,17 +826,21 @@ export function attach(host, opts = {}) {
     if (w < 40 || h < 30) return;
     const o = st.opts, pos = siblingIndex(host);
     const tone = o.tone || toneFor(pos.group, pos.index), kind = o.kind || kindFor(pos.group, pos.index);
+    // NEXORA #037 : objet illustré, sauf motif demandé (kind).
+    const head = host.querySelector('b, h3, h2, strong, small');
+    const object = o.kind ? '' : objectFor(o.object, o.key ? String(o.key).split(':').slice(1).join(':') : '', head ? head.textContent : '');
     if (host.dataset.nxiTone !== tone) host.dataset.nxiTone = tone;
     const colors = readColors(host);
     if (!colors) return;
     const theme = root.getAttribute('data-theme') || '';
     const key = o.key || `${pos.group}:${pos.index}`;
-    const sig = [key, kind, tone, o.cap || '', w, h, theme, host.textContent, colors.s.css, colors.d.css].join('|');
+    const sig = [key, object || kind, tone, o.cap || '', w, h, theme, host.textContent, colors.s.css, colors.d.css].join('|');
     if (sig === st.sig) return;
     let res = cache.get(sig);
     const fresh = !res;
     if (!res) {
-      res = compose({ w, h, key, kind, colors, bg: cardBg(host), cap: o.cap === 'discret', dark: theme === 'dark', boxes: measure(host, layer, o.avoid), prefer: st.pick });
+      const args = { w, h, key, colors, bg: cardBg(host), cap: o.cap === 'discret', dark: theme === 'dark', boxes: measure(host, layer, o.avoid), prefer: st.pick };
+      res = object ? composeObject({ ...args, object }) : compose({ ...args, kind });
       cache.set(sig, res);
       if (cache.size > 300) cache.delete(cache.keys().next().value);
     }

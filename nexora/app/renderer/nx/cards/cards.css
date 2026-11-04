@@ -40,3 +40,7 @@ html[data-theme='light'] .hm-stat.red { --nxi-s: #fab7af; --nxi-m: #f6968b; --nx
 
 /* Carte d'accueil : l'illustration remplace le halo d'origine. */
 .hm-hello.nxi-host::after { display: none; }
+
+/* NEXORA #037 : carte de l'équipe active (Mon compte → Équipe) : nom, offre et bouton à gauche, objet à droite. */
+.nxc-body > .nx-org-head.nxi-host { min-height: 118px; flex-direction: column; align-items: flex-start; justify-content: center; padding-right: 34%; }
+.nxc-body > .nx-org-head.nxi-host > div:first-child { min-width: 0; }

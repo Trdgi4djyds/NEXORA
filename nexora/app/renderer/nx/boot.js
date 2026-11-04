@@ -29,3 +29,5 @@ load('cards', () => document.body, './cards/index.js');
 load('profil', () => document.body, './profil/index.js');
 // NEXORA #034 : écrans de connexion et d'inscription du compte NEXORA redessinés.
 load('auth', () => document.body, './auth/index.js');
+// NEXORA #037 : offres Gratuit, Standard et Pro (Offre et usage, essais de l'App Builder, espaces réservés).
+load('offres', () => document.body, './offres/index.js');

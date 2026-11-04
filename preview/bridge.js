@@ -489,6 +489,28 @@
     // NEXORA #030 : session du compte pour les alertes e-mail (gardée par le processus principal) : rien
     // à garder dans un navigateur.
     "mon:cloud-session": () => false,
+    // NEXORA #037 : offre vue par le processus principal (src/plan.js) ; sans compte transmis, offre Gratuite.
+    "plan:status": () => ({
+      plan: "free",
+      plan_name: "Gratuit",
+      admin: false,
+      perms: {},
+      limits: {},
+      usage: {},
+      source: "invite",
+      at: Date.now(),
+      gates: 41,
+    }),
+    "plan:refresh": () => ({
+      plan: "free",
+      plan_name: "Gratuit",
+      admin: false,
+      perms: {},
+      limits: {},
+      usage: {},
+      source: "invite",
+      at: Date.now(),
+    }),
     "mon:config": () => ({
       endpoints: [],
       channels: { email: { enabled: false } },

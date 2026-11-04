@@ -131,59 +131,190 @@ const person = (i) => ({
   avatar_url: null,
 })
 
+// Offres du #037 (copie de supabase/migrations/20261104000007_offres_limites.sql) : Gratuit, Standard et Pro en
+// dollars ; Équipe et Entreprise retirées de la vente (gardées pour l'historique).
+const FREE_PERMS = Object.fromEntries(
+  [
+    "responsive",
+    "browser",
+    "multiscreen",
+    "dashboard",
+    "design_extended",
+    "design_full",
+    "responsive_advanced",
+    "source_import",
+    "apk",
+    "pwa",
+    "play_publish",
+    "crawler",
+    "audits_advanced",
+    "devlab",
+    "desktop_builder",
+    "push",
+    "inapp",
+    "alerts",
+    "projects_management",
+    "standard_support",
+    "studio_advanced",
+    "transform_extended",
+    "projects_multi",
+    "notifications_advanced",
+    "messaging_events",
+    "automation",
+    "custom_notifications",
+    "api_sdk",
+    "integrations",
+    "priority_support",
+    "early_access",
+  ].map((k, i) => [k, i < 4]),
+)
+const STANDARD_PERMS = {
+  ...FREE_PERMS,
+  ...Object.fromEntries(
+    [
+      "design_extended",
+      "responsive_advanced",
+      "source_import",
+      "apk",
+      "pwa",
+      "play_publish",
+      "crawler",
+      "audits_advanced",
+      "devlab",
+      "desktop_builder",
+      "push",
+      "inapp",
+      "alerts",
+      "projects_management",
+      "standard_support",
+    ].map((k) => [k, true]),
+  ),
+}
+const PRO_PERMS = Object.fromEntries(
+  Object.keys(FREE_PERMS).map((k) => [k, true]),
+)
 export const plans = [
   {
     id: "free",
     name: "Gratuit",
-    description: "Pour découvrir NEXORA",
+    description: "Découvre NEXORA et teste tes premières applications.",
     price_month_cents: 0,
     price_year_cents: 0,
-    currency: "EUR",
+    currency: "USD",
     sort: 1,
     active: true,
+    badge: "",
+    perms: FREE_PERMS,
     limits: {
       projects: 3,
-      designs: 10,
+      designs: 3,
       members: 1,
       monitors: 1,
       storage_mb: 200,
+      apps: 2,
+      app_trial_days: 7,
+      ai_requests_month: 30,
       scans_per_day: 3,
+      crawls_per_day: 0,
+      builds_month: 0,
+      push_month: 0,
     },
-    features: ["Responsive Lab", "NEX-DESIGN", "Studio 3D", "1 moniteur"],
+    features: [
+      "NEX-DESIGN limité (3 documents)",
+      "2 applications créées depuis une adresse web, essai de 7 jours chacune",
+      "Responsive Design et prévisualisation multi-écrans",
+      "Browser : navigation et consultation de sites",
+      "Tableau de bord",
+      "30 requêtes IA par mois, 3 audits de sécurité par jour",
+    ],
+  },
+  {
+    id: "standard",
+    name: "Standard",
+    description: "Pour créer, importer et publier tes projets.",
+    price_month_cents: 1000,
+    price_year_cents: 10000,
+    currency: "USD",
+    sort: 2,
+    active: true,
+    badge: "Le plus choisi",
+    perms: STANDARD_PERMS,
+    limits: {
+      projects: 25,
+      designs: 50,
+      members: 3,
+      monitors: 10,
+      storage_mb: 5120,
+      apps: 10,
+      app_trial_days: 0,
+      ai_requests_month: 500,
+      scans_per_day: 30,
+      crawls_per_day: 20,
+      builds_month: 60,
+      push_month: 10000,
+    },
+    features: [
+      "Tout le Gratuit, sans limite d’essai",
+      "Import de projets web et de code source",
+      "Génération Android et APK (60 constructions par mois)",
+      "NEX-DESIGN étendu (50 documents)",
+      "Responsive avancé, Crawler et audits avancés",
+      "Dev Lab, Desktop Builder et prévisualisation",
+      "500 requêtes IA par mois",
+      "Notifications push et in-app, alertes et rappels",
+      "Gestion de projets (25 projets, 3 membres)",
+      "Assistance standard",
+    ],
   },
   {
     id: "pro",
     name: "Pro",
-    description: "Pour les créateurs et freelances",
-    price_month_cents: 900,
-    price_year_cents: 9000,
-    currency: "EUR",
-    sort: 2,
+    description: "Toute la puissance de NEXORA, sans compromis.",
+    price_month_cents: 2500,
+    price_year_cents: 25000,
+    currency: "USD",
+    sort: 3,
     active: true,
+    badge: "Tout inclus",
+    perms: PRO_PERMS,
     limits: {
-      projects: 50,
-      designs: 500,
-      members: 1,
-      monitors: 10,
-      storage_mb: 10240,
-      scans_per_day: 50,
+      projects: 200,
+      designs: -1,
+      members: 10,
+      monitors: 50,
+      storage_mb: 51200,
+      apps: 50,
+      app_trial_days: 0,
+      ai_requests_month: 3000,
+      scans_per_day: 200,
+      crawls_per_day: 150,
+      builds_month: 400,
+      push_month: 100000,
     },
     features: [
-      "Projets illimités",
-      "10 moniteurs",
-      "Audits avancés",
-      "Export APK",
+      "Tout Standard",
+      "NEX-DESIGN complet, documents illimités",
+      "Création et transformation étendues (400 constructions par mois)",
+      "Projets multiples (200 projets, 10 membres)",
+      "3 000 requêtes IA par mois",
+      "Studio 3D avancé",
+      "Notifications avancées et personnalisées, événements de messagerie",
+      "Automatisations",
+      "API, SDK et outils d’intégration",
+      "Support prioritaire et accès en avant-première aux nouveautés",
     ],
   },
   {
     id: "team",
     name: "Équipe",
-    description: "Pour les agences et les équipes",
+    description: "Ancienne offre, remplacée par Pro",
     price_month_cents: 2900,
     price_year_cents: 29000,
     currency: "EUR",
-    sort: 3,
-    active: true,
+    sort: 13,
+    active: false,
+    badge: "",
+    perms: PRO_PERMS,
     limits: {
       projects: -1,
       designs: -1,
@@ -192,23 +323,18 @@ export const plans = [
       storage_mb: 102400,
       scans_per_day: -1,
     },
-    features: [
-      "Membres et rôles",
-      "Commentaires",
-      "Liens de partage",
-      "Support prioritaire",
-    ],
+    features: ["Membres et rôles", "Support prioritaire"],
   },
 ].map((p) => ({ ...p, created_at: ago(120), updated_at: ago(5) }))
 
 const orgDefs = [
   ["Espace de Camille Laurent", true, 0, "free"],
   ["Espace de Hugo Bernard", true, 1, "free"],
-  ["Studio Moreau", false, 2, "pro"],
+  ["Studio Moreau", false, 2, "standard"],
   ["Espace de Nathan Petit", true, 3, "pro"],
-  ["Agence Pixel", false, 4, "team"],
+  ["Agence Pixel", false, 4, "pro"],
   ["Espace de Lucas Roux", true, 5, "free"],
-  ["Fontaine Design", false, 6, "pro"],
+  ["Fontaine Design", false, 6, "standard"],
   ["Espace de Yanis Mercier", true, 7, "free"],
 ]
 export const organizations = orgDefs.map(([name, personal, owner], i) => ({
@@ -228,7 +354,7 @@ export const subscriptions = orgDefs.map(([, , , plan], i) => ({
   org_id: O(i).id,
   plan_id: plan,
   status: i === 6 ? "trialing" : "active",
-  seats: plan === "team" ? 6 : 1,
+  seats: i === 4 ? 6 : 1,
   current_period_end: plan === "free" ? null : ago(-18 + i),
   provider: plan === "free" ? "manual" : "stripe",
   provider_ref: plan === "free" ? null : `sub_demo${i}`,
@@ -725,7 +851,7 @@ export const announcement_reads = Array.from({ length: 6 }, (_, k) => ({
 export const audit_logs = [
   [0, "update", "feature_flags", { key: "ai_assistant", rollout: 60 }, 0.1],
   [1, "update", "support_tickets", { status: "pending" }, 1],
-  [0, "update", "subscriptions", { plan_id: "team" }, 2],
+  [0, "update", "subscriptions", { plan_id: "pro" }, 2],
   [4, "insert", "projects", { name: "Landing produit" }, 2.5],
   [null, "update", "monitors", { last_status: "down" }, 0.02],
   [0, "update", "profiles", { status: "suspended" }, 12],
@@ -945,8 +1071,31 @@ function demoMutate(table, method, params, postData) {
   return hit
 }
 
+// Essais des applications de l'offre Gratuite (#037).
+export const nx_app_trials = [
+  [0, "Boutique Lumière", "https://boutique-lumiere.fr", 2, "free"],
+  [0, "Blog de l’Atelier", "https://atelier-blog.fr", 11, "free"],
+  [1, "Restaurant Le Quai", "https://lequai-restaurant.fr", 4, "free"],
+  [5, "Portfolio Lucas", "https://lucasroux.design", 9, "free"],
+  [2, "Studio Moreau", null, 20, "standard"],
+].map(([u, name, url, age, plan], i) => ({
+  id: id(900 + i),
+  user_id: P(u).id,
+  org_id: organizations[u].id,
+  local_id: `demo-${i}`,
+  name,
+  source_kind: url ? "url" : "project",
+  source_url: url,
+  plan_at_creation: plan,
+  created_at: ago(age),
+  trial_ends_at: plan === "free" ? ago(age - 7) : null,
+  deleted_at: null,
+  profiles: person(u),
+}))
+
 const TABLES = {
   profiles,
+  nx_app_trials,
   plans,
   organizations,
   subscriptions,
@@ -1000,7 +1149,7 @@ function rpc(name, args) {
       tickets_open: count(support_tickets, (t) => t.status === "open"),
       monitors: monitors.length,
       monitors_down: count(monitors, (m) => m.last_status === "down"),
-      plans: { free: 4, pro: 3, team: 1 },
+      plans: { free: 4, standard: 2, pro: 2 },
       devices: { windows: 6, web: 3 },
     }
   if (name === "admin_timeseries") {
@@ -1052,6 +1201,20 @@ function rpc(name, args) {
       projects: projects.filter((x) => x.org_id === o.id).length,
       designs: design_documents.filter((x) => x.org_id === o.id).length,
     }))
+  // Offres du #037 : état réglable par NX_DEMO_OFFRE (essai, expire, standard).
+  if (name === "nx_plan_status") return demoPlanStatus(args)
+  if (name === "nx_app_status") return demoAppStatus(args)
+  if (name === "nx_app_claim")
+    return demoAppRow(args.p_local_id, args.p_name || "Mon application", 0)
+  if (name === "nx_app_release") return true
+  if (name === "nx_use_feature")
+    return {
+      ok: true,
+      plan: demoOffer() === "standard" ? "standard" : "free",
+      remaining: 12,
+    }
+  if (name === "nx_app_trial_extend")
+    return new Date(now + 7 * 86400000).toISOString()
   if (name === "org_quota")
     return {
       projects: { used: 2, limit: -1 },
@@ -1417,6 +1580,126 @@ const mgmtFunctions = [
  * Réponse de démonstration pour une requête interceptée, ou null si elle ne concerne pas Supabase.
  * @returns {{ status: number, headers?: Record<string, string>, body: unknown } | null}
  */
+// ---------- Offres du #037 ----------
+const demoOffer = () => process.env.NX_DEMO_OFFRE || "essai"
+function demoPlanStatus(args = {}) {
+  // Fiche d'un espace (back office) : offre et usage de cet espace.
+  const org = args.p_org && organizations.find((o) => o.id === args.p_org)
+  if (org && org.id !== organizations[0].id) {
+    const sub = subscriptions.find((x) => x.org_id === org.id)
+    const op =
+      plans.find((x) => x.id === (sub ? sub.plan_id : "free")) || plans[0]
+    const of = (list) => list.filter((x) => x.org_id === org.id).length
+    return {
+      plan: "pro",
+      plan_name: "Pro",
+      admin: true,
+      org_id: org.id,
+      view_org: org.id,
+      org_plan: op.id,
+      org_plan_name: op.name,
+      limits: op.limits,
+      perms: op.perms,
+      org_limits: op.limits,
+      usage: {
+        projects: of(projects),
+        designs: of(design_documents),
+        members: of(organization_members),
+        monitors: of(monitors),
+        storage_mb: 380,
+      },
+    }
+  }
+  const id = demoOffer() === "standard" ? "standard" : "free"
+  const p = plans.find((x) => x.id === id)
+  const usage =
+    id === "standard"
+      ? {
+          projects: 9,
+          designs: 14,
+          members: 2,
+          monitors: 4,
+          storage_mb: 1240,
+          apps: 3,
+          ai_requests_month: 212,
+          scans_per_day: 6,
+          crawls_per_day: 4,
+          builds_month: 11,
+          push_month: 1840,
+        }
+      : {
+          projects: 2,
+          designs: 2,
+          members: 1,
+          monitors: 1,
+          storage_mb: 64,
+          apps: demoOffer() === "expire" ? 2 : 1,
+          ai_requests_month: 18,
+          scans_per_day: 1,
+          crawls_per_day: 0,
+          builds_month: 0,
+          push_month: 0,
+        }
+  return {
+    plan: id,
+    plan_name: p.name,
+    admin: false,
+    org_id: organizations[0].id,
+    view_org: organizations[0].id,
+    org_plan: id,
+    org_plan_name: p.name,
+    limits: p.limits,
+    perms: p.perms,
+    org_limits: p.limits,
+    usage,
+    day: new Date(now).toISOString().slice(0, 10),
+    month: new Date(now).toISOString().slice(0, 8) + "01",
+    checked_at: new Date(now).toISOString(),
+  }
+}
+// Application d'essai : créée il y a `age` jours ; essai de 7 jours en offre Gratuite.
+function demoAppRow(localId, name, age, kind = "url") {
+  const created = now - age * 86400000
+  const ends = created + 7 * 86400000
+  const paid = demoOffer() === "standard"
+  const status = paid ? "active" : ends > now ? "trial" : "expired"
+  return {
+    ok: true,
+    local_id: localId,
+    name,
+    source_kind: kind,
+    status,
+    created_at: new Date(created).toISOString(),
+    trial_ends_at: paid ? null : new Date(ends).toISOString(),
+    days_left: status === "trial" ? Math.ceil((ends - now) / 86400000) : null,
+    deleted: false,
+  }
+}
+function demoAppStatus(args) {
+  const ids = Array.isArray(args.p_local_ids) ? args.p_local_ids : null
+  const expired = demoOffer() === "expire"
+  const rows = ids
+    ? ids
+        .slice(0, 1)
+        .map((i) => demoAppRow(i, "Boutique Lumière", expired ? 9 : 2))
+    : [
+        demoAppRow("demo-a", "Boutique Lumière", 2),
+        demoAppRow("demo-b", "Blog de l’Atelier", 11),
+      ]
+  const paid = demoOffer() === "standard"
+  return {
+    ok: true,
+    plan: paid ? "standard" : "free",
+    plan_name: paid ? "Standard" : "Gratuit",
+    admin: false,
+    trial_days: paid ? 0 : 7,
+    limit: paid ? 10 : 2,
+    used: paid ? 3 : ids ? (expired ? 2 : 1) : 2,
+    source_import: paid,
+    apps: Object.fromEntries(rows.map((r) => [r.local_id, r])),
+  }
+}
+
 export function demoResponse(method, rawUrl, headers, postData) {
   const url = new URL(rawUrl)
   const json = (body, status = 200, extra = {}) => ({

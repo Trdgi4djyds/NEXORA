@@ -9,6 +9,7 @@
     "build": "node scripts/build-web.mjs",
     "preview": "vite preview",
     "check": "node scripts/pack-windows.mjs --check",
+    "test:offres": "node scripts/test-offres.mjs",
     "pack:windows": "node scripts/pack-windows.mjs",
     "captures": "node scripts/captures.mjs",
     "captures:admin": "node scripts/captures-admin.mjs",

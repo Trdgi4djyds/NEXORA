@@ -13,6 +13,8 @@ import { errText } from "./supabase"
 import { Icon } from "./icons"
 // NEXORA #033 : illustrations de fond des cartes, même générateur que l'application.
 import { attach as attachIllustration } from "../../nexora/app/renderer/nx/cards/illu.js"
+// NEXORA #037 : objet illustré choisi d'après le libellé de la carte, sinon d'après son icône.
+import { objectFor } from "../../nexora/app/renderer/nx/cards/objects.js"
 
 /* ---------------------------------------------------------------- Formats */
 
@@ -75,14 +77,21 @@ export const ROLE_LABEL: Record<string, string> = {
 }
 export const LIMIT_LABEL: Record<string, string> = {
   projects: "Projets",
-  designs: "Designs",
-  members: "Membres",
+  designs: "Documents NEX-DESIGN",
+  members: "Membres par espace",
   monitors: "Sites surveillés",
   storage_mb: "Stockage (Mo)",
-  scans_per_day: "Audits par jour",
+  scans_per_day: "Audits de sécurité par jour",
   scans: "Audits",
   exports: "Exports",
   ai_requests: "Requêtes IA",
+  // NEXORA #037
+  apps: "Applications",
+  app_trial_days: "Jours d’essai par application",
+  ai_requests_month: "Requêtes IA par mois",
+  crawls_per_day: "Crawls par jour",
+  builds_month: "Constructions par mois",
+  push_month: "Envois push par mois",
 }
 export const INVITE_LABEL: Record<string, string> = {
   pending: "En attente",
@@ -251,6 +260,7 @@ export function Kpi({
   hint,
   tone = "",
   icon,
+  object,
   onClick,
 }: {
   label: string
@@ -258,6 +268,8 @@ export function Kpi({
   hint?: ReactNode
   tone?: "" | "good" | "warn" | "bad"
   icon?: string
+  /** NEXORA #037 : objet illustré imposé (sinon choisi d'après le libellé et l'icône). */
+  object?: string
   onClick?: () => void
 }) {
   // Illustration de fond (NEXORA #033) : motif et teinte tirés au hasard à chaque ouverture du back
@@ -266,8 +278,8 @@ export function Kpi({
   const layer = useRef<HTMLSpanElement | null>(null)
   useEffect(() => {
     if (!host.current || !layer.current) return
-    return attachIllustration(host.current, { key: `kpi:${label}`, tone: tone ? KPI_TONES[tone] : undefined, layer: layer.current })
-  }, [label, tone])
+    return attachIllustration(host.current, { key: `kpi:${label}`, tone: tone ? KPI_TONES[tone] : undefined, object: object || objectFor(label, icon), layer: layer.current })
+  }, [label, tone, icon, object])
   const inner = (
     <>
       <span className="nxi" aria-hidden="true" ref={layer} />

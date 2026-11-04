@@ -3,7 +3,7 @@ import { go, useRefresh, type SectionProps } from "../App"
 import { Icon } from "../icons"
 import { must, sb, type FnReturn, type Row } from "../supabase"
 import {
-  Bar, downloadCsv, Drawer, Empty, fmtAgo, fmtDate, fmtNum, JsonView, Loaded, ROLE_LABEL, SearchBox, Seg, SUB_LABEL,
+  Bar, downloadCsv, Drawer, Empty, fmtAgo, fmtDate, fmtNum, JsonView, Kpi, Loaded, ROLE_LABEL, SearchBox, Seg, SUB_LABEL,
   Table, Tag, useAction, useLoad, UserCell, plural, LIMIT_LABEL, INVITE_LABEL,
 } from "../ui"
 
@@ -40,7 +40,16 @@ export function Orgs({ param }: SectionProps) {
         {({ orgs, plans }) => {
           const paid = new Set(plans.filter((p) => p.price_month_cents > 0).map((p) => p.id))
           const rows = orgs.filter((o) => kind === "all" || (kind === "teams" ? !o.personal : kind === "personal" ? o.personal : paid.has(o.plan_id)))
+          // NEXORA #037 : cartes des équipes et des espaces, illustrées comme dans l'application.
+          const teams = orgs.filter((o) => !o.personal)
           return (
+            <>
+            <div className="kpis" style={{ marginBottom: 14 }}>
+              <Kpi label="Équipes" object="team" value={fmtNum(teams.length)} hint={plural(teams.reduce((t, o) => t + o.members, 0), "membre")} onClick={() => setKind("teams")} />
+              <Kpi label="Espaces personnels" object="folder" value={fmtNum(orgs.length - teams.length)} hint="un par compte" onClick={() => setKind("personal")} />
+              <Kpi label="Espaces payants" object="star" value={fmtNum(orgs.filter((o) => paid.has(o.plan_id)).length)} hint="Standard et Pro" onClick={() => setKind("paid")} />
+              <Kpi label="Projets" object="folder" value={fmtNum(orgs.reduce((t, o) => t + o.projects, 0))} hint={plural(orgs.reduce((t, o) => t + o.designs, 0), "document NEX-DESIGN", "documents NEX-DESIGN")} />
+            </div>
             <Table head={["Espace", "Propriétaire", "Offre", "Statut", "Membres", "Contenus", "Créé"]} count={rows.length} empty="Aucun espace.">
               {rows.map((o) => (
                 <tr key={o.id} className="click" onClick={(e) => !(e.target as HTMLElement).closest("select") && go("orgs", o.id)}>
@@ -68,6 +77,7 @@ export function Orgs({ param }: SectionProps) {
                 </tr>
               ))}
             </Table>
+            </>
           )
         }}
       </Loaded>
@@ -85,7 +95,8 @@ function OrgDrawer({ id, plans, onChanged }: { id: string; plans: { id: string; 
       sb.from("organizations").select("*").eq("id", id).maybeSingle(),
       sb.from("organization_members").select("role, created_at, user_id, profiles(id, full_name, email, avatar_url)").eq("org_id", id),
       sb.from("subscriptions").select("*").eq("org_id", id).maybeSingle(),
-      sb.rpc("org_quota", { org: id }),
+      // NEXORA #037 : limites de l'offre de l'espace et usage, lus par nx_plan_status ; org_quota en repli.
+      orgQuota(id),
       sb.from("invitations").select("*").eq("org_id", id).order("created_at", { ascending: false }),
       sb.from("usage_daily").select("*").eq("org_id", id).gte("day", since),
     ])
@@ -172,6 +183,21 @@ function OrgDrawer({ id, plans, onChanged }: { id: string; plans: { id: string; 
       </Loaded>
     </Drawer>
   )
+}
+
+async function orgQuota(id: string): Promise<{ data: unknown; error: unknown }> {
+  const r = await sb.rpc("nx_plan_status", { p_org: id })
+  if (!r.error) return { data: planQuota(r.data), error: null }
+  const q = await sb.rpc("org_quota", { org: id })
+  return { data: q.data, error: q.error }
+}
+
+// Réponse de nx_plan_status → { clé: { used, limit } } pour les données de l'espace.
+function planQuota(v: unknown) {
+  const s = (v || {}) as { org_limits?: Record<string, number>; usage?: Record<string, number> }
+  const out: Record<string, { used: number; limit: number }> = {}
+  for (const k of ["projects", "designs", "members", "monitors", "storage_mb"]) out[k] = { used: Number(s.usage?.[k] || 0), limit: Number(s.org_limits?.[k] ?? -1) }
+  return out
 }
 
 /** Limites de l'offre : { clé: { used, limit } } ou forme libre (affichée en JSON). */
