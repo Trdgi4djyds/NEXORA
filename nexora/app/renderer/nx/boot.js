@@ -21,3 +21,5 @@ load('studio', () => state.studio && state.studio.ready && state.studio, './stud
 load('projects', () => settings.uiV2 && document.body, './projects/index.js');
 // NEXORA #017 : sections ajoutées à l'App Builder (fiche Play Store…), posées avant la première ouverture.
 load('android', () => document.body, './android/index.js');
+// NEXORA #030 : session du compte transmise au processus principal pour les alertes e-mail (Brevo).
+load('alerts', () => document.body, './alerts/index.js');

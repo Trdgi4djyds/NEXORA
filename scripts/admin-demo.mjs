@@ -1209,6 +1209,19 @@ export function demoResponse(method, rawUrl, headers, postData) {
           },
         ])
       // Alertes par e-mail avec Brevo (#029) : état gardé pendant la capture.
+      if (
+        /update public\.app_config set value = value \|\| jsonb_build_object\('sender_email'/.test(
+          q,
+        )
+      ) {
+        const m = /'sender_email', '([^']*)', 'sender_name', '([^']*)'/.exec(q)
+        demoEmail.cfg = {
+          ...demoEmail.cfg,
+          sender_email: m?.[1] || "",
+          sender_name: m?.[2] || "",
+        }
+        return json([])
+      }
       if (/nx_brevo_set_key/.test(q)) {
         demoEmail.hasKey = true
         return json([{ nx_brevo_set_key: "" }])
@@ -1240,7 +1253,12 @@ export function demoResponse(method, rawUrl, headers, postData) {
         ])
       if (/to_regprocedure\('public\.nx_brevo_send/.test(q))
         return json([
-          { installed: true, has_key: demoEmail.hasKey, cfg: demoEmail.cfg },
+          {
+            installed: true,
+            app: true,
+            has_key: demoEmail.hasKey,
+            cfg: demoEmail.cfg,
+          },
         ])
       if (/cron\.job/.test(q))
         return json([

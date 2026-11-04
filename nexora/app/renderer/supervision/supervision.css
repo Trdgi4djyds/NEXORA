@@ -359,3 +359,7 @@
 .sup-srv.off .tog { opacity: .45; }
 @media (max-width: 1320px) { .sup-kpis.k4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .sup-note svg, .sup-srv .tog-text > span svg { display: inline-block; }
+
+/* NEXORA #030 : un seul canal d’alerte (e-mail par Brevo) : carte sur une colonne. */
+.sup-chs.sup-chs-one { grid-template-columns: minmax(0, 680px); }
+.sup-chs-one .pop-note { margin: 0; }

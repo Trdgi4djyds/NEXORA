@@ -12,6 +12,7 @@ export const outdated = (err) => /app_site_id|threshold_ms|monitor_series|PGRST2
 export function account() {
   return {
     signedIn: Boolean(cloud.user),
+    email: (cloud.user && cloud.user.email) || '',
     orgId: cloud.orgId || null,
     orgName: (cloud.org && cloud.org.name) || '',
     canEdit: Boolean(cloud.canEdit),

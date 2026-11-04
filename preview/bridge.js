@@ -486,9 +486,12 @@
     // Supervision (onglet de Sécurité) : aucun site surveillé ni canal d'alerte sur un PC neuf
     // (src/monitor.js, config() et summary()), réglages des alertes par défaut, aucun incident ni
     // test de charge (NEXORA #015 : overview(), incidentsQuery(), src/loadtest.js history()).
+    // NEXORA #030 : session du compte pour les alertes e-mail (gardée par le processus principal) : rien
+    // à garder dans un navigateur.
+    "mon:cloud-session": () => false,
     "mon:config": () => ({
       endpoints: [],
-      channels: {},
+      channels: { email: { enabled: false } },
       settings: { ...MON_SETTINGS },
     }),
     "mon:summary": () => [],

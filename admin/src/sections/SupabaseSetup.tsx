@@ -339,7 +339,7 @@ function Functions({ token }: { token: string }) {
 const EMAIL = setup.email
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 const sqlText = (v: string) => `'${v.replace(/'/g, "''")}'`
-type AlertState = { installed: boolean; has_key: boolean; cfg: { enabled?: boolean; sender_email?: string; sender_name?: string } | null }
+type AlertState = { installed: boolean; app: boolean; has_key: boolean; cfg: { enabled?: boolean; sender_email?: string; sender_name?: string } | null }
 
 // E-mails des comptes par le relais SMTP de Brevo, et alertes de supervision par l'API Brevo (clé dans le coffre).
 function EmailSettings({ token }: { token: string }) {
@@ -358,6 +358,7 @@ function EmailSettings({ token }: { token: string }) {
   const alerts = useLoad(async () => {
     const [r] = await sql<AlertState>(token, `select
       to_regprocedure('public.nx_brevo_send(text,text,text,text,text)') is not null as installed,
+      to_regprocedure('public.nx_alert_email(text,text,text)') is not null as app,
       exists (select 1 from vault.secrets where name = 'brevo_api_key') as has_key,
       (select value from public.app_config where key = 'email_alerts') as cfg`)
     return r
@@ -402,8 +403,11 @@ function EmailSettings({ token }: { token: string }) {
     await alertAct.run(async () => {
       try {
         await sql(token, `select public.nx_brevo_set_key(${sqlText(apiKey.trim())})`)
+        // L'expéditeur est gardé en même temps : les alertes de l'application Windows en ont besoin (#030).
+        if (isEmail(form.sender.trim()) && form.name.trim())
+          await sql(token, `update public.app_config set value = value || jsonb_build_object('sender_email', ${sqlText(form.sender.trim())}, 'sender_name', ${sqlText(form.name.trim())}), updated_at = now() where key = 'email_alerts'`)
         setApiKey("")
-        setAlertOutcome({ ok: true, text: "Clé API Brevo enregistrée dans le coffre chiffré de Supabase (Vault). Elle n’est ni affichée ni gardée dans le navigateur.", at: Date.now() })
+        setAlertOutcome({ ok: true, text: `Clé API Brevo enregistrée dans le coffre chiffré de Supabase (Vault), expéditeur ${form.name.trim()} <${form.sender.trim()}>. La clé n’est ni affichée ni gardée dans le navigateur.`, at: Date.now() })
         setTick((n) => n + 1)
       } catch (e) {
         setAlertOutcome({ ok: false, text: `Échec de l’enregistrement de la clé : ${errMsg(e)}`, at: Date.now() })
@@ -483,15 +487,18 @@ function EmailSettings({ token }: { token: string }) {
       </div>
 
       <h4 className="email-sub">Alertes de supervision par e-mail (API)</h4>
+      <p className="muted small" style={{ margin: 0 }}>Une seule clé pour deux usages : les alertes de la supervision 24 h/24 des serveurs (membres de l’équipe) et celles de l’application Windows (Sécurité → Supervision &amp; alertes), envoyées à l’adresse du compte de chaque utilisateur. Telegram et WhatsApp ne sont plus proposés.</p>
       <OutcomeBanner outcome={alertOutcome} onClose={() => setAlertOutcome(null)} />
       <Loaded q={alerts}>
         {(st) => !st.installed ? (
           <div className="banner"><Icon name="warn" size={16} /><span className="grow">Applique d’abord la migration <code>20261104000004_alertes_email_brevo.sql</code> (carte « Migrations du dépôt »).</span></div>
         ) : (
           <>
+            {!st.app && <div className="banner"><Icon name="warn" size={16} /><span className="grow">Pour les alertes de l’application Windows, applique aussi la migration <code>20261104000005_alertes_email_application.sql</code>.</span></div>}
             <p className="muted small" style={{ margin: 0 }}>
               {st.has_key ? <Tag tone="ok">clé API dans le coffre</Tag> : <Tag tone="warn">clé API manquante</Tag>}{" "}
-              {st.cfg?.enabled ? <Tag tone="ok">alertes activées</Tag> : <Tag>alertes désactivées</Tag>}{" "}
+              {st.app ? <Tag tone="ok">application Windows prête</Tag> : <Tag tone="warn">application Windows : migration manquante</Tag>}{" "}
+              {st.cfg?.enabled ? <Tag tone="ok">serveurs : alertes activées</Tag> : <Tag>serveurs : alertes désactivées</Tag>}{" "}
               {st.cfg?.sender_email ? <>Expéditeur {st.cfg.sender_name} &lt;{st.cfg.sender_email}&gt;.</> : "Expéditeur à enregistrer."}
             </p>
             <div className="row">
@@ -501,8 +508,8 @@ function EmailSettings({ token }: { token: string }) {
             <div className="actions">
               <button className="btn" disabled={alertAct.busy || !st.has_key || !st.cfg?.sender_email || !myEmail} onClick={testAlert}>M’envoyer une alerte de test</button>
               {st.cfg?.enabled
-                ? <button className="btn" disabled={alertAct.busy} onClick={() => saveAlerts(false)}>Désactiver les alertes</button>
-                : <button className="btn primary" disabled={alertAct.busy || !st.has_key || !isEmail(form.sender.trim()) || !form.name.trim()} onClick={() => saveAlerts(true)}>{alertAct.busy ? <span className="spinner sm" /> : "Activer les alertes par e-mail"}</button>}
+                ? <button className="btn" disabled={alertAct.busy} onClick={() => saveAlerts(false)}>Désactiver les alertes des serveurs</button>
+                : <button className="btn primary" disabled={alertAct.busy || !st.has_key || !isEmail(form.sender.trim()) || !form.name.trim()} onClick={() => saveAlerts(true)}>{alertAct.busy ? <span className="spinner sm" /> : "Activer les alertes des serveurs"}</button>}
             </div>
           </>
         )}

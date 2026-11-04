@@ -1,8 +1,11 @@
 'use strict';
 /* Supervision des sites de l'utilisateur : vérifications périodiques (disponibilité, temps de réponse,
- * expiration du certificat, présence d'un mot-clé), historique, et alertes par Telegram, e-mail ou WhatsApp
- * lorsqu'un site tombe, ralentit ou que son certificat approche de l'expiration. Tourne tant que NEXORA est
- * ouverte. Aucune donnée n'est envoyée ailleurs que vers les canaux d'alerte que l'utilisateur configure.
+ * expiration du certificat, présence d'un mot-clé), historique, et alertes par e-mail lorsqu'un site tombe,
+ * ralentit ou que son certificat approche de l'expiration. Tourne tant que NEXORA est ouverte.
+ *
+ * NEXORA #030 : un seul canal d'alerte, l'e-mail par Brevo, envoyé par les serveurs NEXORA (fonction
+ * nx_alert_email de Supabase, migration 20261104000005) à l'adresse du compte NEXORA connecté. Telegram,
+ * WhatsApp et le SMTP à configurer soi-même sont retirés (leurs anciens réglages sont effacés du disque).
  *
  * NEXORA #015 : chaque vérification mesure le détail du temps de réponse (DNS, connexion, TLS, premier
  * octet, transfert) ; une panne n'est déclarée qu'après plusieurs échecs de suite (fausses alertes
@@ -12,12 +15,25 @@
 const fs = require('fs');
 const path = require('path');
 const tls = require('tls');
-const { sendMail } = require('./smtp');
 const { probe: realProbe, reasonOf } = require('./supervision/probe');
 const { SiteStore } = require('./supervision/store');
 const S = require('./supervision/stats');
 
 const timeout = (ms) => (typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined);
+
+// NEXORA #030 : seul canal gardé, l'e-mail (Brevo). Une ancienne configuration e-mail (SMTP) reste active ;
+// les jetons et mots de passe de Telegram, WhatsApp et SMTP ne sont plus gardés.
+function cleanChannels(ch) {
+  const em = (ch && ch.email) || {};
+  const enabled = typeof em.enabled === 'boolean' ? em.enabled : Boolean(em.host && em.to);
+  return { email: { enabled } };
+}
+
+// Objet de l'e-mail : le texte de l'alerte sans son pictogramme de tête, sur une ligne.
+function subjectOf(text) {
+  const line = String(text || '').split('\n')[0].replace(/^[^\p{L}\p{N}]+/u, '').trim();
+  return (line || 'Alerte NEXORA').slice(0, 140);
+}
 
 function tlsDays(host, port = 443, timeout = 7000) {
   return new Promise((resolve) => {
@@ -102,7 +118,9 @@ class Monitor {
   }
 
   load() {
-    return readJson(this.file, null) || { endpoints: [], channels: {} };
+    const st = readJson(this.file, null) || { endpoints: [], channels: {} };
+    st.channels = cleanChannels(st.channels);
+    return st;
   }
 
   // Enregistrements regroupés (une vérification toutes les 30 s ne réécrit pas le fichier à chaque fois).
@@ -139,7 +157,39 @@ class Monitor {
 
   config() { return { endpoints: this.state.endpoints || [], channels: this.state.channels || {}, settings: this.settings }; }
 
-  setChannels(ch) { this.state.channels = ch; this.save(); }
+  setChannels(ch) { this.state.channels = cleanChannels(ch); this.save(); }
+
+  // NEXORA #030 : session du compte NEXORA transmise par l'interface (renderer/nx/alerts/), gardée en mémoire
+  // seulement ; elle sert à appeler les fonctions d'alerte e-mail des serveurs NEXORA.
+  setCloud(c) {
+    this.cloud = c && c.url && c.key && c.token
+      ? { url: String(c.url).replace(/\/+$/, ''), key: String(c.key), token: String(c.token), email: String(c.email || '') }
+      : null;
+  }
+
+  async rpc(name, args) {
+    const c = this.cloud;
+    if (!c) throw new Error('Connecte-toi à ton compte NEXORA (bouton Compte du rail) : les alertes e-mail partent par les serveurs NEXORA vers l’adresse de ton compte.');
+    let r;
+    try {
+      r = await this.fetch(`${c.url}/rest/v1/rpc/${name}`, {
+        method: 'POST', headers: { apikey: c.key, authorization: `Bearer ${c.token}`, 'content-type': 'application/json' }, body: JSON.stringify(args), signal: timeout(15000),
+      });
+    } catch {
+      throw new Error('Serveurs NEXORA injoignables : vérifie ta connexion à Internet.');
+    }
+    const j = await r.json().catch(() => null);
+    if (r.ok) return j;
+    const msg = String((j && (j.message || j.msg || j.error_description)) || `HTTP ${r.status}`);
+    if (r.status === 401 || /jwt/i.test(msg)) throw new Error('Session NEXORA expirée : reconnecte-toi à ton compte, puis réessaie.');
+    if ((j && j.code === 'PGRST202') || r.status === 404) throw new Error('Les serveurs NEXORA n’ont pas encore la mise à jour des alertes e-mail : l’administrateur doit appliquer les migrations (back office → Supabase).');
+    throw new Error(msg);
+  }
+
+  async sendEmail(subject, text, kind = 'alerte') {
+    const r = await this.rpc('nx_alert_email', { p_subject: subject, p_text: text, p_kind: kind });
+    return { ok: true, id: r && r.id, to: r && r.to };
+  }
 
   setSettings(patch) {
     const p = patch || {};
@@ -442,59 +492,24 @@ class Monitor {
     const ch = this.state.channels || {};
     const want = (name) => !only || only[name] !== false;
     const jobs = [];
-    if (ch.telegram && ch.telegram.token && ch.telegram.chatId && want('telegram')) jobs.push(['telegram', () => this.sendTelegram(ch.telegram, text)]);
-    if (ch.whatsapp && ch.whatsapp.phone && ch.whatsapp.apikey && want('whatsapp')) jobs.push(['whatsapp', () => this.sendWhatsApp(ch.whatsapp, text)]);
-    if (ch.email && ch.email.host && ch.email.to && want('email')) jobs.push(['email', () => sendMail({ ...ch.email, subject: 'Alerte NEXORA', text })]);
+    if (ch.email && ch.email.enabled && want('email')) jobs.push(['email', () => this.sendEmail(subjectOf(text), text)]);
     return Promise.all(jobs.map(([channel, run]) => Promise.resolve().then(run).then(() => ({ channel, ok: true }), (err) => ({ channel, ok: false, error: String((err && err.message) || err) }))));
   }
 
-  async sendTelegram(cfg, text) {
-    const token = String(cfg.token || '').trim();
-    const chatId = String(cfg.chatId || '').trim();
-    // Le jeton contient « : » : il doit rester tel quel dans l'adresse (encodé en %3A, Telegram répond 404).
-    if (!/^\d{5,}:[\w-]{20,}$/.test(token)) throw new Error('Jeton du bot invalide : il ressemble à 123456789:AAH… (donné par @BotFather).');
-    if (!/^(-?\d+|@[\w]{4,})$/.test(chatId)) throw new Error('Identifiant de discussion invalide : un nombre (ex. 123456789) donné par @userinfobot, ou @nomdecanal.');
-    const r = await this.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }), signal: timeout(15000),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (j.ok) return { ok: true };
-    const d = String(j.description || `HTTP ${r.status}`);
-    if (r.status === 401 || r.status === 404) throw new Error('Jeton du bot refusé par Telegram : recopie-le depuis @BotFather.');
-    if (/chat not found/i.test(d)) throw new Error('Discussion introuvable : ouvre ton bot dans Telegram, appuie sur « Démarrer » (/start), puis vérifie l’identifiant donné par @userinfobot.');
-    if (/can't initiate|blocked|forbidden/i.test(d)) throw new Error('Le bot ne peut pas t’écrire : ouvre la discussion avec ton bot et appuie sur « Démarrer » (/start).');
-    throw new Error(`Telegram : ${d}`);
-  }
-
-  // WhatsApp via CallMeBot (gratuit, pour s'alerter soi-même) : l'utilisateur a activé le bot et obtenu sa clé.
-  // CallMeBot répond toujours HTTP 200 : on lit le texte de la réponse pour savoir si c'est accepté.
-  async sendWhatsApp(cfg, text) {
-    let phone = String(cfg.phone || '').replace(/[\s().-]/g, '');
-    if (phone.startsWith('00')) phone = `+${phone.slice(2)}`;
-    if (!phone.startsWith('+')) phone = `+${phone}`;
-    if (!/^\+\d{8,15}$/.test(phone)) throw new Error('Numéro WhatsApp invalide : indique-le au format international, ex. +22997000000.');
-    const apikey = String(cfg.apikey || '').trim();
-    if (!apikey) throw new Error('Clé API WhatsApp manquante : envoie « I allow callmebot to send me messages » au bot CallMeBot pour l’obtenir.');
-    const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(apikey)}`;
-    const r = await this.fetch(url, { signal: timeout(20000) });
-    const raw = await r.text().catch(() => '');
-    // Texte visible seulement (sans balises, scripts ni styles) pour éviter les faux échecs.
-    const vis = raw.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    if (/apikey is invalid|invalid apikey|wrong apikey/i.test(vis)) throw new Error('Clé API WhatsApp refusée : vérifie la clé reçue de CallMeBot (elle est liée à ce numéro).');
-    if (/not (been )?activated|you need to (get|activate)|phone.*not.*(found|registered)|not in our database/i.test(vis)) throw new Error('Ce numéro n’est pas activé chez CallMeBot : envoie d’abord le message d’autorisation au bot, puis réessaie.');
-    if (!r.ok) throw new Error(`WhatsApp : le service a répondu HTTP ${r.status}.`);
-    if (/queued|message sent|sent to|will receive/i.test(vis)) return { ok: true };
-    if (/error|failed|limit/i.test(vis)) throw new Error(`WhatsApp : ${vis.slice(0, 160)}`);
-    return { ok: true, note: 'Envoyé (le service n’a pas confirmé, le message peut mettre une minute).' };
-  }
-
+  // Test depuis l'interface : l'e-mail part, puis la réponse de Brevo est lue (quelques secondes).
   async testAlert(channel) {
-    const ch = this.state.channels || {};
-    const text = '✅ Test d’alerte NEXORA : la configuration fonctionne.';
-    if (channel === 'telegram') return this.sendTelegram(ch.telegram || {}, text);
-    if (channel === 'whatsapp') return this.sendWhatsApp(ch.whatsapp || {}, text);
-    if (channel === 'email') return sendMail({ ...(ch.email || {}), subject: 'Test NEXORA', text });
-    throw new Error('Canal inconnu.');
+    if (channel !== 'email') throw new Error('Seules les alertes par e-mail (Brevo) sont proposées.');
+    const sent = await this.sendEmail('Test des alertes NEXORA', 'Test d’alerte NEXORA : la configuration fonctionne. Tu recevras un e-mail comme celui-ci quand un site surveillé tombe en panne, ralentit ou revient en ligne.', 'test');
+    for (let i = 0; i < 8; i++) {
+      await new Promise((ok) => setTimeout(ok, 1500));
+      const res = await this.rpc('nx_alert_email_result', { p_id: sent.id }).catch(() => null);
+      if (!res) continue;
+      if (res.status && res.status < 300) return { ok: true, note: `E-mail de test accepté par Brevo pour ${sent.to} : vérifie ta boîte de réception (et les indésirables).` };
+      let detail = res.error || res.content || '';
+      try { detail = JSON.parse(res.content).message || detail; } catch { /* texte brut */ }
+      throw new Error(res.status === 401 ? 'Brevo refuse la clé API des serveurs NEXORA : l’administrateur doit la remplacer (back office → Supabase → E-mails).' : `Brevo a refusé l’e-mail (HTTP ${res.status || '?'}) : ${detail}`);
+    }
+    return { ok: true, note: `E-mail de test envoyé à ${sent.to} ; Brevo n’a pas encore confirmé, il peut mettre une minute.` };
   }
 
   silence({ id, minutes } = {}) {
@@ -662,6 +677,8 @@ function register({
   ipcMain.handle('mon:config', () => mon.config());
   ipcMain.handle('mon:set-endpoints', (_e, list) => mon.setEndpoints(list));
   ipcMain.handle('mon:set-channels', (_e, ch) => { mon.setChannels(ch); return { ok: true }; });
+  // NEXORA #030 : session du compte NEXORA pour les alertes e-mail (mémoire seulement).
+  ipcMain.handle('mon:cloud-session', (_e, c) => { mon.setCloud(c); return Boolean(mon.cloud); });
   ipcMain.handle('mon:summary', () => mon.summary());
   ipcMain.handle('mon:history', (_e, id) => mon.store.recent(id));
   ipcMain.handle('mon:check-now', async (_e, id) => { const e = (mon.state.endpoints || []).find((x) => x.id === id); return e ? mon.check(e) : null; });

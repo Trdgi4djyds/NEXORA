@@ -10,7 +10,7 @@ export function emptyState(ctx) {
   return `<div class="sup-empty sup-hero">
     <div class="sup-hero-ic">${icon('sync', 30)}</div>
     <b>Surveille tes sites en continu</b>
-    <p>Disponibilité, temps de réponse détaillé (DNS, connexion, TLS, serveur, transfert), certificat et erreurs de page, avec des incidents suivis et des alertes par Telegram, e-mail ou WhatsApp.</p>
+    <p>Disponibilité, temps de réponse détaillé (DNS, connexion, TLS, serveur, transfert), certificat et erreurs de page, avec des incidents suivis et des alertes par e-mail.</p>
     <div class="sup-hero-act">${cur ? btn('Surveiller le site ouvert', 'data-sup-add="current"', { ic: 'plus', cls: 'primary' }) : ''}${btn('Ajouter un site', 'data-sup-add="new"', { ic: 'plus', cls: cur ? '' : 'primary' })}</div>
     <div class="sec-chips"><span>Vérification toutes les 30 s à 30 min</span><span>Pannes confirmées, sans fausse alerte</span><span>31 jours de détail, 13 mois d’historique</span></div>
   </div>`;

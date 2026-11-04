@@ -32,13 +32,14 @@ export function siteSheet({ cfg, site = null, url = '', server = false }) {
   const owner = 'sup-site';
   const e = site || { name: '', url, intervalSec: 300, thresholdMs: 2000, keyword: '', expectStatus: '', watchErrors: false, confirm: 0, alerts: null, enabled: true };
   const ch = cfg.channels || {};
-  const ready = { telegram: ch.telegram && ch.telegram.token && ch.telegram.chatId, email: ch.email && ch.email.host && ch.email.to, whatsapp: ch.whatsapp && ch.whatsapp.phone && ch.whatsapp.apikey };
+  // NEXORA #030 : un seul canal, l'e-mail (Brevo) envoyé par les serveurs NEXORA.
+  const ready = { email: Boolean(ch.email && ch.email.enabled) };
   const wants = (k) => !e.alerts || e.alerts[k] !== false;
   const acc = account();
   const srvHint = !acc.signedIn ? 'Connecte-toi à ton compte NEXORA (bouton Connexion du rail) pour l’activer.'
     : !acc.orgId ? 'Choisis un espace d’équipe dans ton compte NEXORA.'
       : !acc.canEdit ? 'Ton rôle dans cet espace ne le permet pas (éditeur au moins).'
-        : `Vérifié par les serveurs NEXORA toutes les minutes au plus, même ordinateur éteint, avec une notification dans NEXORA pour l’équipe « ${acc.orgName} ».`;
+        : `Vérifié par les serveurs NEXORA toutes les minutes au plus, même ordinateur éteint, avec une notification dans NEXORA pour l’équipe « ${acc.orgName} », et un e-mail (Brevo) si les alertes des serveurs sont activées.`;
   const srvOk = acc.signedIn && acc.orgId && acc.canEdit;
   return new Promise((resolve) => {
     let done = false;
@@ -57,7 +58,7 @@ export function siteSheet({ cfg, site = null, url = '', server = false }) {
         <label class="field"><span>Mot-clé attendu dans la page</span><input class="input" name="keyword" value="${esc(e.keyword || '')}" placeholder="Facultatif : la page est en panne si ce texte manque"></label>
         <label class="tog-row"><span class="tog-text"><span>Erreurs de la page</span><small>Charge la page dans un navigateur caché (au plus toutes les 5 min) et relève les erreurs JavaScript et les ressources en échec.</small></span><input type="checkbox" name="watchErrors" ${e.watchErrors ? 'checked' : ''}><span class="tog" aria-hidden="true"></span></label>
         <label class="tog-row sup-srv ${srvOk ? '' : 'off'}"><span class="tog-text"><span>${icon('cloud', 13)} Surveiller aussi 24 h/24 par les serveurs NEXORA</span><small>${esc(srvHint)}</small></span><input type="checkbox" name="server" ${server ? 'checked' : ''} ${srvOk ? '' : 'disabled'}><span class="tog" aria-hidden="true"></span></label>
-        <div class="field"><span>Alertes pour ce site</span><div class="sup-checks">${['telegram', 'email', 'whatsapp'].map((k) => `<label class="sup-check ${ready[k] ? '' : 'off'}"><input type="checkbox" name="al-${k}" ${wants(k) ? 'checked' : ''}><span>${{ telegram: 'Telegram', email: 'E-mail', whatsapp: 'WhatsApp' }[k]}</span>${ready[k] ? '' : '<small>non configuré</small>'}</label>`).join('')}</div></div>
+        <div class="field"><span>Alertes pour ce site</span><div class="sup-checks">${['email'].map((k) => `<label class="sup-check ${ready[k] ? '' : 'off'}"><input type="checkbox" name="al-${k}" ${wants(k) ? 'checked' : ''}><span>E-mail (Brevo)</span>${ready[k] ? '' : '<small>désactivé dans Alertes</small>'}</label>`).join('')}</div></div>
         <p class="sup-form-err" hidden></p>
       </div>
       <div class="sheet-foot"><span class="grow"></span><button type="button" class="btn" data-sup-sheet="cancel">Annuler</button><button type="submit" class="btn primary">${site ? 'Enregistrer' : 'Surveiller ce site'}</button></div>
@@ -77,7 +78,7 @@ export function siteSheet({ cfg, site = null, url = '', server = false }) {
       const others = list.filter((x) => !site || x.id !== site.id).map((x) => x.name);
       const name = freeName(String(f.get('name') || '').trim() || host(u) || 'Site', others);
       const alerts = {};
-      for (const k of ['telegram', 'email', 'whatsapp']) if (!f.get(`al-${k}`)) alerts[k] = false;
+      for (const k of ['email']) if (!f.get(`al-${k}`)) alerts[k] = false;
       const next = {
         ...(site || { id: Math.random().toString(36).slice(2, 9), enabled: true }),
         name, url: u,

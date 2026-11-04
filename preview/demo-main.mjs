@@ -403,12 +403,8 @@ function createRuntime(version) {
     path.join(ud, "monitor.json"),
     JSON.stringify({
       endpoints: profs.map((p) => p.e),
-      channels: {
-        telegram: {
-          token: "123456789:AAH-demo-demo-demo-demo-demo",
-          chatId: "123456789",
-        },
-      },
+      // NEXORA #030 : seul canal, l'e-mail par Brevo (serveurs NEXORA).
+      channels: { email: { enabled: true } },
     }),
   )
   let clock = now - 30 * DAY
@@ -419,7 +415,7 @@ function createRuntime(version) {
     pageErrors: null,
     now: () => clock,
   })
-  replay.dispatch = async () => [{ channel: "telegram", ok: true }]
+  replay.dispatch = async () => [{ channel: "email", ok: true }]
   const steps = profs
     .filter((p) => p.e.enabled !== false)
     .map((p) => ({ p, t: now - 30 * DAY, rand: rng(p.e.id.length * 131) }))
@@ -480,7 +476,7 @@ function createRuntime(version) {
   // Le rejeu se fait site par site : on remet le journal dans l'ordre chronologique, comme en vrai, et
   // on y inscrit l'envoi simulé (les promesses d'envoi ne sont pas encore résolues à ce stade).
   for (const a of replay.alertLog)
-    a.results = a.muted ? [] : [{ channel: "telegram", ok: true }]
+    a.results = a.muted ? [] : [{ channel: "email", ok: true }]
   replay.alertLog.sort((a, b) => b.at - a.at)
   replay.incidents.sort((a, b) => b.start - a.start)
   // Une prise en charge et une note sur la panne de la boutique, pour la démonstration.
@@ -521,9 +517,13 @@ function createRuntime(version) {
     pageErrors: fakePageErrors,
     probe,
   })
-  // Canal Telegram fictif : aucun message ne part réellement, l'envoi est simulé comme réussi.
-  mon.dispatch = async () => [{ channel: "telegram", ok: true }]
-  mon.sendTelegram = async () => ({ ok: true })
+  // Alertes e-mail fictives : aucun message ne part réellement, l'envoi est simulé comme réussi.
+  mon.dispatch = async () => [{ channel: "email", ok: true }]
+  mon.sendEmail = async () => ({ ok: true, id: 1, to: "demo@nexora.app" })
+  mon.testAlert = async () => ({
+    ok: true,
+    note: "E-mail de test accepté par Brevo pour demo@nexora.app (démonstration).",
+  })
   mon.errReports["demo-boutique"] = {
     at: Date.now() - 4 * MIN,
     loadMs: 1840,

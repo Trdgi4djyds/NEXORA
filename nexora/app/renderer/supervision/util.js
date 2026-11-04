@@ -97,7 +97,7 @@ export const ALERT_KIND = {
   down: 'Panne', 'down-rappel': 'Rappel de panne', up: 'Rétablissement', slow: 'Lenteur', 'slow-ok': 'Fin de lenteur',
   cert: 'Certificat', 'cert-ok': 'Certificat renouvelé', errors: 'Erreurs de page', 'errors-ok': 'Fin des erreurs',
 };
-export const CHANNEL = { telegram: 'Telegram', email: 'E-mail', whatsapp: 'WhatsApp' };
+export const CHANNEL = { email: 'E-mail' };
 
 // Palette des séries (mêmes teintes que le système de NEXORA, lisibles en clair comme en sombre).
 export const PALETTE = ['#007aff', '#af52de', '#30b0c7', '#ff9500', '#ff2d55', '#34c759', '#5856d6', '#a2845e', '#ffcc00', '#64d2ff'];

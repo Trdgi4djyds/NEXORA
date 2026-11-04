@@ -1,45 +1,27 @@
-// NEXORA #015 : alertes de la supervision (canaux Telegram, e-mail et WhatsApp, règles de déclenchement,
-// sourdine générale, journal des alertes envoyées) et export vers Prometheus + Grafana.
+// NEXORA #015 : alertes de la supervision (règles de déclenchement, sourdine générale, journal des alertes
+// envoyées) et export vers Prometheus + Grafana.
+// NEXORA #030 : un seul canal, l'e-mail par Brevo, envoyé par les serveurs NEXORA à l'adresse du compte
+// connecté (rien à régler ici) ; Telegram, WhatsApp et le SMTP à saisir soi-même sont retirés.
 import { call, esc, icon, num, time, dateTime, toast, ALERT_KIND, CHANNEL } from './util.js';
 import { card, btn } from './ui.js';
-
-// Fournisseurs d'e-mail (mêmes réglages que l'interface d'origine de la supervision).
-const SMTP = {
-  custom: { label: 'Fournisseur : autre (saisie manuelle)' }, gmail: { label: 'Gmail', host: 'smtp.gmail.com', port: 587 },
-  outlook: { label: 'Outlook / Hotmail / Microsoft 365', host: 'smtp.office365.com', port: 587 }, yahoo: { label: 'Yahoo Mail', host: 'smtp.mail.yahoo.com', port: 465 },
-  zoho: { label: 'Zoho Mail', host: 'smtp.zoho.com', port: 465 }, ovh: { label: 'OVH', host: 'ssl0.ovh.net', port: 465 },
-  hostinger: { label: 'Hostinger', host: 'smtp.hostinger.com', port: 465 }, brevo: { label: 'Brevo (Sendinblue)', host: 'smtp-relay.brevo.com', port: 587 },
-};
-
-const field = (ch, key, value, placeholder, type = 'text') => `<input class="input" type="${type}" data-ch="${ch}|${key}" value="${esc(value || '')}" placeholder="${esc(placeholder)}" spellcheck="false">`;
+import { account, onAccount } from './cloud.js';
 
 export async function renderAlerts(ctx) {
   const [cfg, log] = await Promise.all([call('mon:config'), call('mon:alerts-log', { limit: 200 }).catch(() => [])]);
   ctx.state.alertCfg = cfg;
-  const ch = cfg.channels || {};
+  const em = (cfg.channels && cfg.channels.email) || {};
   const st = cfg.settings || { confirm: 2, slowConfirm: 3, repeatMin: 60, certDays: 14, notifyRecovery: true, silenceUntil: 0 };
-  const ready = { telegram: ch.telegram && ch.telegram.token && ch.telegram.chatId, email: ch.email && ch.email.host && ch.email.to, whatsapp: ch.whatsapp && ch.whatsapp.phone && ch.whatsapp.apikey };
-  const nReady = Object.values(ready).filter(Boolean).length;
-  const tg = ch.telegram || {}; const em = ch.email || {}; const wa = ch.whatsapp || {};
-  const head = (k, ic, label) => `<div class="sup-ch-h">${icon(ic, 15)}<b>${label}</b>${ready[k] ? `<span class="sup-chip good">${icon('check', 11)}Prêt</span>` : '<span class="sup-chip">Non configuré</span>'}</div>`;
-  const channels = `<div class="sup-chs">
-    <div class="sup-ch ${ready.telegram ? 'on' : ''}">${head('telegram', 'chat', 'Telegram')}
-      ${field('telegram', 'token', tg.token, 'Jeton du bot : 123456789:AAH…')}${field('telegram', 'chatId', tg.chatId, 'Ton identifiant : 123456789')}
-      <div class="sup-ch-f">${btn('Tester', 'data-al-test="telegram"', { ic: 'bell' })}<span class="sup-ch-res" data-res="telegram"></span></div>
-      <details><summary>Comment faire ?</summary><ol class="mon-steps"><li>Dans Telegram, écris à <b>@BotFather</b> : <code>/newbot</code> → copie le jeton.</li><li>Ouvre ton nouveau bot et appuie sur <b>Démarrer</b>.</li><li>Écris à <b>@userinfobot</b> → copie ton identifiant (nombre).</li></ol></details>
-    </div>
-    <div class="sup-ch ${ready.email ? 'on' : ''}">${head('email', 'mail', 'E-mail')}
-      <select class="input" data-al-preset>${Object.entries(SMTP).map(([k, v]) => `<option value="${k}" ${em.host && em.host === v.host ? 'selected' : ''}>${esc(v.label)}</option>`).join('')}</select>
-      <div class="sup-form-grid">${field('email', 'host', em.host, 'Serveur SMTP')}${field('email', 'port', em.port || '587', 'Port (587 ou 465)')}</div>
-      <div class="sup-form-grid">${field('email', 'user', em.user, 'Ton adresse e-mail')}${field('email', 'pass', em.pass, 'Mot de passe d’application', 'password')}</div>
-      ${field('email', 'to', em.to, 'Destinataire(s), séparés par des virgules')}
-      <div class="sup-ch-f">${btn('Tester', 'data-al-test="email"', { ic: 'bell' })}<span class="sup-ch-res" data-res="email"></span></div>
-      <details><summary>Comment faire ?</summary><p class="pop-note">Gmail, Outlook et Yahoo refusent ton mot de passe habituel : crée un <b>mot de passe d’application</b>. <button type="button" class="link-btn small" data-external="https://myaccount.google.com/apppasswords">Gmail</button></p></details>
-    </div>
-    <div class="sup-ch ${ready.whatsapp ? 'on' : ''}">${head('whatsapp', 'chat', 'WhatsApp')}
-      ${field('whatsapp', 'phone', wa.phone, 'Ton numéro : +229 97 00 00 00')}${field('whatsapp', 'apikey', wa.apikey, 'Clé API WhatsApp')}
-      <div class="sup-ch-f">${btn('Tester', 'data-al-test="whatsapp"', { ic: 'bell' })}<span class="sup-ch-res" data-res="whatsapp"></span></div>
-      <details><summary>Comment faire ?</summary><ol class="mon-steps"><li>Ajoute le contact du service d’alerte gratuit et envoie-lui « I allow callmebot to send me messages ».</li><li>Tu reçois ta clé par WhatsApp en une à deux minutes. <button type="button" class="link-btn small" data-external="https://callmebot.com/blog/free-api-whatsapp-messages">Numéro du service</button></li></ol></details>
+  const acc = account();
+  const ready = Boolean(em.enabled && acc.signedIn);
+  const chip = ready ? `<span class="sup-chip good">${icon('check', 11)}Prêt</span>`
+    : em.enabled ? '<span class="sup-chip warn">Connexion requise</span>' : '<span class="sup-chip">Désactivé</span>';
+  const channels = `<div class="sup-chs sup-chs-one">
+    <div class="sup-ch ${ready ? 'on' : ''}">
+      <div class="sup-ch-h">${icon('mail', 15)}<b>E-mail (Brevo)</b>${chip}</div>
+      <p class="pop-note">${acc.signedIn ? `Les alertes partent par les serveurs NEXORA vers <b>${esc(acc.email)}</b>, l’adresse de ton compte.` : 'Connecte-toi à ton compte NEXORA : les alertes partent par les serveurs NEXORA vers l’adresse de ton compte.'}</p>
+      <label class="tog-row"><span class="tog-text"><span>Recevoir les alertes par e-mail</span><small>Panne, lenteur, erreurs de page, certificat et retour à la normale, selon les règles ci-dessous.</small></span><input type="checkbox" data-email-enabled ${em.enabled ? 'checked' : ''}><span class="tog" aria-hidden="true"></span></label>
+      <div class="sup-ch-f">${acc.signedIn ? btn('Envoyer un e-mail de test', 'data-al-test="email"', { ic: 'bell' }) : btn('Se connecter', 'data-al-login', { ic: 'user', cls: 'primary' })}<span class="sup-ch-res" data-res="email"></span></div>
+      <details><summary>Comment ça marche ?</summary><ul class="mon-steps"><li>Rien à configurer chez toi : l’envoi passe par Brevo depuis les serveurs NEXORA.</li><li>Jusqu’à 20 alertes par heure et 60 par jour ; au-delà, elles restent dans NEXORA.</li><li>Les alertes partent tant que NEXORA est ouverte. Pour être prévenu même NEXORA fermée, active « Surveiller aussi 24 h/24 par les serveurs NEXORA » dans les réglages du site.</li></ul></details>
     </div>
   </div>`;
   const now = Date.now();
@@ -61,10 +43,10 @@ export async function renderAlerts(ctx) {
       <td><b>${esc(a.siteName)}</b></td>
       <td><span class="sup-chip ${a.level === 'ok' ? 'good' : a.level === 'critique' ? 'bad' : 'warn'}">${esc(ALERT_KIND[a.kind] || a.kind)}</span></td>
       <td class="sup-reason">${esc(a.text.replace(/^\S+\s/u, (m) => (/^[\p{Extended_Pictographic}\u2705]/u.test(m) ? '' : m)))}</td>
-      <td>${a.muted ? '<span class="sup-chip">Sourdine</span>' : a.results == null ? '<span class="muted">Envoi…</span>' : a.results.length ? a.results.map((r) => `<span class="sup-chip ${r.ok ? 'good' : 'bad'}" ${r.ok ? '' : `data-tip="${esc(r.error || '')}"`}>${esc(CHANNEL[r.channel] || r.channel)}</span>`).join('') : '<span class="muted" data-tip="Configure un canal ci-dessus pour recevoir les alertes.">Aucun canal</span>'}</td>
+      <td>${a.muted ? '<span class="sup-chip">Sourdine</span>' : a.results == null ? '<span class="muted">Envoi…</span>' : a.results.some((r) => CHANNEL[r.channel]) ? a.results.filter((r) => CHANNEL[r.channel]).map((r) => `<span class="sup-chip ${r.ok ? 'good' : 'bad'}" ${r.ok ? '' : `data-tip="${esc(r.error || '')}"`}>${esc(CHANNEL[r.channel] || r.channel)}</span>`).join('') : '<span class="muted" data-tip="Active les alertes par e-mail ci-dessus pour les recevoir.">Aucun envoi</span>'}</td>
     </tr>`).join('');
   ctx.afterRender = () => bind(ctx);
-  return `${card('Canaux d’alerte', channels, { sub: nReady ? `${nReady} canal${nReady > 1 ? 'aux' : ''} prêt${nReady > 1 ? 's' : ''} · les alertes partent tant que NEXORA est ouverte` : 'Configure au moins un canal pour être prévenu' })}
+  return `${card('Alertes par e-mail', channels, { sub: ready ? 'Prêt · les alertes partent tant que NEXORA est ouverte' : 'Active les alertes par e-mail pour être prévenu' })}
     <div class="sup-grid g-2-1 g-top">
       ${card('Journal des alertes', rows ? `<div class="sup-table-wrap sup-scroll"><table class="sup-table"><thead><tr><th>Date</th><th>Site</th><th>Type</th><th>Message</th><th>Envoi</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="sup-none">${icon('bell', 14)} Aucune alerte pour l’instant.</p>`, { sub: `${num(log.length)} alerte${log.length > 1 ? 's' : ''} (500 gardées au plus)` })}
       ${card('Règles', rules, { sub: 'Valables pour tous les sites (la confirmation se règle aussi site par site)' })}
@@ -72,36 +54,29 @@ export async function renderAlerts(ctx) {
     ${card('Exporter vers Prometheus et Grafana', `<p class="pop-note">Pour suivre tes sites depuis ton propre serveur : NEXORA génère une configuration Prometheus, un tableau de bord Grafana et un fichier docker-compose, avec les instructions.</p>`, { actions: btn('Générer la configuration', 'data-al-export', { ic: 'download' }), cls: 'sup-card-quiet' })}`;
 }
 
-function readChannels(ctx) {
-  const cfg = ctx.state.alertCfg;
-  const out = JSON.parse(JSON.stringify(cfg.channels || {}));
-  for (const i of ctx.view.querySelectorAll('[data-ch]')) {
-    const [c, k] = i.dataset.ch.split('|');
-    out[c] = { ...(out[c] || {}), [k]: i.value.trim() };
-  }
-  cfg.channels = out;
-  return out;
-}
-
 function bind(ctx) {
   const v = ctx.view;
-  for (const i of v.querySelectorAll('[data-ch]')) i.onchange = () => call('mon:set-channels', readChannels(ctx)).catch((err) => toast(err.message, { kind: 'bad' }));
-  const preset = v.querySelector('[data-al-preset]');
-  if (preset) preset.onchange = () => {
-    const p = SMTP[preset.value];
-    if (!p || !p.host) return;
-    v.querySelector('[data-ch="email|host"]').value = p.host;
-    v.querySelector('[data-ch="email|port"]').value = String(p.port);
-    call('mon:set-channels', readChannels(ctx)).catch(() => {});
+  // Après une connexion ou une déconnexion, la carte se met à jour (adresse, bouton de test).
+  if (ctx.state.alertAccOff) ctx.state.alertAccOff();
+  ctx.state.alertAccOff = onAccount(() => { if (v.isConnected && v.querySelector('[data-email-enabled]')) ctx.show(true); });
+  const tog = v.querySelector('[data-email-enabled]');
+  if (tog) tog.onchange = async () => {
+    try {
+      await call('mon:set-channels', { email: { enabled: tog.checked } });
+      toast(tog.checked ? 'Alertes par e-mail activées.' : 'Alertes par e-mail désactivées.');
+      ctx.show(true);
+    } catch (err) { toast(err.message, { kind: 'bad' }); }
   };
+  const login = v.querySelector('[data-al-login]');
+  if (login) login.onclick = () => { const b = document.getElementById('btnAccount'); if (b) b.click(); };
   for (const b of v.querySelectorAll('[data-al-test]')) b.onclick = async () => {
     const k = b.dataset.alTest;
     const out = v.querySelector(`[data-res="${k}"]`);
     b.disabled = true;
-    if (out) { out.className = 'sup-ch-res busy'; out.innerHTML = '<span class="spinner small"></span> Envoi du test…'; }
+    if (out) { out.className = 'sup-ch-res busy'; out.innerHTML = '<span class="spinner small"></span> Envoi du test par Brevo…'; }
     let r;
-    try { await call('mon:set-channels', readChannels(ctx)); r = await call('mon:test-alert', k); } catch (err) { r = { ok: false, error: err.message }; } finally { b.disabled = false; }
-    if (out) { out.className = `sup-ch-res ${r.ok ? 'good' : 'bad'}`; out.innerHTML = r.ok ? `${icon('check', 12)} ${esc(r.note || 'Message de test envoyé : vérifie sa réception.')}` : `${icon('warn', 12)} ${esc(r.error)}`; }
+    try { r = await call('mon:test-alert', k); } catch (err) { r = { ok: false, error: err.message }; } finally { b.disabled = false; }
+    if (out) { out.className = `sup-ch-res ${r.ok ? 'good' : 'bad'}`; out.innerHTML = r.ok ? `${icon('check', 12)} ${esc(r.note || 'E-mail de test envoyé : vérifie sa réception.')}` : `${icon('warn', 12)} ${esc(r.error)}`; }
   };
   for (const s of v.querySelectorAll('[data-rule]')) s.onchange = async () => {
     const val = s.type === 'checkbox' ? s.checked : Number(s.value);
