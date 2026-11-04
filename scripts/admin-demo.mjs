@@ -1141,6 +1141,10 @@ const mgmtAuth = {
   smtp_host: null,
   jwt_exp: 3600,
 }
+const demoEmail = {
+  hasKey: false,
+  cfg: { enabled: false, sender_email: "", sender_name: "NEXORA" },
+}
 const mgmtFunctions = [
   "admin-users",
   "org-invite",
@@ -1203,6 +1207,40 @@ export function demoResponse(method, rawUrl, headers, postData) {
               { id: "exports", public: false },
             ],
           },
+        ])
+      // Alertes par e-mail avec Brevo (#029) : état gardé pendant la capture.
+      if (/nx_brevo_set_key/.test(q)) {
+        demoEmail.hasKey = true
+        return json([{ nx_brevo_set_key: "" }])
+      }
+      if (
+        /update public\.app_config set value = jsonb_build_object\('enabled'/.test(
+          q,
+        )
+      ) {
+        const m =
+          /'enabled', (true|false), 'sender_email', '([^']*)', 'sender_name', '([^']*)'/.exec(
+            q,
+          )
+        demoEmail.cfg = {
+          enabled: m?.[1] === "true",
+          sender_email: m?.[2] || "",
+          sender_name: m?.[3] || "",
+        }
+        return json([{ value: demoEmail.cfg }])
+      }
+      if (/nx_brevo_test/.test(q)) return json([{ id: 4242 }])
+      if (/net\._http_response/.test(q))
+        return json([
+          {
+            status_code: 201,
+            error_msg: null,
+            content: '{"messageId":"<demo@smtp-relay.mailin.fr>"}',
+          },
+        ])
+      if (/to_regprocedure\('public\.nx_brevo_send/.test(q))
+        return json([
+          { installed: true, has_key: demoEmail.hasKey, cfg: demoEmail.cfg },
         ])
       if (/cron\.job/.test(q))
         return json([

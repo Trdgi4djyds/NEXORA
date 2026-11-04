@@ -29,5 +29,13 @@
     { "id": "assets", "public": false },
     { "id": "exports", "public": false }
   ],
+  "email": {
+    "$comment": "Brevo (#029) : relais SMTP des e-mails des comptes et expéditeur des alertes de supervision. Les clés (SMTP xsmtpsib-…, API xkeysib-…) ne sont jamais dans le dépôt : elles se saisissent dans le back office.",
+    "smtpHost": "smtp-relay.brevo.com",
+    "smtpPort": 587,
+    "smtpUser": "b58a4a001@smtp-brevo.com",
+    "senderEmail": "ippooz.up.2@gmail.com",
+    "senderName": "NEXORA"
+  },
   "cronFunctions": ["run_monitor_checks", "collect_monitor_results", "cleanup_old_data", "nx_monitor_rollup", "nx_monitor_cleanup"]
 }

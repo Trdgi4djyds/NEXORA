@@ -7,7 +7,8 @@
 import { useState, type FormEvent, type ReactNode } from "react"
 import { useRefresh } from "../App"
 import { Icon } from "../icons"
-import { NEXORA_WEB_URL, PROJECT_REF } from "../supabase"
+import { useMe } from "../auth"
+import { NEXORA_WEB_URL, PROJECT_REF, sb } from "../supabase"
 import { Empty, fmtDateTime, Loaded, Switch, Table, Tag, useAction, useLoad, useUi } from "../ui"
 import setup from "../../../supabase/nexora.json"
 
@@ -22,6 +23,11 @@ type AuthConfig = {
   password_min_length: number
   external_email_enabled: boolean
   smtp_host: string | null
+  smtp_port?: string | number | null
+  smtp_user?: string | null
+  smtp_pass?: string | null
+  smtp_admin_email?: string | null
+  smtp_sender_name?: string | null
   jwt_exp: number
 }
 type Fn = { slug: string; status: string; version: number; verify_jwt: boolean; updated_at: number }
@@ -90,6 +96,7 @@ export function SupabaseSetup() {
       <Project token={token} />
       <Checks token={token} />
       <AuthSettings token={token} />
+      <EmailSettings token={token} />
       <div className="cols">
         <Functions token={token} />
         <Migrations token={token} />
@@ -182,7 +189,7 @@ function Checks({ token }: { token: string }) {
       { label: "Sécurité des tables (RLS)", ok: !d.no_rls.length, detail: d.no_rls.length ? <>Sans RLS : {d.no_rls.join(", ")}.</> : "Toutes les tables publiques ont la RLS." },
       { label: "Fonctions Edge", ok: !missingFns.length, detail: missingFns.length ? <>Absentes ou inactives : {missingFns.join(", ")}.</> : `${setup.functions.length} fonctions actives.` },
       { label: "Stockage", ok: !missingBuckets.length, detail: missingBuckets.length ? <>Compartiments manquants : {missingBuckets.map((b) => b.id).join(", ")}.</> : `${setup.buckets.length} compartiments présents.` },
-      { label: "E-mails", ok: auth.smtp_host ? true : null, detail: auth.smtp_host ? <>SMTP : <code>{auth.smtp_host}</code></> : "Serveur d’envoi de Supabase (quelques e-mails par heure). Pour la production, configure un SMTP dans Supabase → Authentication → Emails." },
+      { label: "E-mails", ok: auth.smtp_host ? true : null, detail: auth.smtp_host ? <>SMTP : <code>{auth.smtp_host}</code>{auth.smtp_host === setup.email.smtpHost ? " (Brevo)" : ""}</> : "Serveur d’envoi de Supabase (quelques e-mails par heure) : configure Brevo dans la carte « E-mails (Brevo) » ci-dessous." },
     ]
     return checks
   }, [token, refresh, tick])
@@ -322,6 +329,183 @@ function Functions({ token }: { token: string }) {
             ))}
           </div>
         ) : <Empty>Aucune fonction déployée.</Empty>}
+      </Loaded>
+    </div>
+  )
+}
+
+/* ---------------------------------------------------------------- E-mails (Brevo, NEXORA #029) */
+
+const EMAIL = setup.email
+const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+const sqlText = (v: string) => `'${v.replace(/'/g, "''")}'`
+type AlertState = { installed: boolean; has_key: boolean; cfg: { enabled?: boolean; sender_email?: string; sender_name?: string } | null }
+
+// E-mails des comptes par le relais SMTP de Brevo, et alertes de supervision par l'API Brevo (clé dans le coffre).
+function EmailSettings({ token }: { token: string }) {
+  const ui = useUi()
+  const me = useMe()
+  const myEmail = me?.session.user.email || me?.profile.email || ""
+  const smtpAct = useAction()
+  const alertAct = useAction()
+  const [tick, setTick] = useState(0)
+  const [smtpOutcome, setSmtpOutcome] = useState<Outcome>(null)
+  const [alertOutcome, setAlertOutcome] = useState<Outcome>(null)
+  const [form, setForm] = useState({ host: EMAIL.smtpHost, port: String(EMAIL.smtpPort), user: EMAIL.smtpUser, sender: EMAIL.senderEmail, name: EMAIL.senderName })
+  const [smtpKey, setSmtpKey] = useState("")
+  const [apiKey, setApiKey] = useState("")
+  const auth = useLoad(() => mgmt<AuthConfig>(token, "/config/auth"), [token, tick])
+  const alerts = useLoad(async () => {
+    const [r] = await sql<AlertState>(token, `select
+      to_regprocedure('public.nx_brevo_send(text,text,text,text,text)') is not null as installed,
+      exists (select 1 from vault.secrets where name = 'brevo_api_key') as has_key,
+      (select value from public.app_config where key = 'email_alerts') as cfg`)
+    return r
+  }, [token, tick])
+  const set = (k: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value })
+  const formOk = form.host.trim() && /^\d+$/.test(form.port) && form.user.trim() && isEmail(form.sender.trim()) && form.name.trim()
+
+  async function saveSmtp() {
+    if (!(await ui.confirm({ title: "Envoyer les e-mails des comptes par Brevo ?", body: <>Confirmation d’inscription, mot de passe oublié, liens de connexion et invitations partiront de <b>{form.name} &lt;{form.sender}&gt;</b> par {form.host}:{form.port}.</>, confirm: "Enregistrer" }))) return
+    setSmtpOutcome(null)
+    const patch = { smtp_host: form.host.trim(), smtp_port: form.port.trim(), smtp_user: form.user.trim(), smtp_pass: smtpKey.trim(), smtp_admin_email: form.sender.trim(), smtp_sender_name: form.name.trim() }
+    await smtpAct.run(async () => {
+      try {
+        await mgmt(token, "/config/auth", { method: "PATCH", body: JSON.stringify(patch) })
+        const fresh = await mgmt<AuthConfig>(token, "/config/auth")
+        const wrong = (["smtp_host", "smtp_port", "smtp_user", "smtp_admin_email", "smtp_sender_name"] as const).filter((k) => String(fresh[k] ?? "") !== String(patch[k]))
+        if (wrong.length) throw new Error(`Supabase a répondu, mais ces réglages n’ont pas la valeur envoyée : ${wrong.join(", ")}.`)
+        setSmtpKey("")
+        setSmtpOutcome({ ok: true, text: `SMTP Brevo enregistré et vérifié sur Supabase : ${fresh.smtp_host}:${fresh.smtp_port}, expéditeur ${fresh.smtp_sender_name} <${fresh.smtp_admin_email}>. Envoie-toi un e-mail de test pour vérifier la clé SMTP.`, at: Date.now() })
+        setTick((n) => n + 1)
+      } catch (e) {
+        setSmtpOutcome({ ok: false, text: `Échec de l’enregistrement du SMTP : ${errMsg(e)}`, at: Date.now() })
+        throw e
+      }
+    }, "SMTP Brevo enregistré.")
+  }
+
+  async function testSmtp() {
+    setSmtpOutcome(null)
+    await smtpAct.run(async () => {
+      const { error } = await sb.auth.resetPasswordForEmail(myEmail, { redirectTo: adminUrl() })
+      if (error) {
+        setSmtpOutcome({ ok: false, text: `Supabase n’a pas pu envoyer l’e-mail de test : ${error.message}. Vérifie la clé SMTP (xsmtpsib-…) et que l’expéditeur est validé dans Brevo.`, at: Date.now() })
+        throw error
+      }
+      setSmtpOutcome({ ok: true, text: `E-mail de test envoyé par Brevo à ${myEmail} (lien « mot de passe oublié », tu peux l’ignorer). S’il n’arrive pas d’ici quelques minutes, regarde les indésirables, puis Brevo → Statistiques → E-mails transactionnels.`, at: Date.now() })
+    }, "E-mail de test envoyé.")
+  }
+
+  async function saveApiKey() {
+    setAlertOutcome(null)
+    await alertAct.run(async () => {
+      try {
+        await sql(token, `select public.nx_brevo_set_key(${sqlText(apiKey.trim())})`)
+        setApiKey("")
+        setAlertOutcome({ ok: true, text: "Clé API Brevo enregistrée dans le coffre chiffré de Supabase (Vault). Elle n’est ni affichée ni gardée dans le navigateur.", at: Date.now() })
+        setTick((n) => n + 1)
+      } catch (e) {
+        setAlertOutcome({ ok: false, text: `Échec de l’enregistrement de la clé : ${errMsg(e)}`, at: Date.now() })
+        throw e
+      }
+    }, "Clé API enregistrée.")
+  }
+
+  async function saveAlerts(enabled: boolean) {
+    setAlertOutcome(null)
+    await alertAct.run(async () => {
+      try {
+        const [r] = await sql<{ value: AlertState["cfg"] }>(token, `update public.app_config set value = jsonb_build_object('enabled', ${enabled}, 'sender_email', ${sqlText(form.sender.trim())}, 'sender_name', ${sqlText(form.name.trim())}), updated_at = now() where key = 'email_alerts' returning value`)
+        if (!r || Boolean(r.value?.enabled) !== enabled) throw new Error("Supabase n’a pas gardé le réglage : applique d’abord la migration des alertes.")
+        setAlertOutcome({ ok: true, text: enabled ? `Alertes par e-mail activées : chaque panne, lenteur ou retour en ligne part de ${form.name} <${form.sender}> vers les membres concernés.` : "Alertes par e-mail désactivées : les notifications restent dans NEXORA.", at: Date.now() })
+        setTick((n) => n + 1)
+      } catch (e) {
+        setAlertOutcome({ ok: false, text: `Échec : ${errMsg(e)}`, at: Date.now() })
+        throw e
+      }
+    }, enabled ? "Alertes par e-mail activées." : "Alertes par e-mail désactivées.")
+  }
+
+  // Le résultat de Brevo arrive dans net._http_response quelques secondes après l'envoi.
+  async function testAlert() {
+    setAlertOutcome(null)
+    await alertAct.run(async () => {
+      try {
+        const [r] = await sql<{ id: number | null }>(token, `select public.nx_brevo_test(${sqlText(myEmail)}) as id`)
+        if (!r?.id) throw new Error("rien n’est parti : enregistre la clé API et l’expéditeur.")
+        let res: { status_code: number | null; error_msg: string | null; content: string | null } | undefined
+        for (let i = 0; i < 8 && !res; i++) {
+          await new Promise((ok) => setTimeout(ok, 1500))
+          ;[res] = await sql<NonNullable<typeof res>>(token, `select status_code, error_msg, left(content::text, 400) as content from net._http_response where id = ${Number(r.id)}`)
+        }
+        if (!res) throw new Error("Brevo n’a pas encore répondu. Réessaie dans un instant.")
+        if (res.status_code && res.status_code < 300) {
+          setAlertOutcome({ ok: true, text: `Brevo a accepté l’alerte de test (HTTP ${res.status_code}) pour ${myEmail}.`, at: Date.now() })
+          return
+        }
+        let detail = res.error_msg || res.content || ""
+        try { detail = (JSON.parse(res.content || "") as { message?: string }).message || detail } catch { /* texte brut */ }
+        throw new Error(res.status_code === 401 ? "Brevo refuse la clé API (401) : vérifie-la ou crée-en une nouvelle." : `Brevo a refusé l’e-mail (HTTP ${res.status_code ?? "?"}) : ${detail}`)
+      } catch (e) {
+        setAlertOutcome({ ok: false, text: `Échec de l’alerte de test : ${errMsg(e)}`, at: Date.now() })
+        throw e
+      }
+    }, "Alerte de test acceptée par Brevo.")
+  }
+
+  return (
+    <div className="card form">
+      <div className="card-head"><Icon name="mail" size={16} /><h3 className="grow">E-mails (Brevo)</h3></div>
+
+      <h4 className="email-sub">E-mails des comptes (SMTP)</h4>
+      <OutcomeBanner outcome={smtpOutcome} onClose={() => setSmtpOutcome(null)} />
+      <Loaded q={auth}>
+        {(a) => (
+          <p className="muted small" style={{ margin: 0 }}>
+            {a.smtp_host === EMAIL.smtpHost ? <><Tag tone="ok">Brevo actif</Tag> Expéditeur {a.smtp_sender_name} &lt;{a.smtp_admin_email}&gt;.</>
+              : a.smtp_host ? <><Tag tone="warn">autre SMTP</Tag> {a.smtp_host}</>
+              : <><Tag tone="warn">serveur de Supabase</Tag> quelques e-mails par heure seulement.</>}
+          </p>
+        )}
+      </Loaded>
+      <div className="grid2">
+        <label className="field"><span>Serveur SMTP</span><input className="input" value={form.host} onChange={set("host")} /></label>
+        <label className="field"><span>Port</span><input className="input" value={form.port} onChange={set("port")} inputMode="numeric" /></label>
+        <label className="field"><span>Identifiant SMTP</span><input className="input" value={form.user} onChange={set("user")} /></label>
+        <label className="field"><span>Clé SMTP Brevo</span><input className="input" type="password" autoComplete="off" value={smtpKey} onChange={(e) => setSmtpKey(e.target.value)} placeholder="xsmtpsib-…" /><small>Brevo → SMTP &amp; API → SMTP → « Générer une nouvelle clé SMTP ». Envoyée à Supabase, jamais gardée ici.</small></label>
+        <label className="field"><span>Adresse de l’expéditeur</span><input className="input" value={form.sender} onChange={set("sender")} /><small>Doit être validée dans Brevo (Expéditeurs).</small></label>
+        <label className="field"><span>Nom de l’expéditeur</span><input className="input" value={form.name} onChange={set("name")} /></label>
+      </div>
+      <div className="actions">
+        <button className="btn" disabled={smtpAct.busy || !myEmail || auth.data?.smtp_host !== EMAIL.smtpHost} onClick={testSmtp} title={myEmail ? `Envoie un e-mail à ${myEmail}` : ""}>M’envoyer un e-mail de test</button>
+        <button className="btn primary" disabled={smtpAct.busy || !formOk || !/^xsmtpsib-[\w-]{10,}$/.test(smtpKey.trim())} onClick={saveSmtp}>{smtpAct.busy ? <span className="spinner sm" /> : "Enregistrer le SMTP Brevo"}</button>
+      </div>
+
+      <h4 className="email-sub">Alertes de supervision par e-mail (API)</h4>
+      <OutcomeBanner outcome={alertOutcome} onClose={() => setAlertOutcome(null)} />
+      <Loaded q={alerts}>
+        {(st) => !st.installed ? (
+          <div className="banner"><Icon name="warn" size={16} /><span className="grow">Applique d’abord la migration <code>20261104000004_alertes_email_brevo.sql</code> (carte « Migrations du dépôt »).</span></div>
+        ) : (
+          <>
+            <p className="muted small" style={{ margin: 0 }}>
+              {st.has_key ? <Tag tone="ok">clé API dans le coffre</Tag> : <Tag tone="warn">clé API manquante</Tag>}{" "}
+              {st.cfg?.enabled ? <Tag tone="ok">alertes activées</Tag> : <Tag>alertes désactivées</Tag>}{" "}
+              {st.cfg?.sender_email ? <>Expéditeur {st.cfg.sender_name} &lt;{st.cfg.sender_email}&gt;.</> : "Expéditeur à enregistrer."}
+            </p>
+            <div className="row">
+              <input className="input grow" type="password" autoComplete="off" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={st.has_key ? "Remplacer la clé API (xkeysib-…)" : "Clé API Brevo (xkeysib-…)"} />
+              <button className="btn" disabled={alertAct.busy || !/^xkeysib-[A-Za-z0-9-]{20,}$/.test(apiKey.trim())} onClick={saveApiKey}>Enregistrer dans le coffre</button>
+            </div>
+            <div className="actions">
+              <button className="btn" disabled={alertAct.busy || !st.has_key || !st.cfg?.sender_email || !myEmail} onClick={testAlert}>M’envoyer une alerte de test</button>
+              {st.cfg?.enabled
+                ? <button className="btn" disabled={alertAct.busy} onClick={() => saveAlerts(false)}>Désactiver les alertes</button>
+                : <button className="btn primary" disabled={alertAct.busy || !st.has_key || !isEmail(form.sender.trim()) || !form.name.trim()} onClick={() => saveAlerts(true)}>{alertAct.busy ? <span className="spinner sm" /> : "Activer les alertes par e-mail"}</button>}
+            </div>
+          </>
+        )}
       </Loaded>
     </div>
   )
