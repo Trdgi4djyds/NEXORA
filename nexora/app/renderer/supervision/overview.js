@@ -62,7 +62,7 @@ export async function renderOverview(ctx) {
       if (token !== ctx.token) return;
       for (const id of map.keys()) {
         const cell = ctx.view.querySelector(`tr[data-sup-open="${CSS.escape(id)}"] .sup-site-cell b`);
-        if (cell && !cell.querySelector('.sup-chip')) cell.insertAdjacentHTML('beforeend', ` <span class="sup-chip info" data-tip="Aussi vérifié 24 h/24 par les serveurs NEXORA">24 h/24</span>`);
+        if (cell && !cell.querySelector('.sup-chip')) cell.insertAdjacentHTML('beforeend', ` <span class="sup-chip info" data-tip="Aussi vérifié 24 h/24, même ordinateur éteint">24 h/24</span>`);
       }
     }).catch(() => {});
   };

@@ -120,7 +120,7 @@ async function call(method, path, body) {
       signal: timeout(10000),
     });
   } catch {
-    const e = new Error('Impossible de vérifier ton offre : serveurs NEXORA injoignables. Vérifie ta connexion à Internet, puis réessaie.');
+    const e = new Error('Connexion à NEXORA impossible : vérifie ta connexion à Internet, puis réessaie.');
     e.offline = true;
     throw e;
   }

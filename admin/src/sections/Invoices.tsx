@@ -28,7 +28,7 @@ const STATUS: Record<string, [string, string]> = {
 }
 const CURRENCIES: [string, string][] = [["EUR", "Euro (€)"], ["XOF", "Franc CFA (F CFA)"], ["USD", "Dollar US ($)"]]
 const DEFAULT_ISSUER: Issuer = {
-  name: "IPPOO", address: "", email: setup.email.senderEmail, phone: "", website: NEXORA_WEB_URL, tax_id: "",
+  name: "NEXORA", address: "", email: "", phone: "", website: NEXORA_WEB_URL, tax_id: "",
   vat_note: "TVA non applicable", currency: "EUR", tax_rate: 0, due_days: 30, prefix: "NX", payment: "", footer: "Merci de ta confiance.",
 }
 const MIGRATION = "20261104000006_emails_factures.sql"
@@ -528,7 +528,7 @@ function SendInvoice({ inv, doc, onClose, onSent }: { inv: Invoice; doc: Invoice
   const t = totals(doc.lines, doc.taxRate)
   const mail = useMemo(() => invoiceEmail({
     number: inv.number || "", greeting: hello(name), total: money(t.total, doc.currency), issuedAt: longDate(inv.issued_at), dueAt: longDate(doc.dueAt),
-    paid: inv.status === "payee", filename: invoiceFile(inv.number), payment: doc.issuer.payment || "", issuerName: doc.issuer.name || "IPPOO",
+    paid: inv.status === "payee", filename: invoiceFile(inv.number), payment: doc.issuer.payment || "", issuerName: doc.issuer.name || "NEXORA",
   }), [inv, doc, name, t.total])
   const [subject, setSubject] = useState(mail.subject)
   const okTo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to.trim())
@@ -603,7 +603,7 @@ function IssuerForm({ issuer, busy, onSave, onCancel }: { issuer: Issuer; busy: 
     <div className="form">
       <p className="muted small" style={{ margin: 0 }}>Imprimé sur chaque facture et figé à son émission. Lisible par les administrateurs seulement.</p>
       <div className="grid2">
-        {f("name", "Nom ou raison sociale", { ph: "IPPOO" })}
+        {f("name", "Nom ou raison sociale", { ph: "NEXORA" })}
         {f("tax_id", "N° fiscal (SIRET, IFU, TVA…)", { ph: "Facultatif" })}
         {f("email", "Adresse e-mail", { type: "email" })}
         {f("phone", "Téléphone", { ph: "+229 …" })}

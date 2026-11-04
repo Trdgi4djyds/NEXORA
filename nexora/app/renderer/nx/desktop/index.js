@@ -259,7 +259,7 @@ class DesktopSpace {
     const missing = [];
     if (s && !s.error) {
       if (!s.node || !s.node.ok) missing.push(s.node && s.node.version ? `Node.js (${esc(s.node.version)} est trop ancien)` : 'Node.js (≈ 35 Mo)');
-      if (!s.kit || s.kit.version !== s.kit.expected) missing.push(`le kit electron-builder ${esc((s.kit && s.kit.expected) || '')} (≈ 90 Mo)`);
+      if (!s.kit || s.kit.version !== s.kit.expected) missing.push('les outils de construction (≈ 90 Mo)');
       if (!s.electron || !s.electron.cached || !s.electron.cached.length) missing.push('le moteur Electron (≈ 150 Mo)');
     }
     box.hidden = !missing.length || this.section === 'build';
@@ -429,11 +429,11 @@ class DesktopSpace {
   }
   form_security(a) {
     const row = ([k, l, d, opts]) => `<div class="dsk-perm"><div><b>${l}</b><small>${d}</small></div>${seg(a, `permissions.${k}`, Object.fromEntries((opts || ['allow', 'ask', 'deny']).map((o) => [o, PERM_LABEL[o]])), '')}</div>`;
-    return `<div class="ab-banner">${ico('shield', 18)}<div><b>Toujours actif</b><p>Pages en bac à sable, isolation du contexte, aucune API Node.js ni script injecté dans les pages, navigation et nouvelles fenêtres limitées aux domaines du logiciel, balises webview refusées, fichiers locaux servis par un protocole privé, certificats invalides bloqués.</p></div></div>`
+    return `<div class="ab-banner">${ico('shield', 18)}<div><b>Toujours actif</b><p>Pages isolées, navigation et nouvelles fenêtres limitées aux domaines du logiciel, liens externes ouverts dans le navigateur, certificats invalides bloqués.</p></div></div>`
       + card('Autorisations demandées par le site', `${PERMS.map(row).join('')}${hint('Accordées seulement aux pages du logiciel, jamais aux sites tiers. « Demander » ouvre une fenêtre de choix, avec « Retenir mon choix ».')}`)
       + card('Verrouillage du logiciel', `
-      ${tog(a, 'security.fuses', 'Verrouiller l’exécutable', 'Fusibles Electron : pas de mode Node.js (ELECTRON_RUN_AS_NODE), pas de NODE_OPTIONS ni d’options d’inspection, file:// sans privilèges.')}
-      ${tog(a, 'security.integrity', 'Vérifier l’intégrité des fichiers au démarrage', 'Le logiciel refuse de démarrer si son archive a été modifiée (intégrité ASAR, Windows et macOS).', { disabled: !a.security.fuses })}
+      ${tog(a, 'security.fuses', 'Verrouiller l’exécutable', 'Empêche de détourner le logiciel pour lancer d’autres programmes ou l’inspecter.')}
+      ${tog(a, 'security.integrity', 'Vérifier l’intégrité des fichiers au démarrage', 'Le logiciel refuse de démarrer si ses fichiers ont été modifiés.', { disabled: !a.security.fuses })}
       ${tog(a, 'security.cookieEncryption', 'Chiffrer les cookies', 'Avec la clé du compte Windows. Ne le désactive pas après une publication : les sessions enregistrées seraient perdues.', { disabled: !a.security.fuses })}
       ${tog(a, 'security.httpsOnly', 'HTTPS uniquement', 'Les adresses http des domaines du logiciel s’ouvrent dans le navigateur.', { disabled: a.source.kind === 'url' && /^http:/i.test(a.source.url) })}
       ${tog(a, 'security.devtools', 'Outils de développement (F12)', 'Pour tester. Désactive-les pour la version publiée.')}`);
@@ -492,8 +492,8 @@ class DesktopSpace {
     const envRow = (ok, label, detail) => `<li class="${ok ? 'ok' : 'todo'}">${ico(ok ? 'pass' : 'download', 14)}<span><b>${label}</b><small>${detail}</small></span></li>`;
     const env = s && !s.error ? `<ul class="dsk-env">
         ${envRow(s.node && s.node.ok, 'Node.js', s.node && s.node.ok ? `Version ${esc(s.node.version)}` : s.autoInstall ? 'Installé automatiquement (≈ 35 Mo)' : 'À installer depuis nodejs.org')}
-        ${envRow(s.kit && s.kit.version === s.kit.expected, `Kit electron-builder ${esc((s.kit && s.kit.expected) || '')}`, s.kit && s.kit.version === s.kit.expected ? 'Installé' : 'Installé automatiquement (≈ 90 Mo, une fois)')}
-        ${envRow(s.electron && s.electron.cached && s.electron.cached.length, 'Moteur Electron', s.electron && s.electron.cached && s.electron.cached.length ? `Déjà téléchargé : ${esc(s.electron.cached.join(', '))}` : 'Téléchargé à la première construction (≈ 150 Mo par processeur)')}
+        ${envRow(s.kit && s.kit.version === s.kit.expected, 'Outils de construction', s.kit && s.kit.version === s.kit.expected ? 'Installé' : 'Installé automatiquement (≈ 90 Mo, une fois)')}
+        ${envRow(s.electron && s.electron.cached && s.electron.cached.length, 'Moteur Electron', s.electron && s.electron.cached && s.electron.cached.length ? 'Déjà téléchargé' : 'Téléchargé à la première construction (≈ 150 Mo par processeur)')}
       </ul>` : hint(esc((s && s.error) || 'Vérification des outils…'));
     const p = this.progress;
     const steps = this.building || (p && p.step === 'error') ? `<ol class="dsk-steps">${STEP_LABELS.filter(([id]) => id !== 'msi' || a.install.formats.msi).map(([id, l]) => {

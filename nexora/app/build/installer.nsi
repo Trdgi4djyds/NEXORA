@@ -7,7 +7,7 @@ Unicode true
 
 !define APP "NEXORA"
 !define VER "1.1.0"
-!define PUB "IPPOO"
+!define PUB "NEXORA"
 !define EXE "NEXORA.exe"
 !define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP}"
 

@@ -331,7 +331,7 @@ class DesktopBuilder extends EventEmitter {
       }
       if (!done) throw new Error(`Electron n’a pas pu être téléchargé : ${lastErr ? lastErr.message : 'erreur inconnue'}`);
       fs.writeFileSync(mark, sha);
-      this.log(`Electron ${version} (${archs[i]}) téléchargé, empreinte SHA-256 vérifiée.`);
+      this.log(`Moteur du logiciel (${archs[i]}) téléchargé et vérifié.`);
     }
   }
 

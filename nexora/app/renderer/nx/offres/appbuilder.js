@@ -51,7 +51,7 @@ function banner(inst) {
   const st = appState(inst.cfg), s = current();
   if (st.lock || st.loading) return '';
   if (st.paid) return s.admin ? '' : `<div class="nxo-ab-banner paid">${ico('check', 13)}<span>Offre <b>${esc(s.plan_name || 'Standard')}</b> : application sans limite d’essai.</span></div>`;
-  if (st.unavailable) return `<div class="nxo-ab-banner">${ico('clock', 13)}<span>Offre Gratuite : l’essai de 7 jours de tes applications sera suivi dès l’activation des offres sur les serveurs NEXORA.</span></div>`;
+  if (st.unavailable) return `<div class="nxo-ab-banner">${ico('clock', 13)}<span>Offre Gratuite : jusqu’à 2 applications créées depuis l’adresse d’un site, 7 jours d’essai chacune.</span></div>`;
   const days = Number(current().limits.app_trial_days) || 7;
   if (st.trial) {
     const left = Number(st.trial.days_left) || 0, used = Math.max(0, Math.min(days, days - left));
@@ -80,9 +80,9 @@ function lockCard(inst, st) {
   const others = (settings.android && settings.android.apps || []).length > 1;
   return `<div class="nxo-ab-lock" role="dialog" aria-label="${esc(title)}">
     <div class="nxo-ab-lock-card">
-      <div class="nxo-ab-lock-art" data-nxo-art="${st.reason === 'auth' ? 'lock' : 'clock'}" data-nxo-tone="${st.reason === 'auth' ? 'bleu' : 'corail'}" data-nxo-key="ab-${esc(st.reason)}">
-        <small class="nxo-kicker">${ico('lock', 12)} Application verrouillée</small>
-        <h3>${esc(title)}</h3>
+      <div class="nxo-lock-head">
+        <span class="nxo-medal lock lg">${ico(st.reason === 'auth' ? 'user' : 'lock', 22)}</span>
+        <div><small class="nxo-kicker">${st.reason === 'auth' ? 'Compte NEXORA' : 'Application verrouillée'}</small><h3>${esc(title)}</h3></div>
       </div>
       <p>${esc(text)}</p>
       <div class="nxo-ab-lock-acts">

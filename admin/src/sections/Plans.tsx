@@ -1,13 +1,12 @@
 // NEXORA #037 : offres Gratuit, Standard et Pro. Panneaux de tarifs (aperçu fidèle à l'application, modifiable
 // en direct), limites et fonctions incluses lues par le serveur (migration 20261104000007_offres_limites.sql),
 // tableau comparatif, abonnés par offre et essais des applications de l'offre Gratuite.
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
+import { useMemo, useState, type FormEvent } from "react"
 import { go, useRefresh } from "../App"
 import { Icon } from "../icons"
 import { must, sb, type Json, type Row } from "../supabase"
 import { fmtDate, fmtMoney, fmtNum, Kpi, LIMIT_LABEL, Loaded, Modal, Switch, Tag, useAction, useLoad } from "../ui"
-import { attach as attachIllustration } from "../../../nexora/app/renderer/nx/cards/illu.js"
-import { COMPARE as COMPARE_JS, FALLBACK, PLAN_LOOK, limitText } from "../../../nexora/app/renderer/nx/offres/catalog.js"
+import { COMPARE as COMPARE_JS, FALLBACK, limitText } from "../../../nexora/app/renderer/nx/offres/catalog.js"
 
 type Plan = Row<"plans">
 type Limits = Record<string, number>
@@ -25,17 +24,11 @@ const PERM_GROUPS: [string, [string, string][]][] = COMPARE.map(([group, rows]):
 ]).filter(([, rows]) => rows.length > 0)
 const EXTRA_PERMS: [string, string][] = [["design_extended", "NEX-DESIGN étendu"], ["design_full", "NEX-DESIGN complet"], ["inapp", "Messages in-app"], ["notifications_advanced", "Notifications avancées"], ["projects_management", "Gestion de projets"], ["standard_support", "Assistance standard"], ["priority_support", "Support prioritaire"], ["multiscreen", "Prévisualisation multi-écrans"]]
 
-const look = (id: string) => PLAN_LOOK[id as keyof typeof PLAN_LOOK] || PLAN_LOOK.standard
+// Médaillon de chaque offre (comme dans l'application, NEXORA #038) : pas d'illustration d'objet sur les tarifs.
+const MEDAL: Record<string, string> = { free: "sparkle", standard: "bolt", pro: "star" }
 // Montants : en dollars, « 10 $ » plutôt que « 10,00 $US » ; autres devises : format habituel.
 const amount = (cents: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format((Number(cents) || 0) / 100)
 const price = (cents: number, currency: string) => (currency === "USD" ? `${amount(cents)} $` : fmtMoney(cents, currency))
-
-/** Illustration d'objet de la carte (même moteur que l'application). */
-function Art({ object, tone, k, className, children }: { object: string; tone: string; k: string; className: string; children: ReactNode }) {
-  const host = useRef<HTMLDivElement | null>(null)
-  useEffect(() => (host.current ? attachIllustration(host.current, { key: `offre:${k}`, object, tone, avoid: ".po-ribbon" }) : undefined), [object, tone, k])
-  return <div ref={host} className={className}>{children}</div>
-}
 
 export function Plans() {
   const refresh = useRefresh()
@@ -79,9 +72,9 @@ export function Plans() {
                 </div>
               )}
               <div className="kpis">
-                <Kpi label="Espaces Gratuit" object="plane" value={fmtNum(Math.max(0, orgs - countOf("standard") - countOf("pro")))} hint="sans abonnement payant" />
-                <Kpi label="Espaces Standard" object="rocket" value={fmtNum(countOf("standard"))} hint="10 $ par mois" />
-                <Kpi label="Espaces Pro" object="crown" value={fmtNum(countOf("pro"))} hint="25 $ par mois" />
+                <Kpi label="Espaces Gratuit" object="team" value={fmtNum(Math.max(0, orgs - countOf("standard") - countOf("pro")))} hint="sans abonnement payant" />
+                <Kpi label="Espaces Standard" object="chart" value={fmtNum(countOf("standard"))} hint="10 $ par mois" />
+                <Kpi label="Espaces Pro" object="star" value={fmtNum(countOf("pro"))} hint="25 $ par mois" />
                 <Kpi label="Revenu mensuel" object="coins" value={price(mrr, "USD")} hint="abonnements actifs" />
               </div>
               <div className="po-grid">
@@ -121,7 +114,6 @@ function PlanPanel({ plan, subscribers, editable, onSaved, compact = false }: { 
   const initial = useMemo(() => JSON.stringify({ ...plan, limits: plan.limits || {}, perms: plan.perms || {}, features: ((plan.features as string[]) || []).join("\n") }), [plan])
   const dirty = JSON.stringify({ ...p, limits, perms, features }) !== initial
   const id = p.id === "team" || p.id === "enterprise" ? "pro" : p.id
-  const lk = look(id)
   const feats = features.split("\n").map((s) => s.trim()).filter(Boolean)
   const keys = [...LIMIT_KEYS.filter((k) => k in limits), ...Object.keys(limits).filter((k) => !LIMIT_KEYS.includes(k))]
 
@@ -136,10 +128,10 @@ function PlanPanel({ plan, subscribers, editable, onSaved, compact = false }: { 
 
   return (
     <article className={`po-plan po-${id}${compact ? " compact" : ""}${p.active ? "" : " off"}`}>
-      <Art object={lk.object} tone={lk.tone} k={`admin-${plan.id}`} className="po-top">
-        <div className="po-name"><span className="po-ic"><Icon name={id === "pro" ? "star" : id === "free" ? "sparkle" : "bolt"} size={15} /></span><b>{p.name}</b><code>{plan.id}</code></div>
-        {p.badge ? <span className="po-ribbon">{p.badge}</span> : null}
-      </Art>
+      <div className="po-top">
+        <span className="po-medal"><Icon name={MEDAL[id] || "star"} size={17} /></span>
+        <div className="po-name"><div className="row"><b>{p.name}</b><code>{plan.id}</code></div>{p.badge ? <span className="po-ribbon">{p.badge}</span> : null}</div>
+      </div>
       <div className="po-body">
         <div className="po-price"><b>{amount(p.price_month_cents)}</b><span>{p.currency === "USD" ? "$" : p.currency} / mois</span></div>
         <small className="muted">{p.price_year_cents ? `${price(p.price_year_cents, p.currency)} par an` : "Gratuit, pour toujours"} · {subscribers} espace{subscribers > 1 ? "s" : ""} abonné{subscribers > 1 ? "s" : ""}</small>

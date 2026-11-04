@@ -78,7 +78,7 @@ export async function invoicePdf(d: InvoiceDoc, logoUrl: string): Promise<Uint8A
   const pdf = await PDFDocument.create()
   const title = d.number ? `Facture ${d.number}` : "Facture (brouillon)"
   pdf.setTitle(title)
-  pdf.setAuthor(d.issuer.name || "IPPOO")
+  pdf.setAuthor(d.issuer.name || "NEXORA")
   pdf.setSubject("Facture NEXORA")
   pdf.setCreator("NEXORA — back office")
   pdf.setProducer("NEXORA")
@@ -148,7 +148,7 @@ export async function invoicePdf(d: InvoiceDoc, logoUrl: string): Promise<Uint8A
     if (!first) {
       gradient(pg, 0, H - 8, W, 8)
       text(pg, `${d.number ? `Facture ${d.number}` : "Facture brouillon"} · suite`, M, H - 40, { size: 11, font: bold, color: C.ink })
-      text(pg, d.issuer.name || "IPPOO", W - M, H - 40, { size: 9, color: C.muted, align: "right" })
+      text(pg, d.issuer.name || "NEXORA", W - M, H - 40, { size: 9, color: C.muted, align: "right" })
       return { pg, y: H - 64 }
     }
     const top = H - 156
@@ -158,7 +158,8 @@ export async function invoicePdf(d: InvoiceDoc, logoUrl: string): Promise<Uint8A
     fillRound(pg, M, H - 86, 46, 46, 13, C.white)
     if (logo) pg.drawImage(logo, { x: M + 5, y: H - 81, width: 36, height: 36 })
     text(pg, "NEXORA", M + 58, H - 62, { size: 17, font: bold, color: C.white })
-    text(pg, `par ${d.issuer.name || "IPPOO"}`, M + 58, H - 77, { size: 9.5, color: C.white, opacity: 0.85 })
+    // Émetteur sous le nom de NEXORA, seulement s'il est différent (NEXORA #038 : aucun nom de société par défaut).
+    if (d.issuer.name && d.issuer.name.trim().toUpperCase() !== "NEXORA") text(pg, `par ${d.issuer.name}`, M + 58, H - 77, { size: 9.5, color: C.white, opacity: 0.85 })
     text(pg, "Facture", W - M, H - 66, { size: 30, font: bold, color: C.white, align: "right" })
     text(pg, d.number ? `N° ${d.number}` : "Brouillon, non numérotée", W - M, H - 83, { size: 10.5, color: C.white, opacity: 0.9, align: "right" })
     const st: [string, RGB] = paid ? ["PAYÉE", C.ok] : d.status === "annulee" ? ["ANNULÉE", C.bad] : !d.number ? ["BROUILLON", C.muted] : ["À RÉGLER", C.brand]

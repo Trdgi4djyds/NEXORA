@@ -446,7 +446,7 @@ class Tools extends EventEmitter {
       const file = path.join(downloads, rel.file);
       step(`Téléchargement de ${label} ${version}`.trim(), 0.04);
       await ctx.download(rel.url, file, { sha256: rel.sha256 || undefined }, 0.04, recipe.kind === 'zip' ? 0.7 : 0.8);
-      if (rel.sha256) log('Empreinte SHA-256 vérifiée.');
+      if (rel.sha256) log('Fichier vérifié.');
       if (recipe.kind === 'zip') {
         step('Décompression', 0.72);
         const tmp = `${dir}.new`;

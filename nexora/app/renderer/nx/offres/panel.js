@@ -7,12 +7,6 @@ import { cloud, status, plans, appTrials } from './status.js';
 import { COMPARE, METERS, PLAN_LOOK, PLAN_ORDER, limitText, money, count, normPlan } from './catalog.js';
 
 const longDate = (d) => (d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : '');
-const SOURCE = {
-  serveur: 'Limites contrôlées par les serveurs NEXORA',
-  abonnement: 'Offre lue dans ton abonnement · quotas comptés dès l’activation des offres sur les serveurs',
-  'hors-ligne': 'Serveurs NEXORA injoignables : dernière offre connue',
-  invite: 'Sans compte : offre Gratuite',
-};
 
 function meter([key, label, unit, scope, icon], s) {
   const lim = Number((scope === 'org' ? s.org_limits || s.limits : s.limits)[key]);
@@ -53,9 +47,9 @@ function planCard(p, s) {
     : rank > mine ? `<button type="button" class="nxo-btn ${id === 'standard' || id === 'pro' ? 'primary' : ''}" data-plan-ask="${esc(p.id)}">Passer à ${esc(p.name)}${ico('nxArrowRight', 14)}</button>`
     : `<button type="button" class="nxo-btn ghost" data-plan-ask="${esc(p.id)}">Revenir à ${esc(p.name)}</button>`;
   return `<article class="nxo-plan nxo-${esc(id)}${cur ? ' on' : ''}" data-nxo-plan="${esc(id)}">
-    <div class="nxo-plan-top" data-nxo-art="${look.object}" data-nxo-tone="${look.tone}" data-nxo-key="carte-${esc(id)}">
-      <div class="nxo-plan-name"><span class="nxo-plan-ic">${ico(look.icon, 16)}</span><b>${esc(p.name)}</b></div>
-      ${p.badge ? `<span class="nxo-ribbon">${esc(p.badge)}</span>` : ''}
+    <div class="nxo-plan-top">
+      <span class="nxo-medal nxo-${esc(id)}">${ico(look.icon, 18)}</span>
+      <div class="nxo-plan-name"><b>${esc(p.name)}</b>${p.badge ? `<span class="nxo-ribbon">${esc(p.badge)}</span>` : ''}</div>
     </div>
     <div class="nxo-price">
       <span class="nxo-amt" data-m="${esc(money(m).replace(' $', ''))}" data-y="${esc(money(perMonthYear).replace(' $', ''))}">${esc(money(m).replace(' $', ''))}</span><span class="nxo-cur">$</span><span class="nxo-per">/ mois</span>
@@ -90,17 +84,15 @@ export async function panel() {
   const org = cloud.org;
   const orgPlan = s.org_plan && normPlan(s.org_plan) !== s.plan ? ` · espace en offre ${esc(s.org_plan_name || s.org_plan)}` : '';
   const cur = list.find((p) => normPlan(p.id) === s.plan) || {};
-  const resets = `Quotas du jour remis à zéro chaque nuit (UTC), quotas du mois le 1ᵉʳ.`;
+  const resets = 'Les compteurs du jour repartent chaque jour, ceux du mois le 1ᵉʳ du mois.';
   return `<div class="nxo" data-period="month">
-    <section class="nxo-now nxo-${esc(s.plan)}" data-nxo-art="${look.object}" data-nxo-tone="${look.tone}" data-nxo-key="actuelle">
+    <section class="nxo-now nxo-${esc(s.plan)}">
+      <span class="nxo-medal nxo-${esc(s.plan)} lg">${ico(look.icon, 24)}</span>
       <div class="nxo-now-main">
         <small class="nxo-kicker">${ico('star', 12)} Ton offre</small>
         <h3>${esc(s.plan_name || cur.name || 'Gratuit')}<span class="nxo-now-price">${cur.price_month_cents ? `${esc(money(cur.price_month_cents))} / mois` : '0 $ / mois'}</span></h3>
         <p>${org ? `${esc(org.name)}${orgPlan}` : 'Compte invité'}${org && org.periodEnd ? ` · renouvellement le ${esc(longDate(org.periodEnd))}` : ''}</p>
-        <div class="nxo-chips">
-          <span class="nxo-chip">${ico('shield', 12)}${esc(SOURCE[s.source] || SOURCE.serveur)}</span>
-          ${s.admin ? `<span class="nxo-chip accent">${ico('lock', 12)}Administrateur NEXORA : aucune limite</span>` : ''}
-        </div>
+        ${s.admin ? `<div class="nxo-chips"><span class="nxo-chip accent">${ico('lock', 12)}Administrateur NEXORA : aucune limite</span></div>` : ''}
       </div>
       <div class="nxo-now-acts">
         ${next && cloud.user ? `<button type="button" class="nxo-btn primary" data-plan-ask="${esc(next.id)}">Passer à ${esc(next.name)}${ico('nxArrowRight', 14)}</button>` : ''}
@@ -122,7 +114,7 @@ export async function panel() {
     </div>
     <div class="nxo-plans">${list.map((p) => planCard(p, s)).join('')}</div>
     ${compare(list, s)}
-    <p class="nxo-foot">${ico('lock', 12)} Les limites sont vérifiées par les serveurs NEXORA à chaque création et à chaque fonction réservée. Le changement d’offre est traité par l’équipe NEXORA : ta demande arrive au support et ton offre est activée sous 24 h.</p>
+    <p class="nxo-foot">${ico('chat', 12)} Change d’offre à tout moment : ta demande est traitée par l’équipe NEXORA et ta nouvelle offre est activée sous 24 h.</p>
   </div>`;
 }
 

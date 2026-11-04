@@ -18,6 +18,8 @@ const tls = require('tls');
 const { probe: realProbe, reasonOf } = require('./supervision/probe');
 const { SiteStore } = require('./supervision/store');
 const S = require('./supervision/stats');
+// NEXORA #038 : détail technique d'un refus d'envoi gardé dans le journal local, pas affiché.
+const { techLog } = require('./plain');
 
 const timeout = (ms) => (typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined);
 
@@ -169,20 +171,20 @@ class Monitor {
 
   async rpc(name, args) {
     const c = this.cloud;
-    if (!c) throw new Error('Connecte-toi à ton compte NEXORA (bouton Compte du rail) : les alertes e-mail partent par les serveurs NEXORA vers l’adresse de ton compte.');
+    if (!c) throw new Error('Connecte-toi à ton compte NEXORA (bouton Compte du rail) : les alertes par e-mail sont envoyées à l’adresse de ton compte.');
     let r;
     try {
       r = await this.fetch(`${c.url}/rest/v1/rpc/${name}`, {
         method: 'POST', headers: { apikey: c.key, authorization: `Bearer ${c.token}`, 'content-type': 'application/json' }, body: JSON.stringify(args), signal: timeout(15000),
       });
     } catch {
-      throw new Error('Serveurs NEXORA injoignables : vérifie ta connexion à Internet.');
+      throw new Error('Connexion à NEXORA impossible : vérifie ta connexion à Internet.');
     }
     const j = await r.json().catch(() => null);
     if (r.ok) return j;
     const msg = String((j && (j.message || j.msg || j.error_description)) || `HTTP ${r.status}`);
     if (r.status === 401 || /jwt/i.test(msg)) throw new Error('Session NEXORA expirée : reconnecte-toi à ton compte, puis réessaie.');
-    if ((j && j.code === 'PGRST202') || r.status === 404) throw new Error('Les serveurs NEXORA n’ont pas encore la mise à jour des alertes e-mail : l’administrateur doit appliquer les migrations (back office → Supabase).');
+    if ((j && j.code === 'PGRST202') || r.status === 404) throw new Error('Les alertes par e-mail ne sont pas encore disponibles. Réessaie plus tard.');
     throw new Error(msg);
   }
 
@@ -498,18 +500,19 @@ class Monitor {
 
   // Test depuis l'interface : l'e-mail part, puis la réponse de Brevo est lue (quelques secondes).
   async testAlert(channel) {
-    if (channel !== 'email') throw new Error('Seules les alertes par e-mail (Brevo) sont proposées.');
+    if (channel !== 'email') throw new Error('Seules les alertes par e-mail sont proposées.');
     const sent = await this.sendEmail('Test des alertes NEXORA', 'Test d’alerte NEXORA : la configuration fonctionne. Tu recevras un e-mail comme celui-ci quand un site surveillé tombe en panne, ralentit ou revient en ligne.', 'test');
     for (let i = 0; i < 8; i++) {
       await new Promise((ok) => setTimeout(ok, 1500));
       const res = await this.rpc('nx_alert_email_result', { p_id: sent.id }).catch(() => null);
       if (!res) continue;
-      if (res.status && res.status < 300) return { ok: true, note: `E-mail de test accepté par Brevo pour ${sent.to} : vérifie ta boîte de réception (et les indésirables).` };
+      if (res.status && res.status < 300) return { ok: true, note: `E-mail de test envoyé à ${sent.to} : vérifie ta boîte de réception (et les indésirables).` };
       let detail = res.error || res.content || '';
       try { detail = JSON.parse(res.content).message || detail; } catch { /* texte brut */ }
-      throw new Error(res.status === 401 ? 'Brevo refuse la clé API des serveurs NEXORA : l’administrateur doit la remplacer (back office → Supabase → E-mails).' : `Brevo a refusé l’e-mail (HTTP ${res.status || '?'}) : ${detail}`);
+      techLog('erreurs', `alerte e-mail de test refusée (${res.status || '?'}) : ${detail}`);
+      throw new Error('L’e-mail de test n’a pas pu être envoyé. Réessaie plus tard.');
     }
-    return { ok: true, note: `E-mail de test envoyé à ${sent.to} ; Brevo n’a pas encore confirmé, il peut mettre une minute.` };
+    return { ok: true, note: `E-mail de test envoyé à ${sent.to} : il peut mettre une minute à arriver.` };
   }
 
   silence({ id, minutes } = {}) {

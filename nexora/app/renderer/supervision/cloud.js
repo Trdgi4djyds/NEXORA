@@ -81,8 +81,8 @@ export async function series(monitorId, range) {
 
 function serverError(err) {
   const m = String((err && err.message) || err || '');
-  if (outdated(err)) return Object.assign(new Error('Le serveur NEXORA n’est pas encore à jour pour la supervision 24 h/24 : l’administrateur doit appliquer la migration « supervision_serveur » depuis le back office (section Supabase).'), { outdated: true });
-  if (/quota|limit|plan/i.test(m)) return new Error(`Limite de ton offre atteinte pour les sites surveillés par le serveur. ${m}`);
+  if (outdated(err)) return Object.assign(new Error('La surveillance 24 h/24 n’est pas encore disponible. Réessaie plus tard.'), { outdated: true });
+  if (/quota|limit|plan/i.test(m)) return new Error(/Limite de ton offre/.test(m) ? m : 'Limite de ton offre atteinte pour les sites surveillés.');
   if (/row-level security|permission denied/i.test(m)) return new Error('Tu n’as pas les droits pour modifier les sites surveillés de cet espace.');
-  return new Error(m || 'Le serveur NEXORA n’a pas répondu.');
+  return new Error(m || 'NEXORA n’a pas répondu : réessaie dans un instant.');
 }

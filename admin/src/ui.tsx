@@ -278,7 +278,7 @@ export function Kpi({
   const layer = useRef<HTMLSpanElement | null>(null)
   useEffect(() => {
     if (!host.current || !layer.current) return
-    return attachIllustration(host.current, { key: `kpi:${label}`, tone: tone ? KPI_TONES[tone] : undefined, object: object || objectFor(label, icon), layer: layer.current })
+    return attachIllustration(host.current, { key: `kpi:${label}`, tone: tone ? KPI_TONES[tone] : undefined, object: object || objectFor(label, icon), layout: "badge", layer: layer.current })
   }, [label, tone, icon, object])
   const inner = (
     <>

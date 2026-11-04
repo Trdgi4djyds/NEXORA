@@ -1,4 +1,4 @@
-// NEXORA #037 : offre du compte vue par l'interface. Source : fonction nx_plan_status des serveurs NEXORA
+// NEXORA #037 : offre du compte vue par l'interface. Source : fonction nx_plan_status du serveur
 // (migration 20261104000007) ; sans la migration, l'offre lue dans l'abonnement de l'espace et les limites du
 // catalogue ; sans compte, l'offre Gratuite. Les contrôles qui comptent sont faits par le serveur et par le
 // processus principal (src/plan.js) : ici, on affiche et on évite d'aller au bout d'une action refusée.

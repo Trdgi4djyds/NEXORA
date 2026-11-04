@@ -17,11 +17,11 @@ export async function renderAlerts(ctx) {
     : em.enabled ? '<span class="sup-chip warn">Connexion requise</span>' : '<span class="sup-chip">Désactivé</span>';
   const channels = `<div class="sup-chs sup-chs-one">
     <div class="sup-ch ${ready ? 'on' : ''}">
-      <div class="sup-ch-h">${icon('mail', 15)}<b>E-mail (Brevo)</b>${chip}</div>
-      <p class="pop-note">${acc.signedIn ? `Les alertes partent par les serveurs NEXORA vers <b>${esc(acc.email)}</b>, l’adresse de ton compte.` : 'Connecte-toi à ton compte NEXORA : les alertes partent par les serveurs NEXORA vers l’adresse de ton compte.'}</p>
+      <div class="sup-ch-h">${icon('mail', 15)}<b>E-mail</b>${chip}</div>
+      <p class="pop-note">${acc.signedIn ? `Les alertes sont envoyées à <b>${esc(acc.email)}</b>, l’adresse de ton compte.` : 'Connecte-toi à ton compte NEXORA : les alertes sont envoyées à l’adresse de ton compte.'}</p>
       <label class="tog-row"><span class="tog-text"><span>Recevoir les alertes par e-mail</span><small>Panne, lenteur, erreurs de page, certificat et retour à la normale, selon les règles ci-dessous.</small></span><input type="checkbox" data-email-enabled ${em.enabled ? 'checked' : ''}><span class="tog" aria-hidden="true"></span></label>
       <div class="sup-ch-f">${acc.signedIn ? btn('Envoyer un e-mail de test', 'data-al-test="email"', { ic: 'bell' }) : btn('Se connecter', 'data-al-login', { ic: 'user', cls: 'primary' })}<span class="sup-ch-res" data-res="email"></span></div>
-      <details><summary>Comment ça marche ?</summary><ul class="mon-steps"><li>Rien à configurer chez toi : l’envoi passe par Brevo depuis les serveurs NEXORA.</li><li>Jusqu’à 20 alertes par heure et 60 par jour ; au-delà, elles restent dans NEXORA.</li><li>Les alertes partent tant que NEXORA est ouverte. Pour être prévenu même NEXORA fermée, active « Surveiller aussi 24 h/24 par les serveurs NEXORA » dans les réglages du site.</li></ul></details>
+      <details><summary>Comment ça marche ?</summary><ul class="mon-steps"><li>Rien à configurer : les alertes arrivent à l’adresse de ton compte.</li><li>Jusqu’à 20 alertes par heure et 60 par jour ; au-delà, elles restent dans NEXORA.</li><li>Les alertes partent tant que NEXORA est ouverte. Pour être prévenu même NEXORA fermée, active « Surveiller aussi 24 h/24, même ordinateur éteint » dans les réglages du site.</li></ul></details>
     </div>
   </div>`;
   const now = Date.now();
@@ -73,7 +73,7 @@ function bind(ctx) {
     const k = b.dataset.alTest;
     const out = v.querySelector(`[data-res="${k}"]`);
     b.disabled = true;
-    if (out) { out.className = 'sup-ch-res busy'; out.innerHTML = '<span class="spinner small"></span> Envoi du test par Brevo…'; }
+    if (out) { out.className = 'sup-ch-res busy'; out.innerHTML = '<span class="spinner small"></span> Envoi de l’e-mail de test…'; }
     let r;
     try { r = await call('mon:test-alert', k); } catch (err) { r = { ok: false, error: err.message }; } finally { b.disabled = false; }
     if (out) { out.className = `sup-ch-res ${r.ok ? 'good' : 'bad'}`; out.innerHTML = r.ok ? `${icon('check', 12)} ${esc(r.note || 'E-mail de test envoyé : vérifie sa réception.')}` : `${icon('warn', 12)} ${esc(r.error)}`; }

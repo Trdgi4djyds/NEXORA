@@ -884,7 +884,7 @@ export const nx_private_config = [
   {
     key: "invoice_issuer",
     value: {
-      name: "IPPOO",
+      name: "NEXORA",
       address: "Cotonou, Bénin",
       email: "ippooz.up.2@gmail.com",
       phone: "+229 97 00 00 00",

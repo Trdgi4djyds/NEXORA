@@ -183,7 +183,11 @@ async function gates() {
     r,
   )
   r = await inv("sec:scan", { url: "https://a.com" })
-  ok(/injoignables/.test(r), "hors ligne : fonction à quota refusée", r)
+  ok(
+    /Connexion à NEXORA impossible/.test(r),
+    "hors ligne : fonction à quota refusée",
+    r,
+  )
   server.mode = "missing"
   await inv("mon:cloud-session", {
     url: "https://x.supabase.co",

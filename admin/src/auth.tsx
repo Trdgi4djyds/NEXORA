@@ -66,11 +66,11 @@ function Splash() {
 
 // NEXORA #034 : écran de connexion modernisé, deux panneaux comme dans l'application : la marque (logo,
 // illustration partagée nx/auth/art.js, ce que permet le back office) et le formulaire.
+// Écran public (avant connexion) : rien sur l'infrastructure ni sur la configuration (NEXORA #038).
 const FEATS: [string, string, string][] = [
-  ["user", "Utilisateurs et équipes", "Comptes, rôles, offres et appareils"],
-  ["pdf", "Factures et e-mails", "Factures PDF et e-mails aux couleurs de NEXORA"],
-  ["sync", "Supervision", "Sites surveillés 24 h/24, incidents et alertes"],
-  ["cloud", "Supabase", "Configuration, migrations et sécurité du projet"],
+  ["user", "Utilisateurs et équipes", "Comptes, rôles et offres"],
+  ["pdf", "Factures et e-mails", "Factures et messages aux couleurs de NEXORA"],
+  ["sync", "Supervision", "Sites surveillés, incidents et alertes"],
 ]
 
 function AuthShell({ children }: { children: ReactNode }) {
@@ -93,7 +93,7 @@ function AuthShell({ children }: { children: ReactNode }) {
             ))}
           </ul>
         </div>
-        <p className="auth-trust"><Icon name="lock" size={12} /> Accès réservé aux administrateurs · © {new Date().getFullYear()} IPPOO</p>
+        <p className="auth-trust"><Icon name="lock" size={12} /> Accès réservé aux administrateurs · © {new Date().getFullYear()} NEXORA</p>
       </aside>
       <main className="auth-main">
         <div className="auth-panel">

@@ -581,11 +581,15 @@ fieldset { border: 0; margin: 0; min-width: 0; }
 .po-plan { display: flex; flex-direction: column; gap: 12px; padding: 7px 7px 14px; border-radius: 20px; background: var(--surface); box-shadow: var(--card-shadow), 0 10px 28px rgba(25, 28, 60, .06); min-width: 0; }
 .po-plan.off { opacity: .85; }
 .po-plan.po-standard { background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--brand-grad) border-box; border: 2px solid transparent; box-shadow: 0 16px 36px rgba(211, 75, 213, .16); }
-.po-top { position: relative; min-height: 112px; padding: 14px 15px; border-radius: 15px; display: flex; flex-direction: column; align-items: flex-start; gap: 9px; background: color-mix(in srgb, var(--nxi-s, var(--fill)) 70%, var(--surface)); }
-.po-name { display: flex; align-items: center; gap: 8px; }
+.po-free { --po-c: #1f93d4; --po-medal: linear-gradient(140deg, #6fd0ee, #1f8fd2); }
+.po-standard { --po-c: #d34bd5; --po-medal: var(--brand-grad); }
+.po-pro { --po-c: #e8b52a; --po-medal: linear-gradient(140deg, #ffe39a, #e2a91c); }
+.po-top { display: flex; align-items: center; gap: 12px; padding: 15px; border-radius: 15px; background: radial-gradient(130% 160% at 100% 0%, color-mix(in srgb, var(--po-c, var(--accent)) 16%, transparent) 0%, transparent 60%), color-mix(in srgb, var(--po-c, var(--accent)) 5%, var(--surface)); }
+.po-medal { width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; display: grid; place-items: center; color: #fff; background: var(--po-medal, var(--brand-grad)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 8px 18px color-mix(in srgb, var(--po-c, #d34bd5) 30%, transparent); }
+.po-pro .po-medal { color: #2b1d00; }
+.po-name { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; }
 .po-name b { font-size: 16px; font-weight: 720; letter-spacing: -0.015em; }
 .po-name code { font-size: 11px; color: var(--text-2); }
-.po-ic { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; color: #fff; background: var(--nxi-d, var(--accent)); }
 .po-ribbon { padding: 3px 9px; border-radius: 99px; font-size: 10.5px; font-weight: 720; color: #fff; background: var(--brand-grad); }
 .po-body { display: flex; flex-direction: column; gap: 8px; padding: 0 8px; }
 .po-price { display: flex; align-items: baseline; gap: 6px; }
@@ -599,11 +603,10 @@ fieldset { border: 0; margin: 0; min-width: 0; }
 .po-feats li > svg { flex-shrink: 0; margin-top: 2px; width: 15px; height: 15px; padding: 2px; border-radius: 50%; color: #fff; background: var(--brand-grad); }
 .po-plan.po-pro { color: #f4f4f7; background: #131319; box-shadow: 0 16px 36px rgba(10, 10, 20, .28); }
 html[data-theme="dark"] .po-plan.po-pro { background: linear-gradient(180deg, #1d1b14, #121216); box-shadow: inset 0 0 0 1px rgba(232, 181, 42, .3), 0 16px 36px rgba(0, 0, 0, .4); }
-.po-plan.po-pro .po-top { background: #1c1c25; }
-.po-plan.po-pro [data-nxi-tone="jaune"] { --nxi-s: #363019; --nxi-m: #7a6219; --nxi-d: #f0c131; --nxi-a: #ff8a4c; }
+.po-plan.po-pro .po-top { background: radial-gradient(130% 160% at 100% 0%, rgba(232, 181, 42, .22) 0%, transparent 60%), #1c1c25; }
 .po-plan.po-pro :is(.po-price span, .po-desc, .muted, .po-name code) { color: #c9c9d3; }
 .po-plan.po-pro .po-keys span { color: #e7e7ee; background: rgba(255, 255, 255, .08); }
-.po-plan.po-pro :is(.po-ic, .po-feats li > svg) { color: #241a00; background: #e8b52a; }
+.po-plan.po-pro .po-feats li > svg { color: #241a00; background: #e8b52a; }
 .po-plan.po-pro .po-ribbon { color: #241a00; background: linear-gradient(120deg, #ffe08a, #e8b52a); }
 .po-plan.po-pro .btn { background: rgba(255, 255, 255, .1); color: #fff; box-shadow: none; }
 .po-plan.po-pro .po-edit { color: var(--text); }

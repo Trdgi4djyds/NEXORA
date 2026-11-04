@@ -233,7 +233,7 @@ begin
   end if;
   select * into v_rule from public.nx_feature_rule(p_feature);
   if v_rule.label is null then
-    return jsonb_build_object('ok', false, 'reason', 'unknown', 'message', 'Fonction inconnue des serveurs NEXORA.');
+    return jsonb_build_object('ok', false, 'reason', 'unknown', 'message', 'Cette fonction n’est pas disponible.');
   end if;
   select u.plan_id, u.org_id into v_plan, v_org from public.nx_user_plan(v_uid) u;
   v_plan := coalesce(v_plan, 'free');
@@ -661,7 +661,7 @@ begin
   v_id := public.nx_brevo_send(v_email, v_name, left(coalesce(nullif(p_subject, ''), 'Alerte NEXORA'), 200), left(coalesce(p_text, ''), 2000),
     case when v_kind = 'test' then 'Test' else 'Supervision' end);
   if v_id is null then
-    raise exception 'Les e-mails ne sont pas encore configurés sur les serveurs NEXORA (clé Brevo ou expéditeur manquants dans le back office).';
+    raise exception 'Les alertes par e-mail sont momentanément indisponibles : elles restent affichées dans NEXORA.';
   end if;
   delete from public.nx_email_log where user_id = v_uid and created_at < now() - interval '30 days';
   insert into public.nx_email_log (user_id, request_id, kind) values (v_uid, v_id, v_kind);

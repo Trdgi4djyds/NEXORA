@@ -39,7 +39,7 @@ export function siteSheet({ cfg, site = null, url = '', server = false }) {
   const srvHint = !acc.signedIn ? 'Connecte-toi à ton compte NEXORA (bouton Connexion du rail) pour l’activer.'
     : !acc.orgId ? 'Choisis un espace d’équipe dans ton compte NEXORA.'
       : !acc.canEdit ? 'Ton rôle dans cet espace ne le permet pas (éditeur au moins).'
-        : `Vérifié par les serveurs NEXORA toutes les minutes au plus, même ordinateur éteint, avec une notification dans NEXORA pour l’équipe « ${acc.orgName} », et un e-mail (Brevo) si les alertes des serveurs sont activées.`;
+        : `Vérifié en continu, même ordinateur éteint, avec une notification dans NEXORA pour l’équipe « ${acc.orgName} » et un e-mail si les alertes sont activées.`;
   const srvOk = acc.signedIn && acc.orgId && acc.canEdit;
   return new Promise((resolve) => {
     let done = false;
@@ -57,8 +57,8 @@ export function siteSheet({ cfg, site = null, url = '', server = false }) {
         </div>
         <label class="field"><span>Mot-clé attendu dans la page</span><input class="input" name="keyword" value="${esc(e.keyword || '')}" placeholder="Facultatif : la page est en panne si ce texte manque"></label>
         <label class="tog-row"><span class="tog-text"><span>Erreurs de la page</span><small>Charge la page dans un navigateur caché (au plus toutes les 5 min) et relève les erreurs JavaScript et les ressources en échec.</small></span><input type="checkbox" name="watchErrors" ${e.watchErrors ? 'checked' : ''}><span class="tog" aria-hidden="true"></span></label>
-        <label class="tog-row sup-srv ${srvOk ? '' : 'off'}"><span class="tog-text"><span>${icon('cloud', 13)} Surveiller aussi 24 h/24 par les serveurs NEXORA</span><small>${esc(srvHint)}</small></span><input type="checkbox" name="server" ${server ? 'checked' : ''} ${srvOk ? '' : 'disabled'}><span class="tog" aria-hidden="true"></span></label>
-        <div class="field"><span>Alertes pour ce site</span><div class="sup-checks">${['email'].map((k) => `<label class="sup-check ${ready[k] ? '' : 'off'}"><input type="checkbox" name="al-${k}" ${wants(k) ? 'checked' : ''}><span>E-mail (Brevo)</span>${ready[k] ? '' : '<small>désactivé dans Alertes</small>'}</label>`).join('')}</div></div>
+        <label class="tog-row sup-srv ${srvOk ? '' : 'off'}"><span class="tog-text"><span>${icon('cloud', 13)} Surveiller aussi 24 h/24, même ordinateur éteint</span><small>${esc(srvHint)}</small></span><input type="checkbox" name="server" ${server ? 'checked' : ''} ${srvOk ? '' : 'disabled'}><span class="tog" aria-hidden="true"></span></label>
+        <div class="field"><span>Alertes pour ce site</span><div class="sup-checks">${['email'].map((k) => `<label class="sup-check ${ready[k] ? '' : 'off'}"><input type="checkbox" name="al-${k}" ${wants(k) ? 'checked' : ''}><span>E-mail</span>${ready[k] ? '' : '<small>désactivé dans Alertes</small>'}</label>`).join('')}</div></div>
         <p class="sup-form-err" hidden></p>
       </div>
       <div class="sheet-foot"><span class="grow"></span><button type="button" class="btn" data-sup-sheet="cancel">Annuler</button><button type="submit" class="btn primary">${site ? 'Enregistrer' : 'Surveiller ce site'}</button></div>
@@ -98,7 +98,7 @@ export function siteSheet({ cfg, site = null, url = '', server = false }) {
         let srvMsg = '';
         if (srvOk && (wantServer || server)) {
           try {
-            if (wantServer) { await link(next); srvMsg = ' Surveillé aussi 24 h/24 par les serveurs NEXORA.'; } else { await unlink(next.id); srvMsg = ' Surveillance par le serveur arrêtée.'; }
+            if (wantServer) { await link(next); srvMsg = ' Surveillé aussi 24 h/24.'; } else { await unlink(next.id); srvMsg = ' Surveillance 24 h/24 arrêtée.'; }
           } catch (x) {
             toast(x.message || String(x), { kind: 'bad' });
           }

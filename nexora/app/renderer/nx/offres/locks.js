@@ -18,10 +18,9 @@ function card(sp) {
   const p = FALLBACK.standard;
   return `<div class="nxo-space-lock">
     <div class="nxo-space-card">
-      <div class="nxo-space-art" data-nxo-art="${sp.object}" data-nxo-tone="${sp.tone}" data-nxo-key="espace-${sp.id}">
-        <small class="nxo-kicker">${ico('bolt', 12)} Offre ${esc(p.name)}</small>
-        <h3>${esc(sp.label)} fait partie de l’offre ${esc(p.name)}</h3>
-        <p>Dès 10 $ par mois, sans engagement.</p>
+      <div class="nxo-lock-head">
+        <span class="nxo-medal nxo-standard lg">${ico('bolt', 22)}</span>
+        <div><small class="nxo-kicker">Offre ${esc(p.name)}</small><h3>${esc(sp.label)} fait partie de l’offre ${esc(p.name)}</h3><p>Dès 10 $ par mois, sans engagement.</p></div>
       </div>
       <ul class="nxo-feats">${sp.perks.map((f) => `<li>${ico('check', 12)}<span>${esc(f)}</span></li>`).join('')}</ul>
       <div class="nxo-ab-lock-acts">

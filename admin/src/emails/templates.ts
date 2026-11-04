@@ -7,7 +7,7 @@ import { box, bullets, button, code, esc, layout, p, pill, rows, TONES, type Ton
 
 export const LOGO_URL = `${NEXORA_WEB_URL}logo.png`
 /** Version des modèles enregistrés dans la base (app_config.email_templates) : à augmenter à chaque changement. */
-export const TEMPLATES_VERSION = 1
+export const TEMPLATES_VERSION = 2
 
 type V = Record<string, string>
 export type Rendered = { subject: string; html: string; text?: string }
@@ -408,7 +408,7 @@ export function updateEmail(d: UpdateData): Rendered {
       `Télécharger NEXORA ${d.version} : ${d.url}`,
       `NEXORA en ligne : ${NEXORA_WEB_URL}`,
       "",
-      "— NEXORA (IPPOO)",
+      "— L’équipe NEXORA",
     ].join("\n"),
   }
 }
@@ -486,7 +486,7 @@ export function invoiceEmail(d: InvoiceMailData): Rendered {
       ...(!d.paid && d.payment.trim() ? ["", "Modalités de paiement :", d.payment.trim()] : []),
       "",
       "Une question ? Réponds à cet e-mail.",
-      "— NEXORA (IPPOO)",
+      "— L’équipe NEXORA",
     ].join("\n"),
   }
 }
@@ -513,7 +513,7 @@ const INVOICE: EmailTemplate = {
       paid: Boolean(v.paid),
       filename: "Facture-NX-2026-0004.pdf",
       payment: "Virement bancaire — IBAN FR76 0000 0000 0000 0000 0000 000\nRéférence à indiquer : NX-2026-0004",
-      issuerName: "IPPOO",
+      issuerName: "NEXORA",
     }),
 }
 

@@ -202,7 +202,7 @@ ${o.note ? `<p class="nx-muted nx-sep" style="margin:0;padding:16px 0 26px;borde
 <p class="nx-muted" style="margin:0 0 8px;font-size:12.5px;line-height:1.6;color:${BRAND.muted}"><b class="nx-ink" style="color:${BRAND.ink}">NEXORA</b> · l’atelier pour créer, tester et publier tes sites et applications.</p>
 <p style="margin:0 0 10px;font-size:12.5px;line-height:1.6"><a class="nx-link" href="${esc(o.webUrl)}" target="_blank" style="color:${BRAND.solid};text-decoration:none;font-weight:600">Ouvrir NEXORA</a></p>
 <p class="nx-muted" style="margin:0 0 6px;font-size:11.5px;line-height:1.6;color:${BRAND.faint}">${fr(o.reason)}</p>
-<p class="nx-muted" style="margin:0;font-size:11.5px;line-height:1.6;color:${BRAND.faint}">© ${esc(year)} IPPOO · NEXORA</p>
+<p class="nx-muted" style="margin:0;font-size:11.5px;line-height:1.6;color:${BRAND.faint}">© ${esc(year)} NEXORA</p>
 </td></tr>
 
 </table>

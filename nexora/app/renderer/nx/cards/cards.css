@@ -38,8 +38,14 @@ html[data-theme='light'] .hm-stat.mint { --nxi-s: #b1e4ca; --nxi-m: #87d6ae; --n
 html[data-theme='light'] .hm-stat.yellow { --nxi-s: #f6d97d; --nxi-m: #f0c64f; --nxi-d: #d68f00; --nxi-a: #ff6a3d; }
 html[data-theme='light'] .hm-stat.red { --nxi-s: #fab7af; --nxi-m: #f6968b; --nxi-d: #e5392e; --nxi-a: #ff9f1a; }
 
-/* Carte d'accueil : l'illustration remplace le halo d'origine. */
-.hm-hello.nxi-host::after { display: none; }
+/* Carte d'accueil : l'illustration remplace le halo d'origine (gardé si la carte reste sans objet). */
+.hm-hello.nxi-host:not(.nxi-empty)::after { display: none; }
+
+/* NEXORA #038 : zone d'illustration réservée à droite des cartes de présentation, pour que l'objet ait sa
+   place sans passer sous les textes. */
+.hm-hello.nxi-host > p { max-width: 74%; }
+.hm-stat.nxi-host > small { max-width: 58%; }
+.hm-space.nxi-host > small { max-width: 60%; }
 
 /* NEXORA #037 : carte de l'équipe active (Mon compte → Équipe) : nom, offre et bouton à gauche, objet à droite. */
 .nxc-body > .nx-org-head.nxi-host { min-height: 118px; flex-direction: column; align-items: flex-start; justify-content: center; padding-right: 34%; }

@@ -115,7 +115,7 @@ export function sheet(mode = 'login') {
         <h3>Crée, teste et publie tes sites et applications.</h3>
         <ul>${feats.map(([i, b, t]) => `<li><span class="nxl-ic">${ico(i, 15)}</span><span><b>${b}</b><small>${t}</small></span></li>`).join('')}</ul>
       </div>
-      <p class="nxl-trust">${ico('lock', 12)}<span>Connexion chiffrée · comptes hébergés en Europe</span></p>
+      <p class="nxl-trust">${ico('lock', 12)}<span>Connexion chiffrée · données protégées</span></p>
     </aside>
     <section class="nxl-main">
       <button type="button" class="nxl-close" data-sheet="close" title="Fermer" aria-label="Fermer">${ico('close', 15)}</button>

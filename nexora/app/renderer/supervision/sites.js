@@ -145,7 +145,7 @@ async function act(ctx, d, what, el) {
       ctx.editSite(s.id);
     } else if (what === 'remove') {
       const linked = (await links().catch(() => ({ map: new Map() }))).map.has(s.id);
-      if (!(await confirmSheet({ title: `Retirer « ${s.name || host(s.url)} » ?`, text: `Les mesures de ce site sont effacées. Ses incidents restent dans l’historique.${linked ? ' Il ne sera plus surveillé par les serveurs NEXORA non plus.' : ''}`, ok: 'Retirer', ic: 'trash' }))) return;
+      if (!(await confirmSheet({ title: `Retirer « ${s.name || host(s.url)} » ?`, text: `Les mesures de ce site sont effacées. Ses incidents restent dans l’historique.${linked ? ' Sa surveillance 24 h/24 s’arrête aussi.' : ''}`, ok: 'Retirer', ic: 'trash' }))) return;
       const cfg = await call('mon:config');
       await call('mon:set-endpoints', (cfg.endpoints || []).filter((x) => x.id !== s.id));
       if (linked) await unlink(s.id).catch((x) => toast(x.message || String(x), { kind: 'bad' }));
@@ -214,18 +214,18 @@ async function fillServer(ctx, d, token) {
   if (!host0) return;
   const s = d.site;
   const acc = account();
-  const sub = 'Vérifié par les serveurs NEXORA, même NEXORA fermée et ordinateur éteint';
-  const paint = (body, actions = '') => { if (token === ctx.token && host0.isConnected) { host0.innerHTML = card('Serveurs NEXORA · 24 h/24', body, { sub, actions, cls: 'sup-srv-card' }); bindServer(ctx, d, host0); } };
+  const sub = 'Vérifié en continu, même NEXORA fermée et ordinateur éteint';
+  const paint = (body, actions = '') => { if (token === ctx.token && host0.isConnected) { host0.innerHTML = card('Surveillance 24 h/24', body, { sub, actions, cls: 'sup-srv-card' }); bindServer(ctx, d, host0); } };
   if (!acc.signedIn) {
-    paint(`<p class="sup-note">${icon('cloud', 13)} Connecte-toi à ton compte NEXORA (bouton Connexion du rail) : les serveurs NEXORA vérifieront ce site jour et nuit et préviendront ton équipe dans NEXORA dès qu’il tombe ou ralentit.</p>`);
+    paint(`<p class="sup-note">${icon('cloud', 13)} Connecte-toi à ton compte NEXORA (bouton Connexion du rail) : ce site sera vérifié jour et nuit et ton équipe sera prévenue dès qu’il tombe ou ralentit.</p>`);
     return;
   }
   let l;
   try { l = await links(); } catch (err) { paint(`<p class="sup-note bad">${esc(err.message || String(err))}</p>`); return; }
-  if (l.outdated) { paint('<p class="sup-note">Le serveur NEXORA n’est pas encore à jour pour la supervision 24 h/24 : l’administrateur doit appliquer la migration « supervision_serveur » depuis le back office (section Supabase).</p>'); return; }
+  if (l.outdated) { paint('<p class="sup-note">La surveillance 24 h/24 n’est pas encore disponible. Réessaie plus tard.</p>'); return; }
   const m = l.map.get(s.id);
   if (!m) {
-    paint(`<p class="sup-note">${icon('cloud', 13)} Ce site n’est vérifié que pendant que NEXORA est ouverte sur ce PC. Active la surveillance par les serveurs NEXORA pour l’équipe « ${esc(acc.orgName)} » : vérification toutes les ${Math.max(1, Math.round(s.intervalSec / 60))} min, pannes confirmées, notification dans NEXORA.</p>`,
+    paint(`<p class="sup-note">${icon('cloud', 13)} Ce site n’est vérifié que pendant que NEXORA est ouverte sur ce PC. Active la surveillance 24 h/24 pour l’équipe « ${esc(acc.orgName)} » : vérification toutes les ${Math.max(1, Math.round(s.intervalSec / 60))} min, pannes confirmées, notification dans NEXORA.</p>`,
       acc.canEdit ? btn('Activer la surveillance 24 h/24', 'data-srv="on"', { ic: 'cloud', cls: 'small primary' }) : '<small class="muted">Rôle éditeur requis</small>');
     return;
   }
@@ -242,9 +242,9 @@ async function fillServer(ctx, d, token) {
   const tot = srv.totals || {};
   const open = (srv.incidents || []).filter((i) => !i.ended_at);
   const k = [
-    kpi({ label: 'État vu par le serveur', ic: 'cloud', value: esc(label), tone, hint: m.last_checked_at ? `Vérifié ${esc(ago(Date.parse(m.last_checked_at)))}` : 'Première vérification dans la minute' }),
+    kpi({ label: 'État (24 h/24)', ic: 'cloud', value: esc(label), tone, hint: m.last_checked_at ? `Vérifié ${esc(ago(Date.parse(m.last_checked_at)))}` : 'Première vérification dans la minute' }),
     kpi({ label: 'Disponibilité', ic: 'pass', value: pct(tot.avail), tone: availTone(tot.avail), hint: `${num(tot.n || 0)} vérifications · ${num(tot.fails || 0)} échec${tot.fails > 1 ? 's' : ''}` }),
-    kpi({ label: 'p95 (serveur)', ic: 'clock', value: ms(tot.p95), hint: `Médiane ${ms(tot.p50)} · depuis le serveur NEXORA` }),
+    kpi({ label: 'Temps de réponse', ic: 'clock', value: ms(tot.p95), hint: `Médiane ${ms(tot.p50)}` }),
     kpi({ label: 'Incidents', ic: 'warn', value: num((srv.incidents || []).length), tone: open.length ? 'bad' : 'good', hint: open.length ? `${open.length} en cours` : 'Aucun en cours' }),
   ].join('');
   paint(`<div class="sup-kpis k4">${k}</div><div data-chart="srv"></div>`, actions);
@@ -272,7 +272,7 @@ function bindServer(ctx, d, root) {
         const site = (cfg.endpoints || []).find((x) => x.id === d.site.id);
         if (!site) throw new Error('Site introuvable.');
         await link(site);
-        toast('Site surveillé 24 h/24 par les serveurs NEXORA.');
+        toast('Site surveillé 24 h/24.');
       } else {
         if (!(await confirmSheet({ title: 'Arrêter la surveillance par le serveur ?', text: 'Le site reste surveillé par NEXORA sur ce PC. Les mesures déjà prises par le serveur sont effacées.', ok: 'Arrêter', ic: 'cloud' }))) return;
         await unlink(d.site.id);

@@ -53,7 +53,7 @@ create policy nx_private_config_admin on public.nx_private_config
 revoke all on public.nx_private_config from anon;
 grant select, insert, update on public.nx_private_config to authenticated;
 insert into public.nx_private_config (key, value) values ('invoice_issuer', jsonb_build_object(
-  'name', 'IPPOO', 'address', '', 'email', 'ippooz.up.2@gmail.com', 'phone', '', 'website', 'https://nexora.abrahamtogbonon0.workers.dev/',
+  'name', 'NEXORA', 'address', '', 'email', '', 'phone', '', 'website', 'https://nexora.abrahamtogbonon0.workers.dev/',
   'tax_id', '', 'vat_note', 'TVA non applicable', 'currency', 'EUR', 'tax_rate', 0, 'due_days', 30, 'prefix', 'NX',
   'payment', '', 'footer', 'Merci de ta confiance.'))
 on conflict (key) do nothing;

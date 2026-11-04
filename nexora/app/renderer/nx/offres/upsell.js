@@ -26,10 +26,13 @@ export function openUpsell(info = {}) {
   const perks = (p.features || []).slice(need === 'free' ? 0 : 1, need === 'free' ? 4 : 5);
   const el = sheet('nx-offre', `
     <div class="nxo-up nxo-${esc(need)}">
-      <div class="nxo-up-art" data-nxo-art="${look.object}" data-nxo-tone="${look.tone}" data-nxo-key="up-${esc(need)}">
-        <small class="nxo-kicker">${ico(look.icon, 12)} Offre ${esc(p.name)}</small>
-        <h2>${esc(title)}</h2>
-        <p>${esc(info.message || `${feat[0] || 'Cette fonction'} fait partie de l’offre ${p.name}.`)}</p>
+      <div class="nxo-up-head">
+        <span class="nxo-medal nxo-${esc(need)} lg">${ico(look.icon, 24)}</span>
+        <div>
+          <small class="nxo-kicker">Offre ${esc(p.name)}</small>
+          <h2>${esc(title)}</h2>
+          <p>${esc(info.message || `${feat[0] || 'Cette fonction'} fait partie de l’offre ${p.name}.`)}</p>
+        </div>
       </div>
       <div class="nxo-up-body">
         <div class="nxo-up-price"><b>${p.price_month_cents ? esc(money(p.price_month_cents)) : '0 $'}</b><span>/ mois</span>${p.price_year_cents ? `<small>ou ${esc(money(p.price_year_cents))} par an (2 mois offerts)</small>` : ''}</div>
@@ -39,7 +42,7 @@ export function openUpsell(info = {}) {
       </div>
     </div>
     <div class="sheet-foot">
-      <span class="nx-muted small nxo-up-safe">${ico('lock', 12)} Vérifié par les serveurs NEXORA</span><span class="grow"></span>
+      <span class="grow"></span>
       <button class="btn" data-sheet="close">Plus tard</button>
       ${auth ? '<button class="btn primary" data-nxo-login>Se connecter</button>'
         : `<button class="btn" data-nxo-offers>Voir les offres</button>${need !== 'free' && need !== s.plan ? `<button class="btn primary" data-nxo-ask="${esc(need)}">Passer à ${esc(p.name)}</button>` : ''}`}

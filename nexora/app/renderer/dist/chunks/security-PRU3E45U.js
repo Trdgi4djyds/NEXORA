@@ -43,10 +43,10 @@ import{a as h}from"./chunk-XJMNRA7U.js";import{a as b}from"./chunk-6ZWS5EFO.js";
       <section class="mon-alerts">
         <div class="mon-h"><b>Alertes</b><small>Envoy\xE9es quand un site tombe, ralentit ou que son certificat expire. NEXORA doit rester ouverte.</small></div>
         <div class="mon-ch">
-          <!-- NEXORA #030 : seul canal, l\u2019e-mail par Brevo (Telegram, WhatsApp et SMTP retir\xE9s) -->
+          
           <div class="mon-ch-card ${t("email")?"on":""}">
-            <div class="mon-ch-h">${l("mail",15)}<b>E-mail (Brevo)</b>${t("email")?`<span class="ab-okchip">${l("check",11)} pr\xEAt</span>`:""}</div>
-            <p class="pop-note">Les alertes partent par les serveurs NEXORA vers l\u2019adresse de ton compte NEXORA : rien \xE0 configurer ici. Connecte-toi \xE0 ton compte pour les recevoir.</p>
+            <div class="mon-ch-h">${l("mail",15)}<b>E-mail</b>${t("email")?`<span class="ab-okchip">${l("check",11)} pr\xEAt</span>`:""}</div>
+            <p class="pop-note">Les alertes sont envoy\xE9es \xE0 l\u2019adresse de ton compte NEXORA : rien \xE0 configurer ici. Connecte-toi \xE0 ton compte pour les recevoir.</p>
             <button class="btn small" data-mon="test-email">${l("bell",12)}<span>Envoyer un e-mail de test</span></button>
             <div class="mon-ch-res" data-res="email"></div>
           </div>

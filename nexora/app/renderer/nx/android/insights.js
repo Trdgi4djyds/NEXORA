@@ -20,9 +20,9 @@ const ago = (d) => {
 /* Message clair quand la base n'a pas encore la migration, ou que la connexion manque. */
 export function explain(err) {
   const m = String((err && (err.message || err.details)) || err || '');
-  if (/PGRST202|Could not find the function|function .* does not exist|schema cache/i.test(m)) return 'La base de NEXORA n’a pas encore les statistiques des applications : applique la migration « statistiques_applications » depuis le back office (section Supabase), puis réessaie.';
+  if (/PGRST202|Could not find the function|function .* does not exist|schema cache/i.test(m)) return 'Les statistiques des applications ne sont pas encore disponibles. Réessaie plus tard.';
   if (/JWT|Connexion requise|not authenticated|permission denied/i.test(m)) return 'Connecte-toi à ton compte NEXORA pour voir les statistiques.';
-  if (/Failed to fetch|NetworkError|network/i.test(m)) return 'Serveur de NEXORA injoignable : vérifie ta connexion Internet.';
+  if (/Failed to fetch|NetworkError|network/i.test(m)) return 'Connexion à NEXORA impossible : vérifie ta connexion Internet.';
   return m || 'Erreur inconnue.';
 }
 
