@@ -9,6 +9,8 @@ const http = require('http');
 const https = require('https');
 const { checkSdks, describe } = require('./sdk');
 const { analyzeProject, venvPython } = require('./frameworks');
+const { projectEnv } = require('./isolation');
+const tools = require('./tools');
 
 const IS_WIN = process.platform === 'win32';
 
@@ -59,8 +61,9 @@ function killTree(pid) {
   });
 }
 
-function buildEnv(extra) {
-  const env = { ...process.env, ...extra };
+// NEXORA #016 : environnement isolé du projet (environnement virtuel Python, node_modules/.bin, gems dans vendor/bundle).
+function buildEnv(extra, dir) {
+  const env = projectEnv(dir, extra);
   if (process.platform === 'darwin') env.PATH = ['/opt/homebrew/bin', '/usr/local/bin', env.PATH].filter(Boolean).join(':');
   return env;
 }
@@ -135,11 +138,15 @@ class ProjectRunner extends EventEmitter {
     this.setStatus('checking', { message: 'Vérification des outils' });
     const sdks = await checkSdks(a.sdks, { fresh: true });
     if (gen !== this.gen) return;
-    const missing = a.sdks.filter((id) => !sdks[id].ok);
+    // NEXORA #016 : une version trop ancienne (Node.js 18 pour un projet Vite 7, par exemple) compte comme absente.
+    const tooOld = (id) => { const need = a.minVersions && a.minVersions[id]; const m = /(\d+)\.\d+/.exec(String(sdks[id].version || '')); return Boolean(need && m && Number(m[1]) < need); };
+    const missing = a.sdks.filter((id) => !sdks[id].ok || tooOld(id));
     if (missing.length) {
-      const list = missing.map(describe).filter(Boolean);
+      const list = missing.map((id) => describe(id)).filter(Boolean);
+      const detection = tools.shared() ? await tools.shared().detect(a).catch(() => null) : null;
+      if (gen !== this.gen) return;
       this.log(`Outils manquants : ${list.map((m) => m.label).join(', ')}\n`, 'err');
-      this.setStatus('missing-sdk', { message: `${list.map((m) => m.label).join(' et ')} ${list.length > 1 ? 'sont introuvables' : 'est introuvable'} sur cet ordinateur.`, missing: list });
+      this.setStatus('missing-sdk', { message: `${list.map((m) => m.label).join(' et ')} ${list.length > 1 ? 'sont introuvables' : 'est introuvable'} sur cet ordinateur.`, missing: list, detection });
       return;
     }
     for (const id of a.sdks) this.log(`${sdks[id].version || id}\n`, 'info');
@@ -152,9 +159,10 @@ class ProjectRunner extends EventEmitter {
     const pysys = sdks.python && sdks.python.command ? sdks.python.command : (IS_WIN ? 'python' : 'python3');
     const port = (await findFreePort(a.defaultPort)) || a.defaultPort;
     const values = { port: String(port), script: a.script, pysys };
-    const env = buildEnv({
+    const envExtra = {
       PORT: String(port), BROWSER: 'none', FORCE_COLOR: '0', npm_config_color: 'false', ...a.env,
-    });
+    };
+    let env = buildEnv(envExtra, dir);
 
     if (a.installNeeded && !skipInstall) {
       this.setStatus('installing', { message: a.install[0] ? a.install[0].label : 'Installation' });
@@ -184,6 +192,7 @@ class ProjectRunner extends EventEmitter {
     }
 
     this.setStatus('starting', { message: a.kind === 'flutter' ? 'Compilation Flutter pour le web' : `Démarrage de ${a.label}` });
+    env = buildEnv(envExtra, dir); // l'installation a pu créer l'environnement virtuel du projet
     const cmd = this.fill(a.run, a, values);
     const child = this.spawnShell(cmd, dir, env, { stdin: Boolean(a.watch) });
     this.main = child;
@@ -291,7 +300,7 @@ class ProjectRunner extends EventEmitter {
 
   async runOnce(cmd, dir) {
     await this.stop(true);
-    return this.runStep(cmd, dir, buildEnv({}), this.gen);
+    return this.runStep(cmd, dir, buildEnv({}, dir), this.gen);
   }
 
   async stop(silent = false) {

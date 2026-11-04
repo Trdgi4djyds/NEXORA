@@ -6,16 +6,20 @@
 // de SECRETS. Les fichiers lourds partent par Git LFS (.gitattributes).
 //
 // Options : --repo propriétaire/nom, --branche main, --message "…", --essai (prépare sans envoyer).
-// Jeton : GITHUB_TOKEN, sinon le fichier local « token proj nexora.txt » (portée « repo »).
+// Jeton : GITHUB_TOKEN, sinon le fichier local de jetons (scripts/local-secrets.mjs, portée « repo »).
 import { execFileSync } from "node:child_process"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { ROOT } from "../preview/server.mjs"
-import { githubToken, SECRETS_FILE } from "./local-secrets.mjs"
+import { githubToken, SECRETS_FILES, SECRETS_NAME } from "./local-secrets.mjs"
 
 // Jamais envoyés sur GitHub, même s'ils sont suivis par Git dans Figma Make.
-const SECRETS = [SECRETS_FILE, ".env", ".env.local", ".env.production"]
+const SECRETS = [...SECRETS_FILES, ".env", ".env.local", ".env.production"]
+const isSecret = (f) =>
+  SECRETS.includes(f) ||
+  SECRETS_NAME.test(path.basename(f)) ||
+  /^\.env(\.|$)/.test(path.basename(f))
 const LOCAL_REF = "refs/nexora-github/main"
 
 function parseArgs(argv) {
@@ -64,13 +68,38 @@ function main() {
     // 1. Arbre de l'espace de travail, secrets retirés (index temporaire : l'index de Figma Make ne change pas).
     git(["read-tree", "HEAD"])
     git(["add", "-A"])
-    git(["rm", "--cached", "-q", "--ignore-unmatch", "--", ...SECRETS])
+    const named = git(["ls-files"]).split("\n").filter(isSecret)
+    git([
+      "rm",
+      "--cached",
+      "-q",
+      "--ignore-unmatch",
+      "--",
+      ...new Set([...SECRETS, ...named]),
+    ])
     const tree = git(["write-tree"])
     const leaked = git(["ls-tree", "-r", "--name-only", tree])
       .split("\n")
-      .filter((f) => SECRETS.includes(f))
+      .filter(isSecret)
     if (leaked.length)
       throw new Error(`Secrets encore présents : ${leaked.join(", ")}`)
+    // Dernier garde-fou : aucun fichier envoyé ne contient le jeton GitHub lui-même.
+    try {
+      const hits = execFileSync("git", ["grep", "-l", "-F", "-f", "-", tree], {
+        cwd: ROOT,
+        env,
+        input: token,
+        encoding: "utf8",
+        stdio: ["pipe", "pipe", "pipe"],
+        maxBuffer: 64 << 20,
+      }).trim()
+      if (hits)
+        throw new Error(
+          `Jeton trouvé dans : ${hits.replaceAll(`${tree}:`, "").split("\n").join(", ")}`,
+        )
+    } catch (err) {
+      if (err.status !== 1) throw err
+    }
 
     // 2. Dernier commit de la branche GitHub, s'il existe.
     const remote =

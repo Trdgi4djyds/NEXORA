@@ -177,15 +177,22 @@ function mergeManifests(manifests) {
 }
 
 class PushKit {
-  constructor({ home, fetch, log = () => {}, base, onBaseChanged = () => {} }) {
+  /* NEXORA #019 : name, root, repos, fallbackVersion, floors et format rendent la classe réutilisable pour
+   * d'autres kits (achats intégrés, billing.js) ; leurs valeurs par défaut sont celles du kit de notifications. */
+  constructor({
+    home, fetch, log = () => {}, base, onBaseChanged = () => {}, name = 'push', root = ROOT_ARTIFACT, repos = REPOS, fallbackVersion = FALLBACK_VERSION, floors = FLOORS, format = KIT_FORMAT,
+  }) {
     this.home = home;
     this.fetch = fetch;
     this.log = log;
     this.onBaseChanged = onBaseChanged;
+    Object.assign(this, {
+      name, root, repos, fallbackVersion, floors, format,
+    });
     // Emplacement par défaut : sous Windows, AppData\Local\NEXORA\push (jamais synchronisé, chemin court) plutôt
     // que le dossier « Roaming » des réglages. Un kit déjà prêt à l'ancien emplacement continue d'être utilisé.
-    this.legacyBase = path.join(home, 'push');
-    const local = process.platform === 'win32' && process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'NEXORA', 'push') : null;
+    this.legacyBase = path.join(home, name);
+    const local = process.platform === 'win32' && process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'NEXORA', name) : null;
     this.defaultBase = local && !this.kitReadyIn(this.legacyBase) ? local : this.legacyBase;
     this.base = base || this.defaultBase;
     this.poms = new Map();
@@ -194,7 +201,7 @@ class PushKit {
   kitReadyIn(base) {
     try {
       const k = JSON.parse(fs.readFileSync(path.join(base, 'kit.json'), 'utf8'));
-      return k.format === KIT_FORMAT && Array.isArray(k.dex) && k.dex.every((d) => fs.existsSync(path.join(base, k.version, k.dexDir || 'dex', d)));
+      return k.format === this.format && Array.isArray(k.dex) && k.dex.every((d) => fs.existsSync(path.join(base, k.version, k.dexDir || 'dex', d)));
     } catch { return false; }
   }
 
@@ -205,9 +212,10 @@ class PushKit {
   fallbacks() {
     const list = [this.defaultBase];
     if (process.platform === 'win32') {
-      if (process.env.LOCALAPPDATA) list.push(path.join(process.env.LOCALAPPDATA, 'NEXORA', 'push'));
-      list.push(path.join(`${process.env.SystemDrive || 'C:'}\\`, 'NEXORA-kit'));
-      if (process.env.USERPROFILE) list.push(path.join(process.env.USERPROFILE, 'NEXORA-kit'));
+      const short = this.name === 'push' ? 'NEXORA-kit' : `NEXORA-${this.name}`;
+      if (process.env.LOCALAPPDATA) list.push(path.join(process.env.LOCALAPPDATA, 'NEXORA', this.name));
+      list.push(path.join(`${process.env.SystemDrive || 'C:'}\\`, short));
+      if (process.env.USERPROFILE) list.push(path.join(process.env.USERPROFILE, short));
     }
     list.push(this.legacyBase);
     return [...new Set(list.map((d) => path.resolve(d)))];
@@ -233,7 +241,7 @@ class PushKit {
   status() {
     try {
       const k = JSON.parse(fs.readFileSync(this.kitFile(), 'utf8'));
-      const ok = k.format === KIT_FORMAT && k.dex && k.dex.every((d) => fs.existsSync(path.join(this.base, k.version, k.dexDir || 'dex', d)));
+      const ok = k.format === this.format && k.dex && k.dex.every((d) => fs.existsSync(path.join(this.base, k.version, k.dexDir || 'dex', d)));
       return {
         installed: Boolean(ok), version: k.version, artifacts: (k.artifacts || []).length, size: k.size || 0, built: k.built,
       };
@@ -254,10 +262,10 @@ class PushKit {
 
   async latestVersion() {
     try {
-      const x = await this.getText(`${REPOS[0]}${ROOT_ARTIFACT[0].replace(/\./g, '/')}/${ROOT_ARTIFACT[1]}/maven-metadata.xml`);
+      const x = await this.getText(`${this.repos[0]}${this.root[0].replace(/\./g, '/')}/${this.root[1]}/maven-metadata.xml`);
       const v = x && (tag(x, 'release') || tag(x, 'latest'));
-      return v || FALLBACK_VERSION;
-    } catch { return FALLBACK_VERSION; }
+      return v || this.fallbackVersion;
+    } catch { return this.fallbackVersion; }
   }
 
   async pom(g, a, v) {
@@ -266,7 +274,7 @@ class PushKit {
     const rel = `${g.replace(/\./g, '/')}/${a}/${v}/${a}-${v}.pom`;
     let xml = null;
     let repo = null;
-    for (const r of REPOS) {
+    for (const r of this.repos) {
       // eslint-disable-next-line no-await-in-loop
       xml = await this.getText(r + rel).catch(() => null);
       if (xml) { repo = r; break; }
@@ -291,7 +299,7 @@ class PushKit {
   // Résolution des dépendances, la version la plus haute l'emporte (comme Gradle).
   async resolve(rootVersion, onStep) {
     const chosen = new Map(); // g:a → { g, a, v, packaging, repo }
-    const queue = [{ g: ROOT_ARTIFACT[0], a: ROOT_ARTIFACT[1], v: rootVersion, excl: [] }, ...FLOORS.map(([g, a, v]) => ({ g, a, v, excl: [] }))];
+    const queue = [{ g: this.root[0], a: this.root[1], v: rootVersion, excl: [] }, ...this.floors.map(([g, a, v]) => ({ g, a, v, excl: [] }))];
     let n = 0;
     while (queue.length) {
       const d = queue.shift();
@@ -326,7 +334,7 @@ class PushKit {
   async downloadArtifact(art, dir) {
     const rel = `${art.g.replace(/\./g, '/')}/${art.a}/${art.v}/${art.a}-${art.v}`;
     const exts = art.packaging === 'aar' ? ['aar', 'jar'] : ['jar', 'aar'];
-    const repos = [art.repo, ...REPOS.filter((r) => r !== art.repo)];
+    const repos = [art.repo, ...this.repos.filter((r) => r !== art.repo)];
     for (const ext of exts) {
       const file = path.join(dir, `${art.g}__${art.a}__${art.v}.${ext}`);
       if (fs.existsSync(file) && fs.statSync(file).size > 0) return { file, ext };

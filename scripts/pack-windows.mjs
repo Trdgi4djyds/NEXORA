@@ -56,6 +56,8 @@ function checkSources() {
     "preload.js",
     "renderer/audit.js",
     ...sourceFiles(path.join(APP_DIR, "src")),
+    // Modèle des logiciels de bureau générés par le Desktop Builder (#023).
+    ...sourceFiles(path.join(APP_DIR, "desktop")),
   ].filter(
     (rel) => rel.endsWith(".js") && fs.existsSync(path.join(APP_DIR, rel)),
   )

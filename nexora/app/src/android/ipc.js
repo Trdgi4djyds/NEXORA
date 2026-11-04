@@ -12,6 +12,35 @@ const {
   PushKit, parseGoogleServices, parseServiceAccount, sendTest,
 } = require('./push');
 
+/* NEXORA #016 : chaque application a son propre dossier de sortie. Un fichier .nexora-app.json y note
+ * l'identifiant de l'application ; si le dossier appartient déjà à une autre application (même nom
+ * affiché, par exemple), la construction va dans « <dossier> (<identifiant>) » : aucun APK, AAB,
+ * assetlinks.json ni fichier d'étapes d'une autre application n'est jamais remplacé. */
+const OWNER_FILE = '.nexora-app.json';
+function outOwner(dir) {
+  try { return JSON.parse(fs.readFileSync(path.join(dir, OWNER_FILE), 'utf8')).appId || null; } catch { return null; }
+}
+function freeOutDir(dir, appId) {
+  if (!appId) return dir;
+  let d = dir;
+  for (let n = 1; n < 50; n++) {
+    const o = outOwner(d);
+    if (!o || o === appId) return d;
+    d = n === 1 ? `${dir} (${appId})` : `${dir} (${appId} ${n})`;
+  }
+  return d;
+}
+function claimOutDir(dir, appId, appName) {
+  const d = freeOutDir(dir, appId);
+  fs.mkdirSync(d, { recursive: true });
+  if (appId && !outOwner(d)) {
+    const f = path.join(d, OWNER_FILE);
+    fs.writeFileSync(f, JSON.stringify({ appId, appName: appName || '', note: 'Dossier de sortie de cette application dans NEXORA.' }, null, 2));
+    if (process.platform === 'win32') { try { spawn('attrib', ['+h', f], { windowsHide: true, stdio: 'ignore' }); } catch { /* fichier visible, sans conséquence */ } }
+  }
+  return d;
+}
+
 function register({
   ipcMain, app, dialog, shell, safeStorage, net, send, getWin,
 }) {
@@ -35,6 +64,9 @@ function register({
   // Emplacement du kit choisi par l'utilisateur (conservé d'une session à l'autre).
   const pushLocFile = path.join(home, 'push-location.json');
   try { const j = JSON.parse(fs.readFileSync(pushLocFile, 'utf8')); if (j.dir && fs.existsSync(j.dir)) pushKit.setBase(j.dir); } catch { /* emplacement par défaut */ }
+  // NEXORA #019 : kit d'achats intégrés (Google Play Billing), même principe et mêmes emplacements de repli.
+  const billing = require('./billing');
+  const billingKit = new billing.BillingKit({ home, fetch: fetchImpl, log: (l) => send('android:log', l) });
   let tools = null;
   let busy = false;
   const detect = async () => { tools = await toolchain.detect(); return tools; };
@@ -117,6 +149,46 @@ function register({
     return play.publish({ ...opts, serviceAccount: readSa(playFile(opts.appId)) }, fetchImpl, (label, progress) => send('android:step', { label, progress }));
   });
 
+  // ---------------------------------------------------------------- NEXORA #017 : fiche Play Store
+  const listing = require('./listing');
+  const listingAssets = new listing.ListingAssets(path.join(home, 'play', 'fiches'));
+  const dataUrlBuf = (u) => Buffer.from(String(u || '').replace(/^data:[^,]*,/, ''), 'base64');
+  ipcMain.handle('android:listing-assets', (_e, appId) => listingAssets.list(appId));
+  ipcMain.handle('android:listing-asset-put', (_e, {
+    appId, kind, dataUrl, replace,
+  }) => listingAssets.put(appId, kind, dataUrlBuf(dataUrl), { replace }));
+  ipcMain.handle('android:listing-asset-del', (_e, { appId, kind, id }) => listingAssets.remove(appId, kind, id));
+  ipcMain.handle('android:listing-asset-move', (_e, {
+    appId, kind, id, delta,
+  }) => listingAssets.move(appId, kind, id, delta));
+  ipcMain.handle('android:listing-read', async (_e, { appId, lang }) => {
+    if (!fs.existsSync(playFile(appId))) throw new Error('Importe d’abord la clé du compte de service (section Publication Play Store).');
+    return listing.read({ serviceAccount: readSa(playFile(appId)), appId, lang }, fetchImpl);
+  });
+  ipcMain.handle('android:listing-push', async (_e, opts) => {
+    if (!fs.existsSync(playFile(opts.appId))) throw new Error('Importe d’abord la clé du compte de service (section Publication Play Store).');
+    return listing.push({ ...opts, serviceAccount: readSa(playFile(opts.appId)), assets: listingAssets }, fetchImpl, (label, progress) => send('android:step', { label, progress }));
+  });
+
+  // ---------------------------------------------------------------- NEXORA #019 : achats intégrés (Google Play Billing)
+  ipcMain.handle('android:billing-status', () => ({ ...billingKit.status(), dir: billingKit.base }));
+  ipcMain.handle('android:billing-install', async () => {
+    if (busy) throw new Error('Une opération Android est déjà en cours.');
+    busy = true;
+    try {
+      if (!tools || !tools.ready) await detect();
+      return await billingKit.install(tools, (p) => send('android:progress', { part: 'billing', label: p.label, progress: p.progress }));
+    } finally { busy = false; }
+  });
+  ipcMain.handle('android:billing-products', async (_e, { appId }) => {
+    if (!fs.existsSync(playFile(appId))) throw new Error('Importe d’abord la clé du compte de service (section Publication Play Store).');
+    return billing.products({ serviceAccount: readSa(playFile(appId)), appId }, fetchImpl);
+  });
+  ipcMain.handle('android:billing-verify', async (_e, opts) => {
+    if (!fs.existsSync(playFile(opts.appId))) throw new Error('Importe d’abord la clé du compte de service (section Publication Play Store).');
+    return billing.verify({ ...opts, serviceAccount: readSa(playFile(opts.appId)) }, fetchImpl);
+  });
+
   // ---------------------------------------------------------------- centre de notifications : historique et envois programmés
   const notifDir = path.join(home, 'push', 'envois');
   const histFile = (appId) => path.join(notifDir, `${String(appId).replace(/[^\w.-]/g, '_')}.json`);
@@ -181,13 +253,15 @@ function register({
     busy = true;
     try {
       if (!tools || !tools.ready) await detect();
-      const outDir = spec.outDir || path.join(app.getPath('documents'), 'NEXORA', 'Applications', String(spec.appName || 'application').replace(/[<>:"/\\|?*]+/g, '-'));
+      const wanted = spec.outDir || path.join(app.getPath('documents'), 'NEXORA', 'Applications', String(spec.appName || 'application').replace(/[<>:"/\\|?*]+/g, '-'));
+      const outDir = claimOutDir(wanted, spec.appId, spec.appName);
+      if (outDir !== wanted) send('android:log', `Le dossier ${wanted} appartient à une autre application : les fichiers vont dans ${outDir}.`);
       const images = {};
       for (const [k, v] of Object.entries(spec.images || {})) images[k] = Buffer.from(v);
       const sounds = {};
       for (const [k, v] of Object.entries(spec.sounds || {})) sounds[k] = Buffer.from(v);
       const r = await build({ ...spec, images, sounds, outDir }, {
-        tools, keystores, fetch: fetchImpl, owner: spec.owner, pushKit,
+        tools, keystores, fetch: fetchImpl, owner: spec.owner, pushKit, billingKit,
         log: (l) => send('android:log', l),
         step: (label, progress) => send('android:step', { label, progress }),
       });
@@ -396,10 +470,10 @@ function register({
   });
   ipcMain.handle('android:inspect-dir', (_e, dir) => inspectDir(dir));
   ipcMain.handle('android:build-web', async (_e, dir) => buildWeb(dir, (l) => send('android:log', l)));
-  ipcMain.handle('android:default-out', (_e, name) => path.join(app.getPath('documents'), 'NEXORA', 'Applications', String(name || 'application').replace(/[<>:"/\\|?*]+/g, '-')));
+  ipcMain.handle('android:default-out', (_e, name, appId) => freeOutDir(path.join(app.getPath('documents'), 'NEXORA', 'Applications', String(name || 'application').replace(/[<>:"/\\|?*]+/g, '-')), appId));
   ipcMain.handle('android:reveal', (_e, file) => shell.showItemInFolder(file));
   // Inspection PWA (comme PWABuilder) et génération des fichiers manquants.
-  ipcMain.handle('android:pwa-inspect', (_e, url) => pwa.inspect(url));
+  ipcMain.handle('android:pwa-inspect', (_e, url) => pwa.inspect(url, { partition: require('../isolation').partition() }));
   ipcMain.handle('android:pwa-sw', (_e, { strategy, version, precache }) => ({ sw: pwa.serviceWorker(strategy, { version, precache }), strategies: pwa.SW_STRATEGIES }));
   ipcMain.handle('android:pwa-pack', async (_e, opts) => {
     const r = await dialog.showOpenDialog(getWin(), { title: 'Dossier où enregistrer les fichiers PWA', properties: ['openDirectory', 'createDirectory'] });

@@ -2,8 +2,9 @@
 // avec preview/bridge.js à la place de preload.js. Utilisé par Vite (`pnpm dev`, aperçu Figma Make)
 // et par scripts/build-web.mjs (`pnpm build`, publication).
 import fs from "node:fs"
+import { createRequire } from "node:module"
 import path from "node:path"
-import { fileURLToPath } from "node:url"
+import { fileURLToPath, pathToFileURL } from "node:url"
 
 export const ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -16,6 +17,9 @@ const ANDROID_TEMPLATES_DIR = path.join(APP_DIR, "android", "templates")
 const DEV_IPC_FILE = path.join(APP_DIR, "src", "dev", "ipc.js")
 /** Fichiers propres à l'aperçu (chemins relatifs à la page), en dehors des noms de fichiers de NEXORA. */
 export const BRIDGE_PATH = "__nexora-preview/bridge.js"
+/** Mode web de NEXORA (#025) : seulement dans la version publiée (scripts/build-web.mjs). */
+export const WEB_FILE = path.join(ROOT, "preview", "web.js")
+export const WEB_PATH = "__nexora-preview/web.js"
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -77,10 +81,103 @@ export function devTemplates() {
   )
 }
 
+/**
+ * Outils de développement d'un PC neuf (aucun installé) : même forme que le canal `tools:status`
+ * (src/tools.js, NEXORA #016), avec le catalogue et les étapes de Windows.
+ */
+export function devTools() {
+  const require = createRequire(import.meta.url)
+  const srcDir = path.join(APP_DIR, "src") + path.sep
+  // Relu à chaque appel : une modification de src/tools.js ou src/sdk.js est prise en compte sans redémarrer.
+  for (const id of Object.keys(require.cache))
+    if (id.startsWith(srcDir)) delete require.cache[id]
+  const { catalog } = require(path.join(APP_DIR, "src", "tools.js"))
+  return {
+    platform: "win32",
+    home: "",
+    userPath: true,
+    busy: null,
+    tools: catalog("win32"),
+  }
+}
+
+/** Mode démonstration de la supervision (NEXORA #015) : appels IPC et flux d'évènements. */
+export const DEMO_MAIN_PATH = "__nexora-preview/main"
+
+/**
+ * Desktop Builder sur un PC neuf (NEXORA #023) : même forme que le canal `desktop:status`
+ * (src/desktop/builder.js) ; rien d'installé, version du kit lue dans src/desktop/project.js et version
+ * d'Electron de NEXORA lue dans l'application Windows.
+ */
+export function desktopStatus() {
+  const require = createRequire(import.meta.url)
+  const file = path.join(APP_DIR, "src", "desktop", "project.js")
+  delete require.cache[file]
+  const { BUILDER_VERSION } = require(file)
+  let nexora = ""
+  try {
+    nexora = fs
+      .readFileSync(
+        path.join(ROOT, "nexora", "NEXORA-win32-x64", "version"),
+        "utf8",
+      )
+      .trim()
+  } catch {
+    nexora = ""
+  }
+  return {
+    platform: "win32",
+    node: { ok: false, version: null, min: 18 },
+    kit: { version: null, expected: BUILDER_VERSION },
+    electron: { nexora, cached: [] },
+    home: "",
+    outRoot: "",
+    autoInstall: true,
+    busy: false,
+  }
+}
+export const DEMO_EVENTS_PATH = "__nexora-preview/events"
+
+const appVersion = () =>
+  JSON.parse(fs.readFileSync(path.join(APP_DIR, "package.json"), "utf8"))
+    .version || ""
+
+// Rechargé quand preview/demo-main.mjs change (le serveur d'aperçu tourne en continu).
+const DEMO_FILE = path.join(ROOT, "preview", "demo-main.mjs")
+// Chemin absolu : Vite assemble vite.config.ts (et ce fichier) dans node_modules/.vite-temp.
+const demoModule = () =>
+  import(`${pathToFileURL(DEMO_FILE).href}?v=${fs.statSync(DEMO_FILE).mtimeMs}`)
+
+function demoMain(req, res) {
+  const chunks = []
+  req.on("data", (c) => chunks.push(c))
+  req.on("end", async () => {
+    let out
+    try {
+      const { channel, args } = JSON.parse(
+        Buffer.concat(chunks).toString("utf8") || "{}",
+      )
+      if (!/^(mon|tel):[\w-]+$/.test(String(channel)))
+        throw new Error("Canal non autorisé.")
+      const { demoInvoke } = await demoModule()
+      out = { ok: true, value: await demoInvoke(channel, args, appVersion()) }
+    } catch (err) {
+      out = { ok: false, error: String((err && err.message) || err) }
+    }
+    res.writeHead(200, {
+      "Content-Type": MIME[".json"],
+      "Cache-Control": "no-store",
+    })
+    res.end(JSON.stringify(out ?? { ok: true, value: null }))
+  })
+}
+
 /** Données calculées à partir des sources de NEXORA et servies à côté du pont (chemin relatif à la page). */
 export const PREVIEW_DATA = {
   "__nexora-preview/tab-icons.json": tabIcons,
   "__nexora-preview/dev-templates.json": devTemplates,
+  "__nexora-preview/dev-tools.json": devTools,
+  "__nexora-preview/desktop-status.json": desktopStatus,
 }
 
 /** Page d'accueil de l'interface NEXORA avec les ajouts de l'aperçu (pont, icône, balises en plus). */
@@ -124,7 +221,6 @@ export function nexoraPreview() {
     configureServer(server) {
       const base = server.config.base
       server.middlewares.use((req, res, next) => {
-        if (req.method !== "GET" && req.method !== "HEAD") return next()
         let pathname
         try {
           pathname = decodeURIComponent(
@@ -135,6 +231,17 @@ export function nexoraPreview() {
         }
         if (!pathname.startsWith(base)) return next()
         const rel = pathname.slice(base.length)
+        // Mode démonstration de la supervision (NEXORA #015) : canaux mon:/tel: exécutés par le vrai code
+        // du processus principal dans Node (preview/demo-main.mjs), seulement quand le pont le demande.
+        if (rel === DEMO_MAIN_PATH && req.method === "POST") {
+          demoMain(req, res)
+          return
+        }
+        if (rel === DEMO_EVENTS_PATH && req.method === "GET") {
+          demoModule().then(({ demoEvents }) => demoEvents(res, appVersion()))
+          return
+        }
+        if (req.method !== "GET" && req.method !== "HEAD") return next()
 
         if (rel === "" || rel === "index.html") {
           const body = renderPage({

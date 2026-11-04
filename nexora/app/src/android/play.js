@@ -62,4 +62,5 @@ async function publish({
   }
 }
 
-module.exports = { check, publish };
+// NEXORA #017 : call et explain servent aussi à la fiche Play Store (listing.js).
+module.exports = { check, publish, call, explain };

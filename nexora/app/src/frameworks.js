@@ -53,6 +53,7 @@ function base(dir) {
     id: 'static',
     label: 'Site statique',
     sdks: [],
+    minVersions: {},
     pm: null,
     scripts: {},
     script: null,
@@ -77,6 +78,8 @@ function analyzeNode(dir, a, pkg) {
   a.kind = 'node';
   a.name = pkg.name || a.name;
   a.scripts = pkg.scripts || {};
+  const needNode = nodeRequirement(dir, pkg, deps);
+  if (needNode) a.minVersions.node = needNode;
 
   if (has('pnpm-lock.yaml')) a.pm = 'pnpm';
   else if (has('yarn.lock')) a.pm = 'yarn';
@@ -135,6 +138,33 @@ function analyzeNode(dir, a, pkg) {
   return a;
 }
 
+/* NEXORA #016 : version minimale de Node.js (numéro majeur) demandée par le projet : .nvmrc,
+ * .node-version, champ engines.node du package.json, et exigences des outils qui le déclarent
+ * (Vite 7 et plus, Next.js 16 et plus, Angular 20 et plus : Node.js 20). */
+function lowestMajor(range) {
+  let best = 0;
+  for (const part of String(range || '').split('||')) {
+    let low = 0;
+    for (const m of part.matchAll(/(>=|>|\^|~|=|v|\s|^)(\d+)(?:\.\d+|\.x)*/g)) {
+      if (part.slice(Math.max(0, m.index - 1), m.index + 1).includes('<')) continue;
+      low = Math.max(low, Number(m[2]));
+    }
+    if (low && (!best || low < best)) best = low;
+  }
+  return best;
+}
+function depMajor(v) { const m = /(\d+)/.exec(String(v || '')); return m ? Number(m[1]) : 0; }
+function nodeRequirement(dir, pkg, deps) {
+  let need = 0;
+  for (const f of ['.nvmrc', '.node-version']) {
+    const m = /^\s*v?(\d+)/.exec(readText(path.join(dir, f)));
+    if (m) need = Math.max(need, Number(m[1]));
+  }
+  need = Math.max(need, lowestMajor(pkg.engines && pkg.engines.node));
+  if (depMajor(deps.vite) >= 7 || depMajor(deps.next) >= 16 || depMajor(deps['@angular/core']) >= 20) need = Math.max(need, 20);
+  return need;
+}
+
 function pythonEntry(dir) {
   return ['app.py', 'main.py', 'server.py', 'wsgi.py', 'run.py'].find((f) => fs.existsSync(path.join(dir, f))) || 'app.py';
 }
@@ -158,7 +188,7 @@ function analyzeProject(dir) {
   if (pubspec && /sdk:\s*flutter/.test(pubspec)) {
     const m = pubspec.match(/^name:\s*(\S+)/m);
     Object.assign(a, {
-      kind: 'flutter', id: 'flutter', label: 'Flutter (web)', name: m ? m[1] : a.name, sdks: ['flutter'], defaultPort: 8090,
+      kind: 'flutter', id: 'flutter', label: 'Flutter (web)', name: m ? m[1] : a.name, sdks: ['flutter', 'git'], defaultPort: 8090,
       run: 'flutter run -d web-server --web-port {port} --web-hostname localhost',
       watch: { dirs: ['lib'], key: 'r' },
       needsWebSupport: !has('web'),

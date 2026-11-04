@@ -1,10 +1,17 @@
 // Jetons d'accès pour les scripts (jamais écrits dans le dépôt envoyé sur GitHub) : variable
-// d'environnement d'abord, sinon le fichier local « token proj nexora.txt » fourni par l'utilisateur.
+// d'environnement d'abord, sinon le fichier local de jetons fourni par l'utilisateur
+// (« token_proj_nexora.txt », ou l'ancien nom « token proj nexora.txt »).
 import fs from "node:fs"
 import path from "node:path"
 import { ROOT } from "../preview/server.mjs"
 
-export const SECRETS_FILE = "token proj nexora.txt"
+/** Noms possibles du fichier de jetons (le fichier a été renommé, A-010) : tous exclus de GitHub. */
+export const SECRETS_FILES = ["token_proj_nexora.txt", "token proj nexora.txt"]
+/** Tout fichier dont le nom ressemble à celui du fichier de jetons, quelle que soit la graphie. */
+export const SECRETS_NAME = /token[ _-]?proj[ _-]?nexora/i
+export const SECRETS_FILE =
+  SECRETS_FILES.find((f) => fs.existsSync(path.join(ROOT, f))) ||
+  SECRETS_FILES[0]
 
 function fromFile(pattern) {
   try {

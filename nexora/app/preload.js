@@ -13,11 +13,13 @@ const INVOKE = new Set([
   'autotest:snap', 'autotest:resize', 'autotest:quit', 'autotest:log',
 ]);
 // Espaces ajoutés en v3 : chaque module principal déclare ses canaux sous un préfixe.
-const PREFIXES = ['android:', 'lab:', 'dev:', 'git:', 'gh:', 'tunnel:', 'skins:', 'ai:', 'media:', 'backup:', 'update:', 'support:', 'mon:', 'project:', 'tts:', 'sec:'];
+// NEXORA #016 : 'tools:' (détection et installation des outils de développement).
+// NEXORA #023 : 'desktop:' (Desktop Builder : construction des logiciels de bureau, progression et journal).
+const PREFIXES = ['android:', 'lab:', 'dev:', 'git:', 'gh:', 'tunnel:', 'skins:', 'ai:', 'media:', 'backup:', 'update:', 'support:', 'mon:', 'project:', 'tts:', 'sec:', 'tools:', 'tel:', 'desktop:'];
 const allowed = (set, channel) => set.has(channel) || PREFIXES.some((p) => channel.startsWith(p));
 const EVENTS = new Set([
   'runner:log', 'runner:status', 'runner:hot-reload', 'static:change', 'shortcut',
-  'screencast:frame', 'device:net', 'system:theme', 'window:fullscreen',
+  'screencast:frame', 'device:net', 'system:theme', 'window:fullscreen', 'tools:detected', 'tools:progress',
 ]);
 
 contextBridge.exposeInMainWorld('vitrine', {

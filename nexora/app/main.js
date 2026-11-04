@@ -43,6 +43,14 @@ const { checkSdks, describe } = require('./src/sdk');
 app.setName('NEXORA');
 if (process.env.VITRINE_USER_DATA) app.setPath('userData', process.env.VITRINE_USER_DATA);
 else { try { app.setPath('userData', path.join(app.getPath('appData'), 'Vitrine')); } catch { /* chemin par défaut */ } }
+// NEXORA #016 : isolation des projets (session web et environnement propres à chaque projet) et outils de
+// développement installés par NEXORA (placés dans le PATH dès le démarrage).
+const isolation = require('./src/isolation');
+const toolsMod = require('./src/tools');
+const tools = toolsMod.setShared(new toolsMod.Tools({
+  home: toolsMod.defaultHome(app.getPath('userData')),
+  fetchImpl: (u, o) => (net && net.fetch && app.isReady() ? net.fetch(u, o) : fetch(u, o)),
+}));
 // Studio 3D : la 3D reste disponible sur les cartes graphiques anciennes mises en liste noire par Chromium.
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
 const WEBVIEW_PRELOAD = path.join(__dirname, 'webview-preload.js');
@@ -131,7 +139,8 @@ function send(channel, payload) {
 }
 
 const SHORTCUTS = {
-  1: 'space-1', 2: 'space-2', 3: 'space-3', 4: 'space-4', 5: 'space-5', 6: 'space-6', 7: 'space-7', r: 'reload', o: 'open', n: 'new', '=': 'zoom-in', '+': 'zoom-in', '-': 'zoom-out', '0': 'fit', l: 'focus-address', k: 'focus-search', j: 'console', i: 'inspector', b: 'sidebar',
+  // NEXORA #023 : Ctrl+8 ouvre le Desktop Builder (huitième espace du rail après l'Accueil).
+  1: 'space-1', 2: 'space-2', 3: 'space-3', 4: 'space-4', 5: 'space-5', 6: 'space-6', 7: 'space-7', 8: 'space-8', r: 'reload', o: 'open', n: 'new', '=': 'zoom-in', '+': 'zoom-in', '-': 'zoom-out', '0': 'fit', l: 'focus-address', k: 'focus-search', j: 'console', i: 'inspector', b: 'sidebar',
 };
 const SHIFT_SHORTCUTS = { s: 'photo', r: 'record', f: 'present', t: 'rotate', p: 'fold', a: 'ai' };
 function handleShortcut(event, input) {
@@ -196,6 +205,9 @@ function createWindow() {
 
 app.on('web-contents-created', (_e, contents) => {
   contents.on('will-attach-webview', (_ev, webPreferences, params) => {
+    // NEXORA #016 : session propre à un projet (proxy du partage appliqué à chaque nouvelle session).
+    const part = (params && params.partition) || webPreferences.partition || '';
+    if (/^persist:nx-/.test(part) && isolation.valid(part)) isolation.register(part);
     // VS Code (Dev Lab) : pas de script d'émulation d'appareil dans son interface.
     if (params && params.partition === 'persist:vscode') {
       delete webPreferences.preload;
@@ -239,7 +251,7 @@ ipcMain.handle('sec:scan', async (_e, { url }) => {
   let probe = null;
   try {
     // Fenêtre hors écran pour analyser le contenu rendu de la page (ressources, formulaires, SRI).
-    probe = new BrowserWindow({ show: false, width: 1280, height: 860, webPreferences: { offscreen: true, sandbox: true, partition: 'persist:vitrine' } });
+    probe = new BrowserWindow({ show: false, width: 1280, height: 860, webPreferences: { offscreen: true, sandbox: true, partition: isolation.partition() } });
     probe.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     await probe.webContents.loadURL(url).catch(() => {});
     await new Promise((r) => setTimeout(r, 1200));
@@ -319,6 +331,7 @@ async function analyze(dir) {
     const real = fs.statSync(dir).isDirectory() ? dir : path.dirname(dir);
     const a = analyzeProject(real);
     a.command = commandPreview(a);
+    tools.announce(a, 'responsive'); // NEXORA #016 : détection des outils indispensables au projet
     return a;
   } catch { return null; }
 }
@@ -362,6 +375,21 @@ ipcMain.handle('project:flutter-web', async (_e, dir) => {
 ipcMain.handle('sdk:check', (_e, ids) => checkSdks(ids, { fresh: true }));
 ipcMain.handle('sdk:describe', (_e, ids) => ids.map(describe).filter(Boolean));
 ipcMain.handle('url:check', (_e, url) => probe(url, 4000));
+
+// NEXORA #016 : outils de développement (détection, installation, retrait) et isolation des projets.
+tools.on('progress', (p) => send('tools:progress', p));
+tools.on('detected', (d) => send('tools:detected', d));
+ipcMain.handle('tools:status', () => tools.status());
+ipcMain.handle('tools:detect', async (_e, { dir } = {}) => {
+  if (!dir || !fs.existsSync(dir)) return null;
+  return tools.detect(analyzeProject(fs.statSync(dir).isDirectory() ? dir : path.dirname(dir)));
+});
+ipcMain.handle('tools:install', (_e, { ids, userPath } = {}) => tools.installMany(Array.isArray(ids) ? ids : [], { userPath }));
+ipcMain.handle('tools:cancel', () => tools.cancel());
+ipcMain.handle('tools:remove', (_e, id) => tools.remove(String(id || '')));
+ipcMain.handle('tools:open-dir', () => { fs.mkdirSync(tools.home, { recursive: true }); return shell.openPath(tools.home); });
+ipcMain.handle('project:isolate', (_e, { part } = {}) => isolation.activate(part));
+ipcMain.handle('project:isolation-drop', (_e, { part } = {}) => isolation.drop(part, session));
 
 // ---------------------------------------------------------------- fichiers du projet
 const IGNORED = new Set(['node_modules', '.git', '.next', '.nuxt', '.svelte-kit', '.astro', '.dart_tool', '.idea', '.gradle', 'vendor', '__pycache__', '.venv', 'venv', 'env', '.turbo', '.cache', '.expo', 'coverage', 'Pods', 'bin', 'obj', '.vs', '.parcel-cache', 'storage', '.output', 'target']);
@@ -822,8 +850,16 @@ app.whenReady().then(() => {
   require('./src/loadtest').register({
     ipcMain, app, net, send, dialog, shell, getWin: () => win,
   });
+  // NEXORA #015 : santé de NEXORA (processus, erreurs, plantages, services en ligne), gardée sur ce PC.
+  require('./src/telemetry').register({
+    ipcMain, app, net, getWin: () => win, webContents,
+  });
   require('./src/dev/ipc').register({
     ipcMain, app, dialog, shell, send, getWin: () => win, safeStorage, net, session,
+  });
+  // NEXORA #023 : Desktop Builder (logiciels de bureau installables à partir d'un site, d'un dossier ou d'un projet Electron).
+  require('./src/desktop/ipc').register({
+    ipcMain, app, dialog, shell, safeStorage, net, send, getWin: () => win,
   });
   if (process.platform !== 'darwin') Menu.setApplicationMenu(null);
   createWindow();

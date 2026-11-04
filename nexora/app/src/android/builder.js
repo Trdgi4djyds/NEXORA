@@ -11,6 +11,7 @@ const { run, TARGET_API } = require('./toolchain');
 const { rewrite, list } = require('./zip');
 const { optimizeWww } = require('./optimize');
 const { parseGoogleServices, firebaseValuesXml } = require('./push');
+const { mergeKits } = require('./billing');
 
 const ROOT = path.join(__dirname, '..', '..', 'android');
 const MIN_SDK = 24;
@@ -383,6 +384,16 @@ function shellConfig(spec) {
     ...(spec.remote && spec.remote.enabled && /^https:\/\//.test(spec.remote.url || '') ? { remoteUrl: spec.remote.url } : {}),
     ...(c.passcode && c.passcode.enabled ? { passcode: c.passcode } : {}),
     scanner: Boolean(c.scanner),
+    // NEXORA #019 : achats intégrés (lu par MainActivity, transmis à VtBilling).
+    ...(spec.billing && spec.billing.enabled && spec.mode !== 'twa' ? {
+      billing: { enabled: true, autoAcknowledge: spec.billing.autoAcknowledge !== false, consumables: (spec.billing.consumables || []).filter(Boolean).slice(0, 200) },
+    } : {}),
+    // NEXORA #018 : statistiques et plantages envoyés au compte NEXORA du propriétaire (lu par Insights.java).
+    ...(spec.insights && spec.insights.key && /^https:\/\//.test(spec.insights.url || '') ? {
+      insights: {
+        enabled: true, url: spec.insights.url, anon: spec.insights.anon || '', key: spec.insights.key, launches: spec.insights.launches !== false,
+      },
+    } : {}),
   };
 }
 
@@ -489,6 +500,22 @@ async function build(spec, ctx) {
       write(path.join(resDir, 'values', 'vt_push.xml'), `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n  <color name="vt_push_color">${hexColor((spec.colors || {}).accent, '#007AFF')}</color>\n</resources>\n`);
       log(`Notifications push : projet Firebase « ${gs.projectId} ».`);
     }
+    // NEXORA #019 : achats intégrés (Google Play Billing) : kit préparé une fois, réuni à celui des notifications.
+    const useBilling = spec.billing && spec.billing.enabled && spec.mode !== 'twa';
+    if (useBilling) {
+      if (!ctx.billingKit) throw new Error('Achats intégrés : kit indisponible.');
+      if (!ctx.billingKit.status().installed) {
+        step('Achats intégrés : préparation du kit Google Play Billing (une seule fois)', 0.06);
+        await ctx.billingKit.install(tools, (p) => step(`Kit d’achats : ${p.label}`, 0.06 + (p.progress || 0) * 0.1));
+      }
+      step('Achats intégrés : ajout de Google Play Billing', 0.17);
+      const bk = await ctx.billingKit.forBuild(spec, {
+        tools, work, log, pushArtifacts: pk ? (ctx.pushKit.kit().artifacts || []) : [],
+      });
+      log(`Achats intégrés : Google Play Billing ${ctx.billingKit.status().version} (${bk.libraries} bibliothèque(s) ajoutée(s)).`);
+      pk = mergeKits(pk, bk);
+      pk.billing = true;
+    }
     write(path.join(work, 'AndroidManifest.xml'), manifest(spec, pk));
     const assets = path.join(work, 'assets');
     write(path.join(assets, 'vitrine', 'config.json'), JSON.stringify(shellConfig(spec), null, 2));
@@ -534,8 +561,8 @@ async function build(spec, ctx) {
     // Mode Trusted Web Activity : second fichier de code (androidx.browser réduit).
     const dexExtra = spec.mode === 'twa' ? [{ name: 'classes2.dex', data: fs.readFileSync(path.join(ROOT, 'shell', 'twa.dex')) }] : [];
     if (pk) {
-      step('Notifications push : identifiants des ressources', 0.36);
-      const rdex = await ctx.pushKit.compileR(path.join(work, 'gen'), work, tools);
+      step(usePush ? 'Notifications push : identifiants des ressources' : 'Achats intégrés : identifiants des ressources', 0.36);
+      const rdex = await (ctx.pushKit || ctx.billingKit).compileR(path.join(work, 'gen'), work, tools);
       for (const d of [...pk.dex, ...rdex]) dexExtra.push({ name: `classes${dexExtra.length + 2}.dex`, data: d });
     }
     const result = {

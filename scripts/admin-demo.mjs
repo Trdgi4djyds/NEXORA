@@ -860,8 +860,223 @@ function rpc(name, args) {
       monitors: { used: 2, limit: 50 },
       storage_mb: { used: 1840, limit: 102400 },
     }
+  // Supervision par le serveur (NEXORA #022) : mêmes formes que monitor_overview et monitor_series
+  // (supabase/migrations/20261104000002_supervision_serveur.sql), courbes calculées pour la démonstration.
+  if (name === "monitor_overview") return demoMonitorOverview(args)
+  if (name === "monitor_series") return demoMonitorSeries(args)
+  if (name === "monitor_incident_action")
+    return {
+      ...demoIncidents().find((i) => i.id === args.p_incident),
+      ack_at: new Date(now).toISOString(),
+    }
   if (name === "admin_broadcast") return 9
   return null
+}
+
+const MIN = 60000
+const HOUR = 60 * MIN
+const iso = (ms) => new Date(ms).toISOString()
+// Profil de chaque site fictif : temps de réponse de base, pannes et lenteurs (relatives à maintenant).
+const MON_PROFILE = [
+  { base: 182, down: [[2 * 24 * HOUR + 5 * HOUR, 18 * MIN]], slow: [] },
+  { base: 96, down: [], slow: [] },
+  {
+    base: 210,
+    down: [
+      [26 * MIN, 0],
+      [6 * 24 * HOUR, 7 * MIN],
+    ],
+    slow: [],
+  },
+  { base: 240, down: [], slow: [[30 * HOUR, 40 * MIN]] },
+  { base: 820, down: [], slow: [[2 * HOUR, 0]] },
+]
+function demoIncidents() {
+  const list = []
+  monitors.forEach((m, i) => {
+    const p = MON_PROFILE[i]
+    for (const [kind, spans] of [
+      ["down", p.down],
+      ["slow", p.slow],
+    ])
+      for (const [back, len] of spans)
+        list.push({
+          id: `inc-${i}-${kind}-${back}`,
+          monitor_id: m.id,
+          org_id: m.org_id,
+          kind,
+          started_at: iso(now - back),
+          ended_at: len ? iso(now - back + len) : null,
+          cause:
+            kind === "down"
+              ? i === 2
+                ? "délai dépassé"
+                : "statut 503"
+              : `${p.base * 3} ms (seuil 2000 ms)`,
+          last_cause:
+            kind === "down"
+              ? i === 2
+                ? "délai dépassé"
+                : "statut 503"
+              : `${p.base * 3} ms`,
+          checks: len ? Math.round(len / (m.interval_minutes * MIN)) + 2 : 6,
+          notified: len ? 2 : 1,
+          ack_at: len && i === 0 ? iso(now - back + 4 * MIN) : null,
+          note:
+            len && i === 0
+              ? "Redémarrage du serveur de base de données après une mise à jour."
+              : "",
+          site: m.name,
+          closed_by: len ? "auto" : null,
+          resolution: len ? "Le site répond de nouveau" : "",
+        })
+  })
+  return list.sort((a, b) => b.started_at.localeCompare(a.started_at))
+}
+function demoBuckets(m, i, hours, buckets) {
+  const p = MON_PROFILE[i]
+  const to = now
+  const from = now - hours * HOUR
+  const step = (to - from) / buckets
+  const inSpan = (list, a, b) =>
+    list.some(
+      ([back, len]) => now - back < b && (len ? now - back + len : now) > a,
+    )
+  return Array.from({ length: buckets }, (_, g) => {
+    const a = from + g * step
+    const b = a + step
+    const n = Math.max(1, Math.round(step / (m.interval_minutes * MIN)))
+    const down = inSpan(p.down, a, b)
+    const slow = inSpan(p.slow, a, b)
+    const wave =
+      1 + 0.3 * Math.sin((a / HOUR / 24) * Math.PI * 2) + ((g * 37) % 11) / 40
+    const fails = down
+      ? Math.max(1, Math.round(n * 0.6))
+      : (g * 13 + i) % 29 === 0
+        ? 1
+        : 0
+    const p95 = Math.round(p.base * wave * (slow ? 3 : 1) * 1.6)
+    return {
+      t: iso(a),
+      n,
+      fails: Math.min(n, fails),
+      avail: Math.round(((n - Math.min(n, fails)) / n) * 10000) / 100,
+      p95,
+      p50: Math.round(p95 / 1.7),
+      avg: Math.round(p95 / 1.5),
+      max: Math.round(p95 * 1.4),
+    }
+  })
+}
+function demoMonitorOverview(args) {
+  const hours = Number(args.p_hours) || 24
+  const buckets = Number(args.p_buckets) || 48
+  const from = now - hours * HOUR
+  const incidents = demoIncidents().filter(
+    (x) =>
+      Date.parse(x.started_at) < now &&
+      (!x.ended_at || Date.parse(x.ended_at) > from),
+  )
+  return {
+    from: iso(from),
+    to: iso(now),
+    hours,
+    step: Math.round((hours * HOUR) / buckets),
+    incidents,
+    sites: monitors.map((m, i) => {
+      const bars = demoBuckets(m, i, hours, buckets)
+      const n = bars.reduce((a, b) => a + b.n, 0)
+      const fails = bars.reduce((a, b) => a + b.fails, 0)
+      const p95s = bars.map((b) => b.p95).sort((a, b) => a - b)
+      return {
+        id: m.id,
+        org_id: m.org_id,
+        org: m.organizations?.name || null,
+        name: m.name,
+        url: m.url,
+        active: m.active,
+        interval_minutes: m.interval_minutes,
+        threshold_ms: i === 4 ? 2000 : 1500,
+        confirm_count: 2,
+        keyword: null,
+        expected_status: 200,
+        app_site_id: i < 2 ? `site-${i}` : null,
+        muted_until: null,
+        status: m.last_status,
+        status_since: iso(
+          now -
+            (m.last_status === "down"
+              ? 26 * MIN
+              : m.last_status === "degraded"
+                ? 2 * HOUR
+                : 3 * 24 * HOUR),
+        ),
+        last_checked_at: m.last_checked_at,
+        last_latency_ms: m.last_latency_ms,
+        last_error: m.last_error,
+        n,
+        fails,
+        avail: Math.round(((n - fails) / n) * 100000) / 1000,
+        p50: Math.round(p95s[Math.floor(p95s.length / 2)] / 1.7),
+        p95: p95s[Math.floor(p95s.length * 0.95)],
+        avg: Math.round(p95s[Math.floor(p95s.length / 2)] / 1.5),
+        open: incidents.filter((x) => x.monitor_id === m.id && !x.ended_at)
+          .length,
+        bars: bars.map(({ t, n: bn, fails: bf, avail, p95 }) => ({
+          t,
+          n: bn,
+          fails: bf,
+          avail,
+          p95,
+        })),
+      }
+    }),
+  }
+}
+function demoMonitorSeries(args) {
+  const i = monitors.findIndex((m) => m.id === args.p_monitor)
+  if (i < 0) return null
+  const m = monitors[i]
+  const hours = Number(args.p_hours) || 24
+  const buckets = Number(args.p_buckets) || 96
+  const from = now - hours * HOUR
+  const points = demoBuckets(m, i, hours, buckets)
+  const n = points.reduce((a, b) => a + b.n, 0)
+  const fails = points.reduce((a, b) => a + b.fails, 0)
+  const sorted = points.map((p) => p.p95).sort((a, b) => a - b)
+  return {
+    from: iso(from),
+    to: iso(now),
+    hours,
+    step: Math.round((hours * HOUR) / buckets),
+    hourly: hours > 168,
+    points,
+    totals: {
+      n,
+      fails,
+      avail: Math.round(((n - fails) / n) * 100000) / 1000,
+      avg: Math.round(sorted[sorted.length >> 1] / 1.5),
+      p50: Math.round(sorted[sorted.length >> 1] / 1.7),
+      p95: sorted[Math.floor(sorted.length * 0.95)],
+      max: Math.round(sorted[sorted.length - 1] * 1.4),
+    },
+    incidents: demoIncidents().filter(
+      (x) =>
+        x.monitor_id === m.id && (!x.ended_at || Date.parse(x.ended_at) > from),
+    ),
+    recent: Array.from({ length: 30 }, (_, k) => {
+      const fail = m.last_status === "down" && k < 6
+      return {
+        checked_at: iso(now - k * m.interval_minutes * MIN - 20000),
+        ok: !fail,
+        status_code: fail ? null : 200,
+        latency_ms: fail
+          ? null
+          : Math.round(MON_PROFILE[i].base * (0.8 + ((k * 7) % 9) / 20)),
+        error: fail ? "délai dépassé" : null,
+      }
+    }),
+  }
 }
 
 /** Filtres PostgREST simples (eq, neq, in, is, gte, lte, ilike) appliqués aux données de démonstration. */

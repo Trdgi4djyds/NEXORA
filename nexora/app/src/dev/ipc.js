@@ -11,6 +11,9 @@ const { analyzeProject, commandPreview } = require('../frameworks');
 const { StaticServer } = require('../static-server');
 const { VsCode } = require('./vscode');
 const { Extensions } = require('./extensions');
+// NEXORA #016 : isolation des projets et détection des outils indispensables.
+const isolation = require('../isolation');
+const tools = require('../tools');
 
 // Modèles de workflows GitHub Actions prêts à l'emploi (déploiement Pages, intégration continue Node).
 function workflowTemplate(kind) {
@@ -247,6 +250,13 @@ function register({
   const share = new Share({
     binDir: path.join(app.getPath('userData'), 'bin'), fetchImpl, emit: (m) => send('tunnel:state', m), sessions: ['persist:vitrine', 'persist:vitrine-scrape'].map((p) => session.fromPartition(p)),
   });
+  // NEXORA #016 : les noms locaux du partage (monsite.nexora) marchent aussi dans la session de chaque projet.
+  isolation.onPartition((p) => {
+    const s = session.fromPartition(p);
+    if (share.sessions.includes(s)) return;
+    share.sessions.push(s);
+    if (share.names && share.names.size) share.applyPac().catch(() => {});
+  });
   const vscode = new VsCode({ dataDir: app.getPath('userData'), fetchImpl, emit: (m) => send('dev:vscode', m) });
   const exts = new Extensions({ dataDir: app.getPath('userData'), fetchImpl });
   app.on('before-quit', () => vscode.stop());
@@ -363,6 +373,7 @@ app.listen(port, () => console.log(\`Serveur prêt sur http://localhost:\${port}
   // ------------------------------------------------------------- lancement
   ipcMain.handle('dev:analyze', (_e, dir) => {
     const a = analyzeProject(dir);
+    if (tools.shared()) tools.shared().announce(a, 'dev'); // NEXORA #016 : détection des outils du projet
     let command = commandPreview(a);
     if (a.kind === 'node' && a.run) command = a.run.replace('{script}', a.script || 'dev').replace(' -- --port {port}', '').replace('{port}', String(a.defaultPort));
     const install = (a.install || []).filter((s) => s.cmd).map((s) => s.cmd.replace('{pysys}', process.platform === 'win32' ? 'python' : 'python3').replace('{py}', 'python'));
@@ -382,7 +393,8 @@ app.listen(port, () => console.log(\`Serveur prêt sur http://localhost:\${port}
   ipcMain.handle('dev:static-stop', (_e, { dir }) => { const s = statics.get(dir); if (s) { s.close(); statics.delete(dir); } return true; });
 
   // ------------------------------------------------------------- terminaux
-  ipcMain.handle('dev:term-open', (_e, { cwd }) => terms.open(cwd));
+  // NEXORA #016 : chaque terminal utilise d'abord les outils et dépendances du projet (environnement isolé).
+  ipcMain.handle('dev:term-open', (_e, { cwd }) => terms.open(cwd, isolation.projectVars(cwd)));
   ipcMain.handle('dev:term-write', (_e, { id, line }) => { terms.get(id).write(line); return true; });
   ipcMain.handle('dev:term-input', (_e, { id, text }) => { terms.get(id).input(text); return true; });
   ipcMain.handle('dev:term-stop', (_e, { id }) => terms.get(id).interrupt());

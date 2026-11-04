@@ -5,6 +5,10 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self' data:; script-src 'self'; media-src 'self' blob: data:; connect-src 'self' blob: data: https://*.supabase.co wss://*.supabase.co; worker-src 'self' blob:">
   <title>NEXORA</title>
   <link rel="stylesheet" href="styles.css">
+  <!-- NEXORA #011 : fonctions ajoutées à NEX-DESIGN, au Studio et aux Maquettes (renderer/nx/) -->
+  <link rel="stylesheet" href="nx/nx.css">
+  <!-- NEXORA #023 : Desktop Builder (renderer/nx/desktop/) -->
+  <link rel="stylesheet" href="nx/desktop/desktop.css">
 </head>
 <body data-mode="preview">
   <div class="app" id="app">
@@ -76,6 +80,7 @@
         <section class="space-pane studio" id="studio" hidden></section>
         <section class="space-pane design-pane" id="design" hidden></section>
         <section class="space-pane sec-pane" id="security" hidden></section>
+        <section class="space-pane desktop-pane" id="desktop" hidden></section>
         <aside class="inspector" id="inspector" hidden></aside>
       </div>
     </main>
@@ -90,5 +95,6 @@
   <script src="vendor/dart.min.js"></script>
   <script src="audit.js"></script>
   <script type="module" src="dist/main.js"></script>
+  <script type="module" src="nx/boot.js"></script>
 </body>
 </html>

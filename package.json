@@ -14,6 +14,7 @@
     "captures:admin": "node scripts/captures-admin.mjs",
     "format": "oxfmt vite.config.ts preview scripts",
     "supabase": "node scripts/supabase.mjs",
+    "android:shell": "node scripts/build-android-shell.mjs",
     "github:push": "node scripts/github-push.mjs"
   },
   "devDependencies": {

@@ -3,9 +3,9 @@
 // chat avec ces images et rangée dans captures/ (voir REGLES.md).
 //
 // Utilisation : pnpm captures [écrans…] [options]
-//   écrans                accueil, responsive, browser, dev, apps, studio, design, securite (défaut : les 8),
+//   écrans                accueil, responsive, browser, dev, apps, studio, design, securite, desktop (défaut : les 9),
 //                         premier-lancement (visite guidée et « Préparer les outils », capturé en premier),
-//                         tout (premier lancement puis les 8 espaces)
+//                         tout (premier lancement puis les 9 espaces)
 //   --label <nom>         série rangée dans captures/AAAA-MM-JJ-<nom>/ (défaut : « apercu »)
 //   --click <texte>       avec un seul espace : clique ensuite sur le bouton portant ce texte, ou cette
 //                         infobulle pour un bouton à icône seule (répétable)
@@ -13,6 +13,10 @@
 //   --taille 1440x900     taille de la fenêtre capturée
 //   --upload              envoie chaque image dans le chat (figma artifacts upload) et affiche le Markdown
 //   --url <adresse>       adresse de l'aperçu (défaut : figma make preview get-local-url)
+//   --compte demo         compte NEXORA fictif (données de scripts/admin-demo.mjs, appels Supabase interceptés) :
+//                         montre les fonctions réservées aux comptes connectés (supervision 24 h/24, #022)
+//   --demo                supervision de démonstration : sites fictifs et un mois de mesures simulées,
+//                         servis par le vrai code du processus principal (preview/demo-main.mjs)
 // Le script signale aussi les erreurs de la page (exceptions, console, requêtes en échec) et se termine
 // en erreur si une exception survient : il sert de test rapide de l'interface.
 import { spawnSync } from "node:child_process"
@@ -31,6 +35,7 @@ const SPACES = [
   { slug: "studio", mode: "studio", label: "Studio 3D & Motion", wait: 2500 },
   { slug: "design", mode: "design", label: "NEX-DESIGN" },
   { slug: "securite", mode: "security", label: "Sécurité" },
+  { slug: "desktop", mode: "desktop", label: "Desktop Builder" },
 ]
 const FIRST_RUN = "premier-lancement"
 // Même clé que preview/bridge.js : réglages de NEXORA dans l'aperçu.
@@ -83,6 +88,8 @@ function parseArgs(argv) {
     size: [1440, 900],
     upload: false,
     url: null,
+    demo: false,
+    account: false,
   }
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]
@@ -97,7 +104,11 @@ function parseArgs(argv) {
     else if (arg === "--click") opts.clicks.push(value())
     else if (arg === "--theme") opts.theme = value()
     else if (arg === "--upload") opts.upload = true
-    else if (arg === "--url") opts.url = value()
+    else if (arg === "--demo") opts.demo = true
+    else if (arg === "--compte") {
+      if (value() !== "demo") throw new Error("--compte attend « demo ».")
+      opts.account = true
+    } else if (arg === "--url") opts.url = value()
     else if (arg === "--taille") {
       const m = /^(\d{3,4})x(\d{3,4})$/.exec(value())
       if (!m) throw new Error("--taille attend une valeur comme 1440x900.")
@@ -116,7 +127,7 @@ function parseArgs(argv) {
 
   const everything = opts.screens.includes("tout")
   opts.firstRun = everything || opts.screens.includes(FIRST_RUN)
-  // Sans écran précisé : les 8 espaces. Toujours dans l'ordre du rail.
+  // Sans écran précisé : les 9 espaces. Toujours dans l'ordre du rail.
   opts.spaces =
     everything || opts.screens.length === 0
       ? SPACES
@@ -181,6 +192,85 @@ async function clickByText(page, text) {
   return true
 }
 
+// Compte NEXORA fictif (#022) : session gardée sous la clé du client Supabase de NEXORA (« nexora-auth »),
+// appels Supabase servis par les données de démonstration du back office. Le site « Boutique » de la
+// supervision de démonstration y est surveillé par les serveurs NEXORA.
+async function useDemoAccount(page) {
+  const { demoResponse, demoSession, monitors } = await import(
+    "./admin-demo.mjs"
+  )
+  const servedHead = new Set()
+  await page.evaluateOnNewDocument((s) => {
+    // Seulement la page de NEXORA (pas les cadres des appareils, ni leurs pages data: sans stockage).
+    if (window !== window.top) return
+    if (!localStorage.getItem("nexora-auth"))
+      localStorage.setItem("nexora-auth", s)
+  }, JSON.stringify(demoSession()))
+  const linked = new Map([
+    [
+      "demo-boutique",
+      {
+        id: monitors[0].id,
+        app_site_id: "demo-boutique",
+        active: true,
+        last_status: "up",
+        last_checked_at: new Date(Date.now() - 40000).toISOString(),
+        last_latency_ms: 190,
+        last_error: null,
+        interval_minutes: 1,
+      },
+    ],
+  ])
+  await page.setRequestInterception(true)
+  page.on("request", (req) => {
+    if (req.isInterceptResolutionHandled()) return
+    if (!/\.supabase\.co\//.test(req.url()) || /realtime\/v1/.test(req.url()))
+      return req.continue()
+    const cors = {
+      "access-control-allow-origin": "*",
+      "access-control-allow-headers": "*",
+      "access-control-allow-methods": "*",
+      "access-control-expose-headers": "content-range",
+    }
+    if (req.method() === "OPTIONS")
+      return req.respond({ status: 204, headers: cors })
+    const url = new URL(req.url())
+    const send = (body) =>
+      req.respond({
+        status: 200,
+        headers: { ...cors, "content-type": "application/json" },
+        body: JSON.stringify(body),
+      })
+    if (url.pathname === "/rest/v1/monitors" && req.method() === "GET") {
+      const site = url.searchParams.get("app_site_id") || ""
+      if (site.startsWith("not.is")) return send([...linked.values()])
+      const row = linked.get(site.replace(/^eq\./, ""))
+      return send(row ? [{ id: row.id }] : [])
+    }
+    const res = demoResponse(
+      req.method(),
+      req.url(),
+      req.headers(),
+      req.postData(),
+    )
+    if (!res) return req.continue()
+    if (req.method() === "HEAD") servedHead.add(req)
+    req.respond({
+      status: res.status,
+      headers: { ...cors, ...(res.headers || {}) },
+      ...(req.method() === "HEAD" || res.status === 204
+        ? {}
+        : {
+            body:
+              typeof res.body === "string"
+                ? res.body
+                : JSON.stringify(res.body),
+          }),
+    })
+  })
+  return servedHead
+}
+
 async function main() {
   const opts = parseArgs(process.argv.slice(2))
   if (!fs.existsSync(CHROMIUM))
@@ -212,26 +302,43 @@ async function main() {
     const theme = opts.theme === "sombre" ? { appTheme: "dark" } : {}
     const seed = opts.firstRun ? theme : { ...theme, ...SETUP_DONE }
     await page.evaluateOnNewDocument(
-      (key, value) => {
+      (key, value, demo) => {
+        // Seulement la page de NEXORA (version web, #025 : les appareils affichent des iframes).
+        if (window !== window.top) return
         if (!localStorage.getItem(key)) localStorage.setItem(key, value)
+        // Même clé que preview/bridge.js (mode démonstration de la supervision).
+        if (demo) localStorage.setItem("nexora-preview:demo", "supervision")
       },
       SETTINGS_KEY,
       JSON.stringify(seed),
+      opts.demo,
     )
+    // Requêtes HEAD servies par l'interception : abouties, mais signalées « annulées » par Puppeteer.
+    const servedHead = opts.account ? await useDemoAccount(page) : new Set()
     let where = "démarrage"
     page.on("pageerror", (err) =>
       issues.push({ where, kind: "exception", text: err.message }),
     )
+    // Compte fictif : le bac à sable bloque le WebSocket du temps réel de Supabase (attendu).
+    const accountNoise = (text) =>
+      opts.account && /supabase\.co\/realtime\/v1\/websocket/.test(text)
     page.on("console", (msg) => {
-      if (msg.type() === "error" && !NOISE.test(msg.text()))
+      if (
+        msg.type() === "error" &&
+        !NOISE.test(msg.text()) &&
+        !accountNoise(msg.text())
+      )
         issues.push({ where, kind: "console", text: msg.text() })
     })
-    page.on("requestfailed", (req) =>
-      issues.push({
-        where,
-        kind: "requête",
-        text: `${req.url()} (${req.failure()?.errorText})`,
-      }),
+    page.on(
+      "requestfailed",
+      (req) =>
+        !servedHead.has(req) &&
+        issues.push({
+          where,
+          kind: "requête",
+          text: `${req.url()} (${req.failure()?.errorText})`,
+        }),
     )
 
     await page.goto(url, { waitUntil: "load", timeout: 30000 })

@@ -15,7 +15,7 @@ export const SUPABASE_ANON =
 /** Identifiant du projet Supabase (sous-domaine de l'adresse). */
 export const PROJECT_REF = new URL(SUPABASE_URL).hostname.split(".")[0]
 /** Adresse publique de NEXORA sur le web, utilisée par l'application pour les liens reçus par e-mail. */
-export const NEXORA_WEB_URL = "https://trdgi4djyds.github.io/nexora/"
+export const NEXORA_WEB_URL = "https://nexora.abrahamtogbonon0.workers.dev/"
 
 // Client non typé à l'appel (les jointures de PostgREST sont décrites par des chaînes) ; les lignes
 // sont typées avec Row<'table'>.

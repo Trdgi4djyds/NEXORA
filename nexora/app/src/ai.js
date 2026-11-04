@@ -225,6 +225,72 @@ class AI {
     if (c) c.abort();
     return true;
   }
+
+  // NEXORA #011 : image générée ou retouchée par l'IA (remplissage génératif de NEX-DESIGN).
+  // OpenAI : modèle d'image (édition avec masque si une image est fournie) ; Gemini : modèle « image ».
+  async image({ prompt, image, mask, size = '1024x1024' }) {
+    const c = this.conf();
+    const toBuf = (u) => Buffer.from(String(u).split(',')[1] || '', 'base64');
+    if (c.def.kind === 'gemini') {
+      const list = (this.data.providers[c.id] || {}).models || [];
+      const mdl = list.find((m) => /image/.test(m) && /flash/.test(m)) || 'gemini-2.5-flash-image';
+      const parts = [{ text: prompt }];
+      if (image) parts.push({ inlineData: { mimeType: 'image/png', data: String(image).split(',')[1] } });
+      if (mask) parts.push({ text: 'Le second visuel est un masque : ne modifie que les zones blanches.' }, { inlineData: { mimeType: 'image/png', data: String(mask).split(',')[1] } });
+      const r = await this.fetch(`${c.base}/models/${encodeURIComponent(mdl)}:generateContent?key=${encodeURIComponent(c.key)}`, {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseModalities: ['TEXT', 'IMAGE'] } }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(`${c.def.label} : ${(j.error && j.error.message) || `HTTP ${r.status}`}`);
+      const part = ((((j.candidates || [])[0] || {}).content || {}).parts || []).find((p) => p.inlineData && p.inlineData.data);
+      if (!part) throw new Error('Le modèle n’a pas renvoyé d’image : choisis un modèle Gemini « image ».');
+      return { dataUrl: `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}` };
+    }
+    if (c.id !== 'openai' && c.id !== 'openrouter') throw new Error(`${c.def.label} ne génère pas d’images : connecte OpenAI ou Google Gemini dans les réglages de l’IA.`);
+    let r;
+    if (image) {
+      const form = new FormData();
+      form.append('model', 'gpt-image-1');
+      form.append('prompt', prompt);
+      form.append('size', size);
+      form.append('image', new Blob([toBuf(image)], { type: 'image/png' }), 'image.png');
+      if (mask) form.append('mask', new Blob([toBuf(mask)], { type: 'image/png' }), 'masque.png');
+      r = await this.fetch(`${c.base}/images/edits`, { method: 'POST', headers: { authorization: `Bearer ${c.key}` }, body: form });
+    } else {
+      r = await this.fetch(`${c.base}/images/generations`, { method: 'POST', headers: this.headers(c), body: JSON.stringify({ model: 'gpt-image-1', prompt, size }) });
+    }
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(`${c.def.label} : ${(j.error && (j.error.message || j.error)) || `HTTP ${r.status}`}`);
+    const d = (j.data || [])[0] || {};
+    if (d.b64_json) return { dataUrl: `data:image/png;base64,${d.b64_json}` };
+    if (d.url) {
+      const img = await this.fetch(d.url);
+      return { dataUrl: `data:image/png;base64,${Buffer.from(await img.arrayBuffer()).toString('base64')}` };
+    }
+    throw new Error('Aucune image reçue.');
+  }
+
+  // NEXORA #011 : transcription d'une voix-off ou d'une musique (sous-titres automatiques du Studio).
+  // OpenAI (whisper-1) et Groq (whisper-large-v3) ; horodatage par segment et par mot.
+  async transcribe({ data, mime = 'audio/wav', name = 'audio.wav', language = 'fr' }) {
+    const c = this.conf();
+    if (c.id !== 'openai' && c.id !== 'groq') throw new Error(`${c.def.label} ne transcrit pas l’audio : connecte OpenAI ou Groq (gratuit) dans les réglages de l’IA.`);
+    const form = new FormData();
+    form.append('model', c.id === 'groq' ? 'whisper-large-v3' : 'whisper-1');
+    form.append('response_format', 'verbose_json');
+    form.append('timestamp_granularities[]', 'segment');
+    form.append('timestamp_granularities[]', 'word');
+    if (language) form.append('language', language);
+    form.append('file', new Blob([Buffer.from(data)], { type: mime }), name);
+    const r = await this.fetch(`${c.base}/audio/transcriptions`, { method: 'POST', headers: { authorization: `Bearer ${c.key}` }, body: form });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(`${c.def.label} : ${(j.error && (j.error.message || j.error)) || `HTTP ${r.status}`}`);
+    return {
+      text: j.text || '',
+      segments: (j.segments || []).map((s) => ({ start: s.start, end: s.end, text: String(s.text || '').trim() })),
+      words: (j.words || []).map((w) => ({ start: w.start, end: w.end, word: w.word })),
+    };
+  }
 }
 
 // Messages d'erreur compréhensibles (le détail technique reste entre parenthèses).
@@ -267,6 +333,8 @@ function register({
   ipcMain.handle('ai:models', wrap((a) => ai.models(a.provider)));
   ipcMain.handle('ai:chat', wrap((a) => ai.chat(a)));
   ipcMain.handle('ai:cancel', wrap((a) => ai.cancel(a.id)));
+  ipcMain.handle('ai:image', wrap((a) => ai.image(a)));
+  ipcMain.handle('ai:transcribe', wrap((a) => ai.transcribe(a)));
   const test = async (provider) => {
     try {
       const r = await ai.chat({

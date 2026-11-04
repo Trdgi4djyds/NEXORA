@@ -1,9 +1,9 @@
 {
   "$comment": "Configuration attendue du projet Supabase de NEXORA. Lue par le back office (section Supabase) et par scripts/supabase.mjs.",
   "projectRef": "dcwfgnwaxsrtuvomttbp",
-  "siteUrl": "https://trdgi4djyds.github.io/nexora/",
+  "siteUrl": "https://nexora.abrahamtogbonon0.workers.dev/",
   "redirectUrls": [
-    "https://trdgi4djyds.github.io/nexora/**",
+    "https://nexora.abrahamtogbonon0.workers.dev/**",
     "http://localhost:5173/**",
     "http://127.0.0.1:5173/**",
     "http://localhost:4173/**"
@@ -29,5 +29,5 @@
     { "id": "assets", "public": false },
     { "id": "exports", "public": false }
   ],
-  "cronFunctions": ["run_monitor_checks", "collect_monitor_results", "cleanup_old_data"]
+  "cronFunctions": ["run_monitor_checks", "collect_monitor_results", "cleanup_old_data", "nx_monitor_rollup", "nx_monitor_cleanup"]
 }

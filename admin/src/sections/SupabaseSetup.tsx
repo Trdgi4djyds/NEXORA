@@ -279,10 +279,25 @@ function Migrations({ token }: { token: string }) {
   const ui = useUi()
   const act = useAction()
   const [done, setDone] = useState<string[]>([])
-  const files = Object.entries(MIGRATIONS).map(([path, text]) => ({ name: path.split("/").pop()!, text, desc: (text.split("\n")[0] || "").replace(/^--\s*/, "") }))
+  const files = Object.entries(MIGRATIONS).map(([path, text]) => ({ name: path.split("/").pop()!, text, desc: (text.split("\n")[0] || "").replace(/^--\s*/, "") })).sort((a, b) => a.name.localeCompare(b.name))
   return (
     <div className="card">
-      <div className="card-head"><Icon name="layers" size={16} /><h3>Migrations du dépôt</h3></div>
+      <div className="card-head"><Icon name="layers" size={16} /><h3 className="grow">Migrations du dépôt</h3>
+        {/* NEXORA #025 : toutes les migrations d'un coup, dans l'ordre, arrêt à la première erreur. */}
+        <button className="btn sm primary" disabled={act.busy || !files.length} onClick={async () => {
+          if (!(await ui.confirm({ title: "Appliquer toutes les migrations ?", body: <>Dans l’ordre : {files.map((f) => f.name).join(", ")}. Chacune peut être appliquée plusieurs fois sans effet en double ; en cas d’erreur, les suivantes ne sont pas lancées.</>, confirm: "Tout appliquer" }))) return
+          await act.run(async () => {
+            for (const f of files) {
+              try {
+                await sql(token, f.text)
+              } catch (e) {
+                throw new Error(`${f.name} : ${e instanceof Error ? e.message : String(e)}`)
+              }
+              setDone((d) => (d.includes(f.name) ? d : [...d, f.name]))
+            }
+          }, "Toutes les migrations sont appliquées.")
+        }}>Tout appliquer</button>
+      </div>
       <p className="muted small" style={{ marginTop: 0 }}>Fichiers <code>supabase/migrations/</code>. Chacun peut être appliqué plusieurs fois sans effet en double.</p>
       <div className="list">
         {files.map((f) => (

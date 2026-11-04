@@ -1,5 +1,6 @@
 // `pnpm build` : version web de l'interface NEXORA dans dist/ (publiée par .figma/make/deploy).
-// Même contenu que l'aperçu : l'interface telle quelle et le pont preview/bridge.js.
+// Même contenu que l'aperçu : l'interface telle quelle et le pont preview/bridge.js, plus le mode
+// web de NEXORA (preview/web.js, #025) : compte et synchronisation, appareils affichés par iframe.
 // Le back office web (admin/, React) est assemblé par Vite dans dist/admin/, avec des chemins
 // relatifs : il fonctionne quelle que soit l'adresse de publication (Figma Make, GitHub Pages…).
 // Les arguments passés par Figma Make (par exemple `--mode development`) n'ont pas d'effet ici.
@@ -14,6 +15,8 @@ import {
   RENDERER_DIR,
   ROOT,
   renderPage,
+  WEB_FILE,
+  WEB_PATH,
 } from "../preview/server.mjs"
 
 const OUT_DIR = path.join(ROOT, "dist")
@@ -34,15 +37,43 @@ fs.rmSync(OUT_DIR, { recursive: true, force: true })
 fs.cpSync(RENDERER_DIR, OUT_DIR, { recursive: true })
 fs.mkdirSync(path.dirname(path.join(OUT_DIR, BRIDGE_PATH)), { recursive: true })
 fs.copyFileSync(BRIDGE_FILE, path.join(OUT_DIR, BRIDGE_PATH))
+fs.copyFileSync(WEB_FILE, path.join(OUT_DIR, WEB_PATH))
 for (const [file, data] of Object.entries(PREVIEW_DATA)) {
   fs.writeFileSync(path.join(OUT_DIR, file), JSON.stringify(data()))
 }
-fs.writeFileSync(
-  path.join(OUT_DIR, "index.html"),
-  renderPage({
-    head: noIndex ? ['<meta name="robots" content="noindex, nofollow">'] : [],
-  }),
+
+// Modules du compte NEXORA que dist/main.js ne charge pas en mode web (noms à empreinte).
+const mainJs = fs.readFileSync(
+  path.join(RENDERER_DIR, "dist", "main.js"),
+  "utf8",
 )
+const cloud =
+  /Promise\.all\(\[import\("\.\/(chunks\/session-\w+\.js)"\),import\("\.\/(chunks\/ui-\w+\.js)"\),import\("\.\/(chunks\/sync-\w+\.js)"\)\]\)/.exec(
+    mainJs,
+  )
+if (!cloud)
+  throw new Error(
+    "dist/main.js : chargement du compte NEXORA (session, ui, sync) introuvable.",
+  )
+let page = renderPage({
+  head: [
+    `<script src="${WEB_PATH}" data-cloud="${cloud
+      .slice(1)
+      .map((f) => `dist/${f}`)
+      .join(",")}"></script>`,
+    ...(noIndex ? ['<meta name="robots" content="noindex, nofollow">'] : []),
+  ],
+})
+// Version web seulement : les appareils affichent les sites (et leur fond d'écran, page data:) dans
+// des iframes (nx-webview), que la politique de sécurité de NEXORA (default-src 'self') bloquerait.
+// L'application Windows garde la sienne.
+const csp = "worker-src 'self' blob:"
+if (!page.includes(`${csp}">`))
+  throw new Error(
+    "index.html : politique de sécurité (worker-src) introuvable.",
+  )
+page = page.replace(`${csp}">`, `${csp}; frame-src https: http: data:">`)
+fs.writeFileSync(path.join(OUT_DIR, "index.html"), page)
 if (noIndex)
   fs.writeFileSync(
     path.join(OUT_DIR, "robots.txt"),

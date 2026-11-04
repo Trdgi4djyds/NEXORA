@@ -123,6 +123,28 @@
       onToken: function (cb) { window.addEventListener('vitrinepush', function (e) { if (e.detail && e.detail.type === 'token') cb(e.detail.token); }); },
     },
   };
+  // NEXORA #019 : achats intégrés avec Google Play Billing (si l'application a été construite avec l'option).
+  // products(['pro'], 'inapp' | 'subs') → [{ productId, title, price, offers… }] ; buy('pro', { type, offerToken,
+  // accountId }) → achats ; purchases(type) ; acknowledge(token) ; consume(token) ; onPurchase(cb).
+  var B = window.VitrineBilling;
+  function callB(method, args) {
+    if (!B) return Promise.reject(new Error('Achats intégrés non activés dans cette application'));
+    return new Promise(function (res, rej) {
+      var id = 'b' + (++seq) + '_' + Date.now();
+      pending[id] = { res: res, rej: rej };
+      try { B[method].apply(B, args.concat([id])); } catch (e) { delete pending[id]; rej(e); }
+    });
+  }
+  App.billing = {
+    available: !!B,
+    connect: function () { return callB('connect', []); },
+    products: function (ids, type) { return callB('products', [JSON.stringify([].concat(ids || [])), type === 'subs' ? 'subs' : 'inapp']); },
+    buy: function (productId, opts) { opts = opts || {}; return callB('buy', [String(productId), opts.type === 'subs' ? 'subs' : 'inapp', opts.offerToken || '', opts.accountId ? String(opts.accountId) : '']); },
+    purchases: function (type) { return callB('purchases', [type === 'subs' ? 'subs' : 'inapp']); },
+    acknowledge: function (token) { return callB('acknowledge', [String(token)]); },
+    consume: function (token) { return callB('consume', [String(token)]); },
+    onPurchase: function (cb) { window.addEventListener('nexora-billing', function (e) { if (e.detail && e.detail.type === 'purchase') cb(e.detail.purchases); }); },
+  };
   window.NexoraApp = App;
   window.VitrineApp = App;
 

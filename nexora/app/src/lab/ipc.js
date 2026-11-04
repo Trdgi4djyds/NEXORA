@@ -10,6 +10,8 @@ const { Scraper } = require('./scraper');
 const { NavTester } = require('./tester');
 const { elementCode, elementShot } = require('./elements');
 const { snapUrl } = require('./snap');
+// NEXORA #016 : chaque projet a sa propre session (cookies, stockage, cache) ; les outils utilisent celle du projet ouvert.
+const isolation = require('../isolation');
 
 const THROTTLE = {
   none: { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 },
@@ -28,7 +30,7 @@ function register({
   // NEXORA #005 : avec une adresse, seules les données de ce site sont effacées (cookies, stockage, cache) ;
   // les sessions des autres sites et projets restent intactes. Sans adresse : tout, comme avant.
   ipcMain.handle('lab:clear-session', async (_e, { url } = {}) => {
-    const ses = elSession.fromPartition('persist:vitrine');
+    const ses = elSession.fromPartition(isolation.partition());
     let origin = '';
     try { origin = url ? new URL(url).origin : ''; } catch { origin = ''; }
     if (origin && origin !== 'null') {
@@ -130,7 +132,7 @@ function register({
   ipcMain.handle('lab:fetch', async (_e, { url, method = 'GET', max = 65536 }) => {
     const { net, session } = require('electron');
     try {
-      const r = await net.fetch(url, { method, redirect: 'follow', session: session.fromPartition('persist:vitrine') });
+      const r = await net.fetch(url, { method, redirect: 'follow', session: session.fromPartition(isolation.partition()) });
       let text = '';
       if (method !== 'HEAD') { text = await r.text(); text = text.slice(0, max); }
       return { status: r.status, url: r.url, headers: Object.fromEntries(r.headers), text };
@@ -212,7 +214,7 @@ function register({
     const id = `s${++seq}`;
     const work = fs.mkdtempSync(path.join(os.tmpdir(), 'nexora-site-'));
     const job = new Scraper({
-      url, options, workDir: work, partition: 'persist:vitrine', emit: (p) => send('lab:scrape', { id, ...p }),
+      url, options, workDir: work, partition: isolation.partition(), emit: (p) => send('lab:scrape', { id, ...p }),
     });
     jobs.set(id, { kind: 'scrape', job, work });
     job.run().catch((e) => send('lab:scrape', { id, phase: 'error', error: e.message }));
@@ -247,7 +249,7 @@ function register({
     return true;
   });
   // Capture d'une page à la définition d'un appareil (Studio 3D, publicités, présentations).
-  ipcMain.handle('lab:snap-url', (_e, opts) => snapUrl({ ...opts, chrome: process.versions.chrome }));
+  ipcMain.handle('lab:snap-url', (_e, opts) => snapUrl({ ...opts, partition: isolation.partition(), chrome: process.versions.chrome }));
   ipcMain.handle('lab:reveal', (_e, p) => shell.showItemInFolder(p));
   ipcMain.handle('lab:open-path', (_e, p) => shell.openPath(p));
 
@@ -257,7 +259,7 @@ function register({
   }) => {
     const id = `t${++seq}`;
     const job = new NavTester({
-      url, options, partition: 'persist:vitrine', chrome: process.versions.chrome, emit: (p) => send('lab:test', { id, ...p }),
+      url, options, partition: isolation.partition(), chrome: process.versions.chrome, emit: (p) => send('lab:test', { id, ...p }),
     });
     jobs.set(id, { kind: 'test', job });
     const p = kind === 'scenario' ? job.scenario(steps || [], viewport) : job.explore();

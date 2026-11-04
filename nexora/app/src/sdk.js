@@ -3,7 +3,6 @@
 const { spawn, execFile } = require('child_process');
 
 const IS_WIN = process.platform === 'win32';
-const IS_MAC = process.platform === 'darwin';
 
 /*
  * steps : étapes affichées à l'utilisateur, dans l'ordre.
@@ -192,14 +191,31 @@ const SDKS = {
       linux: [{ text: 'Installe Go en suivant le guide officiel.', url: 'https://go.dev/dl/', label: 'Télécharger Go' }],
     },
   },
+  // NEXORA #016 : Flutter a besoin de Git pour se mettre à jour et récupérer ses paquets.
+  git: {
+    label: 'Git',
+    why: 'Flutter et de nombreux gestionnaires de paquets utilisent Git pour récupérer leur code et leurs dépendances.',
+    check: ['git --version'],
+    url: 'https://git-scm.com/downloads',
+    steps: {
+      win: [{ text: 'Installe Git pour Windows :', cmd: 'winget install Git.Git' }],
+      mac: [{ text: 'Installe Git avec les outils de développement d\'Apple :', cmd: 'xcode-select --install' }],
+      linux: [{ text: 'Installe Git avec le gestionnaire de paquets de ta distribution.', url: 'https://git-scm.com/downloads', label: 'Télécharger Git' }],
+    },
+  },
 };
 
-function stepsFor(id) {
+function stepsFor(id, platform = process.platform) {
   const sdk = SDKS[id];
   if (!sdk) return [];
   const s = sdk.steps;
-  return s.all || (IS_WIN ? s.win : IS_MAC ? s.mac : s.linux) || s.win || [];
+  return s.all || (platform === 'win32' ? s.win : platform === 'darwin' ? s.mac : s.linux) || s.win || [];
 }
+
+// NEXORA #016 : outils installés par NEXORA, toujours placés avant ceux du système (une ancienne
+// version installée sur le PC ne doit pas passer devant la version que NEXORA vient d'installer).
+let preferred = [];
+function setPreferred(dirs) { preferred = (dirs || []).slice(); }
 
 // Sous Windows, une installation faite pendant que NEXORA tourne n'apparaît pas dans son PATH :
 // on relit le PATH du système et de l'utilisateur dans le registre.
@@ -213,7 +229,7 @@ function refreshPath() {
       if (!err && stdout) {
         const current = (process.env.Path || process.env.PATH || '').split(';');
         const fresh = stdout.trim().split(';').map((p) => p.replace(/%([^%]+)%/g, (_m, v) => process.env[v] || `%${v}%`));
-        const merged = [...new Set([...fresh, ...current].filter(Boolean))].join(';');
+        const merged = [...new Set([...preferred, ...fresh, ...current].filter(Boolean))].join(';');
         process.env.Path = merged;
         process.env.PATH = merged;
       }
@@ -267,14 +283,14 @@ async function checkSdks(ids, opts) {
   return out;
 }
 
-function describe(id) {
+function describe(id, platform) {
   const sdk = SDKS[id];
   if (!sdk) return null;
   return {
-    id, label: sdk.label, why: sdk.why, url: sdk.url, steps: stepsFor(id),
+    id, label: sdk.label, why: sdk.why, url: sdk.url, steps: stepsFor(id, typeof platform === 'string' ? platform : undefined),
   };
 }
 
 module.exports = {
-  SDKS, checkSdk, checkSdks, describe, refreshPath,
+  SDKS, checkSdk, checkSdks, describe, refreshPath, setPreferred,
 };

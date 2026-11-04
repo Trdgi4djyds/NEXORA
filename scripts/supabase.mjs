@@ -7,7 +7,7 @@
 //              (--admin <adresse> ajoute l'adresse publiée du back office)
 //   migrer     applique les fichiers de supabase/migrations/ (idempotents)
 //
-// Jeton : SUPABASE_ACCESS_TOKEN, sinon le fichier local « token proj nexora.txt ».
+// Jeton : SUPABASE_ACCESS_TOKEN, sinon le fichier local de jetons (scripts/local-secrets.mjs).
 // Dans le bac à sable de Figma Make, seules les lectures passent (types, verifier) : les écritures
 // (auth, migrer) se font depuis le back office ou un terminal ordinaire.
 import fs from "node:fs"

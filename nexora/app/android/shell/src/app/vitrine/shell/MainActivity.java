@@ -202,6 +202,8 @@ public class MainActivity extends Activity {
             step("event-perm", () -> { if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) requestRuntime(new String[]{Manifest.permission.POST_NOTIFICATIONS}, g -> { }); });
         if (!safeMode) step("push", () -> Push.start(this));
         if (!safeMode) step("remote", this::remoteSettings);
+        // NEXORA #018 : statistiques et plantages en attente, envoyés même en mode simplifié (c'est là qu'ils servent).
+        step("insights", () -> Insights.start(this));
         // Démarrage réussi : 20 s sans fermeture remettent le compteur à zéro.
         ui.postDelayed(() -> getSharedPreferences("vt_crash", MODE_PRIVATE).edit().putInt("count", 0).apply(), 20000);
         if (safeMode) {
@@ -292,6 +294,8 @@ public class MainActivity extends Activity {
                 long now = System.currentTimeMillis();
                 int n = now - sp.getLong("at", 0) < 180000 ? sp.getInt("count", 0) + 1 : 1;
                 sp.edit().putString("trace", trace.length() > 8000 ? trace.substring(0, 8000) : trace).putLong("at", now).putInt("count", n).commit();
+                // NEXORA #018 : rapport de plantage gardé pour le compte NEXORA du propriétaire (si l'option est cochée).
+                Insights.crash(app, th, e);
                 File dir = app.getExternalFilesDir(null);
                 if (dir != null) {
                     try (FileOutputStream out = new FileOutputStream(new File(dir, "nexora-crash.txt"))) {
@@ -801,6 +805,11 @@ public class MainActivity extends Activity {
         cm.setAcceptThirdPartyCookies(web, true);
         web.addJavascriptInterface(new Bridge(), "VitrineNative");
         web.addJavascriptInterface(wtn, "WebToNativeInterface");
+        // NEXORA #019 : achats intégrés (VtBilling, ajouté par le kit d'achats de l'App Builder ; absent sinon).
+        final org.json.JSONObject billing = cfg.raw != null ? cfg.raw.optJSONObject("billing") : null;
+        if (billing != null && billing.optBoolean("enabled", false)) {
+            step("billing", () -> Class.forName("app.vitrine.shell.VtBilling").getMethod("attach", android.app.Activity.class, WebView.class, String.class).invoke(null, this, web, billing.toString()));
+        }
         web.setWebViewClient(new Client());
         web.setWebChromeClient(new Chrome());
         web.setDownloadListener((url, userAgent, disposition, mime, length) -> download(url, userAgent, disposition, mime));
@@ -1090,6 +1099,7 @@ public class MainActivity extends Activity {
             // Android fermerait toute l'application. La WebView morte est retirée et détruite, puis l'activité
             // est recréée ; au-delà de deux arrêts en une minute, on affiche la page hors ligne au lieu de boucler.
             note("renderer", new RuntimeException(detail != null && detail.didCrash() ? "plantage du moteur de rendu" : "moteur de rendu arrêté par le système"));
+            Insights.error(getApplicationContext(), "renderer", detail != null && detail.didCrash() ? "plantage du moteur de rendu" : "moteur de rendu arrêté par le système");
             try {
                 if (view.getParent() instanceof android.view.ViewGroup) ((android.view.ViewGroup) view.getParent()).removeView(view);
                 view.destroy();

@@ -1,0 +1,162 @@
+/* NEXORA #023 : Desktop Builder. Mise en page et cartes de l'App Builder (.ab-*), compléments propres à l'espace.
+   Les aperçus (fenêtre Windows, installateur, bureau) sont des contenus : ils gardent les couleurs du logiciel
+   simulé (clair ou sombre selon son réglage), comme l'application simulée de l'App Builder. */
+:root { --sp-desktop: linear-gradient(135deg, #7c3aed, #2563eb); --spc-desktop: #6d28d9; }
+.rail-spaces > button[data-mode='desktop'] { --sp: var(--sp-desktop); --spc: var(--spc-desktop); }
+.tb-space-ic[data-space='desktop'] { background: var(--sp-desktop); }
+.hm-space[data-space='desktop'] .hm-space-ic { background: var(--sp-desktop) !important; }
+body[data-mode='desktop'] { --space-c: var(--spc-desktop); }
+
+.desktop-pane { display: flex; min-height: 0; min-width: 0; }
+.desktop-pane[hidden] { display: none !important; }
+.dsk .ab-tools { padding: 0; }
+.dsk .ab-tools .ab-banner { margin: 14px 28px 0; }
+.dsk .ab-form .ab-banner { margin: 0 0 14px; }
+.dsk .icon-btn.small { width: 30px; height: 30px; border-radius: var(--r-sm); display: grid; place-items: center; color: var(--text-2); }
+.dsk .icon-btn.small:hover { background: var(--fill); color: var(--text); }
+.dsk .seg > button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.dsk .ab-card .seg + .ab-hint { margin-top: -2px; }
+.dsk .tog-row.dsk-off { opacity: .5; }
+.dsk textarea.input { resize: vertical; min-height: 72px; padding: 8px 10px; line-height: 1.45; height: auto; font: inherit; }
+.dsk input[type=range] { width: 100%; accent-color: var(--accent); }
+.dsk .ab-pick .ab-row { flex-wrap: nowrap; flex-shrink: 0; }
+
+/* Puces : domaines, connexions, langues */
+.dsk-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.dsk-domain { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 4px 0 10px; border-radius: var(--r-lg); background: var(--info-bg, var(--surface)); box-shadow: inset 0 0 0 .5px var(--info-edge, var(--sep)); font: 12px/1 var(--font-code); }
+.dsk-domain.fixed { padding-right: 10px; color: var(--text-2); }
+.dsk-domain button { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; color: var(--text-2); }
+.dsk-domain button:hover { background: var(--fill); color: var(--bad); }
+.dsk-inspect { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 8px 10px; border-radius: var(--r); background: var(--info-bg, var(--input)); box-shadow: inset 0 0 0 .5px var(--info-edge, var(--sep)); font-size: 12px; }
+.dsk-inspect span { display: inline-flex; align-items: center; gap: 5px; }
+.dsk-inspect small { color: var(--text-2); flex-basis: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsk-pre { font: 12px var(--font-code); color: var(--text-2); white-space: nowrap; }
+
+/* Icône */
+.dsk-icon-edit { display: grid; grid-template-columns: 132px 1fr; gap: 18px; align-items: start; }
+.dsk-icon-big { width: 132px; height: 132px; border-radius: var(--r-lg); display: grid; place-items: center;
+  background: repeating-conic-gradient(var(--fill) 0 25%, transparent 0 50%) 50% / 16px 16px; box-shadow: inset 0 0 0 .5px var(--sep); }
+.dsk-icon-big img { width: 112px; height: 112px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.18)); }
+.dsk-icon-ctl { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.dsk-logos { display: flex; flex-wrap: wrap; gap: 6px; }
+.dsk-logo { width: 44px; height: 44px; border-radius: var(--r); display: grid; place-items: center; background: var(--info-bg, var(--input)); box-shadow: inset 0 0 0 .5px var(--info-edge, var(--sep)); color: var(--text-2); }
+.dsk-logo:hover { box-shadow: inset 0 0 0 2px var(--accent); }
+.dsk-logo img { max-width: 32px; max-height: 32px; }
+.dsk-icon-sizes { display: flex; gap: 14px; flex-wrap: wrap; }
+.dsk-icon-sizes figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.dsk-sz { width: 64px; height: 58px; display: grid; place-items: center; border-radius: var(--r-sm); }
+.dsk-sz.light { background: #f3f3f3; box-shadow: inset 0 0 0 .5px rgba(0,0,0,.08); }
+.dsk-sz.dark { background: #202020; }
+.dsk-sz img { image-rendering: auto; }
+.dsk-icon-sizes figcaption { font-size: 10.5px; color: var(--text-2); }
+
+/* Autorisations et formats */
+.dsk-perm { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 7px 0; }
+.dsk-perm + .dsk-perm { border-top: .5px solid var(--sep); }
+.dsk-perm b { font-weight: 560; font-size: 12.5px; display: block; }
+.dsk-perm small { color: var(--text-2); font-size: 11px; line-height: 1.35; display: block; }
+.dsk-perm .seg > button { padding: 0 10px; font-size: 11.5px; }
+.dsk-formats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.dsk-format { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r); background: var(--info-bg, var(--input)); box-shadow: inset 0 0 0 .5px var(--info-edge, var(--sep)); cursor: pointer; }
+.dsk-format:has(input:checked) { box-shadow: inset 0 0 0 2px var(--accent); }
+.dsk-format input { accent-color: var(--accent); margin: 2px 0 0; }
+.dsk-format b { display: block; font-size: 12.5px; font-weight: 600; }
+.dsk-format small { display: block; color: var(--text-2); font-size: 11px; line-height: 1.35; }
+
+/* Construction */
+.dsk-env, .dsk-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.dsk-env li, .dsk-steps li { display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; }
+.dsk-env li span, .dsk-steps li span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.dsk-env li small, .dsk-steps li small { color: var(--text-2); font-size: 11px; }
+.dsk-env li.ok > .ico, .dsk-steps li.done > .ico { color: var(--ok); }
+.dsk-env li.todo > .ico { color: var(--accent); }
+.dsk-steps li { color: var(--text-2); }
+.dsk-steps li.done, .dsk-steps li.now { color: var(--text); }
+.dsk-steps li.now > .ico { color: var(--accent); animation: dsk-spin 1.2s linear infinite; }
+.dsk-steps li.bad > .ico { color: var(--bad); }
+@keyframes dsk-spin { to { transform: rotate(360deg); } }
+.dsk-summary { margin: 0; font-size: 12.5px; color: var(--text-2); }
+.dsk-summary b { color: var(--text); }
+.dsk-files { display: flex; flex-direction: column; gap: 6px; }
+.dsk-file { display: flex; gap: 8px; align-items: center; padding: 7px 8px 7px 10px; border-radius: var(--r); background: var(--info-bg, var(--input)); box-shadow: inset 0 0 0 .5px var(--info-edge, var(--sep)); }
+.dsk-file > .ico { color: var(--accent); flex-shrink: 0; }
+.dsk-file > span { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.dsk-file b { font-size: 12px; font-weight: 560; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsk-file small { font-size: 11px; color: var(--text-2); }
+.dsk-hist { display: flex; flex-direction: column; }
+.dsk-hist > div { display: grid; grid-template-columns: 70px 1fr auto; gap: 8px; align-items: center; padding: 6px 0; font-size: 12px; }
+.dsk-hist > div + div { border-top: .5px solid var(--sep); }
+.dsk-hist small { color: var(--text-2); font-size: 11px; }
+.dsk-build .ab-result .dsk-file { padding: 5px 6px 5px 8px; }
+.dsk-build .ab-result p { margin: 0; font-size: 12px; }
+.dsk-build-formats { flex-wrap: wrap; }
+.dsk-build-sum { font-size: 11.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* Aperçu : fenêtre Windows 11 */
+.dsk-prev-seg { display: block; }
+.dsk-stage { flex: 1; min-height: 0; overflow: auto; padding: 18px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.dsk-win-wrap { width: 100%; }
+.dsk-win { width: 100%; aspect-ratio: var(--ratio, 16/10); max-height: 62vh; display: flex; flex-direction: column; border-radius: 8px; overflow: hidden; background: #f3f3f3; color: #1b1b1b;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.12), 0 18px 40px rgba(0,0,0,.22), 0 4px 10px rgba(0,0,0,.12); }
+.dsk-win.dark { background: #202020; color: #f3f3f3; box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 18px 40px rgba(0,0,0,.45); }
+.dsk-title { height: 28px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding-left: 10px; font: 11px/1 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
+.dsk-title img { width: 14px; height: 14px; }
+.dsk-title span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsk-title .cap { width: 40px; height: 28px; display: grid; place-items: center; opacity: .8; }
+.dsk-menubar { display: flex; gap: 2px; padding: 0 6px 3px; font: 11px "Segoe UI", system-ui, sans-serif; }
+.dsk-menubar span { padding: 3px 7px; border-radius: 4px; }
+.dsk-content { flex: 1; min-height: 0; position: relative; overflow: hidden; background: var(--wbg, #fff); }
+.dsk-wv { position: absolute; left: 0; top: 0; transform-origin: 0 0; border: 0; z-index: 1; }
+.dsk-wv-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 12px; text-align: center; color: var(--wink, #4a4a55); font: 12px "Segoe UI", system-ui, sans-serif; }
+.dsk-wv-empty img { width: 48px; height: 48px; filter: drop-shadow(0 3px 8px rgba(0,0,0,.18)); }
+.dsk-wv-empty span { font-weight: 600; }
+.dsk-wv-empty small { font-size: 11px; opacity: .85; max-width: 240px; }
+.dsk-dim { margin: 0; font-size: 11px; color: var(--text-2); text-align: center; line-height: 1.45; }
+
+/* Aperçu : assistant d'installation NSIS */
+.dsk-inst { width: 100%; max-width: 330px; background: #f0f0f0; color: #000; border-radius: 6px; overflow: hidden; font: 10.5px/1.4 "Segoe UI", Tahoma, system-ui, sans-serif;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.18), 0 16px 34px rgba(0,0,0,.24); }
+.dsk-inst-title { display: flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; background: #fff; border-bottom: 1px solid #dcdcdc; }
+.dsk-inst-title img { width: 13px; height: 13px; }
+.dsk-inst-body { display: grid; grid-template-columns: 41% 1fr; background: #fff; }
+.dsk-sidebar { width: 100%; height: auto; display: block; }
+.dsk-inst-text { padding: 10px 10px 8px; display: flex; flex-direction: column; gap: 6px; }
+.dsk-inst-text b { font-size: 12.5px; line-height: 1.25; }
+.dsk-inst-text p { margin: 0; color: #222; }
+.dsk-inst-foot { display: flex; gap: 6px; align-items: center; padding: 8px; border-top: 1px solid #dcdcdc; }
+.dsk-inst-foot span { flex: 1; color: #6d6d6d; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsk-inst-foot i, .dsk-apps-row i { font-style: normal; padding: 3px 10px; border-radius: 3px; background: #fdfdfd; box-shadow: inset 0 0 0 1px #adadad; }
+.dsk-inst-one { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 14px 18px; background: #fff; text-align: center; }
+.dsk-inst-one img { width: 44px; height: 44px; }
+.dsk-inst-one b { font-size: 13px; }
+.dsk-inst-one .ab-bar { width: 100%; background: #e6e6e6; }
+.dsk-inst-one .ab-bar i { background: #06b025; }
+
+/* Aperçu : bureau, menu Démarrer, barre des tâches, paramètres */
+.dsk-desk { position: relative; width: 100%; aspect-ratio: 16/10; border-radius: 8px; overflow: hidden; background: radial-gradient(120% 90% at 20% 10%, #a5c8ff, #4f7ee8 45%, #2c4ca8);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.14), 0 14px 30px rgba(0,0,0,.2); font: 10.5px "Segoe UI", system-ui, sans-serif; color: #fff; }
+.dsk-desk.dark { background: radial-gradient(120% 90% at 20% 10%, #3b4d7a, #1d2747 50%, #0d1226); }
+.dsk-shortcut { position: absolute; left: 12px; top: 12px; width: 64px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
+.dsk-shortcut img { width: 34px; height: 34px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
+.dsk-start { position: absolute; left: 50%; bottom: 36px; transform: translateX(-50%); width: 62%; padding: 8px; border-radius: 8px; background: rgba(243,243,243,.96); color: #1b1b1b; box-shadow: 0 8px 24px rgba(0,0,0,.3); display: flex; flex-direction: column; gap: 6px; }
+.dsk-desk.dark .dsk-start { background: rgba(36,36,36,.97); color: #f3f3f3; }
+.dsk-start-search { display: flex; gap: 6px; align-items: center; height: 22px; padding: 0 8px; border-radius: 11px; background: #fff; box-shadow: inset 0 -1px 0 #0067c0; color: #333; }
+.dsk-desk.dark .dsk-start-search { background: #2d2d2d; color: #ddd; }
+.dsk-start-hit { display: flex; gap: 8px; align-items: center; padding: 6px; border-radius: 6px; background: rgba(0,0,0,.05); }
+.dsk-desk.dark .dsk-start-hit { background: rgba(255,255,255,.07); }
+.dsk-start-hit img { width: 26px; height: 26px; }
+.dsk-start-hit span { display: flex; flex-direction: column; }
+.dsk-start-hit small { opacity: .7; }
+.dsk-taskbar { position: absolute; left: 0; right: 0; bottom: 0; height: 28px; display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(243,243,243,.92); color: #0067c0; }
+.dsk-desk.dark .dsk-taskbar { background: rgba(28,28,28,.94); color: #4cc2ff; }
+.dsk-taskbar img { width: 18px; height: 18px; }
+.dsk-taskbar img.on { padding-bottom: 2px; border-bottom: 2px solid currentColor; }
+.dsk-taskbar .tray { position: absolute; right: 8px; display: flex; align-items: center; gap: 6px; color: #1b1b1b; font-size: 10px; }
+.dsk-desk.dark .dsk-taskbar .tray { color: #f3f3f3; }
+.dsk-taskbar .tray img { width: 13px; height: 13px; border: 0; padding: 0; }
+.dsk-apps-row { width: 100%; display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 6px; background: #fbfbfb; color: #1b1b1b; box-shadow: 0 0 0 1px rgba(0,0,0,.1); font: 11px "Segoe UI", system-ui, sans-serif; }
+.dsk-apps-row img { width: 22px; height: 22px; }
+.dsk-apps-row span { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.dsk-apps-row small { color: #5d5d5d; }
+
+@media (max-width: 1180px) { .dsk-icon-edit { grid-template-columns: 1fr; } }
