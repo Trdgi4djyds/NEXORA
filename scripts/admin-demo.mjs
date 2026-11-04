@@ -309,6 +309,11 @@ export const app_config = [
   ["signups_enabled", true, "Les nouvelles inscriptions sont ouvertes"],
   ["support_email", "support@nexora.app", "Adresse affichée dans l’aide"],
   ["min_app_version", "1.0.0", "Version minimale de l’application Windows"],
+  [
+    "email_templates",
+    {},
+    "Modèles des e-mails envoyés par la base (NEXORA #031), enregistrés depuis le back office → E-mails",
+  ],
 ].map(([key, value, description], i) => ({
   key,
   value,
@@ -748,6 +753,198 @@ export const usage_daily = [
   value,
 }))
 
+// Factures, émetteur et journal des envois Brevo (#031).
+export const nx_private_config = [
+  {
+    key: "invoice_issuer",
+    value: {
+      name: "IPPOO",
+      address: "Cotonou, Bénin",
+      email: "ippooz.up.2@gmail.com",
+      phone: "+229 97 00 00 00",
+      website: "https://nexora.abrahamtogbonon0.workers.dev/",
+      tax_id: "IFU 0202000000000",
+      vat_note: "TVA non applicable",
+      currency: "EUR",
+      tax_rate: 0,
+      due_days: 30,
+      prefix: "NX",
+      payment:
+        "Virement bancaire — IBAN BJ00 0000 0000 0000 0000 0000\nou Mobile Money : +229 97 00 00 00",
+      footer: "Merci de ta confiance.",
+    },
+    updated_at: ago(2),
+    updated_by: null,
+  },
+]
+const day = (days) => ago(days).slice(0, 10)
+const invTotals = (inv) => {
+  const sub = (inv.lines || []).reduce(
+    (t, l) =>
+      t + Math.round((Number(l.qty) || 0) * (Number(l.unit_cents) || 0)),
+    0,
+  )
+  const tax = Math.round((sub * (Number(inv.tax_rate) || 0)) / 100)
+  return { ...inv, subtotal_cents: sub, tax_cents: tax, total_cents: sub + tax }
+}
+const invDefs = [
+  // [numéro, personne, espace, statut, émise il y a (jours), taux de TVA, lignes]
+  [
+    1,
+    4,
+    4,
+    "payee",
+    34,
+    0,
+    [
+      ["NEXORA Équipe — abonnement mensuel (octobre 2026)", 1, 2900],
+      ["Sièges supplémentaires", 3, 500],
+    ],
+  ],
+  [2, 2, 2, "payee", 30, 0, [["NEXORA Pro — abonnement annuel", 1, 9000]]],
+  [
+    3,
+    3,
+    3,
+    "envoyee",
+    41,
+    20,
+    [["NEXORA Pro — abonnement mensuel (septembre 2026)", 1, 900]],
+  ],
+  [
+    4,
+    6,
+    6,
+    "envoyee",
+    3,
+    0,
+    [
+      ["NEXORA Pro — abonnement mensuel (novembre 2026)", 1, 900],
+      [
+        "Accompagnement à la mise en ligne de la boutique et réglage de la supervision 24 h/24",
+        2,
+        4000,
+      ],
+    ],
+  ],
+  [
+    null,
+    4,
+    4,
+    "brouillon",
+    0,
+    0,
+    [
+      ["NEXORA Équipe — abonnement mensuel (novembre 2026)", 1, 2900],
+      ["Sièges supplémentaires", 4, 500],
+    ],
+  ],
+]
+export const invoices = invDefs.map(([n, u, o, status, days, rate, lines], i) =>
+  invTotals({
+    id: id(900 + i),
+    number: n ? `NX-2026-${String(n).padStart(4, "0")}` : null,
+    status,
+    user_id: P(u).id,
+    org_id: O(o).id,
+    customer: {
+      name: P(u).full_name,
+      company: O(o).personal ? "" : O(o).name,
+      email: P(u).email,
+      address: [
+        "12 rue des Lilas\n75011 Paris, France",
+        "4 place Bellecour\n69002 Lyon, France",
+        "Haie Vive\nCotonou, Bénin",
+      ][i % 3],
+    },
+    lines: lines.map(([label, qty, unit_cents]) => ({
+      label,
+      qty,
+      unit_cents,
+    })),
+    currency: "EUR",
+    tax_rate: rate,
+    issued_at: n ? day(days) : null,
+    due_at: n ? day(days - 30) : null,
+    paid_at: status === "payee" ? ago(days - 4) : null,
+    notes: "",
+    issuer: n ? nx_private_config[0].value : null,
+    sent_at: n ? ago(days - 0.01) : null,
+    sent_to: n ? P(u).email : null,
+    created_by: P(0).id,
+    created_at: ago(days + 0.1),
+    updated_at: ago(Math.max(days - 4, 0)),
+  }),
+)
+export const nx_email_log = [
+  ["facture", P(6).email, 3],
+  ["alerte", null, 4.2],
+  ["maj", P(2).email, 9],
+  ["maj", P(4).email, 9],
+  ["exemple", P(0).email, 9.5],
+  ["test", null, 26],
+  ["facture", P(3).email, 41],
+].map(([kind, to, hours], i) => ({
+  id: 700 + i,
+  user_id: null,
+  request_id: 4000 + i,
+  kind,
+  to_email: to,
+  created_at: ago(hours / 24),
+}))
+// Lignes modifiables pendant une capture (création, enregistrement, suppression).
+const MUTABLE = new Set(["invoices", "nx_private_config"])
+function demoMutate(table, method, params, postData) {
+  const rows = TABLES[table]
+  const body = JSON.parse(postData || "null")
+  const stamp = new Date().toISOString()
+  if (method === "POST") {
+    return (Array.isArray(body) ? body : [body]).map((b) => {
+      const key = table === "nx_private_config" ? "key" : "id"
+      const found = b[key] && rows.find((r) => r[key] === b[key])
+      if (found) return Object.assign(found, b, { updated_at: stamp })
+      const row =
+        table === "invoices"
+          ? invTotals({
+              id: crypto.randomUUID(),
+              number: null,
+              status: "brouillon",
+              user_id: null,
+              org_id: null,
+              customer: {},
+              lines: [],
+              currency: "EUR",
+              tax_rate: 0,
+              issued_at: null,
+              due_at: null,
+              paid_at: null,
+              notes: "",
+              issuer: null,
+              sent_at: null,
+              sent_to: null,
+              created_by: P(0).id,
+              created_at: stamp,
+              updated_at: stamp,
+              ...b,
+            })
+          : { updated_at: stamp, updated_by: null, ...b }
+      rows.unshift(row)
+      return row
+    })
+  }
+  const hit = filterRows(rows, params)
+  for (const r of hit) {
+    if (method === "DELETE") rows.splice(rows.indexOf(r), 1)
+    else
+      Object.assign(
+        r,
+        table === "invoices" ? invTotals({ ...r, ...body }) : body,
+        { updated_at: stamp },
+      )
+  }
+  return hit
+}
+
 const TABLES = {
   profiles,
   plans,
@@ -776,6 +973,9 @@ const TABLES = {
   usage_daily,
   notifications: [],
   user_settings: [],
+  invoices,
+  nx_private_config,
+  nx_email_log,
 }
 
 function rpc(name, args) {
@@ -870,6 +1070,60 @@ function rpc(name, args) {
       ack_at: new Date(now).toISOString(),
     }
   if (name === "admin_broadcast") return 9
+  // E-mails et factures (#031).
+  if (name === "nx_email_templates_save") {
+    const row = app_config.find((r) => r.key === "email_templates")
+    if (row)
+      Object.assign(row, {
+        value: args.p,
+        updated_at: new Date().toISOString(),
+      })
+    return null
+  }
+  if (name === "nx_email_send_admin")
+    return { ok: true, id: 5001, to: args.p_to }
+  if (name === "nx_email_result")
+    return {
+      status: 201,
+      error: null,
+      content: '{"messageId":"<demo@smtp-relay.mailin.fr>"}',
+    }
+  if (name === "nx_email_broadcast") {
+    const a = args.p_audience
+    const n =
+      a === "me"
+        ? 1
+        : a === "admins"
+          ? count(profiles, (p) => p.app_role !== "user")
+          : a === "all"
+            ? count(profiles, (p) => p.status !== "suspended")
+            : count(subscriptions, (x) => `plan:${x.plan_id}` === a)
+    return args.p_dry_run ? { count: n } : { ok: true, count: n }
+  }
+  if (name === "nx_invoice_issue") {
+    const inv = invoices.find((i) => i.id === args.p_id)
+    if (inv && !inv.number)
+      Object.assign(inv, {
+        number: `NX-2026-${String(invoices.filter((i) => i.number).length + 1).padStart(4, "0")}`,
+        status: "emise",
+        issued_at: day(0),
+        due_at: inv.due_at || day(-30),
+        issuer: nx_private_config[0].value,
+        updated_at: new Date().toISOString(),
+      })
+    return inv || null
+  }
+  if (name === "nx_invoice_send") {
+    const inv = invoices.find((i) => i.id === args.p_id)
+    if (inv)
+      Object.assign(inv, {
+        sent_at: new Date().toISOString(),
+        sent_to: args.p_to,
+        status: inv.status === "emise" ? "envoyee" : inv.status,
+        updated_at: new Date().toISOString(),
+      })
+    return { ok: true, id: 5002, to: args.p_to }
+  }
   return null
 }
 
@@ -1308,6 +1562,14 @@ export function demoResponse(method, rawUrl, headers, postData) {
     const rows = TABLES[tableMatch[1]]
     if (!rows)
       return json({ message: "relation inconnue (démonstration)" }, 404)
+    if (
+      MUTABLE.has(tableMatch[1]) &&
+      ["POST", "PATCH", "DELETE"].includes(method)
+    ) {
+      const out = demoMutate(tableMatch[1], method, url.searchParams, postData)
+      const one = String(headers.accept || "").includes("vnd.pgrst.object")
+      return json(one ? (out[0] ?? null) : out, method === "POST" ? 201 : 200)
+    }
     if (method !== "GET" && method !== "HEAD") return json([], 201)
     const list = filterRows(rows, url.searchParams)
     const limit = Number(url.searchParams.get("limit")) || list.length
@@ -1350,4 +1612,6 @@ export const demoIds = {
   org: O(4).id,
   monitor: monitors[2].id,
   scan: security_scans[1].id,
+  invoice: invoices[3].id,
+  invoiceDraft: invoices[4].id,
 }

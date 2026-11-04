@@ -21,6 +21,8 @@ import { Flags } from "./sections/Flags"
 import { Config } from "./sections/Config"
 import { Audit } from "./sections/Audit"
 import { SupabaseSetup } from "./sections/SupabaseSetup"
+import { Emails } from "./sections/Emails"
+import { Invoices } from "./sections/Invoices"
 
 export type SectionProps = { param?: string }
 type Section = {
@@ -37,6 +39,7 @@ export const SECTIONS: Section[] = [
   { id: "overview", label: "Vue d’ensemble", icon: "grid", group: "Pilotage", view: Overview, desc: "L’activité de NEXORA en un coup d’œil." },
   { id: "users", label: "Utilisateurs", icon: "user", group: "Clients", view: Users, desc: "Comptes, rôles, accès et sécurité." },
   { id: "orgs", label: "Équipes et offres", icon: "group", group: "Clients", view: Orgs, desc: "Espaces, membres et abonnements." },
+  { id: "invoices", label: "Factures", icon: "pdf", group: "Clients", view: Invoices, desc: "Factures PDF aux couleurs de NEXORA, envoyées par e-mail avec Brevo." },
   { id: "devices", label: "Appareils", icon: "laptop", group: "Clients", view: Devices, desc: "Postes Windows et navigateurs connectés." },
   { id: "invitations", label: "Invitations", icon: "mail", group: "Clients", view: Invitations, desc: "Invitations envoyées aux équipes." },
   { id: "content", label: "Contenus", icon: "layers", group: "Contenus", view: Content, desc: "Projets, designs, Studio, planches, partages et commentaires." },
@@ -45,6 +48,7 @@ export const SECTIONS: Section[] = [
   { id: "scans", label: "Audits de sécurité", icon: "shield", group: "Contenus", view: Scans, desc: "Résultats des audits lancés depuis NEXORA." },
   { id: "support", label: "Support", icon: "chat", group: "Relation client", view: Support, desc: "Tickets et conversations avec les utilisateurs." },
   { id: "announce", label: "Annonces et messages", icon: "bell", group: "Relation client", view: Announcements, desc: "Bandeaux d’annonce et messages dans le centre de notifications." },
+  { id: "emails", label: "E-mails", icon: "mail", group: "Relation client", view: Emails, desc: "Modèles des e-mails (comptes, sécurité, alertes, mises à jour, factures), annonces et journal des envois Brevo." },
   { id: "plans", label: "Offres", icon: "star", group: "Produit", view: Plans, desc: "Prix, limites et avantages des offres." },
   { id: "flags", label: "Fonctionnalités", icon: "wand", group: "Produit", view: Flags, desc: "Activation et déploiement progressif des espaces." },
   { id: "config", label: "Configuration", icon: "wrench", group: "Produit", view: Config, desc: "Réglages globaux de l’application." },

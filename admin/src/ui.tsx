@@ -11,6 +11,8 @@ import {
 } from "react"
 import { errText } from "./supabase"
 import { Icon } from "./icons"
+// NEXORA #033 : illustrations de fond des cartes, même générateur que l'application.
+import { attach as attachIllustration } from "../../nexora/app/renderer/nx/cards/illu.js"
 
 /* ---------------------------------------------------------------- Formats */
 
@@ -241,6 +243,8 @@ export function Loaded<T>({
   return <>{children(q.data)}</>
 }
 
+const KPI_TONES = { good: "menthe", warn: "orange", bad: "corail" } as const
+
 export function Kpi({
   label,
   value,
@@ -256,8 +260,17 @@ export function Kpi({
   icon?: string
   onClick?: () => void
 }) {
+  // Illustration de fond (NEXORA #033) : motif et teinte tirés au hasard à chaque ouverture du back
+  // office, différents d'une carte à l'autre ; teinte imposée pour les états (bon, attention, alerte).
+  const host = useRef<HTMLElement | null>(null)
+  const layer = useRef<HTMLSpanElement | null>(null)
+  useEffect(() => {
+    if (!host.current || !layer.current) return
+    return attachIllustration(host.current, { key: `kpi:${label}`, tone: tone ? KPI_TONES[tone] : undefined, layer: layer.current })
+  }, [label, tone])
   const inner = (
     <>
+      <span className="nxi" aria-hidden="true" ref={layer} />
       <small>
         {icon && <Icon name={icon} size={13} />}
         {label}
@@ -267,11 +280,11 @@ export function Kpi({
     </>
   )
   return onClick ? (
-    <button className={`kpi ${tone}`} onClick={onClick}>
+    <button className={`kpi ${tone}`} onClick={onClick} ref={(el) => { host.current = el }}>
       {inner}
     </button>
   ) : (
-    <div className={`kpi ${tone}`}>{inner}</div>
+    <div className={`kpi ${tone}`} ref={(el) => { host.current = el }}>{inner}</div>
   )
 }
 

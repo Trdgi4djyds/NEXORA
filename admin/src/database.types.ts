@@ -543,6 +543,81 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer: Json
+          due_at: string | null
+          id: string
+          issued_at: string | null
+          issuer: Json | null
+          lines: Json
+          notes: string
+          number: string | null
+          org_id: string | null
+          paid_at: string | null
+          sent_at: string | null
+          sent_to: string | null
+          status: string
+          subtotal_cents: number
+          tax_cents: number
+          tax_rate: number
+          total_cents: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer?: Json
+          due_at?: string | null
+          id?: string
+          issued_at?: string | null
+          issuer?: Json | null
+          lines?: Json
+          notes?: string
+          number?: string | null
+          org_id?: string | null
+          paid_at?: string | null
+          sent_at?: string | null
+          sent_to?: string | null
+          status?: string
+          subtotal_cents?: number
+          tax_cents?: number
+          tax_rate?: number
+          total_cents?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          customer?: Json
+          due_at?: string | null
+          id?: string
+          issued_at?: string | null
+          issuer?: Json | null
+          lines?: Json
+          notes?: string
+          number?: string | null
+          org_id?: string | null
+          paid_at?: string | null
+          sent_at?: string | null
+          sent_to?: string | null
+          status?: string
+          subtotal_cents?: number
+          tax_cents?: number
+          tax_rate?: number
+          total_cents?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       monitor_checks: {
         Row: {
           checked_at: string
@@ -736,6 +811,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      nx_email_log: {
+        Row: {
+          created_at: string
+          id: number
+          kind: string
+          request_id: number | null
+          to_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          kind?: string
+          request_id?: number | null
+          to_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          kind?: string
+          request_id?: number | null
+          to_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      nx_private_config: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
       }
       organization_members: {
         Row: {
@@ -1468,6 +1591,25 @@ export type Database = {
           token: string
         }[]
       }
+      nx_email_broadcast: {
+        Args: { p_audience: string; p_dry_run?: boolean; p_html: string; p_subject: string; p_tag?: string; p_text: string }
+        Returns: Json
+      }
+      nx_email_result: { Args: { p_id: number }; Returns: Json }
+      nx_email_send_admin: {
+        Args: { p_html: string; p_subject: string; p_tag?: string; p_text?: string; p_to: string; p_to_name: string }
+        Returns: Json
+      }
+      nx_email_templates_save: { Args: { p: Json }; Returns: undefined }
+      nx_invoice_issue: {
+        Args: { p_id: string }
+        Returns: Database["public"]["Tables"]["invoices"]["Row"]
+      }
+      nx_invoice_send: {
+        Args: { p_filename: string; p_html: string; p_id: string; p_pdf_base64: string; p_subject: string; p_text: string; p_to: string; p_to_name: string }
+        Returns: Json
+      }
+      nx_is_admin: { Args: never; Returns: boolean }
       org_quota: { Args: { org: string }; Returns: Json }
       run_monitor_checks: { Args: never; Returns: number }
       touch_presence: {

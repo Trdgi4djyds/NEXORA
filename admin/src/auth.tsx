@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect, useState, type FormEvent, type Re
 import type { Session } from "@supabase/supabase-js"
 import { errText, sb, type Row } from "./supabase"
 import logo from "../../nexora/app/renderer/logo.png"
+import { authArt } from "../../nexora/app/renderer/nx/auth/art.js"
+import { Icon } from "./icons"
 
 export type Me = { session: Session; profile: Row<"profiles">; isSuper: boolean }
 const AuthCtx = createContext<Me>(null as unknown as Me)
@@ -56,21 +58,92 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
 function Splash() {
   return (
-    <div className="auth" aria-busy="true">
+    <div className="auth auth-splash" aria-busy="true">
       <span className="spinner" />
     </div>
   )
 }
 
-function Brand({ title, text }: { title: string; text?: string }) {
+// NEXORA #034 : écran de connexion modernisé, deux panneaux comme dans l'application : la marque (logo,
+// illustration partagée nx/auth/art.js, ce que permet le back office) et le formulaire.
+const FEATS: [string, string, string][] = [
+  ["user", "Utilisateurs et équipes", "Comptes, rôles, offres et appareils"],
+  ["pdf", "Factures et e-mails", "Factures PDF et e-mails aux couleurs de NEXORA"],
+  ["sync", "Supervision", "Sites surveillés 24 h/24, incidents et alertes"],
+  ["cloud", "Supabase", "Configuration, migrations et sécurité du projet"],
+]
+
+function AuthShell({ children }: { children: ReactNode }) {
   return (
-    <div className="brand">
-      <img src={logo} alt="" />
-      <div>
-        <h1>{title}</h1>
-      </div>
-      {text && <p>{text}</p>}
+    <div className="auth">
+      <aside className="auth-brand">
+        <div className="auth-logo">
+          <img src={logo} alt="" />
+          <div><b>NEXORA</b><small>Administration</small></div>
+        </div>
+        <div className="auth-art" dangerouslySetInnerHTML={{ __html: authArt("nxl-admin") }} />
+        <div className="auth-pitch">
+          <h2>Pilote NEXORA en un seul endroit.</h2>
+          <ul>
+            {FEATS.map(([icon, title, text]) => (
+              <li key={title}>
+                <span className="auth-ic"><Icon name={icon} size={15} /></span>
+                <span><b>{title}</b><small>{text}</small></span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="auth-trust"><Icon name="lock" size={12} /> Accès réservé aux administrateurs · © {new Date().getFullYear()} IPPOO</p>
+      </aside>
+      <main className="auth-main">
+        <div className="auth-panel">
+          <div className="auth-mobile-logo"><img src={logo} alt="" /><b>NEXORA</b></div>
+          {children}
+        </div>
+      </main>
     </div>
+  )
+}
+
+function Head({ kicker, title, text, badge }: { kicker?: string; title: string; text: ReactNode; badge?: string }) {
+  return (
+    <div className="auth-head">
+      {badge && <span className="auth-badge"><Icon name={badge} size={20} /></span>}
+      {kicker && <span className="auth-kicker">{kicker}</span>}
+      <h1>{title}</h1>
+      <p>{text}</p>
+    </div>
+  )
+}
+
+function Field({ label, icon, aside, children }: { label: string; icon: string; aside?: ReactNode; children: ReactNode }) {
+  return (
+    <label className="field auth-field">
+      <span className="auth-label">{label}{aside}</span>
+      <span className="auth-input"><Icon name={icon} size={16} />{children}</span>
+    </label>
+  )
+}
+
+/** Champ mot de passe avec bouton d'affichage. */
+function PasswordInput(props: { value: string; onChange: (v: string) => void; autoComplete: string; minLength?: number; placeholder?: string; autoFocus?: boolean }) {
+  const [show, setShow] = useState(false)
+  return (
+    <>
+      <input className="input" type={show ? "text" : "password"} required autoComplete={props.autoComplete} minLength={props.minLength}
+        placeholder={props.placeholder} autoFocus={props.autoFocus} value={props.value} onChange={(e) => props.onChange(e.target.value)} />
+      <button type="button" className="auth-eye" onClick={() => setShow(!show)} aria-label={show ? "Masquer le mot de passe" : "Afficher le mot de passe"} title={show ? "Masquer le mot de passe" : "Afficher le mot de passe"}>
+        <Icon name={show ? "eyeOff" : "eye"} size={16} />
+      </button>
+    </>
+  )
+}
+
+function Submit({ busy, children }: { busy: boolean; children: ReactNode }) {
+  return (
+    <button className="btn primary auth-submit" disabled={busy}>
+      {busy ? <span className="spinner sm" /> : <><span>{children}</span><Icon name="chevronRight" size={16} /></>}
+    </button>
   )
 }
 
@@ -102,58 +175,33 @@ function Login() {
       setBusy(false)
     }
   }
+  const go = (m: "login" | "forgot") => {
+    setMode(m)
+    setMsg(null)
+  }
 
   return (
-    <div className="auth">
-      <form className="auth-card" onSubmit={submit}>
-        <Brand
-          title={mode === "login" ? "Administration NEXORA" : "Mot de passe oublié"}
-          text={
-            mode === "login"
-              ? "Connecte-toi avec ton compte NEXORA administrateur."
-              : "Saisis ton adresse e-mail : tu recevras un lien pour choisir un nouveau mot de passe."
-          }
-        />
-        <label className="field">
-          <span>Adresse e-mail</span>
-          <input
-            className="input"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </label>
-        {mode === "login" && (
-          <label className="field">
-            <span>Mot de passe</span>
-            <input
-              className="input"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </label>
+    <AuthShell>
+      <form className="auth-form" onSubmit={submit}>
+        {mode === "forgot" && (
+          <button type="button" className="auth-back" onClick={() => go("login")}><Icon name="back" size={14} /> Retour à la connexion</button>
         )}
-        {msg && <div className={msg.bad ? "alert" : "banner info"}>{msg.text}</div>}
-        <button className="btn primary" disabled={busy}>
-          {busy ? <span className="spinner sm" /> : mode === "login" ? "Se connecter" : "Envoyer le lien"}
-        </button>
-        <button
-          type="button"
-          className="link-btn"
-          onClick={() => {
-            setMode(mode === "login" ? "forgot" : "login")
-            setMsg(null)
-          }}
-        >
-          {mode === "login" ? "Mot de passe oublié ?" : "Retour à la connexion"}
-        </button>
+        {mode === "login"
+          ? <Head kicker="Back office" title="Connexion" text="Connecte-toi avec ton compte NEXORA administrateur." />
+          : <Head badge="key" title="Mot de passe oublié ?" text="Saisis ton adresse e-mail : tu recevras un lien pour choisir un nouveau mot de passe." />}
+        <Field label="Adresse e-mail" icon="mail">
+          <input className="input" type="email" autoComplete="email" required autoFocus placeholder="toi@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </Field>
+        {mode === "login" && (
+          <Field label="Mot de passe" icon="lock" aside={<button type="button" className="link-btn auth-forgot" onClick={() => go("forgot")}>Mot de passe oublié ?</button>}>
+            <PasswordInput value={password} onChange={setPassword} autoComplete="current-password" placeholder="Ton mot de passe" />
+          </Field>
+        )}
+        {msg && <div className={`auth-msg ${msg.bad ? "bad" : "ok"}`} role={msg.bad ? "alert" : "status"}>{msg.text}</div>}
+        <Submit busy={busy}>{mode === "login" ? "Se connecter" : "Envoyer le lien"}</Submit>
+        <p className="auth-note"><Icon name="shield" size={13} /> Seuls les comptes au rôle administrateur ou super-administrateur peuvent entrer.</p>
       </form>
-    </div>
+    </AuthShell>
   )
 }
 
@@ -173,38 +221,31 @@ function SetPassword({ onDone }: { onDone: () => void }) {
     onDone()
   }
   return (
-    <div className="auth">
-      <form className="auth-card" onSubmit={submit}>
-        <Brand title="Nouveau mot de passe" text="Choisis un mot de passe d’au moins 8 caractères." />
-        <label className="field">
-          <span>Nouveau mot de passe</span>
-          <input className="input" type="password" minLength={8} required autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        </label>
-        <label className="field">
-          <span>Confirmation</span>
-          <input className="input" type="password" minLength={8} required autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
-        </label>
-        {msg && <div className="alert">{msg}</div>}
-        <button className="btn primary" disabled={busy}>
-          Enregistrer
-        </button>
+    <AuthShell>
+      <form className="auth-form" onSubmit={submit}>
+        <Head badge="lock" title="Nouveau mot de passe" text="Choisis un mot de passe d’au moins 8 caractères." />
+        <Field label="Nouveau mot de passe" icon="lock">
+          <PasswordInput value={password} onChange={setPassword} autoComplete="new-password" minLength={8} placeholder="8 caractères minimum" autoFocus />
+        </Field>
+        <Field label="Confirmation" icon="lock">
+          <PasswordInput value={confirm} onChange={setConfirm} autoComplete="new-password" minLength={8} placeholder="Le même mot de passe" />
+        </Field>
+        {msg && <div className="auth-msg bad" role="alert">{msg}</div>}
+        <Submit busy={busy}>Enregistrer</Submit>
       </form>
-    </div>
+    </AuthShell>
   )
 }
 
 function Denied({ reason }: { reason: string }) {
   return (
-    <div className="auth">
-      <div className="auth-card">
-        <Brand
-          title="Accès réservé"
-          text={reason || "Ce compte n’a pas le rôle administrateur. Demande à un super-administrateur de te l’attribuer."}
-        />
-        <button className="btn" onClick={() => sb.auth.signOut()}>
+    <AuthShell>
+      <div className="auth-form">
+        <Head badge="shield" title="Accès réservé" text={reason || "Ce compte n’a pas le rôle administrateur. Demande à un super-administrateur de te l’attribuer."} />
+        <button className="btn auth-alt" onClick={() => sb.auth.signOut()}>
           Changer de compte
         </button>
       </div>
-    </div>
+    </AuthShell>
   )
 }

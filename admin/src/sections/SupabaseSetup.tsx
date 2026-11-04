@@ -13,7 +13,7 @@ import { Empty, fmtDateTime, Loaded, Switch, Table, Tag, useAction, useLoad, use
 import setup from "../../../supabase/nexora.json"
 
 const MIGRATIONS = import.meta.glob("../../../supabase/migrations/*.sql", { query: "?raw", import: "default", eager: true }) as Record<string, string>
-const TOKEN_KEY = "nexora-admin-sbp"
+export const TOKEN_KEY = "nexora-admin-sbp"
 
 type AuthConfig = {
   site_url: string
@@ -38,11 +38,11 @@ declare const __ADMIN_BUILD__: string | undefined
 const ADMIN_BUILD = typeof __ADMIN_BUILD__ === "string" ? `Back office du ${new Date(__ADMIN_BUILD__).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}` : "Back office de l’aperçu"
 
 /** Résultat d'une action, affiché jusqu'à la suivante (NEXORA #027 : confirmation visible, erreur complète). */
-type Outcome = { ok: boolean; text: string; at: number } | null
+export type Outcome = { ok: boolean; text: string; at: number } | null
 const clock = (t: number) => new Date(t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e))
+export const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
-function OutcomeBanner({ outcome, onClose }: { outcome: Outcome; onClose: () => void }) {
+export function OutcomeBanner({ outcome, onClose }: { outcome: Outcome; onClose: () => void }) {
   if (!outcome) return null
   return (
     <div className={`banner outcome ${outcome.ok ? "ok" : "bad"}`} role={outcome.ok ? "status" : "alert"}>
@@ -56,7 +56,7 @@ function OutcomeBanner({ outcome, onClose }: { outcome: Outcome; onClose: () => 
 export const adminUrl = () => `${location.origin}${location.pathname}`
 export const recommendedRedirects = () => [...new Set([...setup.redirectUrls, `${adminUrl()}**`])]
 
-async function mgmt<T>(token: string, path: string, init: RequestInit = {}): Promise<T> {
+export async function mgmt<T>(token: string, path: string, init: RequestInit = {}): Promise<T> {
   // Relais à la racine du site (le back office est servi sous /admin/).
   const url = new URL(`../__supabase-api/v1/projects/${PROJECT_REF}${path}`, document.baseURI)
   let res: Response
@@ -106,7 +106,7 @@ export function SupabaseSetup() {
   )
 }
 
-function TokenForm({ onToken }: { onToken: (t: string) => void }) {
+export function TokenForm({ onToken }: { onToken: (t: string) => void }) {
   const [value, setValue] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")

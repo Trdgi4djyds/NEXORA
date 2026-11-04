@@ -5,7 +5,8 @@
 //   écrans                connexion, vue, utilisateurs, utilisateur, equipes, equipe, appareils,
 //                         invitations, contenus, fichiers, supervision, site, audits, audit-site,
 //                         support, ticket, annonces, offres, fonctionnalites, configuration,
-//                         journal, supabase (défaut : tous)
+//                         journal, supabase, emails, email-maj, email-journal, factures, facture,
+//                         facture-brouillon (défaut : tous)
 //   --label <nom>         série rangée dans captures/AAAA-MM-JJ-<nom>/ (défaut : « admin »)
 //   --theme sombre        thème sombre (défaut : clair)
 //   --taille 1440x900     taille de la fenêtre
@@ -51,6 +52,16 @@ const SCREENS = [
   ["configuration", "Configuration", "config"],
   ["journal", "Journal d’audit", "audit"],
   ["supabase", "Supabase", "supabase"],
+  ["emails", "E-mails", "emails"],
+  ["email-maj", "Annonce d’une mise à jour", "emails/maj"],
+  ["email-journal", "Journal des envois", "emails/journal"],
+  ["factures", "Factures", "invoices"],
+  ["facture", "Facture", `invoices/${demoIds.invoice}`],
+  [
+    "facture-brouillon",
+    "Brouillon de facture",
+    `invoices/${demoIds.invoiceDraft}`,
+  ],
 ]
 const CHROMIUM = process.env.CHROME_PATH || "/usr/bin/chromium"
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -245,7 +256,7 @@ async function main() {
         },
         theme,
         session,
-        route === "supabase" ? DEMO_TOKEN : "",
+        route === "supabase" || route === "emails" ? DEMO_TOKEN : "",
       )
       await page.goto(`${base}${route ? `#/${route}` : ""}`, {
         waitUntil: "load",

@@ -18,6 +18,8 @@ export default defineConfig({
       "react/jsx-dev-runtime",
       "react-dom/client",
       "@supabase/supabase-js",
+      // Factures PDF du back office (#031), chargées à la demande.
+      "pdf-lib",
     ],
   },
   server: {
