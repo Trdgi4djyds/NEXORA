@@ -1,0 +1,23 @@
+// Publication sur Cloudflare Workers (Workers Builds relié au dépôt GitHub) : site statique, sans
+// script Worker. Sans ce fichier, `wrangler deploy` configure le projet tout seul comme une app Vite
+// standard (plugin Cloudflare pour Vite) et produit `assets` sans `directory` : échec du déploiement.
+// NEXORA est assemblé par scripts/build-web.mjs (interface dans dist/, back office dans dist/admin/).
+{
+  // Si le Worker porte un autre nom dans Cloudflare, Workers Builds utilise le sien (simple avertissement).
+  "name": "nexora",
+  "compatibility_date": "2026-10-01",
+  // Lancée par `wrangler deploy` avant l'envoi, même si aucune commande de build n'est réglée dans
+  // Cloudflare : dist/ est toujours reconstruit à partir des sources du commit.
+  "build": {
+    "command": "pnpm run build",
+  },
+  "assets": {
+    "directory": "./dist",
+    // NEXORA et le back office utilisent des routes après # : pas de repli sur index.html, une
+    // adresse inconnue répond 404. /admin redirige vers /admin/ (traitement des barres obliques par défaut).
+    "not_found_handling": "none",
+  },
+  "observability": {
+    "enabled": true,
+  },
+}

@@ -4,6 +4,9 @@ build/
 .cache/
 .env*
 .vite/
+# Cloudflare Wrangler : état local (wrangler dev, deploy)
+.wrangler/
+.dev.vars*
 vite.config.*.timestamp-*
 *.tsbuildinfo
 *-debug.log*

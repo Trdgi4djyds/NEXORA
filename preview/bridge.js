@@ -177,6 +177,8 @@
     // (src/monitor.js, config() et summary()).
     "mon:config": () => ({ endpoints: [], channels: {} }),
     "mon:summary": () => [],
+    // Volet GitHub du Dev Lab : aucun compte connecté sur un PC neuf (src/dev/git.js, me()).
+    "git:me": () => null,
   }
 
   window.vitrine = {
