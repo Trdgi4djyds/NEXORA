@@ -1,6 +1,6 @@
 # NEXORA — espace de travail Figma Make
 
-Ce projet contient **NEXORA**, une application de bureau pour Windows (Electron 45) créée par IPPOO, version 1.0.0, avec une interface en français. Tout le reste du dépôt (aperçu, scripts) sert à travailler sur NEXORA depuis Figma Make.
+Ce projet contient **NEXORA**, une application de bureau pour Windows (Electron 45) créée par IPPOO, version 1.1.0 (depuis #036 ; 1.0.0 à l'origine), avec une interface en français. Tout le reste du dépôt (aperçu, scripts) sert à travailler sur NEXORA depuis Figma Make.
 
 NEXORA regroupe plusieurs espaces : Accueil, Responsive Lab (sites affichés dans des cadres d'appareils réels), Browser Lab (inspection, réseau, console, tests, extraction, audit), Dev Lab (fichiers, éditeur Monaco, terminal, Git et GitHub, VS Code), App Builder (site transformé en app Android : APK, PWA, notifications push, Play Store), Studio 3D & Motion, NEX-DESIGN, Sécurité et Desktop Builder (site, dossier de site ou projet Electron transformé en logiciel Windows installable : installateur NSIS, version portable, ZIP, MSI, #023). Les comptes et la synchronisation passent par le serveur Supabase de NEXORA ; l'assistant IA utilise la clé API de l'utilisateur.
 

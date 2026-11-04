@@ -6,21 +6,21 @@ Unicode true
 !include "LogicLib.nsh"
 
 !define APP "NEXORA"
-!define VER "1.0.0"
+!define VER "1.1.0"
 !define PUB "IPPOO"
 !define EXE "NEXORA.exe"
 !define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP}"
 
 Name "${APP}"
-OutFile "/home/claude/vitrine/dist/NEXORA-Setup-1.0.exe"
+OutFile "/home/claude/vitrine/dist/NEXORA-Setup-1.1.exe"
 RequestExecutionLevel user
 InstallDir "$LOCALAPPDATA\Programs\${APP}"
 InstallDirRegKey HKCU "Software\${APP}" "InstallDir"
 SetCompressor /SOLID lzma
 
-VIProductVersion "1.0.0.0"
+VIProductVersion "1.1.0.0"
 VIAddVersionKey "ProductName" "${APP}"
-VIAddVersionKey "FileVersion" "1.0.0.0"
+VIAddVersionKey "FileVersion" "1.1.0.0"
 VIAddVersionKey "ProductVersion" "${VER}"
 VIAddVersionKey "CompanyName" "${PUB}"
 VIAddVersionKey "LegalCopyright" "© ${PUB}"

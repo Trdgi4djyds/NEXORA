@@ -1,7 +1,7 @@
 {
   "name": "nexora",
   "productName": "NEXORA",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Responsive Lab, Browser Lab, Dev Lab, App Builder et Studio 3D : affiche, teste, développe, emballe en app Android et met en scène tes sites dans le cadre de vrais appareils.",
   "main": "main.js",
   "author": "IPPOO",
