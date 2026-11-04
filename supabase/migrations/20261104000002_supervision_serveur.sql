@@ -94,6 +94,7 @@ grant select on public.monitor_incidents, public.monitor_hourly to authenticated
 create or replace function public.nx_monitor_reason(p_error text, p_timed_out boolean)
 returns text
 language sql immutable
+set search_path = public
 as $$
   select case
     when coalesce(p_timed_out, false) or p_error ilike '%timed out%' or p_error ilike '%timeout%' then 'délai dépassé'
@@ -207,6 +208,7 @@ $$;
 create or replace function public.nx_duration(p interval)
 returns text
 language sql immutable
+set search_path = public
 as $$
   select case
     when extract(epoch from p) < 60 then 'moins d’une minute'

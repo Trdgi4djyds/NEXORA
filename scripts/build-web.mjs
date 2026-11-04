@@ -80,6 +80,23 @@ if (noIndex)
     "User-agent: *\nDisallow: /\n",
   )
 
+// En-têtes de sécurité (#039), lus par Cloudflare (fichier _headers des ressources statiques) :
+// type des fichiers respecté et adresse d'origine réduite partout ; back office jamais affiché dans le
+// cadre d'un autre site (clics détournés sur « Tout appliquer », rôles…). NEXORA web reste affichable en
+// cadre : la publication Figma Make sert aussi dist/. Contrôlé en ligne par `pnpm valider`.
+fs.writeFileSync(
+  path.join(OUT_DIR, "_headers"),
+  [
+    "/*",
+    "  X-Content-Type-Options: nosniff",
+    "  Referrer-Policy: strict-origin-when-cross-origin",
+    "/admin/*",
+    "  X-Frame-Options: DENY",
+    "  Content-Security-Policy: frame-ancestors 'none'",
+    "",
+  ].join("\n"),
+)
+
 // L'environnement Figma Make peut définir NODE_ENV=development : le back office publié est assemblé
 // en mode production (React optimisé, JSX sans aides de développement).
 process.env.NODE_ENV = "production"

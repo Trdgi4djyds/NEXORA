@@ -62,6 +62,7 @@ on conflict (key) do nothing;
 create or replace function public.nx_email_render(p_tpl text, p_vars jsonb)
 returns text
 language plpgsql immutable
+set search_path = public
 as $$
 declare
   k text;
@@ -79,6 +80,7 @@ $$;
 create or replace function public.nx_strip_icon(p text)
 returns text
 language plpgsql immutable
+set search_path = public
 as $$
 declare
   s text := coalesce(p, '');

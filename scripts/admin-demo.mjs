@@ -1548,14 +1548,19 @@ const mgmtProject = {
   },
 }
 const mgmtAuth = {
-  site_url: "http://localhost:5173",
+  site_url: "https://nexora.abrahamtogbonon0.workers.dev/",
   uri_allow_list:
-    "http://localhost:5173/**,http://127.0.0.1:5173/**,http://localhost:4173/**",
+    "https://nexora.abrahamtogbonon0.workers.dev/**,http://localhost:5173/**,http://127.0.0.1:5173/**,http://localhost:4173/**,https://nexora.abrahamtogbonon0.workers.dev/admin/**,http://localhost:3000/admin/**",
   disable_signup: false,
   mailer_autoconfirm: false,
   password_min_length: 8,
   external_email_enabled: true,
-  smtp_host: null,
+  // État relevé en ligne au #039 : Brevo branché, limite des e-mails des comptes restée à 2 par heure.
+  smtp_host: "smtp-relay.brevo.com",
+  smtp_port: "587",
+  smtp_admin_email: "notifications@nexora.example",
+  smtp_sender_name: "NEXORA",
+  rate_limit_email_sent: 2,
   jwt_exp: 3600,
 }
 const demoEmail = {

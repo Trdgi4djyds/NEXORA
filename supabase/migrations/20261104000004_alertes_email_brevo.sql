@@ -18,6 +18,7 @@ on conflict (key) do nothing;
 create or replace function public.nx_html(p text)
 returns text
 language sql immutable
+set search_path = public
 as $$
   select replace(replace(replace(replace(coalesce(p, ''), '&', '&amp;'), '<', '&lt;'), '>', '&gt;'), '"', '&quot;');
 $$;

@@ -35,7 +35,9 @@
     "smtpPort": 587,
     "smtpUser": "b58a4a001@smtp-brevo.com",
     "senderEmail": "ippooz.up.2@gmail.com",
-    "senderName": "NEXORA"
+    "senderName": "NEXORA",
+    "authRateLimitPerHour": 30,
+    "$authRateLimitPerHour": "#039 : limite horaire des e-mails des comptes (confirmation, mot de passe oublié) une fois le SMTP Brevo branché ; Supabase la laisse à 2 par heure sinon. Appliquée par le back office (section Supabase)."
   },
   "cronFunctions": ["run_monitor_checks", "collect_monitor_results", "cleanup_old_data", "nx_monitor_rollup", "nx_monitor_cleanup"]
 }

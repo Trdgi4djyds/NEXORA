@@ -28,8 +28,13 @@ type AuthConfig = {
   smtp_pass?: string | null
   smtp_admin_email?: string | null
   smtp_sender_name?: string | null
+  rate_limit_email_sent?: number | null
   jwt_exp: number
 }
+
+/** Limite horaire des e-mails des comptes avec le SMTP Brevo (#039) : Supabase garde 2 par heure tant qu'on ne la relève pas. */
+const AUTH_MAIL_RATE = setup.email.authRateLimitPerHour
+const lowMailRate = (a: Partial<AuthConfig>) => !!a.smtp_host && Number(a.rate_limit_email_sent ?? 0) < AUTH_MAIL_RATE
 type Fn = { slug: string; status: string; version: number; verify_jwt: boolean; updated_at: number }
 
 /** Adresse du back office (sans le fragment), pour les liens de réinitialisation envoyés par e-mail. */
@@ -189,7 +194,7 @@ function Checks({ token }: { token: string }) {
       { label: "Sécurité des tables (RLS)", ok: !d.no_rls.length, detail: d.no_rls.length ? <>Sans RLS : {d.no_rls.join(", ")}.</> : "Toutes les tables publiques ont la RLS." },
       { label: "Fonctions Edge", ok: !missingFns.length, detail: missingFns.length ? <>Absentes ou inactives : {missingFns.join(", ")}.</> : `${setup.functions.length} fonctions actives.` },
       { label: "Stockage", ok: !missingBuckets.length, detail: missingBuckets.length ? <>Compartiments manquants : {missingBuckets.map((b) => b.id).join(", ")}.</> : `${setup.buckets.length} compartiments présents.` },
-      { label: "E-mails", ok: auth.smtp_host ? true : null, detail: auth.smtp_host ? <>SMTP : <code>{auth.smtp_host}</code>{auth.smtp_host === setup.email.smtpHost ? " (Brevo)" : ""}</> : "Serveur d’envoi de Supabase (quelques e-mails par heure) : configure Brevo dans la carte « E-mails (Brevo) » ci-dessous." },
+      { label: "E-mails", ok: auth.smtp_host ? !lowMailRate(auth) : null, detail: auth.smtp_host ? <>SMTP : <code>{auth.smtp_host}</code>{auth.smtp_host === setup.email.smtpHost ? " (Brevo)" : ""}, {Number(auth.rate_limit_email_sent ?? 0)} e-mails de compte par heure au plus.{lowMailRate(auth) ? <> Limite trop basse : au-delà, les inscriptions et les mots de passe oubliés ne reçoivent plus d’e-mail. « Appliquer la configuration recommandée » la passe à {AUTH_MAIL_RATE}.</> : null}</> : "Serveur d’envoi de Supabase (quelques e-mails par heure) : configure Brevo dans la carte « E-mails (Brevo) » ci-dessous." },
     ]
     return checks
   }, [token, refresh, tick])
@@ -261,16 +266,18 @@ function AuthSettings({ token }: { token: string }) {
           const urls = cur.uri_allow_list ? cur.uri_allow_list.split(",").map((s) => s.trim()).filter(Boolean) : []
           const setUrls = (list: string[]) => setDraft({ ...draft, uri_allow_list: [...new Set(list)].join(",") })
           const recommended = recommendedRedirects()
-          const needs = recommended.some((u) => !urls.includes(u)) || /localhost|127\.0\.0\.1/.test(cur.site_url)
+          const linksOff = recommended.some((u) => !urls.includes(u)) || /localhost|127\.0\.0\.1/.test(cur.site_url)
+          const rateOff = lowMailRate(a)
+          const needs = linksOff || rateOff
           return (
             <div className="form">
               {needs && (
                 <div className="banner">
                   <Icon name="warn" size={16} />
-                  <span className="grow">Les liens envoyés par e-mail (confirmation d’inscription, mot de passe oublié) ne mènent pas encore à NEXORA ni au back office.</span>
+                  <span className="grow">{[linksOff && "Les liens envoyés par e-mail (confirmation d’inscription, mot de passe oublié) ne mènent pas encore à NEXORA ni au back office.", rateOff && `Les e-mails des comptes (confirmation d’inscription, mot de passe oublié) sont limités à ${Number(a.rate_limit_email_sent ?? 0)} par heure : au-delà, ils ne partent plus.`].filter(Boolean).join(" ")}</span>
                   <button className="btn sm primary" disabled={act.busy} onClick={async () => {
-                    if (!(await ui.confirm({ title: "Appliquer la configuration recommandée ?", body: <>Adresse du site : {setup.siteUrl}. Redirections ajoutées : {recommended.filter((u) => !urls.includes(u)).join(", ") || "aucune"}.</>, confirm: "Appliquer" }))) return
-                    save({ site_url: /localhost|127\.0\.0\.1/.test(a.site_url) ? setup.siteUrl : a.site_url, uri_allow_list: [...new Set([...urls, ...recommended])].join(",") }, "Configuration recommandée appliquée.")
+                    if (!(await ui.confirm({ title: "Appliquer la configuration recommandée ?", body: <>Adresse du site : {setup.siteUrl}. Redirections ajoutées : {recommended.filter((u) => !urls.includes(u)).join(", ") || "aucune"}.{rateOff ? <> E-mails des comptes : {AUTH_MAIL_RATE} par heure au plus (au lieu de {Number(a.rate_limit_email_sent ?? 0)}).</> : null}</>, confirm: "Appliquer" }))) return
+                    save({ site_url: /localhost|127\.0\.0\.1/.test(a.site_url) ? setup.siteUrl : a.site_url, uri_allow_list: [...new Set([...urls, ...recommended])].join(","), ...(rateOff ? { rate_limit_email_sent: AUTH_MAIL_RATE } : {}) }, "Configuration recommandée appliquée.")
                   }}>Appliquer la configuration recommandée</button>
                 </div>
               )}
@@ -376,8 +383,16 @@ function EmailSettings({ token }: { token: string }) {
         const fresh = await mgmt<AuthConfig>(token, "/config/auth")
         const wrong = (["smtp_host", "smtp_port", "smtp_user", "smtp_admin_email", "smtp_sender_name"] as const).filter((k) => String(fresh[k] ?? "") !== String(patch[k]))
         if (wrong.length) throw new Error(`Supabase a répondu, mais ces réglages n’ont pas la valeur envoyée : ${wrong.join(", ")}.`)
+        // Supabase garde 2 e-mails de compte par heure tant que la limite n'est pas relevée (#039) ; envoi séparé, une fois le SMTP actif.
+        let rate = Number(fresh.rate_limit_email_sent ?? 0)
+        if (lowMailRate(fresh)) {
+          await mgmt(token, "/config/auth", { method: "PATCH", body: JSON.stringify({ rate_limit_email_sent: AUTH_MAIL_RATE }) })
+          const after = await mgmt<AuthConfig>(token, "/config/auth")
+          rate = Number(after.rate_limit_email_sent ?? 0)
+          if (lowMailRate(after)) throw new Error(`SMTP enregistré, mais la limite des e-mails des comptes reste à ${rate} par heure.`)
+        }
         setSmtpKey("")
-        setSmtpOutcome({ ok: true, text: `SMTP Brevo enregistré et vérifié sur Supabase : ${fresh.smtp_host}:${fresh.smtp_port}, expéditeur ${fresh.smtp_sender_name} <${fresh.smtp_admin_email}>. Envoie-toi un e-mail de test pour vérifier la clé SMTP.`, at: Date.now() })
+        setSmtpOutcome({ ok: true, text: `SMTP Brevo enregistré et vérifié sur Supabase : ${fresh.smtp_host}:${fresh.smtp_port}, expéditeur ${fresh.smtp_sender_name} <${fresh.smtp_admin_email}>, ${rate} e-mails de compte par heure au plus. Envoie-toi un e-mail de test pour vérifier la clé SMTP.`, at: Date.now() })
         setTick((n) => n + 1)
       } catch (e) {
         setSmtpOutcome({ ok: false, text: `Échec de l’enregistrement du SMTP : ${errMsg(e)}`, at: Date.now() })

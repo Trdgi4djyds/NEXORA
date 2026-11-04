@@ -45,6 +45,10 @@ Ces règles s'appliquent à **chaque demande, sans exception**, dans toutes les 
 
 - **R25.** Réponse en français : ce qui a changé, vérifications faites avec leur résultat, captures, limites, et ce qui reste à tester sur Windows.
 
+## 7. Mise en production
+
+- **R26.** Avant chaque mise en production (publication par `pnpm github:push`, livraison de l'application Windows, application de migrations, changement de configuration Supabase ou Brevo), dérouler `CHECKLIST-PRODUCTION.md` : `pnpm valider --label NNN-sujet`, contrôles manuels des rubriques touchées, décision, publication, puis `pnpm valider --label NNN-en-ligne --sans-build`. Un contrôle **bloquant** interdit la mise en production, sauf s'il existait déjà, dépend d'une action de l'utilisateur (Supabase, Brevo), n'est pas aggravé par la livraison et figure dans « Anomalies relevées » avec l'action attendue. Les rapports de `validations/` ne sont jamais supprimés et sont cités dans l'entrée du journal, avec le plan de retour arrière.
+
 ## Procédures
 
 **Modifier l'interface**
@@ -64,6 +68,12 @@ Ces règles s'appliquent à **chaque demande, sans exception**, dans toutes les 
 2. `pnpm pack:windows` : reconstruit `app.asar` et `NEXORA-portable.zip` dans `nexora/`.
 3. Noter la version de NEXORA et la taille du ZIP dans l'entrée, puis version Make et compte rendu.
 
+**Mettre en production** (R26, détail dans `CHECKLIST-PRODUCTION.md`)
+1. Retour arrière prêt : version Make et commit GitHub précédents notés ; sauvegarde manuelle de la base avant toute migration.
+2. `pnpm valider --label NNN-sujet` (avec `--charge` pour une version majeure) et contrôles manuels des rubriques touchées.
+3. Aucun bloquant introduit : `pnpm github:push --essai`, `pnpm github:push`, vérifications « Workers Builds » réussies.
+4. `pnpm valider --label NNN-en-ligne --sans-build`, puis verdict, rapports et bloquants restants dans l'entrée du journal.
+
 ## Modèle d'entrée du journal
 
 ```markdown
@@ -72,6 +82,7 @@ Ces règles s'appliquent à **chaque demande, sans exception**, dans toutes les 
 - **Fait :** …
 - **Fichiers :** …
 - **Vérifications :** `pnpm check` … ; `pnpm captures …` (exceptions : 0) ; …
+- **Mise en production :** rapports `validations/…` (verdict), contrôles manuels menés, bloquants restants, retour arrière
 - **Captures :** `captures/AAAA-MM-JJ-NNN-sujet/` (avant / après)
 - **Limites, à tester sur Windows :** …
 - **Version Make :** n
