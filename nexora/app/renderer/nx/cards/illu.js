@@ -794,6 +794,15 @@ function fitObject(name, layout, w, h, boxes) {
       const k = s / Math.max(bw, bh), pw = bw * k, ph = bh * k, x = w - pw - 14;
       tries.push({ k, x, y: 14, pw, ph }, { k, x, y: h - ph - 14, pw, ph });
     }
+  } else if (layout === 'bleed') {
+    // NEXORA #044 : grand objet qui déborde franchement à droite et en bas (cartes d'action et d'espaces,
+    // comme les cartes de services des références) ; à mi-hauteur s'il gêne un texte en bas.
+    const maxH = Math.min(h * 0.96, (w * 0.42 * bh) / bw);
+    for (const f of [1, 0.9, 0.8, 0.7, 0.6]) {
+      const ph = maxH * f, k = ph / bh, pw = bw * k;
+      if (ph < 48) break;
+      tries.push({ k, x: w - pw * 0.9, y: h - ph * 0.88, pw, ph }, { k, x: w - pw * 0.92, y: h * 0.5 - ph * 0.46, pw, ph });
+    }
   } else {
     const tall = h > w * 1.15;
     const maxH = tall ? Math.min(h * 0.46, (w * 0.72 * bh) / bw) : Math.min(h * 0.92, (w * 0.42 * bh) / bw);
@@ -865,7 +874,7 @@ export function toneFor(group, index) { const l = shuffle(TONES, rng(`${SESSION}
 // exemple par React). Rend la fonction de retrait.
 /**
  * @param {HTMLElement} host
- * @param {{ key?: string, tone?: string, kind?: string, object?: string, layout?: 'hero' | 'badge', cap?: string, avoid?: string, layer?: HTMLElement }} [opts]
+ * @param {{ key?: string, tone?: string, kind?: string, object?: string, layout?: 'hero' | 'badge' | 'bleed', cap?: string, avoid?: string, layer?: HTMLElement }} [opts]
  * @returns {() => void}
  */
 export function attach(host, opts = {}) {

@@ -1,0 +1,147 @@
+/* NEXORA #044 : grandes cartes de l'Accueil redessinées (demande de l'utilisateur : « j'aime pas leur design »).
+   D'après ses images de référence : cartes de services (titre fort sur deux tons, bouton rond fléché, gros objet
+   3D qui déborde de la carte), cartes « feuille » (un grand coin arrondi, pictogramme dans le coin, bouton rond),
+   pastilles d'étiquette à point coloré, mosaïque de tuiles larges et étroites.
+   - carte « Bonjour » : date en pastille, titre de 40 px en deux tons, champ en pilule ;
+   - actions rapides : mosaïque (« Nouveau » en grande carte de couleur franche, les deux autres en cartes claires) ;
+   - compteurs : cartes « feuille », gros chiffre, pictogramme dans le grand coin, bouton rond en bas à droite ;
+   - espaces de NEXORA : mosaïque sur 4 colonnes (Responsive, 3D & Motion, Sécurité et Desktop en tuiles larges),
+     objet qui déborde, raccourci clavier en pastille ;
+   - liste vide des projets : bannière illustrée ;
+   - accueil du Dev Lab : mêmes cartes d'action (bouton rond, objet qui déborde).
+   Objets : nx/cards (mise en page « bleed »). Feuille chargée en dernier par index.html ; règles de survol, de
+   lumière et d'accessibilité des couches #040 et #042 conservées. */
+
+html:root {
+  /* Flèche des boutons ronds (↗), blanche ou encre. */
+  --nx3-go-w: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7.5 16.5 16.5 7.5M9 7.5h7.5V15'/%3E%3C/svg%3E");
+  --nx3-go-k: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2315161d' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7.5 16.5 16.5 7.5M9 7.5h7.5V15'/%3E%3C/svg%3E");
+}
+html[data-theme='light'] { --nx3-card-shadow: 0 0 0 1px rgba(30, 34, 70, .06), 0 22px 44px -30px rgba(25, 28, 60, .34); }
+html[data-theme='dark'] { --nx3-card-shadow: 0 0 0 1px rgba(255, 255, 255, .07), 0 22px 44px -28px rgba(0, 0, 0, .8); }
+
+/* ------------------------------------------------------------------ bouton rond fléché (commun) */
+html :is(.hm-qa, .hm-stat, .hm-space[data-space], .dk-wel-card)::after {
+  content: ''; flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%;
+  background: var(--ink) var(--nx3-go-w) center / 17px no-repeat;
+  box-shadow: 0 8px 16px -8px rgba(10, 12, 30, .55);
+  transition: transform .45s var(--spring), background-color .2s, box-shadow .25s;
+}
+html[data-theme='dark'] :is(.hm-qa, .hm-stat, .hm-space[data-space], .dk-wel-card)::after { background-image: var(--nx3-go-k); box-shadow: 0 8px 16px -8px rgba(0, 0, 0, .7); }
+html :is(.hm-qa, .hm-stat, .hm-space[data-space], .dk-wel-card):hover::after { transform: rotate(45deg); }
+html :is(.hm-qa, .hm-stat, .hm-space[data-space], .dk-wel-card):focus-visible::after { box-shadow: 0 0 0 3px var(--pane), 0 0 0 5px var(--accent); }
+
+/* ------------------------------------------------------------------ rangée d'accueil */
+html .hm-hero { grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 16px; }
+
+/* Carte « Bonjour » */
+html .hm-hello {
+  min-height: 300px; padding: 28px 32px 28px; gap: 12px; border-radius: 32px;
+  background: var(--pane); box-shadow: var(--nx3-card-shadow);
+}
+html .hm-hello > small {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 6px 13px 6px 10px; border-radius: 99px;
+  background: var(--nx2-tile); color: var(--text-2); font-size: 12px; font-weight: 650;
+}
+html .hm-hello > small::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--u, var(--accent)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--u, var(--accent)) 22%, transparent); }
+html .hm-hello h1 { margin-top: 2px; font-size: 40px; line-height: 1.07; letter-spacing: -.038em; font-weight: 780; color: var(--text-2); }
+html .hm-hello h1::first-line { color: var(--text); }
+/* Colonne de droite réservée à l'objet (fusée) au-dessus du champ : titre et texte sur 62 % de la largeur. */
+html .hm-hello h1, html .hm-hello.nxi-host > p, html .hm-hello > p { max-width: 62%; }
+html .hm-hello > p { font-size: 13.5px; line-height: 1.55; }
+html .hm-hello .hm-open { margin-top: auto; height: 54px; padding: 7px 7px 7px 18px; border-radius: 99px; background: var(--input); box-shadow: inset 0 0 0 1px var(--info-edge); }
+html .hm-hello .hm-open:focus-within { background: var(--pane); box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 4px var(--accent-soft); }
+html .hm-hello .hm-open .btn { height: 40px; padding: 0 18px; border-radius: 99px; }
+
+/* Actions rapides : mosaïque, « Nouveau » en grand en haut. */
+html .hm-quick { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(142px, 1fr)); gap: 16px; }
+html .hm-quick > .hm-qa:nth-child(2) { grid-column: 1 / -1; grid-row: 1; }
+html .hm-quick > .hm-qa:nth-child(1) { grid-column: 1; grid-row: 2; }
+html .hm-quick > .hm-qa:nth-child(3) { grid-column: 2; grid-row: 2; }
+html[data-theme] body .hm-qa {
+  position: relative; isolation: isolate; justify-content: flex-start; gap: 3px; min-height: 0;
+  padding: 20px 20px 18px; border-radius: 28px; color: var(--text);
+  background-color: var(--pane); box-shadow: var(--nx3-card-shadow);
+}
+html .hm-qa .hm-qa-ic { display: none !important; }
+html .hm-qa b { font-size: 17px; font-weight: 740; letter-spacing: -.02em; line-height: 1.2; }
+html .hm-qa small { min-height: 0; max-width: 56%; font-size: 12.5px; line-height: 1.38; color: var(--text-2); }
+html .hm-qa::after { order: 9; margin-top: auto; }
+/* « Nouveau » : la carte phare, de la couleur franche de son espace, texte blanc (contraste AA). */
+html body .hm-quick > .hm-qa[data-h='new'] {
+  color: #fff; background-color: var(--u-deep, #b0396f);
+  box-shadow: 0 22px 40px -22px color-mix(in srgb, var(--u, #f05a9b) 85%, transparent);
+  --nxi-s: #fff4f9; --nxi-m: #ffc9e0; --nxi-d: #ff8fc0; --nxi-a: #ffd27a;
+}
+html .hm-qa[data-h='new']::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(90% 130% at 100% 100%, color-mix(in srgb, var(--u, #f05a9b) 55%, transparent), transparent 62%);
+}
+html .hm-qa[data-h='new'] b { font-size: 24px; color: #fff; }
+html .hm-qa[data-h='new'] small { color: rgba(255, 255, 255, .86); max-width: 52%; }
+html[data-theme] .hm-qa[data-h='new']::after { background-color: #fff; background-image: var(--nx3-go-k); }
+
+/* ------------------------------------------------------------------ compteurs : cartes « feuille » */
+html .hm-stats { gap: 16px; }
+html body :is(.hm-stat.pink, .hm-stat.blue, .hm-stat.mint, .hm-stat.yellow, .hm-stat.red) {
+  position: relative; isolation: isolate; min-height: 166px; gap: 4px; padding: 20px 20px 18px;
+  border-radius: 26px 64px 26px 26px;
+}
+html .hm-stat-top { font-size: 14px; font-weight: 720; letter-spacing: -.01em; padding-right: 48px; }
+/* Pictogramme dans le grand coin arrondi, comme le cœur des cartes de référence. */
+html body .hm-stat .hm-stat-ic { position: absolute; top: 18px; right: 20px; width: 38px; height: 38px; border-radius: 50%; }
+html[data-theme='light'] body :is(.hm-stat.pink, .hm-stat.blue, .hm-stat.mint, .hm-stat.yellow, .hm-stat.red) .hm-stat-ic { background: #fff; color: var(--u-ink); box-shadow: 0 6px 14px -6px rgba(20, 20, 40, .22); }
+html[data-theme='dark'] body :is(.hm-stat.pink, .hm-stat.blue, .hm-stat.mint, .hm-stat.yellow, .hm-stat.red) .hm-stat-ic { background: #fff; color: var(--u-deep); box-shadow: 0 6px 14px -6px rgba(0, 0, 0, .5); }
+html .hm-stat-top > .ico:last-child { display: none; }
+html .hm-stat b { margin-top: 6px; font-size: 50px; font-weight: 790; letter-spacing: -.05em; line-height: .95; }
+html .hm-stat small { max-width: calc(100% - 52px); margin-top: auto; font-size: 12.5px; line-height: 1.38; opacity: .9; }
+html .hm-stat::after { position: absolute; right: 16px; bottom: 16px; }
+html[data-theme='dark'] .hm-stat::after { background-color: #fff; background-image: var(--nx3-go-k); }
+
+/* ------------------------------------------------------------------ espaces de NEXORA : mosaïque */
+html .hm-spaces { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-flow: row dense; gap: 16px; }
+html .hm-space[data-space='preview'], html .hm-space[data-space='studio'], html .hm-space[data-space='security'], html .hm-space[data-space='desktop'] { grid-column: span 2; }
+html body .hm-space[data-space] {
+  position: relative; isolation: isolate; min-height: 176px; gap: 5px; padding: 20px 20px 18px;
+  border-radius: 28px !important;
+}
+html body .hm-space[data-space] .hm-space-ic { display: none !important; }
+html .hm-space[data-space] b { font-size: 18px; font-weight: 740; letter-spacing: -.022em; line-height: 1.2; }
+html .hm-space[data-space] small { font-size: 12.5px; line-height: 1.42; }
+html .hm-space[data-space].nxi-host > small { max-width: 58%; }
+html .hm-space[data-space]:is([data-space='preview'], [data-space='studio'], [data-space='security'], [data-space='desktop']).nxi-host > small { max-width: 52%; }
+/* Raccourci clavier en pastille, en bas, à côté du bouton rond. */
+html body .hm-space[data-space] kbd { position: absolute; top: auto; right: auto; left: 66px; bottom: 25px; padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+html .hm-space[data-space]::after { order: 9; margin-top: auto; }
+html[data-theme='dark'] .hm-space[data-space]::after { background-color: #fff; background-image: var(--nx3-go-k); }
+
+/* ------------------------------------------------------------------ liste vide des projets : bannière */
+html .hm-grid > .hm-empty {
+  position: relative; isolation: isolate; align-items: flex-start; justify-content: center; gap: 6px; min-height: 188px;
+  padding: 30px 36px; text-align: left; border-radius: 32px; background: var(--pane); box-shadow: var(--nx3-card-shadow);
+}
+html .hm-grid > .hm-empty.nxi-host:not(.nxi-empty) > svg { display: none; }
+html .hm-grid > .hm-empty b { font-size: 21px; font-weight: 760; letter-spacing: -.025em; }
+html .hm-grid > .hm-empty p { max-width: min(480px, 58%); font-size: 13.5px; line-height: 1.55; }
+
+/* ------------------------------------------------------------------ accueil du Dev Lab : mêmes cartes d'action */
+html .dk-wel-acts { gap: 14px; }
+html body .dk-wel-card { position: relative; isolation: isolate; min-height: 158px; gap: 3px; padding: 18px 18px 16px; border-radius: 24px; }
+html .dk-wel-card > .ico { display: none; }
+html .dk-wel-card b { font-size: 15.5px; font-weight: 740; letter-spacing: -.015em; line-height: 1.25; }
+html .dk-wel-card small { max-width: 62%; font-size: 12px; line-height: 1.4; }
+html .dk-wel-card::after { order: 9; margin-top: auto; width: 34px; height: 34px; background-size: 15px; }
+
+/* ------------------------------------------------------------------ écrans plus étroits */
+@media (max-width: 1100px) {
+  html .hm-hero { grid-template-columns: 1fr; }
+  html .hm-spaces { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ------------------------------------------------------------------ accessibilité */
+html[data-contrast='high'] :is(.hm-qa, .hm-stat, .hm-space[data-space], .dk-wel-card)::after { box-shadow: none; }
+html[data-contrast='high'] .hm-qa[data-h='new']::before { display: none; }
+html[data-motion='none'] :is(.hm-qa, .hm-stat, .hm-space[data-space], .dk-wel-card)::after { transition: none; transform: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  :is(.hm-qa, .hm-stat, .hm-space[data-space], .dk-wel-card)::after { transform: none !important; }
+}

@@ -9,7 +9,6 @@ import { attach, prune } from './illu.js';
 import { objectFor, SPACE_OBJECTS } from './objects.js';
 
 const SPACE_TONES = { preview: 'bleu', browser: 'turquoise', dev: 'orange', android: 'menthe', studio: 'rose', design: 'violet', security: 'corail', desktop: 'jaune' };
-const STAT_TONES = { pink: 'rose', blue: 'bleu', mint: 'menthe', yellow: 'jaune', red: 'corail' };
 const STATE_TONES = { good: 'menthe', warn: 'orange', bad: 'corail' };
 
 // Titre de la carte : premier titre non vide (l'icône d'une action rapide est un span vide, NEXORA #037).
@@ -27,10 +26,12 @@ const QA_TONES = { q1: 'violet', q2: 'rose', q3: 'menthe' };
 const CARDS = [
   // Cartes de présentation : grand objet à droite (layout hero, par défaut).
   ['.hm-hello', () => ({ key: 'accueil', object: 'rocket' })],
-  ['.hm-qa', (el) => { const ic = el.querySelector('.hm-qa-ic'); return { key: `action:${el.dataset.h || el.dataset.hSpace || label(el)}`, tone: ic ? classTone(ic, QA_TONES) : undefined, object: objectFor(label(el), el.dataset.h) }; }],
-  ['.hm-stat', (el) => ({ key: `compteur:${el.dataset.hSpace || label(el)}`, tone: classTone(el, STAT_TONES), object: objectFor(label(el), el.dataset.hSpace) })],
-  ['.hm-space', (el) => ({ key: `espace:${el.dataset.space || label(el)}`, tone: SPACE_TONES[el.dataset.space], object: SPACE_OBJECTS[el.dataset.space] || objectFor(label(el)) })],
-  ['.dk-wel-card', (el) => ({ key: `devlab:${label(el)}`, object: objectFor(label(el), 'code') })],
+  // NEXORA #044 : actions rapides et espaces en grand objet qui déborde (layout bleed) ; compteurs sans objet
+  // (cartes « feuille » de nx/look/cartes.css) ; liste vide des projets en bannière illustrée.
+  ['.hm-qa', (el) => { const ic = el.querySelector('.hm-qa-ic'); return { key: `action:${el.dataset.h || el.dataset.hSpace || label(el)}`, layout: 'bleed', tone: ic ? classTone(ic, QA_TONES) : undefined, object: objectFor(label(el), el.dataset.h) }; }],
+  ['.hm-space', (el) => ({ key: `espace:${el.dataset.space || label(el)}`, layout: 'bleed', tone: SPACE_TONES[el.dataset.space], object: SPACE_OBJECTS[el.dataset.space] || objectFor(label(el)) })],
+  ['.hm-grid > .hm-empty', () => ({ key: 'projets:vide', tone: 'violet', object: 'folder' })],
+  ['.dk-wel-card', (el) => ({ key: `devlab:${label(el)}`, layout: 'bleed', tone: 'orange', object: objectFor(label(el), 'code') })],
   // Carte de l'équipe active (Mon compte → Équipe).
   ['.nxc-body > .nx-org-head', (el) => ({ key: `equipe:${label(el)}`, tone: 'violet', object: 'team', avoid: '.nx-actions' })],
   // Cartes de chiffres et de projets : petite pastille entière en haut à droite (layout badge).
