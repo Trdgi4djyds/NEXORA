@@ -36,7 +36,7 @@ export function openUpsell(info = {}) {
       </div>
       <div class="nxo-up-body">
         <div class="nxo-up-price"><b>${p.price_month_cents ? esc(money(p.price_month_cents)) : '0 $'}</b><span>/ mois</span>${p.price_year_cents ? `<small>ou ${esc(money(p.price_year_cents))} par an (2 mois offerts)</small>` : ''}</div>
-        <ul class="nxo-feats">${perks.map((f) => `<li>${ico('check', 12)}<span>${esc(f)}</span></li>`).join('')}</ul>
+        <ul class="nxo-feats">${perks.map((f) => `<li>${ico('nxCheckCircle', 16)}<span>${esc(f)}</span></li>`).join('')}</ul>
         <div class="nxo-keys"><span>${esc(limitText(lim.projects))} projets</span><span>${esc(limitText(lim.apps))} apps</span><span>${esc(limitText(lim.ai_requests_month))} IA / mois</span><span>${esc(limitText(lim.builds_month))} constructions / mois</span></div>
         ${s.plan && !auth ? `<p class="nx-muted small">Ton offre actuelle : <b>${esc(s.plan_name || s.plan)}</b>.</p>` : ''}
       </div>

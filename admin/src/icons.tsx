@@ -1,5 +1,5 @@
 // Icônes du back office : celles de l'interface NEXORA (même module que l'application, pour garder
-// exactement les mêmes pictogrammes).
+// exactement les mêmes pictogrammes ; icônes Streamline Flex depuis NEXORA #043).
 import { a as NEXORA_ICONS } from "../../nexora/app/renderer/dist/chunks/chunk-S4I2LXHS.js"
 
 const PATHS = NEXORA_ICONS as Record<string, string>
@@ -23,7 +23,7 @@ export function Icon({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.6}
+      strokeWidth={1.7}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"

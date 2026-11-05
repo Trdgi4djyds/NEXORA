@@ -10,6 +10,7 @@
 //   --click <texte>       avec un seul espace : clique ensuite sur le bouton portant ce texte, ou cette
 //                         infobulle pour un bouton à icône seule (répétable)
 //   --theme sombre        thème sombre de NEXORA (défaut : clair)
+//   --scroll <sélecteur>  après les clics, fait défiler jusqu'à l'élément visé (CSS), centré (#041)
 //   --taille 1440x900     taille de la fenêtre capturée
 //   --upload              envoie chaque image dans le chat (figma artifacts upload) et affiche le Markdown
 //   --url <adresse>       adresse de l'aperçu (défaut : figma make preview get-local-url)
@@ -102,6 +103,7 @@ function parseArgs(argv) {
     if (arg === "--") continue
     else if (arg === "--label") opts.label = value()
     else if (arg === "--click") opts.clicks.push(value())
+    else if (arg === "--scroll") opts.scroll = value()
     else if (arg === "--theme") opts.theme = value()
     else if (arg === "--upload") opts.upload = true
     else if (arg === "--demo") opts.demo = true
@@ -379,6 +381,18 @@ async function main() {
         if (!(await clickByText(page, text)))
           throw new Error(`Bouton « ${text} » introuvable dans ${space.label}.`)
         await settle(page, 1200)
+      }
+      if (opts.scroll) {
+        const found = await page.evaluate((sel) => {
+          const el = document.querySelector(sel)
+          if (el) el.scrollIntoView({ block: "center", behavior: "instant" })
+          return !!el
+        }, opts.scroll)
+        if (!found)
+          throw new Error(
+            `Élément « ${opts.scroll} » introuvable dans ${space.label}.`,
+          )
+        await settle(page, 800)
       }
       const index = String(SPACES.indexOf(space) + 1).padStart(2, "0")
       const file = path.join(

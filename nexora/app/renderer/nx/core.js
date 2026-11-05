@@ -96,7 +96,8 @@ const MORE_ICONS = {
   nxMarker: '<path d="M7 3.5h10v11l-5 5-5-5Z"/>',
   nxTag: '<path d="M3.5 12.5v-8h8l9 9-8 8Z"/><circle cx="8" cy="8" r="1.4"/>'
 };
-Object.assign(ICONS, MORE_ICONS);
+// NEXORA #043 : les icônes Streamline Flex déjà posées (nx/icons/flex.js) ne sont pas remplacées.
+for (const [k, v] of Object.entries(MORE_ICONS)) if (!ICONS[k]) ICONS[k] = v;
 export const ico = (name, size = 15, cls = '') => iconRaw(name, size, cls);
 
 // ---------- Interface ----------

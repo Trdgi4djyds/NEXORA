@@ -78,12 +78,25 @@ function toggleTheme() {
   localStorage.setItem("nexora-admin-theme", next)
 }
 
+/* NEXORA #040 : une couleur par groupe de sections (menu, toile, tuile du titre, cartes). */
+const TONE: Record<string, string> = {
+  Pilotage: "pilotage",
+  Clients: "clients",
+  Contenus: "contenus",
+  "Relation client": "relation",
+  Produit: "produit",
+  Système: "systeme",
+}
+const toneOf = (group: string) => TONE[group] || "pilotage"
+const todayFmt = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" })
+
 export function App() {
   const me = useMe()
   const [route, setRoute] = useState(readHash)
   const [refresh, setRefresh] = useState(0)
   const [openTickets, setOpenTickets] = useState(0)
   const [theme, setTheme] = useState(document.documentElement.dataset.theme)
+  const [spin, setSpin] = useState(false)
 
   useEffect(() => {
     const onHash = () => setRoute(readHash())
@@ -108,10 +121,12 @@ export function App() {
   const section = visible.find((s) => s.id === route.id) || visible[0]
   const View = section.view
   let lastGroup = ""
+  const firstName = String(me.profile.full_name || "").trim().split(/\s+/)[0]
+  const today = todayFmt.format(new Date())
 
   return (
     <ShellCtx.Provider value={{ refresh, openTickets, setOpenTickets }}>
-      <div className="shell">
+      <div className="shell" data-tone={toneOf(section.group)}>
         <nav className="nav" aria-label="Sections">
           <div className="brand">
             <img src={logo} alt="" />
@@ -128,6 +143,18 @@ export function App() {
             )
           })}
           <div className="nav-foot">
+            <button className={`nav-promo${openTickets ? " busy" : ""}`} data-g="relation" onClick={() => go("support")}>
+              <i className="nav-promo-ic">
+                <Icon name="chat" size={16} />
+              </i>
+              <span>
+                <b>{openTickets ? `${openTickets} ticket${openTickets > 1 ? "s" : ""} à traiter` : "Support à jour"}</b>
+                <small>{openTickets ? "Réponds depuis Support." : "Aucun ticket en attente."}</small>
+              </span>
+              <i className="go-chip" aria-hidden="true">
+                <Icon name="chevronRight" size={14} />
+              </i>
+            </button>
             <div className="me">
               <Avatar p={me.profile} size={30} />
               <div>
@@ -152,11 +179,24 @@ export function App() {
         </nav>
         <main className="main">
           <header className="head">
+            <i className="head-ic" aria-hidden="true">
+              <Icon name={section.icon} size={20} />
+            </i>
             <div className="grow" style={{ minWidth: 0 }}>
+              <small className="head-kicker">
+                {section.id === "overview" ? `Bonjour${firstName ? ` ${firstName}` : ""} · ${today}` : section.group}
+              </small>
               <h1>{section.label}</h1>
               <p>{section.desc}</p>
             </div>
-            <button className="btn" onClick={() => setRefresh((n) => n + 1)}>
+            <button
+              className={`btn ink${spin ? " spinning" : ""}`}
+              onClick={() => {
+                setRefresh((n) => n + 1)
+                setSpin(true)
+                setTimeout(() => setSpin(false), 700)
+              }}
+            >
               <Icon name="refreshCw" size={14} />
               Actualiser
             </button>
@@ -174,8 +214,10 @@ function NavItem({ s, on, count, head }: { s: Section; on: boolean; count: numbe
   return (
     <>
       {head}
-      <a href={`#/${s.id}`} className={on ? "on" : ""} aria-current={on ? "page" : undefined}>
-        <Icon name={s.icon} size={16} />
+      <a href={`#/${s.id}`} className={on ? "on" : ""} data-g={toneOf(s.group)} aria-current={on ? "page" : undefined}>
+        <i className="nav-ic">
+          <Icon name={s.icon} size={15} />
+        </i>
         <span>{s.label}</span>
         {count > 0 && <em className="count">{count}</em>}
       </a>

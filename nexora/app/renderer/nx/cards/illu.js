@@ -541,7 +541,9 @@ function allowTones(boxes, colors, bg) {
 }
 
 // ---------- Composition : plusieurs placements essayés, le plus lisible est gardé ----------
-const down = (t, step) => (t === 'w' || t === 'k' || step <= 0 ? t : step === 1 ? (t === 'd' || t === 'a' ? 'm' : 's') : 's');
+// NEXORA #043 : teintes dérivées des objets 3D : x (flanc, plus sombre que d), l (face éclairée), h (écran clair).
+const DOWN1 = { d: 'm', a: 'm', x: 'd' };
+const down = (t, step) => (t === 'w' || t === 'k' || step <= 0 ? t : step === 1 ? DOWN1[t] || 's' : 's');
 const tonesOf = (p) => (p.grad ? p.grad.stops.map((s) => s[0]) : [p.lvl]);
 
 let canvas = null, ctx = null;
@@ -607,15 +609,32 @@ function evaluate(parts, boxes, w, h, cap, r) {
 }
 
 const EXTRA = { w: { css: '#fff' }, k: { css: '#000' } };
+// NEXORA #043 : teintes du relief des objets, calculées depuis celles de la carte.
+const mixRgb = (a, b, t) => [0, 1, 2].map((i) => a[i] + (b[i] - a[i]) * t);
+const rgbCss = (c) => `rgb(${Math.round(c[0])} ${Math.round(c[1])} ${Math.round(c[2])})`;
+function derived(colors, dark) {
+  if (!colors.d || !colors.d.rgb || !colors.m || !colors.s) return {};
+  const W = [255, 255, 255], K = [8, 10, 26];
+  return {
+    x: { css: rgbCss(mixRgb(colors.d.rgb, K, dark ? 0.42 : 0.3)) },
+    l: { css: rgbCss(mixRgb(colors.m.rgb, W, dark ? 0.16 : 0.45)) },
+    h: { css: rgbCss(mixRgb(colors.s.rgb, W, dark ? 0.1 : 0.62)) },
+  };
+}
 function toSvg(parts, steps, w, h, colors, dark, obj = false) {
   const id = `nxi${hash(SESSION + Math.random()).toString(36)}`;
-  colors = { ...EXTRA, ...colors };
-  let defs = '', body = '', shadow = false;
+  colors = { ...EXTRA, ...colors, ...derived(colors, dark) };
+  let defs = '', body = '', shadow = false, blur = 0;
   parts.forEach((p, i) => {
     const s = steps[i];
     if (s < 0) return;
     let paint;
-    if (p.grad) {
+    if (p.radial) {
+      const g = p.radial, gid = `${id}r${i}`;
+      defs += `<radialGradient id="${gid}" gradientUnits="userSpaceOnUse" cx="${f(g.cx)}" cy="${f(g.cy)}" r="${f(g.r)}">${g.stops
+        .map(([t, o, a]) => `<stop offset="${o}" stop-color="${colors[down(t, s)].css}"${a < 1 ? ` stop-opacity="${a}"` : ''}/>`).join('')}</radialGradient>`;
+      paint = `url(#${gid})`;
+    } else if (p.grad) {
       const g = p.grad, gid = `${id}g${i}`;
       defs += `<linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${f(g.x1)}" y1="${f(g.y1)}" x2="${f(g.x2)}" y2="${f(g.y2)}">${g.stops
         .map(([t, o, a]) => `<stop offset="${o}" stop-color="${colors[down(t, s)].css}"${a < 1 ? ` stop-opacity="${a}"` : ''}/>`).join('')}</linearGradient>`;
@@ -625,8 +644,12 @@ function toSvg(parts, steps, w, h, colors, dark, obj = false) {
     const strokeA = p.mode === 'fill' ? '' : ` stroke="${paint}" stroke-width="${f(p.sw)}" stroke-linecap="round" stroke-linejoin="round"`;
     const alpha = p.alpha != null && p.alpha < 1 ? ` ${p.mode === 'stroke' ? 'stroke' : 'fill'}-opacity="${p.alpha}"` : '';
     if (p.shadow) shadow = true;
-    body += `<path d="${p.d}" fill="${fillA}"${p.rule ? ` fill-rule="${p.rule}"` : ''}${strokeA}${alpha}${p.shadow ? ` filter="url(#${id}f)"` : ''}/>`;
+    if (p.blur) blur = p.blur;
+    const move = p.offset ? ` transform="translate(${f(p.offset[0])} ${f(p.offset[1])})"` : '';
+    const filt = p.shadow ? ` filter="url(#${id}f)"` : p.blur ? ` filter="url(#${id}b)"` : '';
+    body += `<path d="${p.d}" fill="${fillA}"${p.rule ? ` fill-rule="${p.rule}"` : ''}${strokeA}${alpha}${move}${filt}/>`;
   });
+  if (blur) defs += `<filter id="${id}b" x="-50%" y="-200%" width="200%" height="500%"><feGaussianBlur stdDeviation="${f(blur)}"/></filter>`;
   if (shadow) defs += `<filter id="${id}f" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="${dark ? 4 : 3}" stdDeviation="${dark ? 5 : 4}" flood-color="#000" flood-opacity="${dark ? 0.45 : 0.16}"/></filter>`;
   // Objet : ombre portée douce, teintée de la couleur de la carte (une ombre grise salit les fonds pastel).
   if (obj) {
@@ -671,6 +694,10 @@ export function compose({ w, h, key, kind, boxes = [], colors, bg = null, cap = 
 //   badge : petite pastille entière en haut à droite (cartes de chiffres).
 // L'objet ne touche jamais un texte, une icône ni un champ : sinon il rapetisse, change d'ancrage, ou la
 // carte reste sans objet. Il garde donc toujours ses vraies teintes (pas d'éclaircissement).
+// NEXORA #043 : rendu 3D. Lumière en haut à gauche ; chaque corps a une épaisseur pleine (flanc x décalé vers le
+// bas et la droite), une face en dégradé de trois tons (l, m, d) et un reflet spéculaire ; les surfaces claires
+// sont vitrées (h vers s), les détails et les traits sont en relief (petit flanc sombre sous chacun).
+const DEPTH = 5.5;
 function objectParts(name, map, sc) {
   const parts = [];
   const opt = (o) => ({ main: !o.deco, deco: !!o.deco, alpha: o.alpha, rule: o.rule });
@@ -678,16 +705,54 @@ function objectParts(name, map, sc) {
     const a = map(x1, y1), b = map(x2, y2);
     parts.push({ d: p.d, mode: 'fill', grad: { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stops }, ...opt(o) });
   };
+  // Flanc : copies décalées pas à pas (épaisseur continue, même sur les formes fines).
+  const side = (p, depth, lvl = 'x', sw = 0, alpha) => {
+    const n = Math.max(2, Math.round(depth / 1.6));
+    for (let i = n; i >= 1; i--) {
+      const t = (depth * i) / n, off = [t * 0.42 * sc, t * sc];
+      parts.push(sw ? { d: p.d, mode: 'stroke', lvl, sw: sw * sc, offset: off, deco: true, alpha } : { d: p.d, mode: 'fill', lvl, offset: off, deco: true, alpha, rule: p.rule });
+    }
+  };
   const k = {
     P: () => new Path(map),
-    fill: (p, lvl, o = {}) => parts.push({ d: p.d, mode: 'fill', lvl, ...opt(o) }),
-    line: (p, lvl, sw, o = {}) => parts.push({ d: p.d, mode: 'stroke', lvl, sw: sw * sc, ...opt(o) }),
-    grad,
-    // Corps : de la teinte moyenne (lumière en haut à gauche) à la teinte vive.
-    body: (p, x0, y0, x1, y1, o = {}) => grad(p, [['m', 0, 1], ['d', 0.72, 1]], x0, y0, x1, y1, o),
+    fill: (p, lvl, o = {}) => {
+      if (o.deco || o.alpha != null) { parts.push({ d: p.d, mode: 'fill', lvl, ...opt(o) }); return; }
+      if (lvl === 's') {
+        // Surface claire : vitrée, plus lumineuse en haut.
+        const b = boxOf(p.d);
+        parts.push({ d: p.d, mode: 'fill', grad: { x1: b[0], y1: b[1], x2: b[0], y2: b[3], stops: [['h', 0, 1], ['s', 1, 1]] }, ...opt(o) });
+        return;
+      }
+      // Détail en relief : petit flanc sombre.
+      side(p, 1.6, 'x', 0, 0.55);
+      parts.push({ d: p.d, mode: 'fill', lvl, ...opt(o) });
+    },
+    line: (p, lvl, sw, o = {}) => {
+      if (!o.deco) side(p, 1.8, 'x', sw, 0.5);
+      parts.push({ d: p.d, mode: 'stroke', lvl, sw: sw * sc, ...opt(o) });
+    },
+    grad: (p, stops, x1, y1, x2, y2, o = {}) => { if (!o.deco) side(p, DEPTH * 0.7); grad(p, stops, x1, y1, x2, y2, o); },
+    // Corps : épaisseur, face de la teinte éclairée (l) à la teinte vive (d), reflet spéculaire.
+    body: (p, x0, y0, x1, y1, o = {}) => {
+      side(p, DEPTH);
+      grad(p, [['l', 0, 1], ['m', 0.38, 1], ['d', 0.92, 1]], x0, y0, x1, y1, o);
+      const a = map(x0 + (x1 - x0) * 0.28, y0 + (y1 - y0) * 0.2), r = Math.max(x1 - x0, y1 - y0) * 0.62 * sc;
+      parts.push({ d: p.d, mode: 'fill', radial: { cx: a[0], cy: a[1], r, stops: [['w', 0, 0.5], ['w', 0.55, 0.12], ['w', 1, 0]] }, deco: true, rule: p.rule });
+    },
   };
   OBJECTS[name](k);
   return parts;
+}
+
+// Boîte d'un tracé déjà placé (points des commandes), pour orienter le dégradé des surfaces.
+function boxOf(d) {
+  const n = d.match(/-?\d+(?:\.\d+)?/g) || [];
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (let i = 0; i + 1 < n.length; i += 2) {
+    const x = +n[i], y = +n[i + 1];
+    if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  return Number.isFinite(x0) ? [x0, y0, x1, y1] : [0, 0, 1, 1];
 }
 
 // Boîte réelle de l'objet dans son repère de 100 × 100 (mesurée une fois sur un petit canevas).
@@ -701,8 +766,11 @@ function bboxOf(name) {
   g.fillStyle = '#000'; g.strokeStyle = '#000'; g.lineCap = 'round'; g.lineJoin = 'round';
   for (const p of objectParts(name, (x, y) => [x * S, y * S], S)) {
     const path = new Path2D(p.d);
+    g.save();
+    if (p.offset) g.translate(p.offset[0], p.offset[1]);
     if (p.mode !== 'stroke') g.fill(path, p.rule || 'nonzero');
     if (p.mode !== 'fill') { g.lineWidth = p.sw; g.stroke(path); }
+    g.restore();
   }
   const data = g.getImageData(0, 0, 220, 220).data;
   let x0 = 220, y0 = 220, x1 = 0, y1 = 0;
@@ -751,6 +819,9 @@ export function composeObject({ w, h, object, boxes = [], colors, cap = '', dark
   if (!t) return { svg: '', pick: '' };
   const map = (x, y) => [t.x + (x - t.bx0) * t.k, t.y + (y - t.by0) * t.k];
   const parts = objectParts(name, map, t.k);
+  // NEXORA #043 : ombre de contact floue sous l'objet (posé sur la carte).
+  const cx = t.x + t.pw * 0.5, cy = t.y + t.ph + DEPTH * t.k * 0.6, rx = t.pw * 0.4, ry = Math.max(2.5, t.ph * 0.055);
+  if (cy - ry < h) parts.unshift({ d: new Path().ellipse(cx, cy, rx, ry).d, mode: 'fill', lvl: 'x', alpha: dark ? 0.55 : 0.32, blur: Math.max(2, ry * 0.9), deco: true });
   // Carte discrète (projets) : un cran plus doux.
   const steps = parts.map(() => (cap ? 1 : 0));
   return { svg: toSvg(parts, steps, w, h, colors, dark, layout), pick: `${name}|${layout}` };

@@ -2,7 +2,7 @@ import { useState } from "react"
 import { go, useRefresh } from "../App"
 import { Icon } from "../icons"
 import { must, sb, type FnReturn, type Row } from "../supabase"
-import { Empty, fmtAgo, fmtBytes, fmtMoney, fmtNum, Kpi, Loaded, Seg, Tag, useLoad, UserCell, PRIORITY_LABEL, STATUS_LABEL } from "../ui"
+import { Donut, Empty, fmtAgo, fmtBytes, fmtMoney, fmtNum, Kpi, Loaded, RingCard, Seg, Tag, useLoad, UserCell, PRIORITY_LABEL, STATUS_LABEL } from "../ui"
 
 type Stats = {
   users: number
@@ -25,13 +25,16 @@ type Stats = {
 }
 type Point = FnReturn<"admin_timeseries">[number]
 
+// NEXORA #040 : couleurs des courbes accordées aux teintes du back office.
 const SERIES: [keyof Point, string, string][] = [
-  ["signups", "Inscriptions", "#007aff"],
-  ["projects", "Projets", "#06b6d4"],
-  ["designs", "Designs", "#d946ef"],
-  ["scans", "Audits", "#16a34a"],
-  ["tickets", "Tickets", "#f59e0b"],
+  ["signups", "Inscriptions", "#1f9d6b"],
+  ["projects", "Projets", "#2f7fe0"],
+  ["designs", "Designs", "#7b61ff"],
+  ["scans", "Audits", "#e0457b"],
+  ["tickets", "Tickets", "#f0783c"],
 ]
+const PLAN_COLORS = { free: "#2f7fe0", standard: "#7b61ff", pro: "#e0a400", team: "#94a3b8", enterprise: "#64748b" }
+const DEVICE_COLORS = { windows: "#2f7fe0", web: "#1f9d6b" }
 
 export function Overview() {
   const refresh = useRefresh()
@@ -94,33 +97,58 @@ export function Overview() {
         )}
       </Loaded>
 
-      <div className="card">
-        <div className="card-head">
-          <h3 className="grow">Activité</h3>
-          <Seg value={days} onChange={setDays} options={[["7", "7 jours"], ["30", "30 jours"], ["90", "90 jours"]]} />
-        </div>
-        <Loaded q={series}>{(pts) => <Chart points={pts} />}</Loaded>
-      </div>
-
-      <div className="cols">
+      <div className="ov-main">
         <div className="card">
           <div className="card-head">
-            <h3 className="grow">Offres</h3>
+            <h3 className="grow">Activité</h3>
+            <Seg value={days} onChange={setDays} options={[["7", "7 jours"], ["30", "30 jours"], ["90", "90 jours"]]} />
           </div>
-          {stats.data && <Distribution data={stats.data.plans || {}} labels={{ free: "Gratuit", standard: "Standard", pro: "Pro", team: "Équipe (ancienne)", enterprise: "Entreprise (ancienne)" }} />}
+          <Loaded q={series}>{(pts) => <Chart points={pts} />}</Loaded>
         </div>
-        <div className="card">
-          <div className="card-head">
-            <h3 className="grow">Appareils (30 jours)</h3>
-            <button className="btn sm ghost" onClick={() => go("devices")}>Voir</button>
-          </div>
-          {stats.data && <Distribution data={stats.data.devices || {}} labels={{ web: "Web", windows: "Windows" }} />}
+        {/* NEXORA #040 : anneaux de progression et répartitions en donut. */}
+        <div className="ov-side">
+          {stats.data && (
+            <>
+              <RingCard
+                hue="mint"
+                value={stats.data.users_active_7d}
+                max={stats.data.users}
+                title="Comptes actifs cette semaine"
+                sub={`${fmtNum(stats.data.users_active_7d)} sur ${fmtNum(stats.data.users)} comptes`}
+                onClick={() => go("users")}
+              />
+              <RingCard
+                soft
+                hue={stats.data.monitors_down ? "peach" : "sky"}
+                value={stats.data.monitors - stats.data.monitors_down}
+                max={stats.data.monitors}
+                center={stats.data.monitors ? undefined : "—"}
+                title="Sites en ligne"
+                sub={stats.data.monitors ? `${fmtNum(stats.data.monitors_down)} en panne sur ${fmtNum(stats.data.monitors)}` : "Aucun site surveillé"}
+                onClick={() => go("monitors")}
+              />
+              <div className="card">
+                <div className="card-head">
+                  <h3 className="grow">Offres</h3>
+                  <button className="btn sm ghost" onClick={() => go("plans")}>Gérer</button>
+                </div>
+                <Donut data={stats.data.plans || {}} colors={PLAN_COLORS} caption="espaces" labels={{ free: "Gratuit", standard: "Standard", pro: "Pro", team: "Équipe (ancienne)", enterprise: "Entreprise (ancienne)" }} />
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       <Loaded q={recent}>
         {(r) => (
-          <div className="cols">
+          <div className="cols ov-lists">
+            <div className="card">
+              <div className="card-head">
+                <h3 className="grow">Appareils (30 jours)</h3>
+                <button className="btn sm ghost" onClick={() => go("devices")}>Voir</button>
+              </div>
+              {stats.data && <Donut data={stats.data.devices || {}} colors={DEVICE_COLORS} caption="appareils" labels={{ web: "Web", windows: "Windows" }} />}
+            </div>
             <div className="card">
               <div className="card-head">
                 <h3 className="grow">Dernières inscriptions</h3>
@@ -188,28 +216,6 @@ export function Overview() {
   )
 }
 
-function Distribution({ data, labels }: { data: Record<string, number>; labels: Record<string, string> }) {
-  const entries = Object.entries(data).sort((a, b) => b[1] - a[1])
-  const total = entries.reduce((s, [, n]) => s + n, 0)
-  if (!entries.length) return <Empty>Aucune donnée pour l’instant.</Empty>
-  return (
-    <div className="stack" style={{ gap: 10 }}>
-      {entries.map(([k, n]) => (
-        <div key={k}>
-          <div className="row small">
-            <span className="grow">{labels[k] || k}</span>
-            <b>{fmtNum(n)}</b>
-            <span className="muted" style={{ width: 42, textAlign: "right" }}>{total ? Math.round((n / total) * 100) : 0} %</span>
-          </div>
-          <div className="bar" style={{ marginTop: 5 }}>
-            <i style={{ width: `${total ? (n / total) * 100 : 0}%` }} />
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function Chart({ points }: { points: Point[] }) {
   const [hidden, setHidden] = useState<string[]>([])
   const [hover, setHover] = useState<number | null>(null)
@@ -230,16 +236,25 @@ function Chart({ points }: { points: Point[] }) {
             <text x={L - 8} y={y(t) + 4} textAnchor="end">{t}</text>
           </g>
         ))}
+        {/* NEXORA #040 : courbes lissées, aire légère sous la première série affichée, tracé animé. */}
+        {shown[0] && (
+          <path
+            className="chart-area"
+            fill={shown[0][2]}
+            d={`${smooth(points.map((p, i) => [x(i), y(Number(p[shown[0][0]]) || 0)]))} L${x(points.length - 1)},${y(0)} L${x(0)},${y(0)} Z`}
+          />
+        )}
         {shown.map(([k, , color]) => (
-          <polyline
+          <path
             key={k}
+            className="chart-line"
+            pathLength={1}
             fill="none"
             stroke={color}
-            strokeWidth={2.2}
+            strokeWidth={2.6}
             strokeLinejoin="round"
             strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-            points={points.map((p, i) => `${x(i)},${y(Number(p[k]) || 0)}`).join(" ")}
+            d={smooth(points.map((p, i) => [x(i), y(Number(p[k]) || 0)]))}
           />
         ))}
         {points.map((p, i) =>
@@ -256,7 +271,7 @@ function Chart({ points }: { points: Point[] }) {
           <g className="tip">
             <line x1={x(hover)} x2={x(hover)} y1={T} y2={H - B} stroke="var(--sep-strong)" />
             {shown.map(([k, , color]) => (
-              <circle key={k} cx={x(hover)} cy={y(Number(points[hover][k]) || 0)} r={3.5} fill={color} />
+              <circle key={k} cx={x(hover)} cy={y(Number(points[hover][k]) || 0)} r={4.5} fill={color} stroke="var(--surface)" strokeWidth={2} />
             ))}
           </g>
         )}
@@ -277,4 +292,18 @@ function Chart({ points }: { points: Point[] }) {
       </div>
     </div>
   )
+}
+
+/** Courbe lissée (Catmull-Rom convertie en Bézier) qui ne dépasse pas les valeurs voisines. */
+function smooth(pts: number[][]) {
+  if (!pts.length) return ""
+  let d = `M${pts[0][0]},${pts[0][1]}`
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2
+    const t = 0.18
+    const c1y = Math.min(Math.max(p1[1] + (p2[1] - p0[1]) * t, Math.min(p1[1], p2[1])), Math.max(p1[1], p2[1]))
+    const c2y = Math.min(Math.max(p2[1] - (p3[1] - p1[1]) * t, Math.min(p1[1], p2[1])), Math.max(p1[1], p2[1]))
+    d += ` C${p1[0] + (p2[0] - p0[0]) * t},${c1y} ${p2[0] - (p3[0] - p1[0]) * t},${c2y} ${p2[0]},${p2[1]}`
+  }
+  return d
 }

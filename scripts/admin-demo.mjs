@@ -384,8 +384,20 @@ export const organization_members = memberDefs.map(([o, u, role]) => ({
     name: O(o).name,
     personal: O(o).personal,
     slug: O(o).slug,
+    // NX_DEMO_OFFRE=standard : l'espace du compte de démonstration a un abonnement payé, avec son échéance
+    // (calendrier et minuteur de l'onglet Offre et usage, #040).
     subscriptions: [
-      { plan_id: subscriptions[o].plan_id, status: subscriptions[o].status },
+      o === 0 && process.env.NX_DEMO_OFFRE === "standard"
+        ? {
+            plan_id: "standard",
+            status: "active",
+            current_period_end: ago(-18, -6),
+          }
+        : {
+            plan_id: subscriptions[o].plan_id,
+            status: subscriptions[o].status,
+            current_period_end: subscriptions[o].current_period_end,
+          },
     ],
   },
   profiles: person(u),

@@ -32,7 +32,8 @@ export function addShape(D, key) {
 }
 export async function addIcon(D, name) {
   const st = D.shapeStyle(); const col = (st.fill && typeof st.fill === 'string') ? st.fill : '#1d1d1f';
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="240" height="240" fill="none" stroke="${col}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
+  // NEXORA #043 : les icônes Flex portent « currentColor », remplacé par la couleur choisie.
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="240" height="240" fill="none" stroke="${col}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${(ICONS[name] || '').replace(/currentColor/g, col)}</svg>`;
   await D.addSvg(svg, `Icône ${name}`);
 }
 export async function addSticker(D, kind, opts = {}) {

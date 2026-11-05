@@ -254,6 +254,59 @@ export function Loaded<T>({
 
 const KPI_TONES = { good: "menthe", warn: "orange", bad: "corail" } as const
 
+/* NEXORA #040 : couleurs des cartes (tuile d'icône pastel), stables d'après le libellé. */
+export const HUES = ["mint", "lav", "sky", "peach", "lime", "rose"] as const
+export function hueOf(seed: string) {
+  let h = 0
+  for (const c of seed) h = (h * 33 + c.charCodeAt(0)) >>> 0
+  return HUES[h % HUES.length]
+}
+
+const reducedMotion = () =>
+  typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
+
+/** Sépare « 56,00 $US » en préfixe, nombre (décimales comprises) et unité. */
+function splitNum(s: string) {
+  const m = s.match(/^(\D*?)(\d[\d\s\u00a0\u202f]*(?:,\d+)?)(.*)$/)
+  if (!m) return null
+  const raw = m[2].replace(/[\s\u00a0\u202f]+$/, "")
+  const num = Number(raw.replace(/[\s\u00a0\u202f]/g, "").replace(",", "."))
+  if (!Number.isFinite(num)) return null
+  return { pre: m[1], num, dec: (raw.split(",")[1] || "").length, suf: m[2].slice(raw.length) + m[3] }
+}
+
+/** NEXORA #040 : chiffre qui monte jusqu'à sa valeur à l'affichage ; unité en plus léger. */
+export function CountUp({ value }: { value: ReactNode }) {
+  const parts = typeof value === "string" ? splitNum(value) : null
+  const [k, setK] = useState(1)
+  useEffect(() => {
+    if (!parts || reducedMotion()) return setK(1)
+    let raf = 0
+    const start = performance.now()
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / 900)
+      setK(1 - Math.pow(1 - t, 3))
+      if (t < 1) raf = requestAnimationFrame(step)
+    }
+    setK(0)
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeof value === "string" ? value : null])
+  if (!parts) return <>{value}</>
+  const shown =
+    k >= 1
+      ? (value as string).slice(parts.pre.length, (value as string).length - parts.suf.length)
+      : new Intl.NumberFormat("fr-FR", { minimumFractionDigits: parts.dec, maximumFractionDigits: parts.dec }).format(parts.num * k)
+  return (
+    <>
+      {parts.pre}
+      {shown}
+      {parts.suf && <i className="unit">{parts.suf}</i>}
+    </>
+  )
+}
+
 export function Kpi({
   label,
   value,
@@ -284,19 +337,145 @@ export function Kpi({
     <>
       <span className="nxi" aria-hidden="true" ref={layer} />
       <small>
-        {icon && <Icon name={icon} size={13} />}
+        {icon && (
+          <i className="kpi-ic">
+            <Icon name={icon} size={15} />
+          </i>
+        )}
         {label}
       </small>
-      <b>{value}</b>
+      <b>
+        <CountUp value={value} />
+      </b>
       {hint && <span>{hint}</span>}
     </>
   )
+  const hue = hueOf(label)
   return onClick ? (
-    <button className={`kpi ${tone}`} onClick={onClick} ref={(el) => { host.current = el }}>
+    <button className={`kpi ${tone}`} data-hue={hue} onClick={onClick} ref={(el) => { host.current = el }}>
       {inner}
     </button>
   ) : (
-    <div className={`kpi ${tone}`} ref={(el) => { host.current = el }}>{inner}</div>
+    <div className={`kpi ${tone}`} data-hue={hue} ref={(el) => { host.current = el }}>{inner}</div>
+  )
+}
+
+/* ---------------------------------------------------------------- Anneaux et donuts (NEXORA #040) */
+
+/** Carte à anneau de progression : valeur au centre, titre et explication à droite. */
+export function RingCard({
+  value,
+  max,
+  center,
+  title,
+  sub,
+  hue = "mint",
+  soft,
+  onClick,
+}: {
+  value: number
+  max: number
+  center?: ReactNode
+  title: ReactNode
+  sub?: ReactNode
+  hue?: (typeof HUES)[number]
+  /** Fond teinté de la couleur de la carte (sinon blanc en clair, noir en sombre). */
+  soft?: boolean
+  onClick?: () => void
+}) {
+  const pct = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0
+  const C = 2 * Math.PI * 23
+  const body = (
+    <>
+      <span className="ring">
+        <svg viewBox="0 0 56 56" aria-hidden="true">
+          <circle className="ring-track" cx="28" cy="28" r="23" />
+          <circle className="ring-val" cx="28" cy="28" r="23" strokeDasharray={`${pct * C} ${C}`} />
+        </svg>
+        <b>{center ?? `${Math.round(pct * 100)}`}</b>
+      </span>
+      <span className="ring-text">
+        <b>{title}</b>
+        {sub && <small>{sub}</small>}
+      </span>
+      {onClick && (
+        <i className="go-chip" aria-hidden="true">
+          <Icon name="chevronRight" size={14} />
+        </i>
+      )}
+    </>
+  )
+  const cls = `ring-card${soft ? " soft" : ""}`
+  return onClick ? (
+    <button className={cls} data-hue={hue} onClick={onClick}>
+      {body}
+    </button>
+  ) : (
+    <div className={cls} data-hue={hue}>
+      {body}
+    </div>
+  )
+}
+
+/** Répartition en donut avec légende (valeur et part de chaque élément). */
+export function Donut({
+  data,
+  labels,
+  colors = {},
+  caption = "au total",
+}: {
+  data: Record<string, number>
+  labels: Record<string, string>
+  colors?: Record<string, string>
+  caption?: string
+}) {
+  const entries = Object.entries(data).sort((a, b) => b[1] - a[1])
+  const total = entries.reduce((s, [, n]) => s + n, 0)
+  if (!entries.length || !total) return <Empty>Aucune donnée pour l’instant.</Empty>
+  const R = 40
+  const C = 2 * Math.PI * R
+  const gap = entries.length > 1 ? 2.5 : 0
+  const fallback = ["#1f9d6b", "#7b61ff", "#f0783c", "#2f7fe0", "#e0b100", "#e0457b"]
+  let acc = 0
+  return (
+    <div className="donut">
+      <div className="donut-chart">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle className="donut-track" cx="50" cy="50" r={R} />
+          {entries.map(([k, n], i) => {
+            const len = (n / total) * C
+            const seg = (
+              <circle
+                key={k}
+                cx="50"
+                cy="50"
+                r={R}
+                stroke={colors[k] || fallback[i % fallback.length]}
+                strokeDasharray={`${Math.max(0, len - gap)} ${C}`}
+                strokeDashoffset={-acc}
+                style={{ animationDelay: `${i * 90}ms` }}
+              />
+            )
+            acc += len
+            return seg
+          })}
+        </svg>
+        <div className="donut-center">
+          <b>{fmtNum(total)}</b>
+          <small>{caption}</small>
+        </div>
+      </div>
+      <ul className="donut-legend">
+        {entries.map(([k, n], i) => (
+          <li key={k}>
+            <i style={{ background: colors[k] || fallback[i % fallback.length] }} />
+            <span className="grow ellipsis">{labels[k] || k}</span>
+            <b>{fmtNum(n)}</b>
+            <small>{Math.round((n / total) * 100)} %</small>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 

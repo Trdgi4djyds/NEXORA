@@ -5,6 +5,7 @@
 import { ico, esc } from '../core.js';
 import { cloud, status, plans, appTrials } from './status.js';
 import { COMPARE, METERS, PLAN_LOOK, PLAN_ORDER, limitText, money, count, normPlan } from './catalog.js';
+import { period, fullDate, card as subCard, start as startCountdown, onClick as countdownClick } from './countdown.js';
 
 const longDate = (d) => (d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : '');
 
@@ -28,38 +29,59 @@ function trialRows(t, s) {
     : a.status === 'expired' ? `<span class="nxo-tag bad">${ico('lock', 11)}Essai terminé</span>`
     : a.status === 'plan' ? `<span class="nxo-tag bad">${ico('lock', 11)}Verrouillée</span>`
     : `<span class="nxo-tag">${ico('check', 11)}Active</span>`);
+  // NEXORA #040 : minuteur de l'essai (mis à jour chaque seconde par countdown.js).
+  const until = (a) => {
+    if (a.status !== 'trial' || !a.trial_ends_at) return '';
+    const end = new Date(a.trial_ends_at).getTime(), begin = a.created_at ? new Date(a.created_at).getTime() : end - (Number(t.trial_days) || 7) * 86400000;
+    return `<div class="nxo-trial-cd" data-nxo-until="${end}" data-from="${begin}"><i class="nxo-bar"><em style="width:0%"></em></i><small>${ico('clock', 11)}<span>…</span></small></div>`;
+  };
   return `<section class="nxc-card nxo-trials">
     <div class="nxc-card-head"><span class="nxc-card-ic">${ico('android', 15)}</span><div><h3>Applications de l’App Builder</h3>
     <p>${free ? `Offre Gratuite : <b>${t.used} sur ${t.limit}</b> applications d’essai utilisées. Chaque application créée depuis l’adresse d’un site accessible reste utilisable <b>${t.trial_days} jours</b>, puis elle est verrouillée.` : 'Ton offre n’a pas de limite d’essai : tes applications restent actives.'}</p></div></div>
-    ${list.length ? `<div class="nxo-trial-list">${list.map((a) => `<div class="nxo-trial"><b>${esc(a.name || 'Application')}</b><small>${a.source_kind === 'url' ? 'Adresse web' : 'Dossier ou code'} · créée le ${esc(longDate(a.created_at))}${a.trial_ends_at ? ` · fin d’essai le ${esc(longDate(a.trial_ends_at))}` : ''}</small>${tag(a)}</div>`).join('')}</div>` : '<p class="nx-muted small">Aucune application créée pour l’instant.</p>'}
+    ${list.length ? `<div class="nxo-trial-list">${list.map((a) => `<div class="nxo-trial"><b>${esc(a.name || 'Application')}</b><small>${a.source_kind === 'url' ? 'Adresse web' : 'Dossier ou code'} · créée le ${esc(longDate(a.created_at))}${a.trial_ends_at ? ` · fin d’essai le ${esc(longDate(a.trial_ends_at))}` : ''}</small>${tag(a)}${until(a)}</div>`).join('')}</div>` : '<p class="nx-muted small">Aucune application créée pour l’instant.</p>'}
   </section>`;
 }
 
+// NEXORA #040 : cartes de tarifs (en-tête en dégradé doux, gros prix, bouton plein, avantages cochés).
 function planCard(p, s) {
   const id = normPlan(p.id), look = PLAN_LOOK[id] || PLAN_LOOK.standard;
   const cur = id === s.plan, rank = PLAN_ORDER.indexOf(id), mine = PLAN_ORDER.indexOf(s.plan);
   const m = p.price_month_cents, y = p.price_year_cents;
   const perMonthYear = y ? Math.round(y / 12) : 0;
   const lim = p.limits || {};
+  const rec = id === 'standard';
   const keys = [`${limitText(lim.projects)} projets`, `${limitText(lim.apps)} apps${lim.app_trial_days > 0 ? ` · essai ${lim.app_trial_days} j` : ''}`, `${limitText(lim.ai_requests_month)} IA / mois`];
   const cta = cur ? `<span class="nxo-btn current">${ico('check', 13)}Ton offre actuelle</span>`
-    : !cloud.user ? `<button type="button" class="nxo-btn ${id === 'standard' ? 'primary' : ''}" data-nxo-login>Se connecter pour choisir</button>`
-    : rank > mine ? `<button type="button" class="nxo-btn ${id === 'standard' || id === 'pro' ? 'primary' : ''}" data-plan-ask="${esc(p.id)}">Passer à ${esc(p.name)}${ico('nxArrowRight', 14)}</button>`
-    : `<button type="button" class="nxo-btn ghost" data-plan-ask="${esc(p.id)}">Revenir à ${esc(p.name)}</button>`;
-  return `<article class="nxo-plan nxo-${esc(id)}${cur ? ' on' : ''}" data-nxo-plan="${esc(id)}">
-    <div class="nxo-plan-top">
-      <span class="nxo-medal nxo-${esc(id)}">${ico(look.icon, 18)}</span>
-      <div class="nxo-plan-name"><b>${esc(p.name)}</b>${p.badge ? `<span class="nxo-ribbon">${esc(p.badge)}</span>` : ''}</div>
-    </div>
-    <div class="nxo-price">
-      <span class="nxo-amt" data-m="${esc(money(m).replace(' $', ''))}" data-y="${esc(money(perMonthYear).replace(' $', ''))}">${esc(money(m).replace(' $', ''))}</span><span class="nxo-cur">$</span><span class="nxo-per">/ mois</span>
-    </div>
-    <small class="nxo-bill" data-m="${m ? 'Facturé chaque mois, sans engagement' : 'Gratuit, pour toujours'}" data-y="${y ? `${esc(money(y))} facturés une fois par an` : 'Gratuit, pour toujours'}">${m ? 'Facturé chaque mois, sans engagement' : 'Gratuit, pour toujours'}</small>
-    <p class="nxo-plan-desc">${esc(p.description || '')}</p>
-    ${cta}
-    <div class="nxo-keys">${keys.map((k) => `<span>${esc(k)}</span>`).join('')}</div>
-    <ul class="nxo-feats">${(p.features || []).map((f) => `<li>${ico('check', 12)}<span>${esc(f)}</span></li>`).join('')}</ul>
-  </article>`;
+    : !cloud.user ? `<button type="button" class="nxo-btn ${rec ? 'primary' : 'soft'}" data-nxo-login>Se connecter pour choisir</button>`
+    : rank > mine ? `<button type="button" class="nxo-btn primary" data-plan-ask="${esc(p.id)}">Passer à ${esc(p.name)}${ico('nxArrowRight', 14)}</button>`
+    : `<button type="button" class="nxo-btn soft" data-plan-ask="${esc(p.id)}">Revenir à ${esc(p.name)}</button>`;
+  const amt = (c) => esc(money(c).replace(' $', ''));
+  const billM = m ? 'facturé chaque mois' : 'pour toujours';
+  const billY = y ? `${esc(money(y))} une fois par an` : 'pour toujours';
+  return `<div class="nxo-plan-wrap nxo-${esc(id)}${rec ? ' rec' : ''}">
+    ${rec ? `<div class="nxo-rec">${ico('bolt', 13)}${esc(p.badge || 'Le plus choisi')}</div>` : ''}
+    <article class="nxo-plan nxo-${esc(id)}${cur ? ' on' : ''}" data-nxo-plan="${esc(id)}">
+      <div class="nxo-plan-head">
+        <div class="nxo-plan-name">
+          <span class="nxo-medal nxo-${esc(id)} sm">${ico(look.icon, 14)}</span>
+          <b class="nxo-name">${esc(p.name)}</b>
+          <span class="grow"></span>
+          ${cur ? `<span class="nxo-pill ink">${ico('check', 10)}Ton offre</span>` : p.badge && !rec ? `<span class="nxo-pill">${esc(p.badge)}</span>` : ''}
+        </div>
+        <div class="nxo-price">
+          <span class="nxo-amt" data-m="${amt(m)}" data-y="${amt(perMonthYear)}">${amt(m)}</span><span class="nxo-cur">$</span>
+          <span class="nxo-per"><b>par mois</b><small class="nxo-bill" data-m="${billM}" data-y="${billY}">${billM}</small></span>
+        </div>
+        <p class="nxo-plan-desc">${esc(p.description || '')}</p>
+        ${cta}
+      </div>
+      <div class="nxo-plan-body">
+        <div class="nxo-keys">${keys.map((k) => `<span>${esc(k)}</span>`).join('')}</div>
+        <ul class="nxo-feats">${(p.features || []).map((f) => `<li>${ico('nxCheckCircle', 16)}<span>${esc(f)}</span></li>`).join('')}</ul>
+        <button type="button" class="nxo-more" data-nxo-scroll="#nxoCompare">Besoin de plus de détails ?</button>
+      </div>
+    </article>
+  </div>`;
 }
 
 function cell(row, p) {
@@ -84,29 +106,37 @@ export async function panel() {
   const org = cloud.org;
   const orgPlan = s.org_plan && normPlan(s.org_plan) !== s.plan ? ` · espace en offre ${esc(s.org_plan_name || s.org_plan)}` : '';
   const cur = list.find((p) => normPlan(p.id) === s.plan) || {};
+  const name = s.plan_name || cur.name || 'Gratuit';
   const resets = 'Les compteurs du jour repartent chaque jour, ceux du mois le 1ᵉʳ du mois.';
+  // NEXORA #040 : offre payée avec une date d'échéance => calendrier et minuteur de la période.
+  const per = s.plan !== 'free' ? period(org) : null;
+  if (per) setTimeout(startCountdown, 0);
+  else if (t && t.apps && Object.values(t.apps).some((a) => a.status === 'trial')) setTimeout(startCountdown, 0);
   return `<div class="nxo" data-period="month">
     <section class="nxo-now nxo-${esc(s.plan)}">
-      <span class="nxo-medal nxo-${esc(s.plan)} lg">${ico(look.icon, 24)}</span>
+      <span class="nxo-now-art" aria-hidden="true">${ico(look.icon, 150)}</span>
       <div class="nxo-now-main">
         <small class="nxo-kicker">${ico('star', 12)} Ton offre</small>
-        <h3>${esc(s.plan_name || cur.name || 'Gratuit')}<span class="nxo-now-price">${cur.price_month_cents ? `${esc(money(cur.price_month_cents))} / mois` : '0 $ / mois'}</span></h3>
-        <p>${org ? `${esc(org.name)}${orgPlan}` : 'Compte invité'}${org && org.periodEnd ? ` · renouvellement le ${esc(longDate(org.periodEnd))}` : ''}</p>
-        ${s.admin ? `<div class="nxo-chips"><span class="nxo-chip accent">${ico('lock', 12)}Administrateur NEXORA : aucune limite</span></div>` : ''}
+        <h3>${esc(name)}<span class="nxo-now-price">${cur.price_month_cents ? `${esc(money(cur.price_month_cents))} / mois` : '0 $ / mois'}</span></h3>
+        <p>${org ? `${esc(org.name)}${orgPlan}` : 'Compte invité'}${per ? ` · échéance le ${esc(fullDate(per.end))}` : ''}</p>
+        ${s.admin ? `<div class="nxo-chips"><span class="nxo-chip">${ico('lock', 12)}Administrateur NEXORA : aucune limite</span></div>` : ''}
       </div>
       <div class="nxo-now-acts">
-        ${next && cloud.user ? `<button type="button" class="nxo-btn primary" data-plan-ask="${esc(next.id)}">Passer à ${esc(next.name)}${ico('nxArrowRight', 14)}</button>` : ''}
-        ${!cloud.user ? '<button type="button" class="nxo-btn primary" data-nxo-login>Se connecter</button>' : ''}
-        <button type="button" class="nxo-btn ghost" data-nxo-scroll="#nxoCompare">Comparer les offres</button>
+        ${next && cloud.user ? `<button type="button" class="nxo-btn light" data-plan-ask="${esc(next.id)}">Passer à ${esc(next.name)}${ico('nxArrowRight', 14)}</button>` : ''}
+        ${!cloud.user ? '<button type="button" class="nxo-btn light" data-nxo-login>Se connecter</button>' : ''}
+        <button type="button" class="nxo-link on-color" data-nxo-scroll="#nxoCompare">Comparer les offres<span class="nxo-round">${ico('nxArrowUpRight', 13)}</span></button>
       </div>
     </section>
+    ${per ? subCard(per, { planName: name, plan: s.plan }) : ''}
     <section class="nxc-card nxo-usage">
       <div class="nxc-card-head"><span class="nxc-card-ic">${ico('sync', 15)}</span><div><h3>Ton usage</h3><p>${esc(resets)}</p></div></div>
       <div class="nxo-meters">${METERS.map((m) => meter(m, s)).join('')}</div>
     </section>
     ${trialRows(t, s)}
     <div class="nxo-choose">
-      <div><h3>Choisis ton offre</h3><p>Change d’offre à tout moment. Prix en dollars américains, hors taxes locales.</p></div>
+      <span class="nxo-eyebrow">${ico('star', 12)}Offres</span>
+      <h3>Choisis ton offre</h3>
+      <p>Change d’offre à tout moment. Prix en dollars américains, hors taxes locales.</p>
       <div class="nxo-period" role="tablist" aria-label="Période de facturation">
         <button type="button" role="tab" class="on" data-nxo-period="month" aria-selected="true">Mensuel</button>
         <button type="button" role="tab" data-nxo-period="year" aria-selected="false" title="Annuel : 2 mois offerts">Annuel<em>2 mois offerts</em></button>
@@ -119,6 +149,7 @@ export async function panel() {
 }
 
 export function onClick(e) {
+  if (countdownClick(e)) return true;
   const per = e.target.closest('[data-nxo-period]');
   if (per) {
     const root = per.closest('.nxo');

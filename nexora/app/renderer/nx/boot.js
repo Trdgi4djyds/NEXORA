@@ -31,3 +31,5 @@ load('profil', () => document.body, './profil/index.js');
 load('auth', () => document.body, './auth/index.js');
 // NEXORA #037 : offres Gratuit, Standard et Pro (Offre et usage, essais de l'App Builder, espaces réservés).
 load('offres', () => document.body, './offres/index.js');
+// NEXORA #042 : couche visuelle « Flex » (accent de l'espace, lumière des tuiles, compteurs).
+load('look', () => document.body, './look/index.js');
