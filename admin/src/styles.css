@@ -980,3 +980,20 @@ html[data-theme="dark"] .tabs button.on { background: color-mix(in srgb, #fff 12
 @media (prefers-reduced-motion: reduce) {
   .btn, .switch i::after { transition: none !important; transform: none !important; }
 }
+
+/* =====================================================================================================
+   Back office à plat (NEXORA #045) : aucun dégradé décoratif ni effet lumineux (les ombres sont retirées de
+   toutes les feuilles par nx/look/plat.js, importé par main.tsx) ; pictogrammes Lucide plats (module partagé).
+   ===================================================================================================== */
+:root { --brand-grad: #6f56f0; }
+.auth-brand, html[data-theme="dark"] .auth-brand { background: var(--surface-2); }
+.auth-art .nxl-glow { display: none; }
+.auth-badge, .inv-step { background: #6f56f0; }
+.inv-summary > div b { background: none; -webkit-background-clip: border-box; background-clip: border-box; -webkit-text-fill-color: currentColor; }
+.po-plan.po-standard { background: var(--surface); }
+.po-free { --po-medal: #1f8fd2; }
+.po-pro { --po-medal: #e2a91c; }
+.po-top { background: color-mix(in srgb, var(--po-c, var(--accent)) 9%, var(--surface)); }
+html[data-theme="dark"] .po-plan.po-pro { background: #16161b; }
+.po-plan.po-pro .po-top { background: #1c1c25; }
+.po-plan.po-pro .po-ribbon { background: #e8b52a; }

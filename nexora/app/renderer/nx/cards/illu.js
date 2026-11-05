@@ -8,11 +8,13 @@
 // icônes), sinon elle est écartée ; plusieurs placements sont essayés et le plus lisible est gardé.
 // Teintes : variables CSS --nxi-s (douce), --nxi-m (moyenne), --nxi-d (vive), --nxi-a (vive, autre
 // couleur), posées par cards.css selon data-nxi-tone et le thème.
-// Module autonome (aucune dépendance) : importé aussi par le back office (admin/src/ui.tsx).
+// Importé aussi par le back office (admin/src/ui.tsx) ; pictogrammes : dictionnaire d'icônes de l'interface.
 // NEXORA #037, #038 : les cartes reçoivent un objet illustré (objects.js : dossier, équipe, téléphone,
 // bouclier…) choisi d'après le sens de la carte, placé à droite selon une règle fixe (grand objet ou petite
 // pastille) sans jamais toucher un texte ; les motifs du #033 restent disponibles par l'option kind.
+// NEXORA #045 : objets remplacés par des pictogrammes plats (icônes Lucide) qui s'effacent en transparence.
 import { OBJECTS, objectFor } from './objects.js';
+import { a as ICONS } from '../../dist/chunks/chunk-S4I2LXHS.js';
 
 const TAU = Math.PI * 2;
 const HALF = Math.PI / 2;
@@ -541,9 +543,7 @@ function allowTones(boxes, colors, bg) {
 }
 
 // ---------- Composition : plusieurs placements essayés, le plus lisible est gardé ----------
-// NEXORA #043 : teintes dérivées des objets 3D : x (flanc, plus sombre que d), l (face éclairée), h (écran clair).
-const DOWN1 = { d: 'm', a: 'm', x: 'd' };
-const down = (t, step) => (t === 'w' || t === 'k' || step <= 0 ? t : step === 1 ? DOWN1[t] || 's' : 's');
+const down = (t, step) => (t === 'w' || t === 'k' || step <= 0 ? t : step === 1 ? (t === 'd' || t === 'a' ? 'm' : 's') : 's');
 const tonesOf = (p) => (p.grad ? p.grad.stops.map((s) => s[0]) : [p.lvl]);
 
 let canvas = null, ctx = null;
@@ -609,32 +609,16 @@ function evaluate(parts, boxes, w, h, cap, r) {
 }
 
 const EXTRA = { w: { css: '#fff' }, k: { css: '#000' } };
-// NEXORA #043 : teintes du relief des objets, calculées depuis celles de la carte.
-const mixRgb = (a, b, t) => [0, 1, 2].map((i) => a[i] + (b[i] - a[i]) * t);
-const rgbCss = (c) => `rgb(${Math.round(c[0])} ${Math.round(c[1])} ${Math.round(c[2])})`;
-function derived(colors, dark) {
-  if (!colors.d || !colors.d.rgb || !colors.m || !colors.s) return {};
-  const W = [255, 255, 255], K = [8, 10, 26];
-  return {
-    x: { css: rgbCss(mixRgb(colors.d.rgb, K, dark ? 0.42 : 0.3)) },
-    l: { css: rgbCss(mixRgb(colors.m.rgb, W, dark ? 0.16 : 0.45)) },
-    h: { css: rgbCss(mixRgb(colors.s.rgb, W, dark ? 0.1 : 0.62)) },
-  };
-}
-function toSvg(parts, steps, w, h, colors, dark, obj = false) {
+// NEXORA #045 : aplats seulement (ombres portées, flous et teintes de relief retirés).
+function toSvg(parts, steps, w, h, colors) {
   const id = `nxi${hash(SESSION + Math.random()).toString(36)}`;
-  colors = { ...EXTRA, ...colors, ...derived(colors, dark) };
-  let defs = '', body = '', shadow = false, blur = 0;
+  colors = { ...EXTRA, ...colors };
+  let defs = '', body = '';
   parts.forEach((p, i) => {
     const s = steps[i];
     if (s < 0) return;
     let paint;
-    if (p.radial) {
-      const g = p.radial, gid = `${id}r${i}`;
-      defs += `<radialGradient id="${gid}" gradientUnits="userSpaceOnUse" cx="${f(g.cx)}" cy="${f(g.cy)}" r="${f(g.r)}">${g.stops
-        .map(([t, o, a]) => `<stop offset="${o}" stop-color="${colors[down(t, s)].css}"${a < 1 ? ` stop-opacity="${a}"` : ''}/>`).join('')}</radialGradient>`;
-      paint = `url(#${gid})`;
-    } else if (p.grad) {
+    if (p.grad) {
       const g = p.grad, gid = `${id}g${i}`;
       defs += `<linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${f(g.x1)}" y1="${f(g.y1)}" x2="${f(g.x2)}" y2="${f(g.y2)}">${g.stops
         .map(([t, o, a]) => `<stop offset="${o}" stop-color="${colors[down(t, s)].css}"${a < 1 ? ` stop-opacity="${a}"` : ''}/>`).join('')}</linearGradient>`;
@@ -643,20 +627,8 @@ function toSvg(parts, steps, w, h, colors, dark, obj = false) {
     const fillA = p.mode === 'stroke' ? 'none' : paint;
     const strokeA = p.mode === 'fill' ? '' : ` stroke="${paint}" stroke-width="${f(p.sw)}" stroke-linecap="round" stroke-linejoin="round"`;
     const alpha = p.alpha != null && p.alpha < 1 ? ` ${p.mode === 'stroke' ? 'stroke' : 'fill'}-opacity="${p.alpha}"` : '';
-    if (p.shadow) shadow = true;
-    if (p.blur) blur = p.blur;
-    const move = p.offset ? ` transform="translate(${f(p.offset[0])} ${f(p.offset[1])})"` : '';
-    const filt = p.shadow ? ` filter="url(#${id}f)"` : p.blur ? ` filter="url(#${id}b)"` : '';
-    body += `<path d="${p.d}" fill="${fillA}"${p.rule ? ` fill-rule="${p.rule}"` : ''}${strokeA}${alpha}${move}${filt}/>`;
+    body += `<path d="${p.d}" fill="${fillA}"${p.rule ? ` fill-rule="${p.rule}"` : ''}${strokeA}${alpha}/>`;
   });
-  if (blur) defs += `<filter id="${id}b" x="-50%" y="-200%" width="200%" height="500%"><feGaussianBlur stdDeviation="${f(blur)}"/></filter>`;
-  if (shadow) defs += `<filter id="${id}f" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="${dark ? 4 : 3}" stdDeviation="${dark ? 5 : 4}" flood-color="#000" flood-opacity="${dark ? 0.45 : 0.16}"/></filter>`;
-  // Objet : ombre portée douce, teintée de la couleur de la carte (une ombre grise salit les fonds pastel).
-  if (obj) {
-    const small = obj === 'badge';
-    defs += `<filter id="${id}o" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="${small ? 2 : 4}" stdDeviation="${small ? 2.5 : 5}" flood-color="${dark ? '#000' : colors.d.css}" flood-opacity="${dark ? 0.4 : small ? 0.22 : 0.26}"/></filter>`;
-    body = `<g filter="url(#${id}o)">${body}</g>`;
-  }
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true" focusable="false">${defs ? `<defs>${defs}</defs>` : ''}${body}</svg>`;
 }
 
@@ -685,155 +657,56 @@ export function compose({ w, h, key, kind, boxes = [], colors, bg = null, cap = 
     if (MOTIFS[kd]) kept = candidate(kd, +i);
   }
   const chosen = kept && kept.score <= best.score + 25 ? kept : best;
-  return { svg: toSvg(chosen.parts, chosen.steps, w, h, colors, dark), pick: chosen.pick };
+  return { svg: toSvg(chosen.parts, chosen.steps, w, h, colors), pick: chosen.pick };
 }
 
-// ---------- Objets illustrés (NEXORA #037, refaits au #038) ----------
-// Placement déterministe (aucun tirage) : même règle pour toutes les cartes d'un même type, aucune rotation.
-//   hero  : grand objet à droite, légèrement rogné par le bord droit et le bas (cartes de présentation) ;
-//   badge : petite pastille entière en haut à droite (cartes de chiffres).
-// L'objet ne touche jamais un texte, une icône ni un champ : sinon il rapetisse, change d'ancrage, ou la
-// carte reste sans objet. Il garde donc toujours ses vraies teintes (pas d'éclaircissement).
-// NEXORA #043 : rendu 3D. Lumière en haut à gauche ; chaque corps a une épaisseur pleine (flanc x décalé vers le
-// bas et la droite), une face en dégradé de trois tons (l, m, d) et un reflet spéculaire ; les surfaces claires
-// sont vitrées (h vers s), les détails et les traits sont en relief (petit flanc sombre sous chacun).
-const DEPTH = 5.5;
-function objectParts(name, map, sc) {
-  const parts = [];
-  const opt = (o) => ({ main: !o.deco, deco: !!o.deco, alpha: o.alpha, rule: o.rule });
-  const grad = (p, stops, x1, y1, x2, y2, o = {}) => {
-    const a = map(x1, y1), b = map(x2, y2);
-    parts.push({ d: p.d, mode: 'fill', grad: { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stops }, ...opt(o) });
-  };
-  // Flanc : copies décalées pas à pas (épaisseur continue, même sur les formes fines).
-  const side = (p, depth, lvl = 'x', sw = 0, alpha) => {
-    const n = Math.max(2, Math.round(depth / 1.6));
-    for (let i = n; i >= 1; i--) {
-      const t = (depth * i) / n, off = [t * 0.42 * sc, t * sc];
-      parts.push(sw ? { d: p.d, mode: 'stroke', lvl, sw: sw * sc, offset: off, deco: true, alpha } : { d: p.d, mode: 'fill', lvl, offset: off, deco: true, alpha, rule: p.rule });
-    }
-  };
-  const k = {
-    P: () => new Path(map),
-    fill: (p, lvl, o = {}) => {
-      if (o.deco || o.alpha != null) { parts.push({ d: p.d, mode: 'fill', lvl, ...opt(o) }); return; }
-      if (lvl === 's') {
-        // Surface claire : vitrée, plus lumineuse en haut.
-        const b = boxOf(p.d);
-        parts.push({ d: p.d, mode: 'fill', grad: { x1: b[0], y1: b[1], x2: b[0], y2: b[3], stops: [['h', 0, 1], ['s', 1, 1]] }, ...opt(o) });
-        return;
-      }
-      // Détail en relief : petit flanc sombre.
-      side(p, 1.6, 'x', 0, 0.55);
-      parts.push({ d: p.d, mode: 'fill', lvl, ...opt(o) });
-    },
-    line: (p, lvl, sw, o = {}) => {
-      if (!o.deco) side(p, 1.8, 'x', sw, 0.5);
-      parts.push({ d: p.d, mode: 'stroke', lvl, sw: sw * sc, ...opt(o) });
-    },
-    grad: (p, stops, x1, y1, x2, y2, o = {}) => { if (!o.deco) side(p, DEPTH * 0.7); grad(p, stops, x1, y1, x2, y2, o); },
-    // Corps : épaisseur, face de la teinte éclairée (l) à la teinte vive (d), reflet spéculaire.
-    body: (p, x0, y0, x1, y1, o = {}) => {
-      side(p, DEPTH);
-      grad(p, [['l', 0, 1], ['m', 0.38, 1], ['d', 0.92, 1]], x0, y0, x1, y1, o);
-      const a = map(x0 + (x1 - x0) * 0.28, y0 + (y1 - y0) * 0.2), r = Math.max(x1 - x0, y1 - y0) * 0.62 * sc;
-      parts.push({ d: p.d, mode: 'fill', radial: { cx: a[0], cy: a[1], r, stops: [['w', 0, 0.5], ['w', 0.55, 0.12], ['w', 1, 0]] }, deco: true, rule: p.rule });
-    },
-  };
-  OBJECTS[name](k);
-  return parts;
-}
-
-// Boîte d'un tracé déjà placé (points des commandes), pour orienter le dégradé des surfaces.
-function boxOf(d) {
-  const n = d.match(/-?\d+(?:\.\d+)?/g) || [];
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (let i = 0; i + 1 < n.length; i += 2) {
-    const x = +n[i], y = +n[i + 1];
-    if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
-  }
-  return Number.isFinite(x0) ? [x0, y0, x1, y1] : [0, 0, 1, 1];
-}
-
-// Boîte réelle de l'objet dans son repère de 100 × 100 (mesurée une fois sur un petit canevas).
-const BOXES = new Map();
-function bboxOf(name) {
-  if (BOXES.has(name)) return BOXES.get(name);
-  const S = 2, c = document.createElement('canvas');
-  c.width = c.height = 220;
-  const g = c.getContext('2d', { willReadFrequently: true });
-  g.translate(10, 10);
-  g.fillStyle = '#000'; g.strokeStyle = '#000'; g.lineCap = 'round'; g.lineJoin = 'round';
-  for (const p of objectParts(name, (x, y) => [x * S, y * S], S)) {
-    const path = new Path2D(p.d);
-    g.save();
-    if (p.offset) g.translate(p.offset[0], p.offset[1]);
-    if (p.mode !== 'stroke') g.fill(path, p.rule || 'nonzero');
-    if (p.mode !== 'fill') { g.lineWidth = p.sw; g.stroke(path); }
-    g.restore();
-  }
-  const data = g.getImageData(0, 0, 220, 220).data;
-  let x0 = 220, y0 = 220, x1 = 0, y1 = 0;
-  for (let y = 0; y < 220; y++) for (let x = 0; x < 220; x++) {
-    if (data[(y * 220 + x) * 4 + 3] > 20) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
-  }
-  const box = x1 > x0 ? [(x0 - 10) / S, (y0 - 10) / S, (x1 - 9) / S, (y1 - 9) / S] : [0, 0, 100, 100];
-  BOXES.set(name, box);
-  return box;
-}
-
-function fitObject(name, layout, w, h, boxes) {
-  const [bx0, by0, bx1, by1] = bboxOf(name), bw = bx1 - bx0, bh = by1 - by0;
-  const obs = boxes.map((b) => ({ x: b.x - 5, y: b.y - 5, w: b.w + 10, h: b.h + 10 }));
+// ---------- Pictogrammes plats (NEXORA #045 ; objets dessinés du #037, en 3D au #043) ----------
+// L'objet de la carte (objects.js) désigne une icône Lucide du dictionnaire de l'interface, dessinée en grand au trait,
+// de la teinte vive de la carte, et qui s'efface en transparence (opacité dégressive du coin haut droit vers le bas
+// gauche, côté textes). Aucun relief ni ombre. Placement fixe, jamais sur un texte, une icône ni un champ :
+//   bleed : grand pictogramme rogné par le bord droit et le bas (actions, espaces) ;
+//   hero  : grand pictogramme entier à droite (cartes de présentation) ;
+//   badge : petit pictogramme entier en haut à droite, sinon en bas (cartes de chiffres).
+// Aucune place libre : pas de pictogramme (la carte garde son apparence).
+function fitIcon(layout, w, h, boxes) {
+  const obs = boxes.map((b) => ({ x: b.x - 4, y: b.y - 4, w: b.w + 8, h: b.h + 8 }));
   const free = (r) => !obs.some((o) => r.x < o.x + o.w && r.x + r.w > o.x && r.y < o.y + o.h && r.y + r.h > o.y);
   const tries = [];
   if (layout === 'badge') {
-    const s0 = Math.min(58, h * 0.46, w * 0.3);
-    for (const s of [s0, s0 * 0.86, s0 * 0.74]) {
-      if (s < 32) break;
-      const k = s / Math.max(bw, bh), pw = bw * k, ph = bh * k, x = w - pw - 14;
-      tries.push({ k, x, y: 14, pw, ph }, { k, x, y: h - ph - 14, pw, ph });
-    }
-  } else if (layout === 'bleed') {
-    // NEXORA #044 : grand objet qui déborde franchement à droite et en bas (cartes d'action et d'espaces,
-    // comme les cartes de services des références) ; à mi-hauteur s'il gêne un texte en bas.
-    const maxH = Math.min(h * 0.96, (w * 0.42 * bh) / bw);
-    for (const f of [1, 0.9, 0.8, 0.7, 0.6]) {
-      const ph = maxH * f, k = ph / bh, pw = bw * k;
-      if (ph < 48) break;
-      tries.push({ k, x: w - pw * 0.9, y: h - ph * 0.88, pw, ph }, { k, x: w - pw * 0.92, y: h * 0.5 - ph * 0.46, pw, ph });
+    const s0 = Math.min(56, h * 0.44, w * 0.3);
+    for (const s of [s0, s0 * 0.85, s0 * 0.72]) {
+      if (s < 28) break;
+      tries.push({ s, x: w - s - 12, y: 12 }, { s, x: w - s - 12, y: h - s - 12 });
     }
   } else {
-    const tall = h > w * 1.15;
-    const maxH = tall ? Math.min(h * 0.46, (w * 0.72 * bh) / bw) : Math.min(h * 0.92, (w * 0.42 * bh) / bw);
-    for (const f of [1, 0.9, 0.8, 0.7, 0.6]) {
-      const ph = maxH * f, k = ph / bh, pw = bw * k;
-      if (ph < 44) break;
-      const br = { x: w - pw * 0.88, y: h - ph * 0.9 };
-      const mr = { x: w - pw * 0.9, y: h * (tall ? 0.42 : 0.5) - ph / 2 };
-      const tr = { x: w - pw - 14, y: 14 };
-      for (const a of tall ? [mr, br, tr] : [br, mr, tr]) if (a.y >= 8) tries.push({ k, x: a.x, y: a.y, pw, ph });
+    const bleed = layout === 'bleed';
+    const s0 = bleed ? Math.min(h * 1.04, w * 0.5) : Math.min(h * 0.84, w * 0.4);
+    for (const k of [1, 0.88, 0.76, 0.64]) {
+      const s = s0 * k;
+      if (s < 44) break;
+      if (bleed) tries.push({ s, x: w - s * 0.8, y: h - s * 0.82 }, { s, x: w - s * 0.82, y: h / 2 - s * 0.46 });
+      else tries.push({ s, x: w - s - 16, y: h - s - 14 }, { s, x: w - s - 16, y: (h - s) / 2 }, { s, x: w - s - 16, y: 14 });
     }
   }
-  for (const t of tries) {
-    if (free({ x: t.x, y: t.y, w: t.pw, h: t.ph })) return { ...t, bx0, by0 };
-  }
-  return null;
+  return tries.find((t) => free({ x: t.x, y: t.y, w: t.s, h: t.s })) || null;
 }
 
-// Dessine l'objet sur une carte de w × h px. Rend { svg } (svg vide : aucune place libre).
+// Dessine le pictogramme d'une carte de w × h px. Rend { svg } (svg vide : aucune place libre).
 export function composeObject({ w, h, object, boxes = [], colors, cap = '', dark = false, layout = 'hero' }) {
   const name = OBJECTS[object] ? object : 'chart';
-  const t = fitObject(name, layout, w, h, boxes);
+  const icon = ICONS[OBJECTS[name]] || '';
+  const t = icon ? fitIcon(layout, w, h, boxes) : null;
   if (!t) return { svg: '', pick: '' };
-  const map = (x, y) => [t.x + (x - t.bx0) * t.k, t.y + (y - t.by0) * t.k];
-  const parts = objectParts(name, map, t.k);
-  // NEXORA #043 : ombre de contact floue sous l'objet (posé sur la carte).
-  const cx = t.x + t.pw * 0.5, cy = t.y + t.ph + DEPTH * t.k * 0.6, rx = t.pw * 0.4, ry = Math.max(2.5, t.ph * 0.055);
-  if (cy - ry < h) parts.unshift({ d: new Path().ellipse(cx, cy, rx, ry).d, mode: 'fill', lvl: 'x', alpha: dark ? 0.55 : 0.32, blur: Math.max(2, ry * 0.9), deco: true });
-  // Carte discrète (projets) : un cran plus doux.
-  const steps = parts.map(() => (cap ? 1 : 0));
-  return { svg: toSvg(parts, steps, w, h, colors, dark, layout), pick: `${name}|${layout}` };
+  const id = `nxi${hash(SESSION + Math.random()).toString(36)}`;
+  const col = (cap ? colors.m : colors.d).css;
+  const small = layout === 'badge';
+  const a0 = small ? (dark ? 0.62 : 0.55) : (dark ? 0.46 : 0.42), a1 = small ? 0.16 : 0.03;
+  const k = t.s / 24;
+  const body = icon.replace(/currentColor/g, `url(#${id})`);
+  return {
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true" focusable="false"><defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="22" y1="2" x2="3" y2="21"><stop offset="0" stop-color="${col}" stop-opacity="${a0}"/><stop offset="1" stop-color="${col}" stop-opacity="${a1}"/></linearGradient></defs><g transform="translate(${f(t.x)} ${f(t.y)}) scale(${k.toFixed(3)})" fill="none" stroke="url(#${id})" stroke-width="${small ? 1.6 : 1.25}" stroke-linecap="round" stroke-linejoin="round">${body}</g></svg>`,
+    pick: `${name}|${layout}`,
+  };
 }
 
 // ---------- Pose sur une carte : mesure, dessin au calme, redessin au besoin ----------

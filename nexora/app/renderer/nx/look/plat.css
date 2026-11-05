@@ -1,0 +1,71 @@
+/* NEXORA #045 : interface plate, sans dégradé décoratif ni effet lumineux (demande de l'utilisateur : « corriger les
+   effets de dégradé et lumineux », « retirer tous les effets d'ombres »). Les ombres sont retirées de toutes les
+   feuilles par nx/look/plat.js ; cette feuille, chargée en dernier, remplace les dégradés décoratifs par des aplats.
+   Gardés, car ils ont une fonction ou montrent un contenu : flèches des listes déroulantes, damiers de transparence,
+   sélecteurs de couleur, anneaux de progression, fondus de la frise du Studio, fonds de scène et de maquette,
+   écrans d'appareils simulés (App Builder), fond d'écran de l'aperçu du Desktop Builder, aperçus des fonds des
+   Réglages, rayures des incidents ouverts. Les règles qui visent des feuilles chargées après celle-ci (offres,
+   profil, connexion) sont marquées !important. */
+
+/* ------------------------------------------------------------------ couleurs de marque : aplats */
+html:root, html:root body { --brand-grad: #6d5cf6; --nxo-brand: #6d5cf6 !important; --brand-glow: none; }
+
+/* ------------------------------------------------------------------ interface d'origine (styles.css) */
+html .src-icon { background: #0a84ff; }
+html .src-icon.globe { background: #5e5ce6; }
+html .grp-icon { background: var(--c); }
+html :is(.stage, .st-view, .bl-view, .ab-side .ab-phone-wrap) {
+  background-color: var(--stage-a); background-image: radial-gradient(var(--dot) 1px, transparent 1.2px); background-size: 18px 18px;
+}
+html .ab-side { background: var(--stage-a); }
+html .screen-msg, html .screen-msg.idle { background: var(--pane); }
+html :is(.hero h1, .lp-hero h1 em) { background: none; -webkit-background-clip: border-box; background-clip: border-box; -webkit-text-fill-color: currentColor; }
+html .hero h1 { color: var(--text); }
+html .lp-hero h1 em { color: #6a4cff; }
+html :is(.dock-swatch, .cr-dot, .st-dot, .st-color:not(.custom)) { background: var(--c); }
+html .st-tpl-ico { background: var(--accent); }
+html .tb-ai { background: #7b61ff; }
+html .btn.primary { background-image: none; }
+html .hm-logo { background: var(--c); }
+html .nx-plan-now { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+html .nxa-nav button.on { background: #6a4cff; }
+html .nx-landing { background: var(--window); }
+html .lp-feat span { background: #6a4cff; }
+html .hm-qa-ic.q1, html .hm-qa-ic.q3 { background-image: none; }
+html .sheet-icon, html .sheet-icon.warn { background-image: none; }
+
+/* ------------------------------------------------------------------ offres (nx/offres/offres.css) */
+html .nxo-btn.primary { background: #17171b !important; }
+html[data-theme='dark'] .nxo-btn.primary { background: #ffffff !important; }
+html .nxo-btn.soft { background: #f1f1f4 !important; }
+html[data-theme='dark'] .nxo-btn.soft { background: #26262c !important; }
+html .nxo-now { background: #5a45e8 !important; }
+html .nxo-now.nxo-free { background: #1f6fd0 !important; }
+html .nxo-now.nxo-pro { background: #6b4a12 !important; }
+html :is(.nxo-sub-ic, .nxo-day.end b, .lg-end, .nxo-sub .nxo-bar em) { background: var(--nxo-c) !important; }
+html .nxo-meter.hot .nxo-bar em { background: #ff8a1a !important; }
+html .nxo-trial-cd .nxo-bar em { background: #22b07d !important; }
+html .nxo-plan-wrap.rec { background: color-mix(in srgb, #8b5cff 9%, var(--surface)) !important; }
+html .nxo-free { --nxo-medal: #1f8fd2 !important; }
+html .nxo-pro { --nxo-medal: #e2a91c !important; }
+html .nxo-plan { --nxo-mesh: none !important; }
+html :is(.nxo-plan.nxo-standard, .nxo-plan.nxo-pro) .nxo-name { background: none !important; -webkit-background-clip: border-box !important; background-clip: border-box !important; -webkit-text-fill-color: currentColor !important; }
+html .nxo-plan.nxo-standard .nxo-name { color: #7a32e6 !important; }
+html .nxo-plan.nxo-pro .nxo-name { color: #9a6408 !important; }
+html[data-theme='dark'] .nxo-plan.nxo-standard .nxo-name { color: #c08bff !important; }
+html[data-theme='dark'] .nxo-plan.nxo-pro .nxo-name { color: #ffc24d !important; }
+html :is(.nxo-up-head, .nxo-lock-head) { background: color-mix(in srgb, var(--nxo-c, var(--accent)) 8%, var(--surface)) !important; }
+html .nxo-dial-wrap { background: var(--surface) !important; }
+html .nxo-dial-arc { stroke: var(--nxo-c, #6d5cf6) !important; }
+
+/* ------------------------------------------------------------------ profil et réglages (nx/profil/profil.css) */
+html .nxc-brand-ic { background: var(--accent) !important; }
+html .nxc-promo { background: var(--accent) !important; }
+html .nxc-cover, html #popover .nx-me::before { background: color-mix(in srgb, var(--accent) 20%, var(--surface)) !important; }
+html .nxc-cover::after { display: none !important; }
+html .nxc-cta { background: var(--ink) !important; }
+html .nxc-body > .nx-plan-now { background: color-mix(in srgb, var(--accent) 10%, var(--surface)) !important; }
+
+/* ------------------------------------------------------------------ connexion (nx/auth/auth.css) */
+html .nxl-brand { background: var(--surface-2, var(--surface)) !important; }
+html :is(.nxl-badge, .nxl-form .nx-sent > svg) { background: #6d5cf6 !important; }

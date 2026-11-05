@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from "vite"
 import react from "@vitejs/plugin-react"
+import { fileURLToPath } from "node:url"
 import { nexoraPreview } from "./preview/server.mjs"
 
 // Vite sert uniquement l'aperçu navigateur de NEXORA (voir preview/server.mjs) : l'interface est
@@ -29,7 +30,9 @@ export default defineConfig({
     watch: {
       ignored: [
         "**/.figma/**",
-        "**/dist/**",
+        // Publication (dist/ à la racine) seulement : nexora/app/renderer/dist/ (interface de NEXORA, importée par
+        // le back office) reste surveillé, sinon l'aperçu du back office garde un module périmé en cache (#045).
+        `${fileURLToPath(new URL("./dist", import.meta.url))}/**`,
         "**/nexora/NEXORA-win32-x64/**",
         "**/nexora/*.zip",
       ],

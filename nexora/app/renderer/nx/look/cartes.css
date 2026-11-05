@@ -46,8 +46,9 @@ html .hm-hello > small {
 html .hm-hello > small::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--u, var(--accent)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--u, var(--accent)) 22%, transparent); }
 html .hm-hello h1 { margin-top: 2px; font-size: 40px; line-height: 1.07; letter-spacing: -.038em; font-weight: 780; color: var(--text-2); }
 html .hm-hello h1::first-line { color: var(--text); }
-/* Colonne de droite réservée à l'objet (fusée) au-dessus du champ : titre et texte sur 62 % de la largeur. */
-html .hm-hello h1, html .hm-hello.nxi-host > p, html .hm-hello > p { max-width: 62%; }
+/* NEXORA #045 : sans illustration, le titre et le texte occupent la largeur de la carte (texte limité pour rester lisible). */
+html .hm-hello h1 { max-width: 15em; }
+html .hm-hello > p { max-width: 520px; }
 html .hm-hello > p { font-size: 13.5px; line-height: 1.55; }
 html .hm-hello .hm-open { margin-top: auto; height: 54px; padding: 7px 7px 7px 18px; border-radius: 99px; background: var(--input); box-shadow: inset 0 0 0 1px var(--info-edge); }
 html .hm-hello .hm-open:focus-within { background: var(--pane); box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 4px var(--accent-soft); }
@@ -71,11 +72,7 @@ html .hm-qa::after { order: 9; margin-top: auto; }
 html body .hm-quick > .hm-qa[data-h='new'] {
   color: #fff; background-color: var(--u-deep, #b0396f);
   box-shadow: 0 22px 40px -22px color-mix(in srgb, var(--u, #f05a9b) 85%, transparent);
-  --nxi-s: #fff4f9; --nxi-m: #ffc9e0; --nxi-d: #ff8fc0; --nxi-a: #ffd27a;
-}
-html .hm-qa[data-h='new']::before {
-  content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
-  background: radial-gradient(90% 130% at 100% 100%, color-mix(in srgb, var(--u, #f05a9b) 55%, transparent), transparent 62%);
+  --nxi-s: #ffffff; --nxi-m: #ffffff; --nxi-d: #ffffff; --nxi-a: #ffffff;
 }
 html .hm-qa[data-h='new'] b { font-size: 24px; color: #fff; }
 html .hm-qa[data-h='new'] small { color: rgba(255, 255, 255, .86); max-width: 52%; }
@@ -140,7 +137,6 @@ html .dk-wel-card::after { order: 9; margin-top: auto; width: 34px; height: 34px
 
 /* ------------------------------------------------------------------ accessibilité */
 html[data-contrast='high'] :is(.hm-qa, .hm-stat, .hm-space[data-space], .dk-wel-card)::after { box-shadow: none; }
-html[data-contrast='high'] .hm-qa[data-h='new']::before { display: none; }
 html[data-motion='none'] :is(.hm-qa, .hm-stat, .hm-space[data-space], .dk-wel-card)::after { transition: none; transform: none !important; }
 @media (prefers-reduced-motion: reduce) {
   :is(.hm-qa, .hm-stat, .hm-space[data-space], .dk-wel-card)::after { transform: none !important; }

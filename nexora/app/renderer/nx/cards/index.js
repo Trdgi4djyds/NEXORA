@@ -25,7 +25,7 @@ const QA_TONES = { q1: 'violet', q2: 'rose', q3: 'menthe' };
 // [sélecteur, réglages de la carte] ; teinte absente : tirée au hasard, différente des voisines.
 const CARDS = [
   // Cartes de présentation : grand objet à droite (layout hero, par défaut).
-  ['.hm-hello', () => ({ key: 'accueil', object: 'rocket' })],
+  // NEXORA #045 : plus d'illustration sur la carte « Bonjour » (fusée retirée, demande de l'utilisateur).
   // NEXORA #044 : actions rapides et espaces en grand objet qui déborde (layout bleed) ; compteurs sans objet
   // (cartes « feuille » de nx/look/cartes.css) ; liste vide des projets en bannière illustrée.
   ['.hm-qa', (el) => { const ic = el.querySelector('.hm-qa-ic'); return { key: `action:${el.dataset.h || el.dataset.hSpace || label(el)}`, layout: 'bleed', tone: ic ? classTone(ic, QA_TONES) : undefined, object: objectFor(label(el), el.dataset.h) }; }],

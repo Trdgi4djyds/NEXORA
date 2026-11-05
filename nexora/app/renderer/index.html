@@ -17,6 +17,10 @@
   <link rel="stylesheet" href="nx/look/composants.css">
   <!-- NEXORA #044 : grandes cartes de l'Accueil redessinées (mosaïque, cartes « feuille », boutons ronds) -->
   <link rel="stylesheet" href="nx/look/cartes.css">
+  <!-- NEXORA #045 : aplats à la place des dégradés décoratifs (les ombres sont retirées par nx/look/plat.js) -->
+  <link rel="stylesheet" href="nx/look/plat.css">
+  <!-- NEXORA #045 : mise en page corrigée (débordements, rail, Browser Lab, petites fenêtres) -->
+  <link rel="stylesheet" href="nx/look/mise-en-page.css">
 </head>
 <body data-mode="preview">
   <div class="app" id="app">
@@ -102,6 +106,8 @@
   <script src="vendor/highlight.min.js"></script>
   <script src="vendor/dart.min.js"></script>
   <script src="audit.js"></script>
+  <!-- NEXORA #045 : interface plate (ombres, lueurs et reliefs retirés de toutes les feuilles de style) -->
+  <script type="module" src="nx/look/plat.js"></script>
   <script type="module" src="dist/main.js"></script>
   <script type="module" src="nx/boot.js"></script>
 </body>

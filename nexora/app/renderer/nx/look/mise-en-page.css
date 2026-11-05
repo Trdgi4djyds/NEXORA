@@ -1,0 +1,41 @@
+/* NEXORA #045 : mise en page corrigée (demande de l'utilisateur : « corriger les erreurs de responsives et de blocs,
+   composants ou UI mal alignés, disposés, proportionnés ou qui débordent »). Défauts relevés par l'audit
+   scripts/audit-ui.mjs (pnpm audit:ui) à 1440 × 900, 1280 × 800, 1024 × 700 et 880 × 600, puis vérifiés à l'œil. */
+
+/* Rail : libellé « Connexion » du compte au même format que les autres (il sortait de son bouton, en plus grand). */
+html .rail-acct .rail-label {
+  display: block; max-width: 58px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 10px; font-weight: 600; letter-spacing: .01em; line-height: 1;
+}
+html[data-labels='off'] .rail-acct .rail-label { display: none; }
+@media (max-height: 640px) { html .rail-acct .rail-label { display: none; } }
+/* Rail : plus compact quand la fenêtre est basse, pour que les 9 espaces tiennent, compte connecté compris (A-026). */
+@media (max-height: 960px) {
+  html .rail-spaces > button, html .rail-btn { min-height: 50px; }
+  html .rail-spaces, html .rail-foot { gap: 2px; }
+}
+/* Fenêtre basse (moins de 780 px) : icônes seules (le nom apparaît au survol), tous les espaces restent visibles. */
+@media (max-height: 780px) {
+  html .rail-lb, html .rail-acct .rail-label { display: none; }
+  html .rail-spaces > button, html .rail-btn { min-height: 42px; }
+  html .rail-logo { margin-bottom: 0; }
+}
+
+/* Browser Lab sans page : la zone d'affichage mesurait 0 × 0 et cachait le message d'accueil (titre, texte). */
+html .bl-canvas:has(> .bl-empty) { position: absolute; inset: 0; width: auto !important; height: auto !important; overflow: visible; border-radius: 0; }
+/* Barre du Browser Lab : libellés réduits plus tôt pour ne pas sortir du panneau. */
+@container (max-width: 1000px) {
+  html .bl-bar .seg > button > span { display: none; }
+  html .bl-bar .bl-sel { flex: 0 1 132px; width: 132px; min-width: 0; }
+  html .bl-bar .bl-addr { min-width: 110px; }
+}
+
+/* App Builder : puces de construction sur une ligne chacune, la rangée passe à la ligne si besoin. */
+html .ab-build-row { flex-wrap: wrap; }
+html .ab-chip { white-space: nowrap; }
+
+/* NEX-DESIGN : onglets du panneau de gauche lisibles même quand le panneau est étroit. */
+html .dz-left .seg.wide { gap: 2px; }
+html .dz-left .seg.wide > button { min-width: 0; padding-inline: 3px; font-weight: 560; letter-spacing: -.01em; }
+/* Fenêtre étroite (panneau réduit) : les quatre onglets passent sur deux lignes plutôt que d'être coupés. */
+@media (max-width: 1100px) { html body .dz-left .seg.wide { grid-template-columns: repeat(2, minmax(0, 1fr)); } html .dz-left .seg.wide > button { flex: 1 1 40%; } }

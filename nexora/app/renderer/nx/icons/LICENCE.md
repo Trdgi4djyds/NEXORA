@@ -1,15 +1,26 @@
 # Icônes de NEXORA
 
-Depuis la version du 2026-11-05 (NEXORA #043), la plupart des pictogrammes de NEXORA (application, version web
-et back office) sont des icônes **Streamline Flex** (jeu gratuit « Flex Line » et « Flex Solid »), créées par
-**Streamline** : https://www.streamlinehq.com
+Depuis la version du 2026-11-05 (NEXORA #045), tous les pictogrammes de NEXORA (application, version web et back
+office) sont des icônes **Lucide** : https://lucide.dev
 
-Licence : **Creative Commons Attribution 4.0 International (CC BY 4.0)**,
-https://creativecommons.org/licenses/by/4.0/
+Licence : **ISC** (https://github.com/lucide-icons/lucide/blob/main/LICENSE)
 
-Modifications apportées par NEXORA : tracés recalculés de la grille de 14 à la grille de 24 de l'interface,
-deux icônes retournées horizontalement (barre latérale gauche), aucune autre retouche du dessin.
+> ISC License
+>
+> Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT). All other copyright
+> (c) for Lucide are held by Lucide Contributors 2022.
+>
+> Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby
+> granted, provided that the above copyright notice and this permission notice appear in all copies.
+>
+> THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL
+> IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+> INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
+> AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+> PERFORMANCE OF THIS SOFTWARE.
 
-Les autres pictogrammes (flèches, chevrons, plus, moins, lecture…) restent des dessins d'origine de NEXORA.
+Modifications apportées par NEXORA : épaisseur du trait laissée au gabarit qui affiche l'icône (1,7 par défaut au
+lieu de 2), aucune autre retouche du dessin.
 
-Le fichier `flex.js` est généré par `scripts/icones-flex.mjs` (`pnpm icones:flex`).
+Le fichier `lucide.js` est généré par `scripts/icones-lucide.mjs` (`pnpm icones:lucide`). Les icônes Streamline Flex
+du #043 ne sont plus utilisées.

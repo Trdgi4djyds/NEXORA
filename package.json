@@ -17,7 +17,8 @@
     "format": "oxfmt vite.config.ts preview scripts",
     "supabase": "node scripts/supabase.mjs",
     "android:shell": "node scripts/build-android-shell.mjs",
-    "icones:flex": "node scripts/icones-flex.mjs",
+    "icones:lucide": "node scripts/icones-lucide.mjs",
+    "audit:ui": "node scripts/audit-ui.mjs",
     "github:push": "node scripts/github-push.mjs"
   },
   "devDependencies": {

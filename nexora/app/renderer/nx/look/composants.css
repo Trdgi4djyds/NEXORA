@@ -174,10 +174,6 @@ html .rail-lb { font-weight: 600; }
 html[data-theme='light'] .rail-btn:not(.rail-ai) .rail-ic { background: var(--nx2-tile); }
 html[data-theme='dark'] .rail-btn:not(.rail-ai) .rail-ic { background: rgba(255, 255, 255, .06); }
 html .rail-btn:hover .rail-ic, html .rail-btn.open .rail-ic { box-shadow: inset 0 0 0 1px var(--nx2-edge-2); }
-/* Icône pleine de l'espace ouvert (posée par nx/look/index.js), au trait pour les autres. */
-html .rail-ic > .nx2-solid { display: none; }
-html .rail-spaces > button.on .rail-ic:has(> .nx2-solid) > svg:not(.nx2-solid) { display: none; }
-html .rail-spaces > button.on .rail-ic > .nx2-solid { display: block; }
 
 /* Barre d'outils : icône de l'espace en tuile à lèvre. */
 html .tb-space-ic { border-radius: 12px; box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--u, #7668ec) 18%, transparent); }
@@ -190,7 +186,7 @@ html ::-webkit-scrollbar-thumb:hover { background-color: var(--thumb); }
 /* ------------------------------------------------------------------ accessibilité et animations */
 html[data-contrast='high'] :is(.btn, .btn.primary, .seg > button.on, .check-row .box, .rail-spaces > button.on .rail-ic, .sheet-icon, .tb-space-ic) { box-shadow: inset 0 0 0 1px currentColor !important; }
 html[data-contrast='high'] .rail-spaces > button:not(.on) .rail-ic { background: transparent !important; color: inherit !important; }
-html[data-motion='none'] :is(.btn, .menu-item > .ico, .tog::after, .check-row .box, .nw-tile) { transition: none !important; transform: none !important; }
+html[data-motion='none'] :is(.btn, .menu-item > .ico, .check-row .box, .nw-tile), html[data-motion='none'] .tog::after { transition: none !important; transform: none !important; }
 @media (prefers-reduced-motion: reduce) {
   :is(.btn, .menu-item > .ico, .check-row .box) { transform: none !important; }
 }

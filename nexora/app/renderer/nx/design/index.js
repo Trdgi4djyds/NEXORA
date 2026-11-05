@@ -12,7 +12,8 @@ import { SHAPES, FRAMES, GRIDS, STICKERS, stickerSvg, TEMPLATES, PATTERNS } from
 import { getBrand, brandSheet, onBrand } from '../services.js';
 import { settings, saveSettings, esc, ico, toast, menu, prompt, uid, clamp, fmt, $, el, luminance } from '../core.js';
 
-ICONS.nxMore = '<circle cx="5.5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.5" cy="12" r="1.4"/>';
+// NEXORA #045 : l'icône Lucide déjà posée est gardée.
+ICONS.nxMore = ICONS.nxMore || '<circle cx="5.5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.5" cy="12" r="1.4"/>';
 const TEXT = ['textbox', 'i-text', 'text'];
 const isText = (o) => o && TEXT.includes(o.type);
 
