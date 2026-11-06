@@ -1238,6 +1238,14 @@ const TABLES = {
 // la mise à jour proposée.
 function demoReviewLinks(doc) {
   const ago = (min) => new Date(Date.now() - min * 60000).toISOString()
+  // NEXORA #055 : vidéo du Studio à valider, avis rattachés à un instant.
+  if (doc.startsWith("studio:")) return [{
+    token: "demo0000000000000000000000000002", name: "Lancement de l’app", created_at: ago(120), active: true, kind: "video", doc_local_id: doc,
+    design_reviews: [
+      { author: "Awa Koné", decision: "changes", comment: "Le logo arrive un peu tard, avance-le d’une seconde.", t: 3.4, created_at: ago(25) },
+      { author: "Marc Diallo", decision: "approve", comment: "Parfait pour les réseaux.", t: 7.9, created_at: ago(6) },
+    ],
+  }]
   return [{
     token: "demo0000000000000000000000000001", name: "Mon premier design", created_at: ago(180), active: true, doc_local_id: doc,
     design_reviews: [
@@ -1250,6 +1258,7 @@ function demoReviewLinks(doc) {
 function demoLibraries() {
   return [
     { id: "lib-demo-variables", kind: "variables", name: "Couleurs Boutique Moreau", updated_at: new Date().toISOString(), data: { modes: ["Clair", "Sombre"], mode: "Clair", list: [{ id: "v-demo-1", name: "primaire", type: "color", values: { Clair: "#6a4cff", Sombre: "#8b74ff" } }, { id: "v-demo-2", name: "accent", type: "color", values: { Clair: "#ffcc00", Sombre: "#ffd84d" } }] } },
+    { id: "lib-demo-studio", kind: "studio", name: "Présentoir de la marque", updated_at: "2026-11-05T15:00:00.000Z", data: { scene: {}, thumb: "" } },
     { id: "lib-demo-brand", kind: "brand", name: "Kit Boutique Moreau", updated_at: "2026-11-02T10:00:00.000Z", data: { name: "Boutique Moreau", colors: ["#6a4cff", "#ff3d7f", "#ffcc00", "#14151a", "#f5f5f7"], fonts: {} } },
   ]
 }

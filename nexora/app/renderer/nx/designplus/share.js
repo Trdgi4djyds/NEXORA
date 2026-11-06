@@ -21,6 +21,7 @@ async function openReview(token) {
   const ov = overlay('<div class="dzx-review-box"><p>Chargement du design…</p></div>');
   const { data, error } = await sb.rpc('nx_review_get', { p_token: token }).then((r) => r, (e) => ({ error: e }));
   if (error || !data) { ov.querySelector('.dzx-review-box').innerHTML = '<h2>Lien introuvable</h2><p>Ce lien de validation n’existe pas ou n’est plus actif. Demande un nouveau lien à la personne qui te l’a envoyé.</p><button class="btn" data-rclose>Fermer</button>'; ov.addEventListener('click', (e) => { if (e.target.closest('[data-rclose]')) { ov.remove(); history.replaceState(null, '', location.pathname); } }); return; }
+  if (data.kind === 'video') { videoReview(ov, token, data); return; }
   let page = 0;
   const pins = [];
   const render = () => {
@@ -53,6 +54,44 @@ async function openReview(token) {
       if (error) { const h = ov.querySelector('aside .dzx-hint'); if (h) h.textContent = 'Ton avis n’a pas pu être envoyé. Réessaie dans un instant.'; return; }
       data.reviews = rows || data.reviews; pins.length = 0; render();
     }
+  });
+}
+// NEXORA #055 : vidéo du Studio à valider : lecture (chargée puis lue en local, la politique de sécurité de la page
+// n'autorise pas les vidéos d'un autre site), commentaires à l'instant de lecture, avis horodatés cliquables.
+const mmss = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+async function videoReview(ov, token, data) {
+  const box = ov.querySelector('.dzx-review-box');
+  box.innerHTML = '<p>Chargement de la vidéo…</p>';
+  let src = '';
+  try { src = URL.createObjectURL(await (await fetch(data.media_url)).blob()); } catch { box.innerHTML = '<h2>Vidéo indisponible</h2><p>La vidéo n’a pas pu être chargée. Réessaie dans un instant.</p><button class="btn" data-rclose>Fermer</button>'; }
+  const close = () => { if (src) URL.revokeObjectURL(src); ov.remove(); history.replaceState(null, '', location.pathname); };
+  const list = () => `<h3>Avis (${(data.reviews || []).length})</h3>${(data.reviews || []).map((r) => `<div class="dzx-rv ${r.decision}"><b>${esc(r.author)}</b> <em>${esc(DECISIONS[r.decision] || '')}</em><p>${esc(r.comment)}</p><small>${r.t != null ? `<button class="dzx-rv-t" data-rseek="${r.t}">à ${mmss(r.t)}</button> · ` : ''}${new Date(r.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</small></div>`).join('') || '<p class="dzx-hint">Aucun avis pour l’instant.</p>'}`;
+  if (src) {
+    box.classList.add('wide');
+    box.innerHTML = `<header><div><small>Vidéo à valider</small><h2>${esc(data.name)}</h2></div><span class="grow"></span><button class="btn" data-rclose>Fermer</button></header>
+      <div class="dzx-review-main"><div class="dzx-review-video"><video controls playsinline src="${src}"></video><div class="dzx-rv-marks">${(data.reviews || []).filter((r) => r.t != null).map((r) => `<button class="dzx-rv-mark ${r.decision}" data-rseek="${r.t}" title="${esc(r.author)} à ${mmss(r.t)}" style="left:0"></button>`).join('')}</div></div>
+      <aside><p class="dzx-hint">Mets la vidéo en pause au bon moment : ton commentaire est rattaché à cet instant (<b data-rnow>0:00</b>).</p>
+        <label>Ton nom<input class="input" data-rname value="${esc(localStorage.getItem('nx-review-name') || '')}" placeholder="Prénom Nom"></label>
+        <label>Commentaire<textarea class="input" rows="4" data-rtext placeholder="Ce qui te plaît, ce qu’il faut changer…"></textarea></label>
+        <div class="dzx-review-acts"><button class="btn primary" data-rsend="approve">Approuver</button><button class="btn" data-rsend="changes">Demander des changements</button><button class="btn" data-rsend="comment">Commenter</button></div>
+        <div data-rlist>${list()}</div></aside></div>`;
+    const v = box.querySelector('video');
+    const place = () => { const d = v.duration || 0; box.querySelectorAll('.dzx-rv-mark').forEach((m) => { m.style.left = d ? `${(+m.dataset.rseek / d) * 100}%` : '0'; }); };
+    v.addEventListener('loadedmetadata', place);
+    v.addEventListener('timeupdate', () => { const n = box.querySelector('[data-rnow]'); if (n) n.textContent = mmss(v.currentTime); });
+  }
+  ov.addEventListener('click', async (e) => {
+    if (e.target.closest('[data-rclose]')) { close(); return; }
+    const seek = e.target.closest('[data-rseek]'); const v = box.querySelector('video');
+    if (seek && v) { v.currentTime = +seek.dataset.rseek; v.pause(); return; }
+    const s = e.target.closest('[data-rsend]'); if (!s || !v) return;
+    const author = box.querySelector('[data-rname]').value.trim(); const comment = box.querySelector('[data-rtext]').value.trim();
+    if (!author) { box.querySelector('[data-rname]').focus(); return; }
+    if (!comment && s.dataset.rsend !== 'approve') { box.querySelector('[data-rtext]').focus(); return; }
+    localStorage.setItem('nx-review-name', author);
+    const { data: rows, error } = await sb.rpc('nx_review_post', { p_token: token, p_author: author, p_decision: s.dataset.rsend, p_comment: comment, p_page: 0, p_x: null, p_y: null, p_t: Math.round(v.currentTime * 100) / 100 }).then((r) => r, (er) => ({ error: er }));
+    if (error) { const h = box.querySelector('aside .dzx-hint'); if (h) h.textContent = 'Ton avis n’a pas pu être envoyé. Réessaie dans un instant.'; return; }
+    data.reviews = rows || data.reviews; box.querySelector('[data-rtext]').value = ''; box.querySelector('[data-rlist]').innerHTML = list();
   });
 }
 async function openShare(token) {

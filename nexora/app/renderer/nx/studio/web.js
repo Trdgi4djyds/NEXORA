@@ -47,23 +47,26 @@ export function toggleTest(S) {
 }
 
 // ---------- Export web autonome (un seul fichier HTML, modèle intégré) ----------
-export async function buildHtml(S, title) {
+// NEXORA #055 : option scroll (l'animation suit le défilement de la page, scroll-telling) ; « réduire les
+// animations » du système respecté (pas de lecture automatique).
+export async function buildHtml(S, title, { scroll = false, glbUrl = '', maxTexture = 2048 } = {}) {
   const keep = new Map(); for (const id of S.order) { const r = S.objects.get(id).model.root; keep.set(r, r.name); r.name = `nx_${id}`; }
   S.editorVisible && S.editorVisible(false);
   let glb;
-  try { glb = await new GLTFExporter().parseAsync(S.three.content, { binary: true, onlyVisible: true, maxTextureSize: 2048 }); } finally { for (const [r, n] of keep) r.name = n; S.editorVisible && S.editorVisible(true); }
+  try { glb = glbUrl ? null : await new GLTFExporter().parseAsync(S.three.content, { binary: true, onlyVisible: true, maxTextureSize: maxTexture }); } finally { for (const [r, n] of keep) r.name = n; S.editorVisible && S.editorVisible(true); }
   const env = S.three.env; const cam = S.three.camera;
   const easeSrc = Object.fromEntries(Object.entries(EASES).map(([k, v]) => [k, String(v[1])]));
   const data = {
-    title, bg: env.bg === 'transparent' ? null : env.bgColor || '#0a0a0c', exposure: env.exposure || 1,
+    title, scroll, bg: env.bg === 'transparent' ? null : env.bgColor || '#0a0a0c', exposure: env.exposure || 1,
     camera: { pos: cam.position.toArray(), target: S.controls.target.toArray(), fov: cam.fov },
     anim: { duration: S.anim.duration, tracks: S.anim.tracks },
     interact: Object.fromEntries(S.order.map((id) => [id, S.objects.get(id).item.nxInteract]).filter(([, v]) => v))
   };
-  const b64 = bytesB64(new Uint8Array(glb));
+  // Modèle intégré (page autonome) ou chargé depuis un fichier voisin (glbUrl, page publiée sur un site).
+  const b64 = glb ? bytesB64(new Uint8Array(glb)) : '';
   return `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title>
-<style>html,body{margin:0;height:100%;background:${data.bg || 'transparent'};overflow:hidden;font-family:system-ui,sans-serif}canvas{display:block;width:100%;height:100%;touch-action:none}#nx-load{position:fixed;inset:0;display:grid;place-items:center;color:#888;font-size:14px}</style>
+<style>html,body{margin:0;height:100%;background:${data.bg || 'transparent'};overflow:${scroll ? 'auto' : 'hidden'};font-family:system-ui,sans-serif}${scroll ? 'body{height:400vh}canvas{position:fixed;inset:0;width:100%;height:100vh}' : 'canvas{display:block;width:100%;height:100%;touch-action:none}'}#nx-load{position:fixed;inset:0;display:grid;place-items:center;color:#888;font-size:14px}</style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@${WEB_THREE}/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@${WEB_THREE}/examples/jsm/"}}</script>
 </head><body><div id="nx-load">Chargement de la scène 3D…</div>
 <!-- Scène exportée par NEXORA (Studio 3D & Motion). Intégration : <iframe src="ce-fichier.html" style="width:100%;height:520px;border:0"></iframe> -->
@@ -81,11 +84,12 @@ scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnviron
 const key = new THREE.DirectionalLight(0xffffff, 2); key.position.set(25, 45, 30); scene.add(key, new THREE.HemisphereLight(0xffffff, 0x444444, 0.6));
 const camera = new THREE.PerspectiveCamera(D.camera.fov, 1, 0.5, 3000); camera.position.fromArray(D.camera.pos);
 const controls = new OrbitControls(camera, renderer.domElement); controls.target.fromArray(D.camera.target); controls.enableDamping = true;
-const bytes = Uint8Array.from(atob('${b64}'), (c) => c.charCodeAt(0));
+const bytes = ${glbUrl ? `new Uint8Array(await (await fetch(${JSON.stringify(glbUrl)})).arrayBuffer())` : `Uint8Array.from(atob('${b64}'), (c) => c.charCodeAt(0))`};
 const gltf = await new GLTFLoader().parseAsync(bytes.buffer, ''); scene.add(gltf.scene); document.getElementById('nx-load').remove();
 const nodes = {}; gltf.scene.traverse((o) => { if (o.name && o.name.startsWith('nx_')) nodes[o.name.slice(3)] = { o, base: { p: o.position.clone(), r: o.rotation.clone(), s: o.scale.clone() } }; });
 const val = (id, t) => { const tr = D.anim.tracks[id]; if (!tr || !tr.length) return null; if (t <= tr[0].t) return tr[0].v; const l = tr[tr.length - 1]; if (t >= l.t) return l.v; let i = 0; while (i < tr.length - 1 && tr[i + 1].t < t) i++; const a = tr[i]; const b = tr[i + 1]; const k = (EASE[b.ease] || EASE.inOut)((t - a.t) / Math.max(1e-6, b.t - a.t)); const out = {}; for (const n of new Set([...Object.keys(a.v), ...Object.keys(b.v)])) { const x = a.v[n] ?? b.v[n]; const y = b.v[n] ?? a.v[n]; out[n] = Array.isArray(x) ? x.map((v, j) => v + ((y[j] ?? v) - v) * k) : typeof x === 'number' ? x + (y - x) * k : y; } return out; };
-const deg = Math.PI / 180; let t0 = performance.now(); let scrollT = null; const state = {}; let hover = null; const ray = new THREE.Raycaster(); const ptr = new THREE.Vector2();
+const deg = Math.PI / 180; let t0 = performance.now(); let scrollT = null; const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (D.scroll) { controls.enableZoom = false; scrollT = 0; addEventListener('scroll', () => { scrollT = (scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight)) * D.anim.duration; }, { passive: true }); } const state = {}; let hover = null; const ray = new THREE.Raycaster(); const ptr = new THREE.Vector2();
 const pick = (e) => { const r = renderer.domElement.getBoundingClientRect(); ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ptr, camera); for (const h of ray.intersectObject(gltf.scene, true)) { let o = h.object; while (o && !(o.name || '').startsWith('nx_')) o = o.parent; if (o) return o.name.slice(3); } return null; };
 renderer.domElement.addEventListener('pointermove', (e) => { hover = pick(e); const it = hover && D.interact[hover]; renderer.domElement.style.cursor = it && it.click && it.click !== 'none' ? 'pointer' : ''; });
 renderer.domElement.addEventListener('click', (e) => { const id = pick(e); const it = id && D.interact[id]; if (!it) return; if (it.click === 'play') t0 = performance.now(); else if (it.click === 'link' && it.url) window.open(it.url, '_blank'); else if (it.click && it.click !== 'none') state[id] = { click: it.click, at: performance.now() }; });
@@ -94,7 +98,7 @@ const hv = {};
 function frame(now) {
   requestAnimationFrame(frame);
   const w = innerWidth, h = innerHeight; if (renderer.domElement.width !== Math.floor(w * renderer.getPixelRatio())) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
-  const t = scrollT ?? (((now - t0) / 1000) % D.anim.duration);
+  const t = scrollT ?? (still ? 0 : (((now - t0) / 1000) % D.anim.duration));
   for (const [id, n] of Object.entries(nodes)) {
     const v = val(id, t); const o = n.o; o.position.copy(n.base.p); o.rotation.copy(n.base.r); o.scale.copy(n.base.s);
     if (v) { if (v.pos) o.position.fromArray(v.pos); if (v.rot) o.rotation.set(v.rot[0] * deg, v.rot[1] * deg, v.rot[2] * deg); if (v.scale != null) o.scale.setScalar(v.scale); }

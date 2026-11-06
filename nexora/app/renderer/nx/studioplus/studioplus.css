@@ -1,0 +1,31 @@
+/* NEXORA #055 : Studio 3D & Motion, cartes ajoutées (plates : aucune ombre, aucun dégradé). */
+.sx-pro { font-style: normal; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: var(--info-bg, rgba(127,127,127,.12)); color: var(--text-2); margin-left: 4px; vertical-align: 1px; }
+.sx-area { width: 100%; resize: vertical; min-height: 64px; margin: 2px 0 8px; font: inherit; }
+.st-card .input + .st-btns { margin-top: 8px; }
+.sx-checks { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
+.sx-sfx { display: grid; gap: 4px; margin: 4px 0 8px; }
+.sx-sfx-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; font-size: 12.5px; }
+.sx-list { display: grid; gap: 4px; margin: 6px 0 8px; }
+.sx-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; min-width: 0; }
+.sx-row > span:not(.grow) { min-width: 0; display: grid; }
+.sx-row b, .sx-row small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sx-row small { color: var(--text-3); font-size: 11px; }
+.sx-row .grow { flex: 1; }
+.sx-link { border: 0; background: none; padding: 0; color: var(--accent, #6a4cff); font: inherit; font-weight: 600; cursor: pointer; font-variant-numeric: tabular-nums; }
+.sx-link:hover { text-decoration: underline; }
+.sx-review { display: grid; gap: 3px; padding: 8px 10px; border: 1px solid var(--info-edge, var(--border)); border-radius: 10px; background: var(--info-bg, transparent); }
+.sx-quote { display: block; color: var(--text-2); font-size: 11.5px; line-height: 1.4; }
+.sx-thumb { width: 40px; height: 28px; object-fit: cover; border-radius: 5px; border: 1px solid var(--info-edge, var(--border)); flex: none; }
+.sx-eases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.sx-ease { display: grid; justify-items: center; gap: 2px; padding: 6px 4px; border: 1px solid var(--info-edge, var(--border)); border-radius: 9px; background: var(--info-bg, transparent); color: var(--text-2); font-size: 10.5px; cursor: pointer; }
+.sx-ease span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sx-ease.on, .sx-ease:hover { border-color: var(--accent, #6a4cff); color: var(--accent, #6a4cff); }
+.sx-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0 8px; }
+.sx-compare figure { margin: 0; display: grid; gap: 4px; }
+.sx-compare img { width: 100%; border-radius: 8px; border: 1px solid var(--info-edge, var(--border)); }
+.sx-compare figcaption { font-size: 11px; color: var(--text-3); text-align: center; }
+.sx-fps { position: absolute; top: 10px; left: 10px; z-index: 4; padding: 3px 8px; border-radius: 6px; background: rgba(20, 21, 26, .78); color: #fff; font: 600 11px/1.4 Inter, system-ui, sans-serif; pointer-events: none; font-variant-numeric: tabular-nums; }
+/* Cartes gratuites : même présentation que les cartes du #011 (nx/nx.css). */
+.sx-card .nx-st-title > span { display: flex; justify-content: flex-start; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--text); }
+.sx-card .st-btns .btn { display: inline-flex; align-items: center; gap: 5px; }
+.sx-card .st-btns, .nx-st-card .st-btns { flex-wrap: wrap; }

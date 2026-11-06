@@ -12,6 +12,7 @@
     "test:offres": "node scripts/test-offres.mjs",
     "test:devlab": "node scripts/test-devlab.mjs",
     "test:design": "node scripts/test-design.mjs",
+    "test:studio": "node scripts/test-studio.mjs",
     "test:fiabilite": "node scripts/test-fiabilite.mjs",
     "valider": "node scripts/valider.mjs",
     "pack:windows": "node scripts/pack-windows.mjs",

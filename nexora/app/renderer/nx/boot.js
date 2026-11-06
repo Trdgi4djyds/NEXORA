@@ -44,3 +44,7 @@ load('devplus', () => state.devLab && state.devLab.el && state.devLab.st && stat
 load('designplus', () => state.design && state.design.ready && state.design.nxInstalled && state.design, './designplus/index.js');
 // NEXORA #053 : liens de validation (#/revue/…) et de partage (#/share/…), dès le démarrage (application et web).
 load('revue', () => document.body, './designplus/share.js');
+// NEXORA #055 : Studio 3D & Motion (création par l'IA, import OBJ/STL/PLY/SPLAT, réseaux sociaux, bruitages, clés et
+// repères, rendus par lots, packs web et réalité augmentée, Lottie, validation des vidéos, versions, équipe), posé
+// après les fonctions du #011.
+load('studioplus', () => state.studio && state.studio.ready && state.studio.nxInstalled && state.studio, './studioplus/index.js');

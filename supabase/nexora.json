@@ -29,7 +29,8 @@
     { "id": "avatars", "public": true },
     { "id": "design-files", "public": false },
     { "id": "assets", "public": false },
-    { "id": "exports", "public": false }
+    { "id": "exports", "public": false },
+    { "id": "studio-reviews", "public": true }
   ],
   "email": {
     "$comment": "Brevo (#029) : relais SMTP des e-mails des comptes et expéditeur des alertes de supervision. Les clés (SMTP xsmtpsib-…, API xkeysib-…) ne sont jamais dans le dépôt : elles se saisissent dans le back office.",
