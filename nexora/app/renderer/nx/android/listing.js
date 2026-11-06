@@ -115,7 +115,7 @@ ${perms.length ? `<h2>Autorisations demandées</h2><ul>${perms.map((p) => `<li>$
 `;
 }
 
-function readiness(app, cfg, assets) {
+export function readiness(app, cfg, assets) {
   const l = L(app, cfg);
   const a = assets || {};
   return [

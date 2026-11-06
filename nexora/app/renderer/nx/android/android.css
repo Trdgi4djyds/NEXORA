@@ -229,3 +229,65 @@
 .nxh-wopt span { font-size: 10.5px; line-height: 1.15; min-height: 2.3em; text-align: center; overflow: hidden; overflow-wrap: anywhere; }
 .nxh-wopt.on img { box-shadow: 0 0 0 2px var(--accent); }
 .nxh-wopt.on span { color: var(--accent); font-weight: 600; }
+
+/* NEXORA #056 : Prêt pour le Play Store (.nxr-*) et Tests fermés (.nxt-*). Aplats, contours, sans ombre. */
+.nxr-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: center; }
+.nxr-score { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 92px; height: 92px; border-radius: 50%; border: 6px solid var(--info-edge, var(--border)); }
+.nxr-score b { font-size: 22px; font-weight: 750; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.nxr-score small { font-size: 10.5px; color: var(--text-3, var(--text-2)); text-align: center; line-height: 1.2; }
+.nxr-ok .nxr-score { border-color: var(--ok, #30d158); }
+.nxr-warn .nxr-score { border-color: var(--warn, #ff9f0a); }
+.nxr-bad .nxr-score { border-color: var(--bad, #ff453a); }
+.nxr-verdict { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.nxr-verdict b { font-size: 16px; font-weight: 700; }
+.nxr-verdict span { color: var(--text-2); font-size: 12.5px; }
+.nxr-meter { height: 6px; border-radius: 99px; background: var(--info-bg, var(--fill)); border: 1px solid var(--info-edge, var(--border)); overflow: hidden; margin-top: 6px; }
+.nxr-meter i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+.nxr-ok .nxr-meter i { background: var(--ok, #30d158); }
+.nxr-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.nxr-list li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--info-edge, var(--border)); }
+.nxr-list li:first-child { border-top: 0; padding-top: 2px; }
+.nxr-ic { display: grid; place-items: center; }
+.nxr-list .nxr-ok .nxr-ic { color: var(--ok, #30d158); }
+.nxr-list .nxr-warn .nxr-ic { color: var(--warn, #ff9f0a); }
+.nxr-list .nxr-bad .nxr-ic { color: var(--bad, #ff453a); }
+.nxr-list .nxr-info .nxr-ic { color: var(--text-3, var(--text-2)); }
+.nxr-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.nxr-txt b { font-size: 12.5px; font-weight: 600; overflow-wrap: anywhere; }
+.nxr-txt small { font-size: 11.5px; color: var(--text-2); line-height: 1.4; }
+.nxr-okline { display: flex; align-items: center; gap: 6px; }
+.nxr-okline svg { color: var(--ok, #30d158); flex: none; }
+.nxt-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.nxt-kpi { background: var(--info-bg, var(--fill)); border: 1px solid var(--info-edge, var(--border)); border-radius: var(--r-md, 10px); padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.nxt-kpi small { color: var(--text-2); font-size: 11.5px; }
+.nxt-kpi b { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.nxt-kpi b span { font-size: 13px; color: var(--text-3, var(--text-2)); font-weight: 500; }
+.nxt-status { display: flex; align-items: flex-start; gap: 7px; margin: 0; font-size: 12.5px; line-height: 1.45; }
+.nxt-status svg { flex: none; margin-top: 2px; }
+.nxt-status.nxr-ok svg { color: var(--ok, #30d158); }
+.nxt-status.nxr-warn svg { color: var(--warn, #ff9f0a); }
+.nxt-status.nxr-bad svg { color: var(--bad, #ff453a); }
+.nxt-count { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; font-size: 12.5px; }
+.nxt-count b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.nxt-count small { color: var(--text-2); }
+.nxt-count .nxr-meter { flex-basis: 100%; margin-top: 2px; }
+.nxt-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 160px; overflow: auto; }
+.nxt-chip { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; padding: 2px 2px 2px 10px; border-radius: 99px; border: 1px solid var(--info-edge, var(--border)); background: var(--info-bg, var(--fill)); font-size: 12px; }
+.nxt-chip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nxt-links { display: flex; flex-direction: column; gap: 8px; }
+.nxt-links > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 8px; align-items: center; }
+.nxt-links small { grid-column: 1 / -1; color: var(--text-2); font-size: 11.5px; }
+.nxt-links code { font-size: 12px; padding: 6px 8px; border-radius: var(--r-sm, 8px); background: var(--info-bg, var(--fill)); border: 1px solid var(--info-edge, var(--border)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nxt-add { display: flex; gap: 8px; }
+.nxt-add .input { flex: 1; min-width: 0; }
+.nxt-fb { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.nxt-fb li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px solid var(--info-edge, var(--border)); }
+.nxt-fb li:first-child { border-top: 0; }
+.nxt-fb li.done .ab-check span { color: var(--text-3, var(--text-2)); text-decoration: line-through; }
+.nxt-fb small { color: var(--text-3, var(--text-2)); font-size: 11px; font-variant-numeric: tabular-nums; }
+.nxt-qa { display: flex; flex-direction: column; gap: 8px; }
+.nxt-qa > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; padding: 10px 12px; border-radius: var(--r-md, 10px); border: 1px solid var(--info-edge, var(--border)); background: var(--info-bg, var(--fill)); }
+.nxt-qa b { font-size: 12.5px; }
+.nxt-qa p { grid-column: 1; margin: 4px 0 0; font-size: 12px; color: var(--text-2); line-height: 1.45; }
+.nxt-qa .icon-btn { grid-row: 1 / span 2; grid-column: 2; align-self: start; }
+@media (max-width: 1100px) { .nxr-head { grid-template-columns: auto minmax(0, 1fr); } .nxr-head > .icon-btn { grid-column: 2; justify-self: end; } }
