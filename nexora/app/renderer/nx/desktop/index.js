@@ -10,7 +10,7 @@ import { a as resizable } from '../../dist/chunks/chunk-W2YYTHPL.js';
 import { iconDataUrl, sidebarCanvas, buildAssets, initials } from './icons.js';
 
 export const SECTIONS = [
-  ['source', 'Source', 'globe', 'Site en ligne, dossier ou projet Electron'],
+  ['source', 'Source', 'globe', 'Site en ligne, dossier ou projet de bureau'],
   ['identity', 'Identité', 'file', 'Nom, éditeur, version, identifiant'],
   ['icon', 'Icône', 'image', 'Icône du logiciel et de l’installateur'],
   ['window', 'Fenêtre', 'display', 'Taille, démarrage, barre de menus, thème'],
@@ -24,11 +24,11 @@ export const SECTIONS = [
 const KINDS = {
   url: ['Site en ligne', 'globe', 'Ton site dans une fenêtre de logiciel : chaque mise à jour du site est visible sans réinstaller.'],
   folder: ['Dossier de site', 'folderOpen', 'Un site (HTML) ou un projet web (React, Vue, Angular, Astro…) intégré au logiciel : il marche hors connexion.'],
-  electron: ['Projet Electron', 'code', 'Ton projet Electron existant, emballé avec sa configuration ou celle recommandée par NEXORA.'],
+  electron: ['Projet de bureau', 'code', 'Ton projet existant, emballé avec sa configuration ou celle recommandée par NEXORA.'],
 };
 const LOGINS = [
-  ['google', 'Google'], ['microsoft', 'Microsoft'], ['apple', 'Apple'], ['facebook', 'Facebook'], ['github', 'GitHub'],
-  ['auth0', 'Auth0'], ['okta', 'Okta'], ['stripe', 'Stripe'], ['paypal', 'PayPal'],
+  ['google', 'Compte web'], ['microsoft', 'Compte professionnel'], ['apple', 'Compte de l’appareil'], ['facebook', 'Réseau social'], ['github', 'Dépôt de code'],
+  ['auth0', 'Connexion centralisée'], ['okta', 'Compte d’entreprise'], ['stripe', 'Paiement en ligne'], ['paypal', 'Portefeuille en ligne'],
 ];
 const PERMS = [
   ['notifications', 'Notifications', 'Messages du site dans le centre de notifications de Windows.', ['allow', 'deny']],
@@ -44,7 +44,7 @@ const PERM_LABEL = { allow: 'Autoriser', ask: 'Demander', deny: 'Refuser' };
 const SIZES = [['1024x700', 'Compact'], ['1280x800', 'Standard'], ['1440x900', 'Grand'], ['1600x1000', 'Très grand']];
 const SPELL = [['fr', 'Français'], ['en-US', 'Anglais (États-Unis)'], ['en-GB', 'Anglais (Royaume-Uni)'], ['de', 'Allemand'], ['es', 'Espagnol'], ['it', 'Italien'], ['pt-BR', 'Portugais (Brésil)'], ['nl', 'Néerlandais']];
 const FORMATS = [['nsis', 'Installateur', 'Assistant d’installation .exe (recommandé)'], ['portable', 'Portable', 'Un seul .exe, sans installation'], ['zip', 'ZIP', 'Archive à décompresser'], ['msi', 'MSI', 'Déploiement en entreprise (GPO, Intune)']];
-const STEP_LABELS = [['tools', 'Outils de construction'], ['electron', 'Moteur Electron'], ['source', 'Source'], ['project', 'Projet du logiciel'], ['package', 'Emballage et installateur'], ['msi', 'Paquet MSI'], ['copy', 'Fichiers d’installation']];
+const STEP_LABELS = [['tools', 'Outils de construction'], ['electron', 'Moteur du logiciel'], ['source', 'Source'], ['project', 'Projet du logiciel'], ['package', 'Emballage et installateur'], ['msi', 'Paquet MSI'], ['copy', 'Fichiers d’installation']];
 
 // ---------------------------------------------------------------- modèle d'un logiciel
 function defaults() {
@@ -258,9 +258,9 @@ class DesktopSpace {
     const s = this.status;
     const missing = [];
     if (s && !s.error) {
-      if (!s.node || !s.node.ok) missing.push(s.node && s.node.version ? `Node.js (${esc(s.node.version)} est trop ancien)` : 'Node.js (≈ 35 Mo)');
+      if (!s.node || !s.node.ok) missing.push(s.node && s.node.version ? `l’environnement de construction (${esc(s.node.version)} est trop ancien)` : 'l’environnement de construction (≈ 35 Mo)');
       if (!s.kit || s.kit.version !== s.kit.expected) missing.push('les outils de construction (≈ 90 Mo)');
-      if (!s.electron || !s.electron.cached || !s.electron.cached.length) missing.push('le moteur Electron (≈ 150 Mo)');
+      if (!s.electron || !s.electron.cached || !s.electron.cached.length) missing.push('le moteur du logiciel (≈ 150 Mo)');
     }
     box.hidden = !missing.length || this.section === 'build';
     if (box.hidden) { box.innerHTML = ''; return; }
@@ -286,7 +286,7 @@ class DesktopSpace {
   form_source(a) {
     const s = a.source;
     const intro = !s.url && !s.dir ? `<div class="ab-banner dsk-intro">${ico('display', 18)}<div><b>Un vrai logiciel Windows, installable et désinstallable</b>
-      <p>Pars d’un site en ligne, d’un dossier de site ou d’un projet Electron. NEXORA produit un installateur Windows (menu Démarrer, bureau, désinstallation depuis les paramètres), avec les réglages de sécurité recommandés par Electron : bac à sable, liens externes dans le navigateur, autorisations contrôlées, exécutable verrouillé.</p></div></div>` : '';
+      <p>Pars d’un site en ligne, d’un dossier de site ou d’un projet de bureau. NEXORA produit un installateur Windows (menu Démarrer, bureau, désinstallation depuis les paramètres), avec ses réglages de sécurité : bac à sable, liens externes dans le navigateur, autorisations contrôlées, exécutable verrouillé.</p></div></div>` : '';
     let detail = '';
     if (s.kind === 'url') {
       const ins = a.inspect;
@@ -308,7 +308,7 @@ class DesktopSpace {
         <div class="field"><span>Connexion avec un service tiers (reste dans le logiciel)</span><div class="dsk-chips">${LOGINS.map(([id, l]) => `<label class="ab-chip"><input type="checkbox" data-login="${id}" ${a.logins.includes(id) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div></div>`);
     } else {
       const an = s.analysis;
-      const pick = `<div class="ab-pick"><div><b>${esc(s.dir ? s.dir.split(/[\\/]/).filter(Boolean).pop() : 'Aucun dossier choisi')}</b><small>${esc(s.dir || (s.kind === 'electron' ? 'Choisis le dossier qui contient le package.json du projet Electron.' : 'Choisis le dossier du site (index.html) ou la racine du projet web.'))}</small></div>
+      const pick = `<div class="ab-pick"><div><b>${esc(s.dir ? s.dir.split(/[\\/]/).filter(Boolean).pop() : 'Aucun dossier choisi')}</b><small>${esc(s.dir || (s.kind === 'electron' ? 'Choisis le dossier qui contient la configuration du projet de bureau.' : 'Choisis le dossier du site ou la racine du projet web.'))}</small></div>
         <div class="ab-row">${s.dir ? `<button class="btn small" data-act="reanalyze" title="Analyser de nouveau">${ico('refreshCw', 13)}</button>` : ''}<button class="btn" data-act="pick-source">${ico('folderOpen', 14)}<span>${s.dir ? 'Changer…' : 'Choisir le dossier…'}</span></button></div></div>`;
       let info = '';
       if (an) {
@@ -317,7 +317,7 @@ class DesktopSpace {
         if (an.kind === 'unsupported') info = `${head}${hint(esc(an.unsupported.message))}`;
         else if (s.kind === 'electron') {
           const e = an.electron || {};
-          info = `${head}<ul class="ab-feat"><li>Electron ${esc(e.version || '?')}${e.main ? ` · fichier principal ${esc(e.main)}` : ''}</li><li>${e.configFile ? `Configuration de construction : ${esc(e.configFile)}` : 'Pas de configuration electron-builder : NEXORA appliquera ses réglages recommandés.'}</li></ul>
+          info = `${head}<ul class="ab-feat"><li>Moteur détecté${e.main ? ` · fichier principal ${esc(e.main)}` : ''}</li><li>${e.configFile ? `Configuration de construction détectée : ${esc(e.configFile)}` : 'NEXORA appliquera ses réglages recommandés.'}</li></ul>
             ${field('Commande de préparation (avant l’emballage)', inp(a, 'source.prepareCmd', { placeholder: 'npm run build', mono: true }), 'Compile le code (TypeScript, Vite…) avant l’emballage. Laisse vide si le projet est prêt.')}
             ${e.builder && !e.forge ? tog(a, 'source.useProjectConfig', 'Utiliser la configuration du projet', 'Formats, icône et installateur définis par le projet. Sinon : réglages de NEXORA (sections Installation, Sécurité…).') : ''}${warns}`;
         } else if (an.kind === 'web') {
@@ -329,7 +329,7 @@ class DesktopSpace {
           info = `${head}${field('Dossier du site (contient index.html)', inp(a, 'source.webDir', { placeholder: '(racine du dossier)', mono: true, list: 'dsk-webdirs' }))}<datalist id="dsk-webdirs">${(an.webDirs || []).map((d) => `<option value="${esc(d)}">`).join('')}</datalist>${warns}`;
         }
       }
-      detail = card(s.kind === 'electron' ? 'Projet Electron' : 'Dossier du site ou du projet', `${pick}${info}`)
+      detail = card(s.kind === 'electron' ? 'Projet de bureau' : 'Dossier du site ou du projet', `${pick}${info}`)
         + (s.kind === 'folder' ? card('Pages et liens', `${hint('Le site est servi à l’adresse privée app://local : ses liens internes restent dans le logiciel et les liens vers Internet s’ouvrent dans le navigateur. Ajoute ici les domaines de tes API ou services à garder dans le logiciel (fenêtres de connexion, paiement).')}${this.domainsHtml(a)}<div class="ab-row"><input class="input mono" data-new-domain data-enter="add-domain" placeholder="api.monsite.com" spellcheck="false"><button class="btn" data-act="add-domain">${ico('plus', 14)}<span>Ajouter</span></button></div>`) : '');
     }
     return `${intro}${card('Type de source', `${seg(a, 'source.kind', Object.fromEntries(Object.entries(KINDS).map(([k, [l, i]]) => [k, `${ico(i, 14)}<span>${l}</span>`])))}${hint(KINDS[s.kind][2])}`)}${detail}`;
@@ -423,9 +423,9 @@ class DesktopSpace {
       + card('Téléchargements', `${seg(a, 'behavior.downloads', { ask: 'Demander où enregistrer', auto: 'Dossier Téléchargements' })}${hint('Progression dans la barre des tâches et notification à la fin.')}`)
       + card('Correcteur orthographique', `<div class="dsk-chips">${SPELL.map(([id, l]) => `<label class="ab-chip"><input type="checkbox" data-spell="${id}" ${b.spellcheck.includes(id) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div>${hint('Quatre langues au plus. Aucune case : correcteur désactivé.')}`)
       + card('Compatibilité des sites', `
-      ${seg(a, 'behavior.userAgent', { chrome: 'Navigateur standard', electron: 'Electron', custom: 'Personnalisé' })}
+      ${seg(a, 'behavior.userAgent', { chrome: 'Navigateur standard', electron: 'Application de bureau', custom: 'Personnalisé' })}
       ${b.userAgent === 'custom' ? inp(a, 'behavior.customUserAgent', { placeholder: 'Mozilla/5.0 …', mono: true }) : ''}
-      ${hint('« Navigateur standard » retire « Electron » de l’identité envoyée aux sites : connexions Google, messageries et sites qui refusent les navigateurs intégrés fonctionnent comme dans Chrome.')}`);
+      ${hint('« Navigateur standard » utilise une identité web classique : les connexions, messageries et sites qui refusent les navigateurs intégrés restent compatibles.')}`);
   }
   form_security(a) {
     const row = ([k, l, d, opts]) => `<div class="dsk-perm"><div><b>${l}</b><small>${d}</small></div>${seg(a, `permissions.${k}`, Object.fromEntries((opts || ['allow', 'ask', 'deny']).map((o) => [o, PERM_LABEL[o]])), '')}</div>`;
@@ -455,24 +455,24 @@ class DesktopSpace {
       ${i.formats.msi ? hint(`${ico('info', 12)} Le MSI est construit à part (outil WiX téléchargé automatiquement) : s’il échoue, les autres formats restent prêts. Certains PC demandent d’activer le .NET Framework 3.5.`) : ''}
       ${i.formats.portable ? hint(`${ico('info', 12)} La version portable ne s’inscrit pas dans le menu Démarrer : Windows n’y affiche pas les notifications et elle ne se met pas à jour seule.`) : ''}
       <div class="field"><span>Processeurs</span><div class="dsk-chips">${chip(a, 'install.archs.x64', 'Intel et AMD 64 bits')}${chip(a, 'install.archs.arm64', 'ARM 64 bits (Snapdragon)')}</div></div>
-      ${hint('Avec les deux, l’installateur contient les deux versions et choisit la bonne. Electron ne fournit plus de version 32 bits.')}`)
+      ${hint('Avec les deux, l’installateur contient les deux versions et choisit la bonne. Les systèmes 32 bits ne sont plus pris en charge.')}`)
       + card('Moteur et compression', `
-      ${field('Version d’Electron', seg(a, 'install.electron', { latest: 'Dernière version stable (recommandé)', nexora: `Celle de NEXORA${this.status && this.status.electron && this.status.electron.nexora ? ` (${esc(this.status.electron.nexora)})` : ''}` }), 'La dernière version contient les correctifs de sécurité de Chromium les plus récents.')}
+      ${field('Moteur du logiciel', seg(a, 'install.electron', { latest: 'Dernière version stable (recommandé)', nexora: 'Celle de NEXORA' }), 'La dernière version contient les correctifs de sécurité les plus récents.')}
       ${field('Compression', seg(a, 'install.compression', { normal: 'Normale', maximum: 'Maximale', store: 'Rapide (essais)' }))}`)
       + card('Dossier des fichiers', `
       <div class="ab-pick"><div><b>${esc(a.out ? a.out : 'Documents › NEXORA › Logiciels')}</b><small>Chaque logiciel a son sous-dossier : installateurs, puis son code source dans « projet ».</small></div><div class="ab-row">${a.out ? `<button class="btn small" data-act="out-reset">Par défaut</button>` : ''}<button class="btn" data-act="pick-out">${ico('folderOpen', 14)}<span>Changer…</span></button></div></div>
-      ${tog(a, 'install.ci', 'Fichier GitHub Actions pour macOS et Linux', 'Ajoute .github/workflows/build.yml au projet : sur GitHub, il construit aussi les versions macOS (.dmg) et Linux (.AppImage).')}`);
+      ${tog(a, 'install.ci', 'Construction automatique pour macOS et Linux', 'Ajoute au projet un fichier d’automatisation qui produit aussi les versions macOS (.dmg) et Linux (.AppImage) depuis le dépôt distant.')}`);
   }
   form_updates(a) {
     const u = a.updates;
     const files = `<code>${esc(slugName(a.name))}-Setup-${esc(a.version)}.exe</code>, son <code>.blockmap</code> et <code>latest.yml</code>`;
     return card('Mise à jour automatique', `
-      ${seg(a, 'updates.mode', { none: 'Aucune', generic: 'Mon serveur web', github: 'GitHub Releases' })}
-      ${u.mode === 'none' ? hint(a.source.kind === 'url' ? 'Le contenu de ton site se met à jour tout seul. Une mise à jour du logiciel n’est utile que pour suivre les correctifs de sécurité d’Electron : il suffit alors de réinstaller une nouvelle version.' : 'Pour diffuser une nouvelle version, augmente le numéro de version, reconstruis et envoie le nouvel installateur.') : ''}
+      ${seg(a, 'updates.mode', { none: 'Aucune', generic: 'Mon serveur web', github: 'Dépôt de versions' })}
+      ${u.mode === 'none' ? hint(a.source.kind === 'url' ? 'Le contenu de ton site se met à jour tout seul. Pour mettre à jour le moteur du logiciel, reconstruis puis réinstalle une nouvelle version.' : 'Pour diffuser une nouvelle version, augmente le numéro de version, reconstruis et envoie le nouvel installateur.') : ''}
       ${u.mode === 'generic' ? `${field('Adresse du dossier de mise à jour', inp(a, 'updates.url', { placeholder: 'https://monsite.com/telechargements/monlogiciel', mono: true }))}${hint(`Après chaque construction, dépose ${files} dans ce dossier (en https).`)}` : ''}
       ${u.mode === 'github' ? `<div class="ab-grid2">${field('Propriétaire', inp(a, 'updates.owner', { placeholder: 'mon-compte', mono: true }))}${field('Dépôt (public)', inp(a, 'updates.repo', { placeholder: 'mon-logiciel', mono: true }))}</div>${hint(`Crée une version (Release) par numéro de version et joins-y ${files}.`)}` : ''}
       ${u.mode !== 'none' ? tog(a, 'updates.checkOnStart', 'Vérifier au démarrage', 'Puis toutes les 6 heures. La mise à jour est téléchargée en arrière-plan, installée à la fermeture, et un message propose de redémarrer.') : ''}`)
-      + (u.mode !== 'none' ? card('Bon à savoir', `<ul class="ab-feat"><li>Le module officiel electron-updater est ajouté au logiciel ; seules les mises à jour différentielles sont téléchargées.</li><li>L’installateur doit garder le même identifiant (section Identité) d’une version à l’autre.</li><li>Un logiciel signé (section Signature) vérifie que la mise à jour vient bien de toi.</li></ul>`) : '');
+      + (u.mode !== 'none' ? card('Bon à savoir', `<ul class="ab-feat"><li>Le module de mise à jour est ajouté au logiciel ; seuls les changements nécessaires sont téléchargés.</li><li>L’installateur doit garder le même identifiant (section Identité) d’une version à l’autre.</li><li>Un logiciel signé (section Signature) vérifie que la mise à jour vient bien de toi.</li></ul>`) : '');
   }
   form_signing(a) {
     const c = this.cert;
@@ -491,9 +491,9 @@ class DesktopSpace {
     const s = this.status;
     const envRow = (ok, label, detail) => `<li class="${ok ? 'ok' : 'todo'}">${ico(ok ? 'pass' : 'download', 14)}<span><b>${label}</b><small>${detail}</small></span></li>`;
     const env = s && !s.error ? `<ul class="dsk-env">
-        ${envRow(s.node && s.node.ok, 'Node.js', s.node && s.node.ok ? `Version ${esc(s.node.version)}` : s.autoInstall ? 'Installé automatiquement (≈ 35 Mo)' : 'À installer depuis nodejs.org')}
+        ${envRow(s.node && s.node.ok, 'Environnement de construction', s.node && s.node.ok ? 'Prêt' : s.autoInstall ? 'Installé automatiquement (≈ 35 Mo)' : 'À installer')}
         ${envRow(s.kit && s.kit.version === s.kit.expected, 'Outils de construction', s.kit && s.kit.version === s.kit.expected ? 'Installé' : 'Installé automatiquement (≈ 90 Mo, une fois)')}
-        ${envRow(s.electron && s.electron.cached && s.electron.cached.length, 'Moteur Electron', s.electron && s.electron.cached && s.electron.cached.length ? 'Déjà téléchargé' : 'Téléchargé à la première construction (≈ 150 Mo par processeur)')}
+        ${envRow(s.electron && s.electron.cached && s.electron.cached.length, 'Moteur du logiciel', s.electron && s.electron.cached && s.electron.cached.length ? 'Déjà téléchargé' : 'Téléchargé à la première construction (≈ 150 Mo par processeur)')}
       </ul>` : hint(esc((s && s.error) || 'Vérification des outils…'));
     const p = this.progress;
     const steps = this.building || (p && p.step === 'error') ? `<ol class="dsk-steps">${STEP_LABELS.filter(([id]) => id !== 'msi' || a.install.formats.msi).map(([id, l]) => {
@@ -508,7 +508,7 @@ class DesktopSpace {
       <div class="ab-row">${last.outDir ? `<button class="btn" data-act="open-out" data-path="${esc(last.outDir)}">${ico('folderOpen', 14)}<span>Ouvrir le dossier</span></button>` : ''}${last.unpacked ? `<button class="btn" data-act="run-test" data-path="${esc(last.unpacked)}">${ico('play', 14)}<span>Tester sans installer</span></button>` : ''}${last.project ? `<button class="btn" data-act="open-out" data-path="${esc(last.project)}">${ico('code', 14)}<span>Code source</span></button>` : ''}</div>
       ${(last.warnings || []).map((w) => hint(`${ico('warn', 12)} ${esc(w)}`)).join('')}
       ${last.version === a.version && this.result ? hint('Pour publier une nouvelle version, augmente d’abord le numéro (section Identité).') : ''}`, last.at ? fmtDate(last.at) : '') : '';
-    const hist = a.builds.length > 1 ? card('Historique', `<div class="dsk-hist">${a.builds.slice(0, 8).map((b) => `<div><b>${esc(b.version)}</b><small>${esc(fmtDate(b.at))} · Electron ${esc(b.electron || '?')} · ${Math.round((b.ms || 0) / 1000)} s</small>${b.outDir ? `<button class="btn small" data-act="open-out" data-path="${esc(b.outDir)}">${ico('folderOpen', 13)}</button>` : ''}</div>`).join('')}</div>`) : '';
+    const hist = a.builds.length > 1 ? card('Historique', `<div class="dsk-hist">${a.builds.slice(0, 8).map((b) => `<div><b>${esc(b.version)}</b><small>${esc(fmtDate(b.at))} · ${Math.round((b.ms || 0) / 1000)} s</small>${b.outDir ? `<button class="btn small" data-act="open-out" data-path="${esc(b.outDir)}">${ico('folderOpen', 13)}</button>` : ''}</div>`).join('')}</div>`) : '';
     return card('Outils de construction', `${env}${hint('Construction dans un dossier de travail local de NEXORA (hors OneDrive) ; seuls les fichiers finaux sont copiés dans le dossier du logiciel.')}`)
       + card('Construire', `
       <p class="dsk-summary">${this.summary(a)}</p>
@@ -517,7 +517,7 @@ class DesktopSpace {
       ${steps}
       ${this.logLines.length ? `<details class="ab-log" ${this.building ? '' : ''}><summary>Journal de construction (${this.logLines.length} lignes)</summary><pre>${esc(this.logLines.slice(-400).join('\n'))}</pre><div class="ab-row"><button class="btn small" data-act="log-open">${ico('external', 13)}<span>Journal complet</span></button></div></details>` : ''}`)
       + res + hist
-      + card('Espace disque', `<div class="ab-row"><button class="btn" data-act="clear-cache">${ico('trash', 14)}<span>Vider le cache de construction</span></button></div>${hint('Retire les dossiers de travail (versions de test comprises). Le kit, Node.js et les moteurs Electron téléchargés sont gardés.')}`);
+      + card('Espace disque', `<div class="ab-row"><button class="btn" data-act="clear-cache">${ico('trash', 14)}<span>Vider le cache de construction</span></button></div>${hint('Retire les dossiers de travail et les versions de test. Les composants téléchargés sont gardés.')}`);
   }
   summary(a) {
     const fm = FORMATS.filter(([k]) => a.install.formats[k]).map(([, l]) => l.toLowerCase());
@@ -883,8 +883,8 @@ class DesktopSpace {
     const a = this.cfg;
     const s = a.source;
     s.dir = an.dir;
-    if (an.kind === 'electron' && s.kind !== 'electron') { s.kind = 'electron'; toast('C’est un projet Electron : la source « Projet Electron » est choisie.'); }
-    if (an.kind !== 'electron' && s.kind === 'electron' && an.kind !== 'unsupported') { s.kind = 'folder'; toast('Ce dossier n’est pas un projet Electron : la source « Dossier de site » est choisie.'); }
+    if (an.kind === 'electron' && s.kind !== 'electron') { s.kind = 'electron'; toast('C’est un projet de bureau : la source correspondante est choisie.'); }
+    if (an.kind !== 'electron' && s.kind === 'electron' && an.kind !== 'unsupported') { s.kind = 'folder'; toast('Ce dossier n’est pas un projet de bureau : la source « Dossier de site » est choisie.'); }
     this.icons = (an.icons || []).map((i) => ({ name: i.name, dataUrl: i.dataUrl }));
     s.analysis = { ...an, icons: undefined };
     s.buildCmd = an.buildCmd || '';
@@ -987,7 +987,7 @@ class DesktopSpace {
     if (a.source.kind !== 'url' && !a.source.dir) return fail('source', 'Choisis d’abord le dossier du site ou du projet.');
     if (a.source.analysis && a.source.analysis.kind === 'unsupported') return fail('source', a.source.analysis.unsupported.message);
     if (a.updates.mode === 'generic' && !/^https:\/\//i.test(a.updates.url || '')) return fail('updates', 'Indique l’adresse https du dossier de mise à jour.');
-    if (a.updates.mode === 'github' && (!a.updates.owner || !a.updates.repo)) return fail('updates', 'Indique le propriétaire et le nom du dépôt GitHub.');
+    if (a.updates.mode === 'github' && (!a.updates.owner || !a.updates.repo)) return fail('updates', 'Indique le propriétaire et le nom du dépôt distant.');
     return true;
   }
   payload(a) {

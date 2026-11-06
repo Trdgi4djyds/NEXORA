@@ -15,7 +15,7 @@ const SERVICE_KEEP = 1440; // 24 h par service
 
 const SERVICES = [
   { id: 'auth', label: 'Comptes et connexion', path: '/auth/v1/health' },
-  { id: 'db', label: 'Base de données', path: '/rest/v1/plans?select=id&limit=1' },
+  { id: 'db', label: 'Données', path: '/rest/v1/plans?select=id&limit=1' },
   { id: 'storage', label: 'Stockage des fichiers', path: '/storage/v1/status' },
   { id: 'functions', label: 'Fonctions serveur', path: '/functions/v1/site-info', method: 'OPTIONS' },
   { id: 'realtime', label: 'Temps réel (synchronisation)', ws: '/realtime/v1/websocket' },

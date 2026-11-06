@@ -20,7 +20,7 @@ export async function renderPlatform(ctx) {
   const services = s.services || [];
   const svcDown = services.filter((x) => x.last && !x.last.ok).length;
   const kpis = [
-    kpi({ label: 'NEXORA', ic: 'info', value: esc(s.app.version || '—'), hint: s.app.electron ? `Electron ${esc(s.app.electron)} · Chromium ${esc(String(s.app.chrome).split('.')[0])}` : esc(s.app.os || '') }),
+    kpi({ label: 'NEXORA', ic: 'info', value: esc(s.app.version || '—'), hint: s.app.electron ? 'Application de bureau' : esc(s.app.os || '') }),
     kpi({ label: 'Session en cours', ic: 'clock', value: dur(s.app.uptime, { short: true }), hint: c.avgSession ? `Durée moyenne : ${dur(c.avgSession, { short: true })}` : `${num(c.sessions7d || 1)} session(s) sur 7 jours` }),
     kpi({ label: 'Processeur', ic: 'bolt', value: desktop ? `${num(cur.cpu, 1)} %` : '—', tone: cur.cpu > 80 ? 'warn' : '', hint: desktop ? `PC entier : ${cur.sysCpu != null ? `${num(cur.sysCpu, 0)} %` : '—'}` : 'Mesuré dans l’application Windows' }),
     kpi({ label: 'Mémoire', ic: 'layers', value: desktop ? `${num(cur.mem)} Mo` : '—', hint: desktop ? `${num(cur.procs)} processus · PC : ${num(cur.sysMem / 1024, 1)} / ${num(s.app.totalMem / 1024, 1)} Go` : '' }),
@@ -43,7 +43,7 @@ export async function renderPlatform(ctx) {
   const sessions = (s.sessions || []).slice(0, 8).map((x, i) => `<tr><td class="nowrap">${esc(dateTime(x.start))}</td><td class="num">${i === 0 && !x.end ? `<span class="sup-chip good">En cours</span>` : dur((x.end || x.lastSeen || x.start) - x.start, { short: true })}</td><td>${esc(x.version || '')}</td><td class="num">${num(x.errors || 0)}</td><td>${x.unexpected ? '<span class="sup-chip bad" data-tip="NEXORA s’est fermée sans passer par la fermeture normale (plantage ou coupure).">Fermeture brutale</span>' : x.crashes ? `<span class="sup-chip warn">${num(x.crashes)} plantage(s)</span>` : '<span class="muted">—</span>'}</td></tr>`).join('');
   const sys = [
     ['Système', s.app.os], ['Processeur', `${s.app.cpuModel || '—'}${s.app.cpus ? ` · ${s.app.cpus} cœurs` : ''}`], ['Mémoire', s.app.totalMem ? `${num(s.app.totalMem / 1024, 1)} Go` : '—'],
-    ['Electron', s.app.electron || '—'], ['Chromium', s.app.chrome || '—'], ['Node.js', s.app.node || '—'], ['Démarrée', dateTime(s.app.startedAt)],
+    ['Moteur d’interface', s.app.electron ? 'Prêt' : '—'], ['Affichage', s.app.chrome ? 'Prêt' : '—'], ['Environnement système', s.app.node ? 'Prêt' : '—'], ['Démarrée', dateTime(s.app.startedAt)],
   ].map(([k, v]) => `<span>${esc(k)}</span><b>${esc(v)}</b>`).join('');
   ctx.afterRender = () => { mountCharts(ctx, s); bind(ctx); };
   const note = desktop ? '' : '<p class="sup-note">Les mesures du processeur et de la mémoire de chaque processus sont relevées par l’application NEXORA pour Windows.</p>';

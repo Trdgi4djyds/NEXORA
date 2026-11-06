@@ -75,7 +75,7 @@ Légende de la colonne « Méthode » : **auto** (`pnpm valider`), **auto compte
 
 | Contrôle | Méthode | Comment |
 |---|---|---|
-| Offres et prix en ligne identiques au catalogue | auto | Gratuit 0 $, Standard 10 $, Pro 25 $ par mois (`nx/offres/catalog.js`). |
+| Offres et prix en ligne identiques au catalogue | auto | Gratuit 0 $, Standard 12 $, Pro 18 $ par mois (120 $ et 180 $ par an) (`nx/offres/catalog.js`). |
 | Quotas, essais, restrictions, historique | essais, auto compte | Offre du compte lue sur le serveur. |
 | Changement d'offre par l'administrateur | manuel | Back office → Équipes et offres : nouvelle offre visible dans NEXORA (Mon compte → Offre et usage). |
 | Factures : numérotation, totaux, taxes, PDF, envoi | manuel | Back office → Factures : brouillon, émission (numéro suivant, plus modifiable), PDF, envoi à une adresse de test. |

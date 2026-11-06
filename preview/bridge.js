@@ -47,6 +47,11 @@
     "desktop:pick-out",
     "desktop:pick-cert",
     "desktop:export",
+    // Espace Sécurité (NEXORA #048) : dossier du projet, application à auditer, rapport, export SARIF.
+    "sec:pick-dir",
+    "sec:pick-app",
+    "sec:report-save",
+    "sec:sarif-save",
   ])
 
   const listeners = new Map()
@@ -161,7 +166,7 @@
     { id: "auth", label: "Comptes et connexion", path: "/auth/v1/health" },
     {
       id: "db",
-      label: "Base de données",
+      label: "Données",
       path: "/rest/v1/plans?select=id&limit=1",
     },
     {
@@ -314,14 +319,17 @@
 
   // Mode démonstration (option --demo de pnpm captures) : canaux mon:/tel: exécutés par le vrai code du
   // processus principal dans le serveur d'aperçu (preview/demo-main.mjs), évènements en direct compris.
-  const DEMO =
-    (() => {
-      try {
-        return localStorage.getItem("nexora-preview:demo")
-      } catch {
-        return null
-      }
-    })() === "supervision"
+  const DEMO_MODE = (() => {
+    try {
+      return localStorage.getItem("nexora-preview:demo")
+    } catch {
+      return null
+    }
+  })()
+  const DEMO = DEMO_MODE === "supervision"
+  // NEXORA #052 : mode démonstration du Dev Lab (option --demo-dev de pnpm captures) : canaux dev:, git: et
+  // devx: (et gh:, tunnel:) servis par le vrai code du processus principal sur un projet de démonstration (preview/demo-dev.mjs).
+  const DEMO_DEV = DEMO_MODE === "devlab"
   const demoInvoke = (channel, args) =>
     fetch(previewFile("main"), {
       method: "POST",
@@ -333,8 +341,10 @@
         if (!out.ok) throw new Error(out.error)
         return out.value
       })
-  if (DEMO && typeof EventSource === "function") {
-    const source = new EventSource(previewFile("events"))
+  if ((DEMO || DEMO_DEV) && typeof EventSource === "function") {
+    const source = new EventSource(
+      previewFile("events") + (DEMO_DEV ? "?dev=1" : ""),
+    )
     source.onmessage = (ev) => {
       try {
         const { channel, data } = JSON.parse(ev.data)
@@ -511,6 +521,11 @@
       source: "invite",
       at: Date.now(),
     }),
+    // NEXORA #053 : NEX-DESIGN, onglet Importer : aucun jeton Figma enregistré sur un PC neuf
+    // (src/designplus/ipc.js, dzx:figma-token sans argument).
+    "dzx:figma-token": () => ({ saved: false }),
+    // NEXORA #054 : PDF vectoriel : pas de téléchargement de police dans l'aperçu (polices livrées seulement).
+    "dzx:font-ttf": () => null,
     "mon:config": () => ({
       endpoints: [],
       channels: { email: { enabled: false } },
@@ -529,6 +544,15 @@
       }
     },
     "mon:alerts-log": () => [],
+    // NEXORA #048 : maintenance et repères de déploiement (src/monitor.js), aucun sur un PC neuf.
+    "mon:maintenance": () => [],
+    "mon:marks": () => [],
+    // Espace Sécurité (src/securite/index.js) : aucun audit, risque accepté ni audit programmé sur un PC neuf.
+    "sec:history": () => [],
+    "sec:latest": () => null,
+    "sec:accepted": () => [],
+    "sec:schedules": () => [],
+    "sec:summary": () => ({ latest: [], accepted: [], schedules: [] }),
     "mon:loadtests": () => [],
     "mon:loadtest-running": () => false,
     // Santé de NEXORA (src/telemetry.js) : pas de relevé des processus dans un navigateur ; les services
@@ -571,7 +595,17 @@
     chromeVersion:
       (navigator.userAgent.match(/Chrome\/([\d.]+)/) || [])[1] || "",
     invoke(channel, ...args) {
-      if (DEMO && /^(mon|tel):/.test(channel) && !DIALOG_CHANNELS.has(channel))
+      if (
+        DEMO &&
+        /^(mon|tel|sec):/.test(channel) &&
+        !DIALOG_CHANNELS.has(channel)
+      )
+        return demoInvoke(channel, args)
+      if (
+        DEMO_DEV &&
+        /^(dev|git|devx|gh|tunnel):/.test(channel) &&
+        !DIALOG_CHANNELS.has(channel)
+      )
         return demoInvoke(channel, args)
       const handler = handlers[channel]
       if (!handler) {

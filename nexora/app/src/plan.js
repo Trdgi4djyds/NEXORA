@@ -34,6 +34,18 @@ const GATES = {
   'lab:scrape-start': ['crawler', 1],
   'lab:test-start': ['audit_advanced', 0],
   'sec:scan': ['scan', 1],
+  // NEXORA #048 : audits avancés (plusieurs pages, code, applications, correctifs écrits, crochet Git, audits
+  // programmés), intégration continue et SARIF (API et SDK), parcours rejoués de la supervision (Pro).
+  'sec:crawl-audit': ['audit_advanced', 0],
+  'sec:code-audit': ['audit_advanced', 0],
+  'sec:app-audit': ['audit_advanced', 0],
+  'sec:fix-write': ['audit_advanced', 0],
+  'sec:hook-install': ['audit_advanced', 0],
+  'sec:schedule-set': ['audit_advanced', 0],
+  'sec:ci-write': ['ci_export', 0],
+  'sec:sarif-save': ['ci_export', 0],
+  'mon:journey-record': ['synthetic', 0],
+  'mon:journey-run': ['synthetic', 0],
   // Responsive Lab : projets locaux (dossier de site ou code source) ; Responsive avancé (enregistrement
   // vidéo des appareils, outils de développement de l'appareil)
   'project:pick': ['source_import', 0],
@@ -56,6 +68,34 @@ const GATES = {
   'git:push': ['devlab', 0],
   'git:publish': ['devlab', 0],
   'tunnel:start': ['devlab', 0],
+  // NEXORA #052 : outils du Dev Lab. Standard : Problèmes, scripts, variables protégées, Git avancé, demandes de
+  // fusion, client d'API, tests, dépendances. Pro : assistant IA du projet, débogueur, mise en ligne, contrôles
+  // avant mise en ligne, bases de données.
+  'devx:problems': ['devlab', 0],
+  'devx:task-start': ['devlab', 0],
+  'devx:env-set': ['devlab', 0],
+  'devx:env-import': ['devlab', 0],
+  'devx:git-merge': ['devlab', 0],
+  'devx:git-stash': ['devlab', 0],
+  'devx:git-blame': ['devlab', 0],
+  'devx:pr-create': ['devlab', 0],
+  'devx:pr-review': ['devlab', 0],
+  'devx:http': ['devlab', 0],
+  'devx:tests-run': ['devlab', 0],
+  'devx:deps': ['devlab', 0],
+  'devx:deps-update': ['devlab', 0],
+  'devx:agent-context': ['devlab_pro', 0],
+  'devx:agent-apply': ['devlab_pro', 0],
+  'devx:debug-start': ['devlab_pro', 0],
+  'devx:debug-attach': ['devlab_pro', 0],
+  'devx:deploy-run': ['devlab_pro', 0],
+  'devx:checks-run': ['devlab_pro', 0],
+  'devx:db-tables': ['devlab_pro', 0],
+  'devx:db-query': ['devlab_pro', 0],
+  'devx:db-seed': ['devlab_pro', 0],
+  // NEXORA #053 : NEX-DESIGN complet (Pro) : import de fichiers Figma.
+  'dzx:figma-file': ['design_full', 0],
+  'dzx:figma-svg': ['design_full', 0],
   // Assistant IA (requêtes par mois ; une image compte pour 5, une transcription pour 2)
   'ai:chat': ['ai', 1],
   'ai:image': ['ai', 5],
@@ -67,6 +107,12 @@ const PERM = {
   apk: 'apk', pwa: 'pwa', source_import: 'source_import', play_publish: 'play_publish', push: 'push',
   automation: 'automation', integrations: 'integrations', crawler: 'crawler', audit_advanced: 'audits_advanced',
   desktop_builder: 'desktop_builder', devlab: 'devlab', responsive_advanced: 'responsive_advanced', scan: null, ai: null,
+  // NEXORA #048
+  ci_export: 'api_sdk', rum: 'api_sdk', synthetic: 'synthetic', status_page: 'status_page', multi_region: 'multi_region',
+  // NEXORA #052
+  devlab_pro: 'devlab_pro',
+  // NEXORA #053
+  design_extended: 'design_extended', design_full: 'design_full',
 };
 const QUOTA = new Set(['apk', 'pwa', 'push', 'crawler', 'desktop_builder', 'scan', 'ai']);
 const LABEL = {
@@ -76,12 +122,16 @@ const LABEL = {
   audit_advanced: 'Les tests et audits avancés', desktop_builder: 'Le Desktop Builder', devlab: 'Le Dev Lab',
   scan: 'L’audit de sécurité', ai: 'L’assistant IA',
   responsive_advanced: 'Le Responsive avancé (enregistrement vidéo et outils de développement des appareils)',
+  ci_export: 'L’intégration continue et l’export SARIF', rum: 'La mesure des visiteurs réels', synthetic: 'Les parcours rejoués',
+  status_page: 'La page de statut publique', multi_region: 'La confirmation depuis une deuxième région',
+  devlab_pro: 'Les outils Pro du Dev Lab (assistant IA du projet, débogueur, mise en ligne, contrôles, bases de données)',
+  design_extended: 'NEX-DESIGN étendu', design_full: 'NEX-DESIGN complet (IA, code vers le Dev Lab, validation client, équipe, import Figma)',
 };
 const NAME = { free: 'Gratuit', standard: 'Standard', pro: 'Pro' };
 
 // Permissions par défaut (copie de la migration), pour un invité ou des serveurs sans la migration.
-const STANDARD_PERMS = ['apk', 'pwa', 'source_import', 'play_publish', 'push', 'crawler', 'audits_advanced', 'desktop_builder', 'devlab', 'inapp', 'alerts', 'responsive_advanced'];
-const PRO_ONLY = ['automation', 'integrations', 'api_sdk', 'studio_advanced'];
+const STANDARD_PERMS = ['apk', 'pwa', 'source_import', 'play_publish', 'push', 'crawler', 'audits_advanced', 'desktop_builder', 'devlab', 'inapp', 'alerts', 'responsive_advanced', 'status_page', 'design_extended'];
+const PRO_ONLY = ['automation', 'integrations', 'api_sdk', 'studio_advanced', 'synthetic', 'multi_region', 'devlab_pro', 'design_full'];
 function defaultPerms(plan) {
   const p = {};
   for (const k of [...STANDARD_PERMS, ...PRO_ONLY]) p[k] = false;
@@ -206,7 +256,9 @@ async function check(feature, amount) {
   try { s = await refresh(); } catch (e) {
     if (e.offline && lastOk && Date.now() - lastOk.at < 24 * 3600 * 1000) s = lastOk; else throw e;
   }
-  if (s.admin || !perm || (s.perms && s.perms[perm])) return { ok: true, plan: s.plan };
+  // NEXORA #048 : permission encore inconnue des serveurs (migration pas appliquée) : valeur par défaut de l'offre.
+  const allowed = s.perms && perm in s.perms ? s.perms[perm] : defaultPerms(s.plan)[perm];
+  if (s.admin || !perm || allowed) return { ok: true, plan: s.plan };
   throw deny({ feature, reason: 'plan', plan: s.plan, plan_name: s.plan_name, need: neededFor(perm), need_name: NAME[neededFor(perm)], message: `${label} fait partie de l’offre ${NAME[neededFor(perm)]}. Ton offre actuelle : ${s.plan_name || NAME[s.plan] || s.plan}.` });
 }
 

@@ -9,7 +9,7 @@ import { FALLBACK } from './catalog.js';
 
 const SPACES = [
   { id: 'devlab', perm: 'devlab', label: 'Le Dev Lab', object: 'code', tone: 'orange',
-    perks: ['Fichiers, éditeur et terminal de tes projets', 'Git, GitHub et VS Code', 'Prévisualisation en direct et partage', 'Import de projets et de code source'] },
+    perks: ['Fichiers, éditeur et terminal de tes projets', 'Versions, dépôt et éditeur externe', 'Prévisualisation en direct et partage', 'Import de projets et de code source'] },
   { id: 'desktop', perm: 'desktop_builder', label: 'Le Desktop Builder', object: 'monitor', tone: 'jaune',
     perks: ['Ton site transformé en logiciel Windows', 'Installateur, version portable, ZIP et MSI', '60 constructions par mois', 'Signature et mises à jour'] },
 ];
@@ -20,11 +20,11 @@ function card(sp) {
     <div class="nxo-space-card">
       <div class="nxo-lock-head">
         <span class="nxo-medal nxo-standard lg">${ico('bolt', 22)}</span>
-        <div><small class="nxo-kicker">Offre ${esc(p.name)}</small><h3>${esc(sp.label)} fait partie de l’offre ${esc(p.name)}</h3><p>Dès 10 $ par mois, sans engagement.</p></div>
+        <div><small class="nxo-kicker">Offre ${esc(p.name)}</small><h3>${esc(sp.label)} fait partie de l’offre ${esc(p.name)}</h3><p>Dès 12 $ par mois, sans engagement.</p></div>
       </div>
       <ul class="nxo-feats">${sp.perks.map((f) => `<li>${ico('check', 12)}<span>${esc(f)}</span></li>`).join('')}</ul>
       <div class="nxo-ab-lock-acts">
-        ${cloud.user ? `<button type="button" class="nxo-btn primary" data-nxo-ask="standard">Passer à ${esc(p.name)} · 10 $ / mois</button><button type="button" class="nxo-btn ghost" data-nxo-offers>Voir les offres</button>`
+        ${cloud.user ? `<button type="button" class="nxo-btn primary" data-nxo-ask="standard">Passer à ${esc(p.name)} · 12 $ / mois</button><button type="button" class="nxo-btn ghost" data-nxo-offers>Voir les offres</button>`
           : '<button type="button" class="nxo-btn primary" data-nxo-login>Se connecter</button><button type="button" class="nxo-btn ghost" data-nxo-offers>Voir les offres</button>'}
       </div>
     </div>

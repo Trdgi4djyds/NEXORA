@@ -1,0 +1,121 @@
+/* NEXORA #053 : fonctions de design ajoutées à NEX-DESIGN. Interface plate (#045) : aucune ombre portée ni
+ * dégradé décoratif ; blocs pleins à contour net (#007) ; couleurs du thème (#004). */
+.dzp { position: absolute; top: var(--dzp-top, 60px); right: 8px; bottom: 8px; width: min(380px, calc(100% - 16px)); z-index: 40; display: flex; flex-direction: column; background: var(--window); border: 1px solid var(--sep-strong); border-radius: 16px; overflow: hidden; }
+.dzp[hidden] { display: none; }
+.dzp-top { display: flex; align-items: center; justify-content: space-between; padding: 10px 10px 6px 14px; color: var(--text); }
+.dzp-top b { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.dzp-tabs { display: flex; flex-wrap: wrap; gap: 3px; padding: 0 10px 8px; border-bottom: 1px solid var(--sep); }
+.dzp-tabs button { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 8px; border-radius: 8px; font-size: 11.5px; color: var(--text-2); background: none; }
+.dzp-tabs button:hover { background: var(--fill-hover); color: var(--text); }
+.dzp-tabs button.on { background: var(--fill); color: var(--text); font-weight: 600; box-shadow: 0 0 0 1px var(--sep-strong) inset; }
+.dzp-pro { font-style: normal; font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 5px; background: color-mix(in srgb, var(--warn) 14%, var(--window)); color: var(--warn); }
+.dzp-body { flex: 1; overflow: auto; padding: 12px 14px 18px; display: flex; flex-direction: column; gap: 10px; font-size: 12.5px; color: var(--text-2); }
+.dzp-sub { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); margin-top: 6px; }
+.dzp-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dzp-bar .seg { flex-wrap: wrap; }
+.dzp-list { display: flex; flex-direction: column; border: 1px solid var(--sep); border-radius: 12px; background: var(--surface); overflow: hidden; }
+.dzp-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-top: 1px solid var(--sep); color: var(--text); min-width: 0; }
+.dzp-item:first-child { border-top: 0; }
+.dzp-item > span:not(.dzp-sw):not(.dzp-thumb), .dzp-item-main > span:last-child { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.dzp-item b { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; }
+.dzp-item small { color: var(--text-3); font-size: 11.5px; }
+.dzp-item.bad { box-shadow: inset 3px 0 0 var(--bad); }
+.dzp-item.ok { box-shadow: inset 3px 0 0 var(--ok); }
+.dzp-item-main { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; text-align: left; background: none; color: inherit; padding: 0; }
+.dzp-sw { flex: none; width: 34px; height: 26px; border-radius: 7px; border: 1px solid var(--sep-strong); display: grid; place-items: center; font-weight: 700; font-size: 12px; }
+.dzp-thumb { flex: none; width: 54px; height: 40px; border-radius: 6px; border: 1px solid var(--sep); background: var(--fill); display: grid; place-items: center; overflow: hidden; }
+.dzp-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.dzp-quote { font-style: italic; }
+.dzp-table { border: 1px solid var(--sep); border-radius: 10px; overflow: auto; background: var(--surface); }
+.dzp-table table { border-collapse: collapse; width: 100%; font-size: 11.5px; }
+.dzp-table th, .dzp-table td { padding: 5px 8px; border-bottom: 1px solid var(--sep); text-align: left; color: var(--text); white-space: nowrap; }
+.dzp-table th { background: var(--pane); color: var(--text-2); }
+.dzp-var { display: grid; grid-template-columns: minmax(80px, 1fr) 54px repeat(var(--modes, 2), 72px) 26px; align-items: center; gap: 6px; }
+.dzp-vhead { display: grid; grid-template-columns: minmax(80px, 1fr) 54px repeat(var(--modes, 2), 72px) 26px; gap: 6px; font-size: 11px; color: var(--text-3); }
+.dzp-var small { color: var(--text-3); font-size: 11px; }
+.dzp-var .input { height: 28px; font-size: 12px; min-width: 0; }
+.dzp-vval input[type=color] { width: 100%; height: 28px; border: 1px solid var(--sep-strong); border-radius: 7px; background: none; padding: 2px; }
+.dzp-cmp { display: flex; flex-direction: column; gap: 8px; }
+.dzp-cmp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dzp-cmp figure { margin: 0; border: 1px solid var(--sep); border-radius: 8px; padding: 6px; background: var(--surface); text-align: center; }
+.dzp-cmp img { max-width: 100%; max-height: 140px; }
+.dzp-cmp figcaption { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+.dzp-pairs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.dzp-pair { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px; border: 1px solid var(--sep); border-radius: 10px; background: var(--surface); color: var(--text); text-align: left; }
+.dzp-pair:hover, .dzp-font:hover { background: var(--fill-hover); }
+.dzp-pair b { font-size: 15px; }
+.dzp-pair small { color: var(--text-2); font-size: 11.5px; }
+.dzp-fonts { display: flex; flex-wrap: wrap; gap: 5px; }
+.dzp-font { padding: 6px 10px; border: 1px solid var(--sep); border-radius: 9px; background: var(--surface); color: var(--text); font-size: 14px; display: inline-flex; align-items: center; gap: 4px; }
+.dzp-gate, .dzx-card .dzp-gate { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent); background: color-mix(in srgb, var(--warn) 8%, var(--window)); color: var(--text); }
+.dzp-gate > svg { color: var(--warn); }
+
+/* Panneau de droite */
+.dzx-hint { margin: 0; font-size: 12px; color: var(--text-2); line-height: 1.45; }
+.dzp-body > * { flex-shrink: 0; }
+.dzx-hint svg { display: inline-block; vertical-align: -2px; margin-right: 4px; }
+.dzx-hint.bad { color: var(--bad); }
+.dzx-hint code, .dzp-body code { font-size: 11.5px; background: var(--fill); padding: 1px 4px; border-radius: 4px; }
+.dzx-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dzx-num { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; color: var(--text-2); min-width: 0; }
+.dzx-num .input { height: 30px; min-width: 0; }
+.dzx-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); }
+.dzx-row > span { flex: none; width: 92px; }
+.dzx-row .input { flex: 1; min-width: 0; height: 30px; }
+.dzx-row input[type=color] { width: 44px; height: 28px; border: 1px solid var(--sep-strong); border-radius: 7px; background: none; padding: 2px; }
+.dzx-check { white-space: normal; font-size: 12px; }
+.dzx-vis { display: flex; flex-direction: column; gap: 4px; }
+.dzx-css { margin: 0; font: 11.5px/1.5 var(--mono, ui-monospace, Consolas, monospace); background: var(--code-bg, var(--surface)); border: 1px solid var(--sep); border-radius: 8px; padding: 8px 10px; max-height: 180px; overflow: auto; white-space: pre-wrap; color: var(--text); }
+
+/* Lecteur de prototype */
+.dzx-player { position: fixed; inset: 0; z-index: 900; background: #16171c; display: flex; flex-direction: column; color: #fff; }
+.dzx-player-bar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid #2a2c33; }
+.dzx-player-bar .grow { flex: 1; }
+.dzx-player-bar .icon-btn, .dzx-player-bar .btn { color: #fff; }
+/* Barre toujours sombre : boutons et segments à contraste fixe, quel que soit le thème (au-dessus de composants.css). */
+html body .dzx-player .dzx-player-bar .btn { background: #262830; border: 1px solid #3a3d47; color: #fff; }
+html body .dzx-player .dzx-player-bar .btn:hover { background: #30333d; }
+html body .dzx-player .dzx-player-bar .seg { background: #262830; }
+html body .dzx-player .dzx-player-bar .seg button { color: #c9cbd6; }
+html body .dzx-player .dzx-player-bar .seg button.on { background: #fff; color: #16171c; }
+.dzx-player-stage { flex: 1; display: grid; place-items: center; padding: 16px; min-height: 0; }
+.dzx-player-tip { text-align: center; color: #9a9caa; font-size: 12px; margin: 0 0 14px; }
+
+/* Page de revue (lien de validation ou de partage) */
+.dzx-review { position: fixed; inset: 0; z-index: 1000; background: var(--canvas, #eef0f5); display: grid; place-items: center; padding: 20px; overflow: auto; }
+.dzx-review-box { width: min(560px, 100%); background: var(--window); border: 1px solid var(--sep-strong); border-radius: 18px; padding: 20px; color: var(--text); display: flex; flex-direction: column; gap: 12px; }
+.dzx-review-box.wide { width: min(1280px, 100%); height: min(860px, 100%); }
+.dzx-review-box header { display: flex; align-items: center; gap: 12px; }
+.dzx-review-box header .grow { flex: 1; }
+.dzx-review-box h2 { margin: 2px 0 0; font-size: 20px; }
+.dzx-review-box small { color: var(--text-3); }
+.dzx-review-main { flex: 1; display: grid; grid-template-columns: 1fr 320px; gap: 16px; min-height: 0; }
+.dzx-review-img { position: relative; display: grid; place-items: center; background: var(--fill); border-radius: 12px; overflow: auto; min-height: 240px; }
+.dzx-review-img img { max-width: 100%; max-height: 100%; cursor: crosshair; display: block; }
+.dzx-pin { position: absolute; transform: translate(-50%, -50%); width: 24px; height: 24px; border-radius: 50%; background: #e8336d; color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 700; pointer-events: none; }
+.dzx-review-main aside { display: flex; flex-direction: column; gap: 10px; overflow: auto; }
+.dzx-review-main aside label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-2); }
+.dzx-review-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.dzx-review-main h3 { margin: 6px 0 0; font-size: 13px; }
+.dzx-rv { border-left: 3px solid var(--sep-strong); padding: 4px 10px; }
+.dzx-rv.approve { border-color: var(--ok); }
+.dzx-rv.changes { border-color: var(--bad); }
+.dzx-rv em { font-style: normal; font-size: 11px; color: var(--text-3); }
+.dzx-rv p { margin: 4px 0; white-space: pre-wrap; }
+@media (max-width: 860px) { .dzx-review-main { grid-template-columns: 1fr; } }
+
+/* NEXORA #054 : responsive, nouveautés (bibliothèques d'équipe, avis de validation). */
+.dzx-range input { width: 100%; }
+.dzx-resp-prev { display: grid; justify-items: center; gap: 6px; max-height: 420px; overflow: auto; padding: 10px; border: 1px solid var(--info-edge, var(--border)); border-radius: 10px; background: var(--info-bg, var(--fill)); }
+.dzx-resp-prev img { display: block; width: 100%; max-width: 230px; height: auto; border: 1px solid var(--info-edge, var(--border)); border-radius: 6px; background: #fff; }
+.dzx-resp-prev small { color: var(--text-3); font-size: 11px; }
+.dzx-checks { display: grid; gap: 6px; }
+.dzx-checks small { color: var(--text-3); }
+.dzp-new { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-style: normal; font-size: 10.5px; font-weight: 600; background: var(--accent, #6a4cff); color: #fff; vertical-align: 1px; }
+.dzp-update { align-items: center; }
+.dzp-update small { display: block; color: var(--text-2); font-size: 11.5px; }
+.dz-tool.dzx-news { position: relative; }
+.dz-tool.dzx-news::after { content: ''; position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent, #6a4cff); border: 2px solid var(--panel, #fff); }
+
+.dzx-stack { display: grid; gap: 8px; }
+.dzx-stack .dzx-num { display: grid; grid-template-columns: 84px 1fr; align-items: center; gap: 8px; }

@@ -1,6 +1,8 @@
 {
   "$comment": "Configuration attendue du projet Supabase de NEXORA. Lue par le back office (section Supabase) et par scripts/supabase.mjs.",
   "projectRef": "dcwfgnwaxsrtuvomttbp",
+  "publicKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjd2ZnbndheHNydHV2b210dGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0MjE1NzcsImV4cCI6MjEwODk5NzU3N30.k-LmO2wJecDAi_LJIT7103vDVOAds4-2JFjcv6SStcY",
+  "$publicKey": "#048 : clé publique (anon) du projet, la même que celle de l’application et du back office ; lue par le Worker de NEXORA web (signal de vie, déploiements, visiteurs réels, deuxième région).",
   "siteUrl": "https://nexora.abrahamtogbonon0.workers.dev/",
   "redirectUrls": [
     "https://nexora.abrahamtogbonon0.workers.dev/**",
@@ -39,5 +41,5 @@
     "authRateLimitPerHour": 30,
     "$authRateLimitPerHour": "#039 : limite horaire des e-mails des comptes (confirmation, mot de passe oublié) une fois le SMTP Brevo branché ; Supabase la laisse à 2 par heure sinon. Appliquée par le back office (section Supabase)."
   },
-  "cronFunctions": ["run_monitor_checks", "collect_monitor_results", "cleanup_old_data", "nx_monitor_rollup", "nx_monitor_cleanup"]
+  "cronFunctions": ["run_monitor_checks", "collect_monitor_results", "cleanup_old_data", "nx_monitor_rollup", "nx_monitor_cleanup", "nx_monitor_monthly_report", "nx_rum_cleanup"]
 }

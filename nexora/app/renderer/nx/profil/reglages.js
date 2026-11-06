@@ -168,7 +168,7 @@ export function pop() {
   const dark = isDark();
   const link = (attr, icon, label) => `<button type="button" class="nxr-link" ${attr}><span class="nxr-link-ic">${ico(icon, 15)}</span><span>${label}</span>${ico('chevronRight', 13)}</button>`;
   return `
-    <div class="nxr-pop-head"><span class="nxc-brand-ic">${ico('palette', 16)}</span><div><b>Apparence</b><small>Thème, couleur et affichage des appareils</small></div></div>
+    <div class="nxr-pop-head"><span class="nxc-brand-ic">${ico('appearance', 16)}</span><div><b>Apparence</b><small>Thème, couleur et affichage des appareils</small></div></div>
     ${seg('appTheme', settings.appTheme, { light: `${ico('sun', 15)}<span>Clair</span>`, dark: `${ico('moon', 15)}<span>Sombre</span>`, system: `${ico('auto', 15)}<span>Auto</span>` })}
     <div class="pop-sub">Couleur d'accentuation</div>
     <div class="swatches">${Object.entries(ACCENTS).map(([k, c]) => `<button class="swatch${settings.accent === k ? ' on' : ''}" style="--c:${dark ? c[1] : c[0]}" data-accent="${k}" title="${esc(c[2])}" aria-label="${esc(c[2])}"></button>`).join('')}</div>

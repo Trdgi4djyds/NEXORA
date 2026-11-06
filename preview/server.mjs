@@ -149,6 +149,9 @@ const DEMO_FILE = path.join(ROOT, "preview", "demo-main.mjs")
 // Chemin absolu : Vite assemble vite.config.ts (et ce fichier) dans node_modules/.vite-temp.
 const demoModule = () =>
   import(`${pathToFileURL(DEMO_FILE).href}?v=${fs.statSync(DEMO_FILE).mtimeMs}`)
+// NEXORA #052 : mode démonstration du Dev Lab (chargé une seule fois : il crée le projet de démonstration).
+const DEV_DEMO_FILE = path.join(ROOT, "preview", "demo-dev.mjs")
+const devDemoModule = () => import(pathToFileURL(DEV_DEMO_FILE).href)
 
 function demoMain(req, res) {
   const chunks = []
@@ -159,10 +162,16 @@ function demoMain(req, res) {
       const { channel, args } = JSON.parse(
         Buffer.concat(chunks).toString("utf8") || "{}",
       )
-      if (!/^(mon|tel):[\w-]+$/.test(String(channel)))
-        throw new Error("Canal non autorisé.")
-      const { demoInvoke } = await demoModule()
-      out = { ok: true, value: await demoInvoke(channel, args, appVersion()) }
+      // NEXORA #052 : canaux du Dev Lab (dev:, git:, devx:) servis par preview/demo-dev.mjs.
+      if (/^(dev|git|devx|gh|tunnel):[\w-]+$/.test(String(channel))) {
+        const { demoDevInvoke } = await devDemoModule()
+        out = { ok: true, value: await demoDevInvoke(channel, args) }
+      } else {
+        if (!/^(mon|tel|sec):[\w-]+$/.test(String(channel)))
+          throw new Error("Canal non autorisé.")
+        const { demoInvoke } = await demoModule()
+        out = { ok: true, value: await demoInvoke(channel, args, appVersion()) }
+      }
     } catch (err) {
       out = { ok: false, error: String((err && err.message) || err) }
     }
@@ -233,6 +242,34 @@ function rendererFile(rel) {
   }
 }
 
+// NEXORA #048 : fichiers publics hors de l'interface (page de statut, script des visiteurs réels).
+export const WEB_DIR = path.join(ROOT, "web")
+export function webFile(rel) {
+  if (rel !== "rum.js" && rel !== "status" && !rel.startsWith("status/"))
+    return null
+  const r =
+    rel === "status" || rel.endsWith("/")
+      ? `${rel.replace(/\/$/, "")}/index.html`
+      : rel
+  const file = path.resolve(WEB_DIR, r)
+  if (
+    !file.startsWith(WEB_DIR + path.sep) ||
+    !fs.existsSync(file) ||
+    !fs.statSync(file).isFile()
+  )
+    return null
+  return file
+}
+export function statusConfig() {
+  const setup = JSON.parse(
+    fs.readFileSync(path.join(ROOT, "supabase", "nexora.json"), "utf8"),
+  )
+  return {
+    url: `https://${setup.projectRef}.supabase.co`,
+    key: setup.publicKey,
+  }
+}
+
 /**
  * Plugin Vite de l'aperçu : sert les fichiers de NEXORA sans les transformer et recharge la page
  * quand l'interface ou le pont changent (Vite ne suit pas ces fichiers dans son graphe de modules).
@@ -262,6 +299,16 @@ export function nexoraPreview() {
           return
         }
         if (rel === DEMO_EVENTS_PATH && req.method === "GET") {
+          if (/[?&]dev=1/.test(req.url || "")) {
+            res.writeHead(200, {
+              "Content-Type": "text/event-stream",
+              "Cache-Control": "no-store",
+              Connection: "keep-alive",
+            })
+            res.write(": nexora\n\n")
+            devDemoModule().then(({ attachDevEvents }) => attachDevEvents(res))
+            return
+          }
           demoModule().then(({ demoEvents }) => demoEvents(res, appVersion()))
           return
         }
@@ -292,6 +339,29 @@ export function nexoraPreview() {
           return
         }
 
+        // NEXORA #048 : page de statut publique et script des visiteurs réels (web/), publiés avec NEXORA web.
+        if (rel === "status/config.json") {
+          res.writeHead(200, {
+            "Content-Type": MIME[".json"],
+            "Cache-Control": "no-store",
+          })
+          res.end(
+            req.method === "HEAD" ? undefined : JSON.stringify(statusConfig()),
+          )
+          return
+        }
+        const pub = webFile(rel)
+        if (pub) {
+          res.writeHead(200, {
+            "Content-Type":
+              MIME[path.extname(pub).toLowerCase()] ??
+              "application/octet-stream",
+            "Cache-Control": "no-cache",
+          })
+          if (req.method === "HEAD") return res.end()
+          fs.createReadStream(pub).pipe(res)
+          return
+        }
         const file = rel === BRIDGE_PATH ? BRIDGE_FILE : rendererFile(rel)
         if (!file) return next()
         res.writeHead(200, {

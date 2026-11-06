@@ -18,10 +18,16 @@
     "directory": "./dist",
     "binding": "ASSETS",
     // Le script ne tourne que pour le relais ; toutes les autres adresses sont servies directement.
-    "run_worker_first": ["/__supabase-api/*"],
+    // NEXORA #048 : signal de vie, repères de déploiement et visiteurs réels (worker/fiabilite.js).
+    "run_worker_first": ["/__supabase-api/*", "/hb/*", "/hook/*", "/rum"],
     // NEXORA et le back office utilisent des routes après # : pas de repli sur index.html, une
     // adresse inconnue répond 404. /admin redirige vers /admin/ (traitement des barres obliques par défaut).
     "not_found_handling": "none",
+  },
+  // NEXORA #048 : deuxième région de la supervision, chaque minute (sans effet tant que la variable
+  // NX_PROBE_SECRET n'est pas réglée dans Cloudflare, voir supabase/migrations/20261105000008_fiabilite.sql).
+  "triggers": {
+    "crons": ["* * * * *"],
   },
   "observability": {
     "enabled": true,

@@ -3,11 +3,16 @@
 // à plusieurs tailles de fenêtre (NEXORA accepte au minimum 760 × 520).
 //   pnpm audit:ui [écrans…] [--tailles 1440x900,1280x800,1024x700,880x600] [--theme sombre] [--json]
 // Écrans : accueil, responsive, browser, dev, apps, studio, design, securite, desktop (défaut : tous).
+// Les fenêtres Nouveau, Réglages, Personnaliser, Connexion, IA et Nouveau projet sont aussi auditées.
+// NEXORA #047 : la fenêtre « Mon compte » est auditée rubrique par rubrique avec le compte fictif
+// (données de scripts/admin-demo.mjs, appels Supabase interceptés, comme `pnpm captures --compte demo`).
 // Relevés (éléments visibles seulement) :
 //   - fenêtre : élément qui sort de la fenêtre sans conteneur qui défile ou qui le coupe ;
 //   - coupé : texte coupé par son conteneur sans points de suspension ;
 //   - déborde : élément dans le flux qui sort de son parent (carte, barre, bouton) ;
-//   - chevauche : deux éléments voisins dans le flux qui se recouvrent.
+//   - chevauche : deux éléments voisins dans le flux qui se recouvrent (sauf recouvrement voulu,
+//     attribut data-audit-recouvre) ;
+//   - masqué (#047, fenêtre « Mon compte ») : bloc qui coupe son contenu en hauteur sans le faire défiler.
 // Code de sortie 1 s'il reste un relevé.
 import puppeteer from "puppeteer-core"
 
@@ -40,6 +45,62 @@ const wanted = args.filter(
     !(i > 0 && args[i - 1].startsWith("--") && args[i - 1] !== "--json"),
 )
 const screens = wanted.length ? wanted : Object.keys(SPACES)
+
+// Compte NEXORA fictif (#047) : session sous « nexora-auth » et réponses Supabase de démonstration.
+async function useDemoAccount(page, dark) {
+  const { demoResponse, demoSession } = await import("./admin-demo.mjs")
+  await page.evaluateOnNewDocument(
+    (s, d) => {
+      if (window !== window.top) return
+      if (!localStorage.getItem("nexora-auth"))
+        localStorage.setItem("nexora-auth", s)
+      if (!localStorage.getItem("nexora-preview:settings"))
+        localStorage.setItem(
+          "nexora-preview:settings",
+          JSON.stringify({
+            tourDone: true,
+            setup: { done: true, chosen: [], pending: [] },
+            ...(d ? { appTheme: "dark" } : {}),
+          }),
+        )
+    },
+    JSON.stringify(demoSession()),
+    dark,
+  )
+  await page.setRequestInterception(true)
+  page.on("request", (req) => {
+    if (req.isInterceptResolutionHandled()) return
+    if (!/\.supabase\.co\//.test(req.url()) || /realtime\/v1/.test(req.url()))
+      return req.continue()
+    const cors = {
+      "access-control-allow-origin": "*",
+      "access-control-allow-headers": "*",
+      "access-control-allow-methods": "*",
+      "access-control-expose-headers": "content-range",
+    }
+    if (req.method() === "OPTIONS")
+      return req.respond({ status: 204, headers: cors })
+    const res = demoResponse(
+      req.method(),
+      req.url(),
+      req.headers(),
+      req.postData(),
+    )
+    if (!res) return req.continue()
+    req.respond({
+      status: res.status,
+      headers: { ...cors, ...(res.headers || {}) },
+      ...(req.method() === "HEAD" || res.status === 204
+        ? {}
+        : {
+            body:
+              typeof res.body === "string" || Buffer.isBuffer(res.body)
+                ? res.body
+                : JSON.stringify(res.body),
+          }),
+    })
+  })
+}
 
 function inspect() {
   const W = innerWidth,
@@ -188,6 +249,30 @@ function inspect() {
     }
   }
   // Voisins dans le flux qui se recouvrent.
+  // #047 : dans la fenêtre « Mon compte », un bloc qui coupe son contenu sans défiler cache du texte
+  // (le relevé « coupé » ne voit que les textes sur une ligne).
+  for (const el of all) {
+    if (!el.closest("#sheet .nxc") || !el.children.length) continue
+    const cs = getComputedStyle(el)
+    if (!/hidden|clip/.test(cs.overflowY) || cs.webkitLineClamp !== "none")
+      continue
+    const r = el.getBoundingClientRect()
+    if (!visible(el, cs, r) || el.scrollHeight - el.clientHeight <= 4) continue
+    if (
+      ![...el.querySelectorAll("*")].some(
+        (k) =>
+          k.getBoundingClientRect().bottom > r.bottom + 2 &&
+          (k.innerText || "").trim(),
+      )
+    )
+      continue
+    out.push({
+      type: "masqué",
+      where: short(el),
+      text: text(el),
+      rect: [r.left, r.top, r.width, r.height].map(Math.round),
+    })
+  }
   for (const p of new Set(all.map((e) => e.parentElement))) {
     if (!p) continue
     const kids = [...p.children].filter((c) => {
@@ -196,6 +281,9 @@ function inspect() {
         cs.position !== "absolute" &&
         cs.position !== "fixed" &&
         cs.display !== "none" &&
+        // #047 : un mot en gras coupé sur deux lignes a un rectangle englobant qui recouvre ses voisins
+        // sans aucun chevauchement visible.
+        !(cs.display === "inline" && c.getClientRects().length > 1) &&
         !c.closest("svg, .nxi")
       )
     })
@@ -210,7 +298,10 @@ function inspect() {
           ox > 3 &&
           oy > 3 &&
           !hiddenByAncestor(kids[i]) &&
-          !hiddenByAncestor(kids[j])
+          !hiddenByAncestor(kids[j]) &&
+          // #047 : recouvrement voulu, déclaré par data-audit-recouvre (photo de profil posée sur la bannière).
+          !kids[i].hasAttribute("data-audit-recouvre") &&
+          !kids[j].hasAttribute("data-audit-recouvre")
         )
           out.push({
             type: "chevauche",
@@ -279,7 +370,142 @@ try {
           )
       }
     }
+    // NEXORA #046 : les fenêtres sont la première source de régressions responsive. Les ouvrir avec
+    // de vrais clics à chaque taille, puis appliquer le même audit que pour les espaces.
+    const auditWindow = async (name, open) => {
+      await page.goto(URL, { waitUntil: "load", timeout: 30000 })
+      await new Promise((r) => setTimeout(r, 1400))
+      if (!(await open())) return
+      await new Promise((r) => setTimeout(r, 900))
+      const found = await page.evaluate(inspect)
+      const seen = new Set()
+      const uniq = found.filter((f) => {
+        const k = f.type + f.where
+        if (seen.has(k)) return false
+        seen.add(k)
+        return true
+      })
+      total += uniq.length
+      report.push({
+        taille: `${w}x${h}`,
+        ecran: `fenetre-${name}`,
+        releves: uniq,
+      })
+      if (!json) {
+        console.log(
+          `\nfenêtre ${name} ${w}×${h} : ${
+            uniq.length ? `${uniq.length} relevé(s)` : "aucun relevé"
+          }`,
+        )
+        for (const f of uniq)
+          console.log(
+            `  ${f.type.padEnd(9)} ${f.where}${
+              f.text ? ` « ${f.text} »` : ""
+            } ${JSON.stringify(f.rect)}${
+              f.parent ? ` dans ${JSON.stringify(f.parent)}` : ""
+            }`,
+          )
+      }
+    }
+    const click = async (selector) =>
+      page.evaluate((s) => {
+        const el = document.querySelector(s)
+        if (!el) return false
+        el.click()
+        return true
+      }, selector)
+    await auditWindow("nouveau", () => click("#btnNew"))
+    await auditWindow("reglages", () => click("#btnAppearance"))
+    await auditWindow("personnaliser", async () => {
+      if (!(await click("#btnAppearance"))) return false
+      await new Promise((r) => setTimeout(r, 350))
+      return click("#popover [data-ui-more]")
+    })
+    await auditWindow("connexion", () => click(".rail-acct"))
+    await auditWindow("ia", () => click("#btnAI"))
+    await auditWindow("nouveau-projet", async () => {
+      if (!(await click('#modeSeg [data-mode="dev"]'))) return false
+      await new Promise((r) => setTimeout(r, 1200))
+      return click('#devlab [data-act="new"]')
+    })
     await page.close()
+
+    // NEXORA #047 : fenêtre « Mon compte », chaque rubrique, avec le compte fictif.
+    const acc = await browser.newPage()
+    await acc.setViewport({ width: w, height: h })
+    await useDemoAccount(acc, dark)
+    const accSettle = async () => {
+      await acc.goto(URL, { waitUntil: "load", timeout: 30000 })
+      await new Promise((r) => setTimeout(r, 2200))
+      // Les annonces de démonstration (notifications) ne font pas partie de la fenêtre auditée.
+      await acc.addStyleTag({
+        content: "#toasts, .toasts, .nx-toasts { display: none !important; }",
+      })
+      const opened = await acc.evaluate(async () => {
+        const btn = document.querySelector("#btnAccount")
+        if (!btn) return false
+        btn.click()
+        await new Promise((r) => setTimeout(r, 350))
+        const item = document.querySelector('#popover [data-acc="profile"]')
+        if (!item) return false
+        item.click()
+        return true
+      })
+      if (opened) await new Promise((r) => setTimeout(r, 1400))
+      return opened
+    }
+    if (await accSettle()) {
+      const tabs = await acc.evaluate(() =>
+        [...document.querySelectorAll("#sheet [data-tab]")].map(
+          (b) => b.dataset.tab,
+        ),
+      )
+      for (const tab of [...new Set(tabs)]) {
+        await acc.evaluate(
+          (t) => document.querySelector(`#sheet [data-tab="${t}"]`)?.click(),
+          tab,
+        )
+        await new Promise((r) => setTimeout(r, 1200))
+        const found = await acc.evaluate(inspect)
+        const seen = new Set()
+        const uniq = found.filter((f) => {
+          const k = f.type + f.where
+          if (seen.has(k)) return false
+          seen.add(k)
+          return true
+        })
+        total += uniq.length
+        report.push({
+          taille: `${w}x${h}`,
+          ecran: `compte-${tab}`,
+          releves: uniq,
+        })
+        if (!json) {
+          console.log(
+            `\ncompte ${tab} ${w}×${h} : ${
+              uniq.length ? `${uniq.length} relevé(s)` : "aucun relevé"
+            }`,
+          )
+          for (const f of uniq)
+            console.log(
+              `  ${f.type.padEnd(9)} ${f.where}${
+                f.text ? ` « ${f.text} »` : ""
+              } ${JSON.stringify(f.rect)}${
+                f.parent ? ` dans ${JSON.stringify(f.parent)}` : ""
+              }`,
+            )
+        }
+      }
+    } else {
+      total += 1
+      report.push({
+        taille: `${w}x${h}`,
+        ecran: "compte",
+        releves: [{ type: "absente", where: "fenêtre Mon compte" }],
+      })
+      if (!json) console.log(`\ncompte ${w}×${h} : fenêtre introuvable`)
+    }
+    await acc.close()
   }
 } finally {
   await browser.close()

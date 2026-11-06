@@ -1,6 +1,6 @@
 // NEXORA #015 : tests de charge k6 (scénarios, plusieurs pages, seuils), suivi en direct seconde par
 // seconde, résultats détaillés par page, historique et comparaison de deux tests.
-import { call, esc, icon, num, ms, bytes, dur, dateTime, host, toast, PALETTE } from './util.js';
+import { call, esc, icon, num, ms, bytes, dur, dateTime, host, toast, PALETTE, sheet, closeSheet } from './util.js';
 import { Chart } from './charts.js';
 import { kpi, card, btn, iconBtn, confirmSheet } from './ui.js';
 
@@ -101,7 +101,7 @@ function liveKpis(p, f) {
 function verdictText(r) {
   if (r.failRate < 1 && r.p95 < 1000) return 'Ton site tient bien la charge testée.';
   if (r.failRate >= 5) return 'Beaucoup d’erreurs : le site sature à cette charge. Regarde à partir de combien de visiteurs les erreurs apparaissent sur le graphique.';
-  return 'Temps de réponse élevé sous charge : pense à un cache (pages, images), à une base de données mieux indexée ou à plus de ressources serveur.';
+  return 'Temps de réponse élevé sous charge : pense à un cache (pages, images), à des données mieux organisées ou à plus de ressources serveur.';
 }
 
 function resultHtml(r) {
@@ -236,6 +236,12 @@ async function start(ctx) {
   const f = readForm(ctx);
   const urls = f.urls.split(/\s*\n\s*/).map((u) => u.trim()).filter(Boolean);
   if (!urls.length) { toast('Indique au moins une adresse à tester.', { kind: 'bad' }); return; }
+  // NEXORA #048 : un test de charge ne vise que des sites dont la propriété est prouvée.
+  for (const u of urls) {
+    let st = null;
+    try { st = await call('mon:verify-status', { url: u }); } catch { st = null; }
+    if (st && !st.verified) { const ok = await verifySheet(st); if (!ok) return; }
+  }
   const stages = plan(f.scenario, f.vus, f.duration);
   ctx.state.ltLive = { points: [], running: true, label: 'Préparation du test de charge…', total: stages.reduce((a, s) => a + s[0], 0), elapsed: 0 };
   ctx.state.ltResult = null;
@@ -250,6 +256,36 @@ async function start(ctx) {
     ctx.state.ltLive = null;
     if (ctx.tab === 'load' && ctx.visible()) ctx.show(true);
   }
+}
+
+// NEXORA #048 : preuve de propriété (fichier /.well-known/nexora-verify.txt ou enregistrement DNS TXT).
+function verifySheet(st) {
+  const owner = 'sup-verify';
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (v) => { if (!done) { done = true; resolve(v); } };
+    const el = sheet(owner, `<div class="sheet-head"><span class="sheet-icon">${icon('shield', 22)}</span><div><h2>Ce site t’appartient-il ?</h2><p>Un test de charge envoie des centaines de requêtes : sur le site de quelqu’un d’autre, c’est une attaque. Prouve une fois que ${esc(st.host)} est à toi, avec l’une des deux méthodes.</p></div></div>
+      <div class="sheet-body sup-form-body">
+        <div class="sup-verif"><b>1. Fichier sur le site</b><small>Crée le fichier <code>${esc(st.file)}</code> avec ce contenu, puis publie le site :</small><div class="sup-hb-u"><code>${esc(st.token)}</code><button type="button" class="btn small" data-vc="${esc(st.token)}">${icon('copy', 12)}<span>Copier</span></button></div></div>
+        <div class="sup-verif"><b>2. Enregistrement DNS</b><small>Chez ton hébergeur DNS, ajoute un enregistrement TXT sur ${esc(st.host)} (ou _nexora.${esc(st.host)}) :</small><div class="sup-hb-u"><code>${esc(st.txt)}</code><button type="button" class="btn small" data-vc="${esc(st.txt)}">${icon('copy', 12)}<span>Copier</span></button></div></div>
+        <p class="sup-form-err" hidden></p>
+      </div>
+      <div class="sheet-foot"><span class="grow"></span><button type="button" class="btn" data-v="no">Annuler</button><button type="button" class="btn primary" data-v="check">${icon('search', 13)}<span>Vérifier</span></button></div>`, { onClose: () => finish(false) });
+    const err = el.querySelector('.sup-form-err');
+    el.onclick = async (ev) => {
+      const c = ev.target.closest('[data-vc]');
+      if (c) { call('clipboard:write', c.dataset.vc).then(() => toast('Copié.')).catch(() => {}); return; }
+      const b = ev.target.closest('[data-v]');
+      if (!b) return;
+      if (b.dataset.v === 'no') { closeSheet(owner); finish(false); return; }
+      b.disabled = true;
+      try {
+        const r = await call('mon:verify-check', { url: `https://${st.host}` });
+        if (r.verified) { toast(`${st.host} est vérifié : tu peux lancer tes tests de charge.`); finish(true); closeSheet(owner); }
+        else { err.hidden = false; err.textContent = `Preuve introuvable pour l’instant (${r.detail || 'fichier et DNS absents'}). Un enregistrement DNS peut mettre quelques minutes à apparaître.`; }
+      } catch (x) { err.hidden = false; err.textContent = x.message; } finally { b.disabled = false; }
+    };
+  });
 }
 
 // Mesures reçues en direct pendant le test (évènement mon:loadtest-progress).

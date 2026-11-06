@@ -10,6 +10,7 @@ import os from "node:os"
 import path from "node:path"
 import { createRequire } from "node:module"
 import { APP_DIR } from "./server.mjs"
+import { seedSecurity } from "./demo-securite.mjs"
 
 const require = createRequire(import.meta.url)
 const MIN = 60e3
@@ -486,7 +487,7 @@ function createRuntime(version) {
   if (past)
     Object.assign(past, {
       ackAt: past.start + 4 * MIN,
-      note: "Redémarrage du serveur de base de données après une mise à jour.",
+      note: "Redémarrage du service de données après une mise à jour.",
     })
   replay.stopAll()
   replay.flush()
@@ -522,7 +523,7 @@ function createRuntime(version) {
   mon.sendEmail = async () => ({ ok: true, id: 1, to: "demo@nexora.app" })
   mon.testAlert = async () => ({
     ok: true,
-    note: "E-mail de test accepté par Brevo pour demo@nexora.app (démonstration).",
+    note: "E-mail de test accepté par le service d’envoi pour demo@nexora.app (démonstration).",
   })
   mon.errReports["demo-boutique"] = {
     at: Date.now() - 4 * MIN,
@@ -641,6 +642,9 @@ function createRuntime(version) {
     },
   )
   tel.events.sort((a, b) => b.at - a.at)
+  // 3. Espace Sécurité (NEXORA #048) : historique d'audits, risque accepté, audit programmé, maintenance,
+  // repères de déploiement et webhooks fictifs.
+  seedSecurity({ require, APP_DIR, ipcMain, handlers, app, send, mon })
   return {
     handlers,
     clients,
@@ -661,6 +665,8 @@ const WATCHED = [
   path.join(APP_DIR, "src", "supervision", "stats.js"),
   path.join(APP_DIR, "src", "supervision", "store.js"),
   path.join(APP_DIR, "src", "supervision", "probe.js"),
+  path.join(APP_DIR, "src", "supervision", "checks.js"),
+  path.join(APP_DIR, "src", "securite", "index.js"),
 ]
 const signature = () =>
   WATCHED.map((f) => {

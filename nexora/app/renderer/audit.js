@@ -34,7 +34,7 @@
     if (document.documentElement.getAttribute('data-wf-site')) add('Webflow', 'Créateur de sites');
     if (/framer/i.test(gen) || q('#__framer-badge-container')) add('Framer', 'Créateur de sites');
     if (/squarespace/i.test(gen) || w.Static && w.Static.SQUARESPACE_CONTEXT) add('Squarespace', 'Créateur de sites');
-    if (/figma/i.test(gen) || /figma/.test(scripts)) add('Figma Sites', 'Créateur de sites');
+    if (/figma/i.test(gen) || /figma/.test(scripts)) add('Créateur de sites', 'Plateforme de création');
     if (/@vite\/client/.test(scripts)) add('Vite (serveur de développement)', 'Outil de build');
     if (Object.keys(w).some((k) => k.startsWith('webpackChunk'))) add('Webpack', 'Outil de build');
 

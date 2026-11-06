@@ -1,10 +1,10 @@
 // NEXORA #015 : fiche détaillée d'un site surveillé (percentiles, détail du temps de réponse,
 // disponibilité, codes HTTP, incidents, dernières vérifications, erreurs de page) et actions.
-import { call, esc, icon, num, pct, ms, bytes, dur, ago, time, dateTime, host, PHASE, KIND, stateChip, chip, toast, popover, closePopover, csv, sheet, RANGE_MS } from './util.js';
+import { call, esc, icon, num, pct, ms, bytes, dur, ago, time, dateTime, host, PHASE, KIND, TYPES, stateChip, chip, toast, popover, closePopover, csv, sheet, RANGE_MS } from './util.js';
 import { Chart, statusBars, spark } from './charts.js';
 import { kpi, card, btn, iconBtn, confirmSheet } from './ui.js';
 import { emptyState, barTip, availTone, incidentRow } from './overview.js';
-import { account, links, link, unlink, series as serverSeries } from './cloud.js';
+import { account, links, link, unlink, series as serverSeries, heartbeatUrl } from './cloud.js';
 
 export async function renderSites(ctx) {
   const ov = await call('mon:overview', { range: ctx.range, bars: 40 });
@@ -25,11 +25,11 @@ export async function renderSites(ctx) {
   const certTone = s.cert && s.cert.days != null ? (s.cert.days <= 7 ? 'bad' : s.cert.days <= 14 ? 'warn' : 'good') : '';
   const kpis = [
     kpi({ label: 'Disponibilité', ic: 'pass', value: pct(tot.avail), tone: availTone(tot.avail), hint: `${num(tot.n)} vérifications · ${num(tot.fails)} échec${tot.fails > 1 ? 's' : ''}` }),
-    kpi({ label: 'Médiane (p50)', ic: 'clock', value: ms(tot.p50), hint: `Moyenne ${ms(tot.avg)}` }),
-    kpi({ label: 'p95', ic: 'clock', value: ms(tot.p95), tone: s.thresholdMs && tot.p95 > s.thresholdMs ? 'warn' : '', hint: s.thresholdMs ? `Seuil de lenteur ${ms(s.thresholdMs)}` : '95 % des réponses plus rapides' }),
+    kpi({ label: 'p95', ic: 'clock', value: ms(tot.p95), tone: s.thresholdMs && tot.p95 > s.thresholdMs ? 'warn' : '', hint: `Médiane ${ms(tot.p50)}${s.thresholdMs ? ` · seuil ${ms(s.thresholdMs)}` : ''}` }),
     kpi({ label: 'p99', ic: 'clock', value: ms(tot.p99), hint: `Maximum ${ms(tot.max)}` }),
+    sloKpi(s),
     kpi({ label: 'Incidents', ic: 'warn', value: num(d.stats.count), tone: s.open.length ? 'bad' : d.stats.count ? 'warn' : 'good', hint: d.stats.down ? `${num(d.stats.down)} panne${d.stats.down > 1 ? 's' : ''} · ${dur(d.stats.downtime, { short: true })} hors ligne` : 'Aucune panne sur la période' }),
-    kpi({ label: 'Certificat', ic: 'lock', value: s.cert && s.cert.days != null ? `${num(s.cert.days)} j` : '—', tone: certTone, hint: s.cert && s.cert.issuer ? `Émis par ${esc(s.cert.issuer)}` : s.url.startsWith('https') ? 'Relevé à la prochaine vérification' : 'Site sans https' }),
+    typeKpi(s, certTone),
   ].join('');
   const codes = Object.entries(tot.codes || {}).sort((a, b) => b[1] - a[1]);
   const codeTotal = codes.reduce((a, c) => a + c[1], 0) || 1;
@@ -56,7 +56,7 @@ export async function renderSites(ctx) {
         <div class="sup-dhead-t">
           <h2>${esc(s.name || host(s.url))}</h2>
           <div class="sup-dhead-m"><button type="button" class="link-btn small" data-external="${esc(s.url)}">${esc(s.url)}</button>${s.ip ? `<small class="muted">${esc(s.ip)}${s.http ? ` · HTTP/${esc(s.http)}` : ''}</small>` : ''}</div>
-          <div class="sup-dhead-c">${stateChip(st, s.pending)}${since ? `<small class="muted">${esc(since)}</small>` : ''}${s.reason && st !== 'up' ? chip(s.reason, 'bad') : ''}${mutedTxt}<small class="muted">Toutes les ${s.intervalSec < 60 ? `${s.intervalSec} s` : `${s.intervalSec / 60} min`} · vérifié ${s.last ? esc(ago(s.last.at)) : 'jamais'}</small></div>
+          <div class="sup-dhead-c">${s.type && s.type !== 'http' ? chip(TYPES[s.type] ? TYPES[s.type].label : s.type, '', TYPES[s.type] ? TYPES[s.type].icon : 'globe') : ''}${stateChip(st, s.pending)}${since ? `<small class="muted">${esc(since)}</small>` : ''}${s.reason && st !== 'up' ? chip(s.reason, 'bad') : ''}${mutedTxt}<small class="muted">Toutes les ${s.intervalSec < 60 ? `${s.intervalSec} s` : `${s.intervalSec / 60} min`} · vérifié ${s.last ? esc(ago(s.last.at)) : 'jamais'}</small></div>
         </div>
         <div class="sup-dhead-a">
           ${btn('Vérifier', 'data-site-act="check"', { ic: 'sync' })}
@@ -79,6 +79,7 @@ export async function renderSites(ctx) {
         ${card('Incidents', incHtml, { actions: btn('Voir tout', 'data-site-act="incidents"', { ic: 'chevronRight' }) })}
       </div>
       ${errHtml}
+      ${journeyHtml(s)}
       ${card('Dernières vérifications', `<div class="sup-table-wrap"><table class="sup-table dense"><thead><tr><th>Heure</th><th>Résultat</th><th class="num">Code</th><th class="num">Total</th>${PHASE.map(([, l]) => `<th class="num">${esc(l)}</th>`).join('')}<th class="num">Taille</th><th>Détail</th></tr></thead><tbody>${recent || '<tr><td colspan="11" class="sup-none">Aucune vérification pour l’instant.</td></tr>'}</tbody></table></div>`, { sub: 'Les 30 plus récentes' })}
     </div>
   </div>`;
@@ -87,6 +88,8 @@ export async function renderSites(ctx) {
 function mountCharts(ctx, d) {
   const s = d.site;
   const bands = d.incidents.filter((i) => i.kind === 'down' || i.kind === 'slow').map((i) => ({ from: i.start, to: i.end || d.to, color: i.kind === 'down' ? 'var(--bad-dot)' : 'var(--warn-dot)', opacity: i.kind === 'down' ? 0.12 : 0.08, label: `${KIND[i.kind].label} : ${i.cause}` }));
+  // NEXORA #048 : repères de déploiement (fine bande violette) pour relier un ralentissement à une mise en ligne.
+  for (const m of d.marks || []) bands.push({ from: m.at, to: m.at + Math.max(d.step * 0.35, (d.to - d.from) / 400), color: '#7b4fe6', opacity: 0.55, label: `Déploiement : ${m.label}` });
   const at = (k) => d.points.map((p) => ({ t: p.t, v: p[k] }));
   const el = ctx.view.querySelector('[data-chart="pct"]');
   if (el) ctx.charts.push(new Chart(el, {
@@ -121,6 +124,7 @@ function bind(ctx, d) {
   const s = d.site;
   for (const b of ctx.view.querySelectorAll('[data-site]')) b.onclick = () => { ctx.siteId = b.dataset.site; ctx.savePref(); ctx.show(); };
   for (const b of ctx.view.querySelectorAll('[data-site-act]')) b.onclick = () => act(ctx, d, b.dataset.siteAct, b);
+  for (const b of ctx.view.querySelectorAll('[data-reveal-shot]')) b.onclick = () => call('shell:open', b.dataset.revealShot).catch(() => {});
   void s;
 }
 
@@ -235,8 +239,11 @@ async function fillServer(ctx, d, token) {
   const label = { up: 'En ligne', down: 'En panne', degraded: 'Lent', paused: 'En pause' }[state] || 'En attente de la première vérification';
   const tone = { up: 'good', down: 'bad', degraded: 'warn' }[state] || '';
   const actions = btn('Arrêter', 'data-srv="off"', { ic: 'close' });
+  // NEXORA #048 : adresse du signal de vie et confirmation depuis une deuxième région.
+  const hb = heartbeatUrl(m);
+  const extra = `${hb ? `<div class="sup-hb"><small>Adresse à appeler à chaque passage de ta tâche (GET ou POST) :</small><div class="sup-hb-u"><code>${esc(hb)}</code>${btn('Copier', `data-copy-hb="${esc(hb)}"`, { ic: 'copy' })}</div><small class="muted">Exemple : <code>curl -fsS ${esc(hb)}</code> à la fin de ta sauvegarde. ${m.last_ping_at ? `Dernier signal ${esc(ago(Date.parse(m.last_ping_at)))}.` : 'Aucun signal reçu pour l’instant.'}</small></div>` : ''}${m.regional_at ? `<p class="sup-note">${icon('globe', 12)} Deuxième région (${esc(m.regional_colo || 'réseau Cloudflare')}) : ${m.regional_status === 'up' ? 'le site y répond' : 'le site n’y répond pas'} · ${esc(ago(Date.parse(m.regional_at)))}.</p>` : ''}`;
   if (!srv || srv.error) {
-    paint(`<div class="sup-srv-row">${chip(label, tone, 'cloud')}<small class="muted">Vérifié ${esc(ago(m.last_checked_at ? Date.parse(m.last_checked_at) : 0))}${m.last_latency_ms != null ? ` · ${ms(m.last_latency_ms)}` : ''}${m.last_error ? ` · ${esc(m.last_error)}` : ''}</small></div>${srv && srv.error ? `<p class="sup-note">${esc(srv.error.message)}</p>` : ''}`, actions);
+    paint(`${extra}<div class="sup-srv-row">${chip(label, tone, 'cloud')}<small class="muted">Vérifié ${esc(ago(m.last_checked_at ? Date.parse(m.last_checked_at) : 0))}${m.last_latency_ms != null ? ` · ${ms(m.last_latency_ms)}` : ''}${m.last_error ? ` · ${esc(m.last_error)}` : ''}</small></div>${srv && srv.error ? `<p class="sup-note">${esc(srv.error.message)}</p>` : ''}`, actions);
     return;
   }
   const tot = srv.totals || {};
@@ -247,7 +254,7 @@ async function fillServer(ctx, d, token) {
     kpi({ label: 'Temps de réponse', ic: 'clock', value: ms(tot.p95), hint: `Médiane ${ms(tot.p50)}` }),
     kpi({ label: 'Incidents', ic: 'warn', value: num((srv.incidents || []).length), tone: open.length ? 'bad' : 'good', hint: open.length ? `${open.length} en cours` : 'Aucun en cours' }),
   ].join('');
-  paint(`<div class="sup-kpis k4">${k}</div><div data-chart="srv"></div>`, actions);
+  paint(`${extra}<div class="sup-kpis k4">${k}</div><div data-chart="srv"></div>`, actions);
   const el = host0.querySelector('[data-chart="srv"]');
   if (!el) return;
   const t = (v) => Date.parse(v);
@@ -264,6 +271,7 @@ async function fillServer(ctx, d, token) {
 }
 
 function bindServer(ctx, d, root) {
+  for (const b of root.querySelectorAll('[data-copy-hb]')) b.onclick = () => call('clipboard:write', b.dataset.copyHb).then(() => toast('Adresse copiée.')).catch(() => {});
   for (const b of root.querySelectorAll('[data-srv]')) b.onclick = async () => {
     b.disabled = true;
     try {
@@ -285,6 +293,33 @@ function bindServer(ctx, d, root) {
       b.disabled = false;
     }
   };
+}
+
+// NEXORA #048 : objectif de disponibilité et budget d'erreur sur 30 jours glissants.
+function sloKpi(s) {
+  const o = s.slo;
+  if (!o) return kpi({ label: 'Objectif', ic: 'target', value: '—' });
+  const left = Math.max(0, o.leftMs);
+  const tone = o.used >= 1 ? 'bad' : o.used >= 0.75 ? 'warn' : 'good';
+  return kpi({ label: `Objectif ${String(o.target).replace('.', ',')} %`, ic: 'target', value: o.used >= 1 ? 'Dépassé' : `${Math.round((1 - o.used) * 100)} %`, tone, hint: o.used >= 1 ? `${dur(o.downMs, { short: true })} hors ligne pour ${dur(o.budgetMs, { short: true })} permis (30 j)` : `Budget restant : ${dur(left, { short: true })} sur 30 j`, tip: 'Budget d’erreur : temps hors ligne encore permis sur 30 jours pour tenir l’objectif.' });
+}
+
+// Indicateur propre au type de vérification (certificat, domaine, DNS, API, parcours).
+function typeKpi(s, certTone) {
+  if (s.type === 'domain') return kpi({ label: 'Expiration du domaine', ic: 'globe', value: s.domainDays != null ? `${num(s.domainDays)} j` : '—', tone: s.domainDays == null ? '' : s.domainDays <= 14 ? 'bad' : s.domainDays <= 30 ? 'warn' : 'good', hint: 'Vérifiée toutes les 6 heures' });
+  if (s.type === 'dns') return kpi({ label: 'Valeur DNS', ic: 'link', value: esc(String(s.dnsValues || '—').split(' | ')[0] || '—'), hint: s.dnsValues && s.dnsValues.includes(' | ') ? `${s.dnsValues.split(' | ').length} valeurs` : 'Dernière lecture' });
+  if (s.type === 'api') return kpi({ label: 'Dernière valeur', ic: 'code', value: esc(s.apiValue || '—'), hint: 'Valeur JSON contrôlée' });
+  if (s.type === 'journey') return kpi({ label: 'Étapes', ic: 'target', value: s.journey ? `${s.journey.steps.filter((x) => x[2]).length}/${s.journey.steps.length}` : '—', tone: s.journey ? (s.journey.ok ? 'good' : 'bad') : '', hint: s.journey ? `Dernier passage ${esc(ago(s.journey.at))}` : 'Premier passage en attente' });
+  if (s.type === 'tcp') return kpi({ label: 'Port', ic: 'display', value: esc(String(s.url).replace(/^tcp:\/\//, '')), hint: 'Connexion TCP' });
+  return kpi({ label: 'Certificat', ic: 'lock', value: s.cert && s.cert.days != null ? `${num(s.cert.days)} j` : '—', tone: certTone, hint: s.cert && s.cert.issuer ? `Émis par ${esc(s.cert.issuer)}` : s.url.startsWith('https') ? 'Relevé à la prochaine vérification' : 'Site sans https' });
+}
+
+function journeyHtml(s) {
+  if (s.type !== 'journey') return '';
+  const j = s.journey;
+  if (!j) return card('Dernier passage du parcours', '<p class="sup-none">Le premier passage arrive à la prochaine vérification.</p>');
+  const max = Math.max(1, ...j.steps.map((x) => x[1]));
+  return card('Dernier passage du parcours', `<div class="sup-jsteps">${j.steps.map(([label, t, ok], i) => `<div class="sup-jstep ${ok ? '' : 'bad'}"><span class="sup-step-n">${i + 1}</span><span class="sup-jstep-l">${esc(label)}</span><span class="sup-jstep-b"><i style="width:${Math.max(2, (t / max) * 100)}%"></i></span><b>${ms(t)}</b>${ok ? icon('check', 12) : icon('warn', 12)}</div>`).join('')}</div>${!j.ok && j.shot ? `<div class="nxs-actions">${btn('Voir la capture de l’échec', `data-reveal-shot="${esc(j.shot)}"`, { ic: 'image' })}</div>` : ''}`, { sub: `${j.ok ? 'Réussi' : 'En échec'} · ${esc(dateTime(j.at))}` });
 }
 
 export { RANGE_MS };

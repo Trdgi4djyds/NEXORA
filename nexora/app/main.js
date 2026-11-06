@@ -182,9 +182,10 @@ function createWindow() {
     title: 'NEXORA',
     backgroundColor: dark ? '#0d0e11' : '#e9ebf2',
     icon: path.join(__dirname, 'build', 'icon.png'),
-    titleBarStyle: 'hidden',
-    titleBarOverlay: isMac ? undefined : { color: dark ? '#0d0e11' : '#e9ebf2', symbolColor: dark ? '#f5f5f7' : '#1d1d1f', height: 58 },
-    trafficLightPosition: { x: 18, y: 18 },
+    // NEXORA #046 : sous Windows et Linux, la barre native garde réduire, agrandir et fermer hors
+    // du contenu. L'ancienne superposition masquait la barre d'outils, surtout sur les petits écrans.
+    titleBarStyle: isMac ? 'hiddenInset' : 'default',
+    trafficLightPosition: isMac ? { x: 18, y: 18 } : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, webviewTag: true, spellcheck: false,
     },
@@ -241,15 +242,17 @@ app.on('web-contents-created', (_e, contents) => {
   }
 });
 
-ipcMain.handle('window:titlebar', (_e, { color, symbolColor }) => {
-  if (win && process.platform !== 'darwin') { try { win.setTitleBarOverlay({ color, symbolColor, height: 58 }); } catch { /* ignore */ } }
-});
+// Conservé pour la compatibilité du pont : la barre native se dessine désormais hors de l'interface.
+ipcMain.handle('window:titlebar', () => false);
 ipcMain.handle('window:fullscreen', (_e, on) => { if (win) win.setFullScreen(Boolean(on)); });
 ipcMain.handle('window:zoom', (_e, f) => { if (win) win.webContents.setZoomFactor(Math.max(0.7, Math.min(1.5, Number(f) || 1))); });
 
 // Audit de sécurité défensif d'un site (en lecture seule).
 const security = require('./src/security');
-ipcMain.handle('sec:scan', async (_e, { url }) => {
+// NEXORA #048 : l'audit est aussi lancé par les audits programmés (src/securite/) ; chaque audit est gardé dans
+// l'historique et comparé au précédent.
+let securite = null;
+async function runScan(url) {
   const fetchImpl = (u, o) => (net && net.fetch ? net.fetch(u, { ...o, useSessionCookies: false }) : fetch(u, o));
   let probe = null;
   try {
@@ -262,7 +265,123 @@ ipcMain.handle('sec:scan', async (_e, { url }) => {
   try {
     return await security.scan(url, { fetchImpl, page: probe ? probe.webContents : null, onStep: (p) => send('sec:progress', p) });
   } finally { if (probe && !probe.isDestroyed()) probe.destroy(); }
+}
+ipcMain.handle('sec:scan', async (_e, { url }) => {
+  const r = await runScan(url);
+  return securite ? securite.store.record({ ...r, kind: 'site', target: r.host }) : r;
 });
+// NEXORA #048 : page chargée dans une fenêtre cachée (session du projet ouvert), pour l'assistant CSP.
+async function withPage(url, fn) {
+  const w = new BrowserWindow({ show: false, width: 1280, height: 860, webPreferences: { offscreen: true, sandbox: true, partition: isolation.partition() } });
+  w.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  w.webContents.setAudioMuted(true);
+  try {
+    await Promise.race([w.loadURL(url).catch(() => {}), new Promise((r) => setTimeout(r, 25000))]);
+    return await fn(w.webContents);
+  } finally { if (!w.isDestroyed()) w.destroy(); }
+}
+
+// NEXORA #048 : parcours de la supervision (clics, saisies, vérifications) rejoués dans une fenêtre cachée,
+// avec une session à part par parcours. Les valeurs secrètes (mots de passe) sont chiffrées par safeStorage.
+const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+function seal(v) {
+  try { return safeStorage.isEncryptionAvailable() ? `enc:${safeStorage.encryptString(String(v || '')).toString('base64')}` : String(v || ''); } catch { return String(v || ''); }
+}
+function unseal(v) {
+  const s = String(v == null ? '' : v);
+  if (!s.startsWith('enc:')) return s;
+  try { return safeStorage.decryptString(Buffer.from(s.slice(4), 'base64')); } catch { return ''; }
+}
+const stepLabel = (s) => ({ goto: `Ouvrir ${s.url || ''}`, click: `Cliquer sur ${s.text || s.sel || ''}`, fill: `Remplir ${s.sel || ''}`, press: 'Valider le formulaire', wait: `Attendre ${Math.round((Number(s.ms) || 1000) / 100) / 10} s`, expect: `Vérifier le texte « ${s.text || ''} »`, expectUrl: `Vérifier l’adresse « ${s.text || ''} »` }[s.do] || s.do || 'Étape').slice(0, 80);
+async function runJourney(e) {
+  const steps = Array.isArray(e.steps) ? e.steps.slice(0, 40) : [];
+  const t0 = Date.now();
+  const out = [];
+  const part = `nexora-parcours-${String(e.id || 'essai').replace(/[^\w-]/g, '').slice(0, 30)}`;
+  const w = new BrowserWindow({ show: false, width: 1280, height: 860, webPreferences: { offscreen: true, sandbox: true, partition: part } });
+  const wc = w.webContents;
+  wc.setWindowOpenHandler(() => ({ action: 'deny' }));
+  wc.setAudioMuted(true);
+  const js = (code) => wc.executeJavaScript(code, true);
+  const settle = async () => { await pause(300); const end = Date.now() + 15000; while (wc.isLoading() && Date.now() < end) await pause(200); await pause(200); };
+  const waitSel = async (sel) => { const end = Date.now() + 10000; while (Date.now() < end) { if (await js(`!!document.querySelector(${JSON.stringify(sel)})`).catch(() => false)) return true; await pause(250); } return false; };
+  let error = '';
+  let shot = '';
+  try {
+    await Promise.race([w.loadURL(e.url).catch(() => {}), pause(25000)]);
+    await settle();
+    for (const s of steps) {
+      const st = Date.now();
+      const label = stepLabel(s);
+      let err = '';
+      try {
+        const sel = JSON.stringify(String(s.sel || ''));
+        if (s.do === 'goto') { await Promise.race([w.loadURL(new URL(s.url, wc.getURL() || e.url).href).catch(() => {}), pause(25000)]); await settle(); }
+        else if (s.do === 'click') { if (!(await waitSel(s.sel))) throw new Error(`élément introuvable (${s.sel})`); await js(`document.querySelector(${sel}).click()`); await settle(); }
+        else if (s.do === 'fill') {
+          if (!(await waitSel(s.sel))) throw new Error(`champ introuvable (${s.sel})`);
+          await js(`(() => { const el = document.querySelector(${sel}); el.focus(); const p = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : el instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(p, 'value').set.call(el, ${JSON.stringify(unseal(s.value))}); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); })()`);
+        } else if (s.do === 'press') { await js(`(() => { const el = document.querySelector(${sel}) || document.activeElement; const f = el && el.closest ? el.closest('form') : null; if (f && f.requestSubmit) f.requestSubmit(); else if (el) el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); })()`); await settle(); }
+        else if (s.do === 'wait') await pause(Math.min(15000, Number(s.ms) || 1000));
+        else if (s.do === 'expect') {
+          const end = Date.now() + 10000;
+          let found = false;
+          while (!found && Date.now() < end) { found = await js(`!!document.body && document.body.innerText.includes(${JSON.stringify(String(s.text || ''))})`).catch(() => false); if (!found) await pause(300); }
+          if (!found) throw new Error(`texte absent : « ${s.text} »`);
+        } else if (s.do === 'expectUrl') { if (!wc.getURL().includes(String(s.text || ''))) throw new Error(`adresse actuelle : ${wc.getURL()}`); }
+      } catch (x) { err = String((x && x.message) || x); }
+      out.push({ label, ms: Date.now() - st, ok: !err, error: err });
+      if (err) { error = `${label} : ${err}`; break; }
+    }
+    if (error) {
+      try {
+        const img = await wc.capturePage();
+        const dir = path.join(app.getPath('userData'), 'supervision', 'parcours');
+        fs.mkdirSync(dir, { recursive: true });
+        shot = path.join(dir, `${part}.png`);
+        fs.writeFileSync(shot, img.resize({ width: 640 }).toPNG());
+      } catch { shot = ''; }
+    }
+  } finally {
+    if (!w.isDestroyed()) w.destroy();
+    session.fromPartition(part).clearStorageData().catch(() => {});
+  }
+  return { ok: !error, ms: Date.now() - t0, steps: out, error, shot };
+}
+ipcMain.handle('mon:seal', (_e, v) => seal(v));
+ipcMain.handle('mon:journey-run', (_e, e) => runJourney({ ...(e || {}), id: 'essai' }));
+// Enregistreur : fenêtre visible ; chaque clic et chaque saisie devient une étape. Fermer la fenêtre termine.
+const REC_SCRIPT = `(() => { if (window.__nxRec) return; window.__nxRec = 1;
+  const sel = (el) => { if (el.id && /^[A-Za-z][\\w-]*$/.test(el.id)) return '#' + el.id; for (const a of ['data-testid', 'data-test', 'name', 'aria-label']) { const v = el.getAttribute && el.getAttribute(a); if (v) return el.tagName.toLowerCase() + '[' + a + '=' + JSON.stringify(v) + ']'; } const parts = []; let n = el; while (n && n.nodeType === 1 && parts.length < 5 && n !== document.body) { if (n.id && /^[A-Za-z][\\w-]*$/.test(n.id)) { parts.unshift('#' + n.id); break; } let p = n.tagName.toLowerCase(); const sib = n.parentElement ? [...n.parentElement.children].filter((c) => c.tagName === n.tagName) : []; if (sib.length > 1) p += ':nth-of-type(' + (sib.indexOf(n) + 1) + ')'; parts.unshift(p); n = n.parentElement; } return parts.join(' > '); };
+  const txt = (el) => (el.innerText || el.value || el.getAttribute('aria-label') || el.getAttribute('title') || '').trim().replace(/\\s+/g, ' ').slice(0, 40);
+  const emit = (o) => console.log('__NXREC__' + JSON.stringify(o));
+  document.addEventListener('click', (e) => { const el = e.target.closest('a,button,input[type=submit],input[type=button],[role=button],summary,label') || e.target; if (el.matches && el.matches('input:not([type=submit]):not([type=button]):not([type=checkbox]):not([type=radio]),textarea,select')) return; emit({ do: 'click', sel: sel(el), text: txt(el) }); }, true);
+  document.addEventListener('change', (e) => { const el = e.target; if (!el.matches || !el.matches('input,textarea,select')) return; if (el.type === 'checkbox' || el.type === 'radio') return; emit({ do: 'fill', sel: sel(el), value: el.value, secret: el.type === 'password' }); }, true);
+})()`;
+ipcMain.handle('mon:journey-record', (_e, { url } = {}) => new Promise((resolve) => {
+  const steps = [];
+  let last = String(url || '');
+  const w = new BrowserWindow({ width: 1200, height: 820, title: 'Enregistrement du parcours : fais tes clics, puis ferme cette fenêtre', autoHideMenuBar: true, webPreferences: { sandbox: true, partition: 'nexora-parcours-enregistrement' } });
+  const wc = w.webContents;
+  wc.setWindowOpenHandler(({ url: u }) => { wc.loadURL(u).catch(() => {}); return { action: 'deny' }; });
+  wc.on('dom-ready', () => { wc.executeJavaScript(REC_SCRIPT).catch(() => {}); });
+  wc.on('did-navigate', (_ev, u) => { last = u; });
+  wc.on('console-message', (ev, _level, message) => {
+    const msg = String(ev && ev.message != null ? ev.message : message || '');
+    if (!msg.startsWith('__NXREC__')) return;
+    try {
+      const s = JSON.parse(msg.slice(9));
+      if (s.secret) s.value = seal(s.value);
+      const prev = steps[steps.length - 1];
+      if (prev && s.do === 'fill' && prev.do === 'fill' && prev.sel === s.sel) prev.value = s.value; else steps.push(s);
+    } catch { /* message illisible */ }
+  });
+  w.on('closed', () => {
+    session.fromPartition('nexora-parcours-enregistrement').clearStorageData().catch(() => {});
+    resolve({ steps: steps.slice(0, 40), lastUrl: last });
+  });
+  w.loadURL(String(url || 'about:blank')).catch(() => {});
+}));
 // Surveillance des erreurs d'une page (ton site) : charge la page dans une fenêtre cachée, avec une session
 // isolée en mémoire, et relève les erreurs JavaScript, les exceptions non rattrapées, les ressources en échec
 // (4xx/5xx, réseau) et les plantages. Les vérifications passent une par une (un seul écouteur réseau par session).
@@ -847,8 +966,14 @@ app.whenReady().then(() => {
   require('./src/maint').register({
     ipcMain, app, shell, net, send,
   });
-  require('./src/monitor').register({
-    ipcMain, app, net, send, pageErrors,
+  const plan = require('./src/plan');
+  const mon = require('./src/monitor').register({
+    ipcMain, app, net, send, pageErrors, journey: runJourney, planCheck: (f, n) => plan.check(f, n),
+  });
+  // NEXORA #048 : centre de sécurité (historique, audits programmés, domaine, pages, code, applications, CSP).
+  securite = require('./src/securite').register({
+    ipcMain, app, net, send, dialog, shell, getWin: () => win, BrowserWindow, runScan, withPage,
+    notify: (n) => mon.notify(n), planCheck: (f, n) => plan.check(f, n),
   });
   require('./src/loadtest').register({
     ipcMain, app, net, send, dialog, shell, getWin: () => win,
@@ -857,6 +982,22 @@ app.whenReady().then(() => {
   require('./src/telemetry').register({
     ipcMain, app, net, getWin: () => win, webContents,
   });
+  // NEXORA #048 : un envoi Git réussi ou la construction d'un logiciel pose un repère de déploiement sur les
+  // graphiques de la supervision et relance les audits programmés « après chaque déploiement ».
+  const DEPLOY = { 'git:push': 'Envoi Git', 'git:publish': 'Publication sur GitHub', 'desktop:build': 'Construction du logiciel' };
+  const baseHandle = ipcMain.handle;
+  ipcMain.handle = (ch, fn) => baseHandle.call(ipcMain, ch, DEPLOY[ch] ? async (e, ...a) => {
+    const r = await fn(e, ...a);
+    if (!(r && r.ok === false)) {
+      try {
+        const arg = a[0] || {};
+        const where = arg.dir || arg.source || arg.projectDir || '';
+        mon.addMark({ label: `${DEPLOY[ch]}${where ? ` : ${path.basename(String(where))}` : ''}`, source: ch.split(':')[0] });
+        securite.onDeploy();
+      } catch { /* repère facultatif */ }
+    }
+    return r;
+  } : fn);
   require('./src/dev/ipc').register({
     ipcMain, app, dialog, shell, send, getWin: () => win, safeStorage, net, session,
   });
@@ -864,6 +1005,14 @@ app.whenReady().then(() => {
   require('./src/desktop/ipc').register({
     ipcMain, app, dialog, shell, safeStorage, net, send, getWin: () => win,
   });
+  // NEXORA #052 : outils du Dev Lab (Problèmes, scripts, variables protégées, Git avancé, débogueur, API, tests,
+  // dépendances, mise en ligne, contrôles, bases de données, assistant IA du projet).
+  require('./src/devplus/ipc').register({
+    ipcMain, app, safeStorage, send, BrowserWindow, partition: () => isolation.partition(),
+  });
+  // NEXORA #053 : NEX-DESIGN (polices libres, import de fichiers Figma).
+  require('./src/designplus/ipc').register({ ipcMain, app, safeStorage });
+  ipcMain.handle = baseHandle;
   if (process.platform !== 'darwin') Menu.setApplicationMenu(null);
   createWindow();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });

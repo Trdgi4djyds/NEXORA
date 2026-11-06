@@ -86,18 +86,40 @@ export const STATE = {
   down: { label: 'En panne', tone: 'bad' },
   paused: { label: 'En pause', tone: 'mute' },
   unknown: { label: 'En attente', tone: 'mute' },
+  maint: { label: 'En maintenance', tone: 'mute' }, // NEXORA #048
 };
 export const KIND = {
   down: { label: 'Panne', icon: 'error', tone: 'bad' },
   slow: { label: 'Lenteur', icon: 'clock', tone: 'warn' },
   cert: { label: 'Certificat', icon: 'lock', tone: 'warn' },
   errors: { label: 'Erreurs de page', icon: 'code', tone: 'warn' },
+  // NEXORA #048
+  change: { label: 'Modification', icon: 'eye', tone: 'warn' },
+  domain: { label: 'Domaine', icon: 'globe', tone: 'warn' },
 };
 export const ALERT_KIND = {
   down: 'Panne', 'down-rappel': 'Rappel de panne', up: 'Rétablissement', slow: 'Lenteur', 'slow-ok': 'Fin de lenteur',
   cert: 'Certificat', 'cert-ok': 'Certificat renouvelé', errors: 'Erreurs de page', 'errors-ok': 'Fin des erreurs',
+  // NEXORA #048
+  escalade: 'Escalade', change: 'Modification', domain: 'Domaine', 'domain-ok': 'Domaine renouvelé', secu: 'Audit de sécurité',
 };
 export const CHANNEL = { email: 'E-mail' };
+// NEXORA #048 : libellé d'un canal du journal (« webhook:<id> » → nom du webhook).
+export function channelLabel(ch, hooks = []) {
+  if (CHANNEL[ch]) return CHANNEL[ch];
+  if (String(ch).startsWith('webhook:')) { const h = hooks.find((x) => `webhook:${x.id}` === ch); return h ? h.name : 'Webhook'; }
+  return ch;
+}
+// Types de vérification (NEXORA #048).
+export const TYPES = {
+  http: { label: 'Site web', icon: 'globe' },
+  api: { label: 'API', icon: 'code' },
+  tcp: { label: 'Port TCP', icon: 'display' },
+  dns: { label: 'DNS', icon: 'link' },
+  domain: { label: 'Nom de domaine', icon: 'clock' },
+  journey: { label: 'Parcours', icon: 'target' },
+  heartbeat: { label: 'Signal de vie', icon: 'heart' },
+};
 
 // Palette des séries (mêmes teintes que le système de NEXORA, lisibles en clair comme en sombre).
 export const PALETTE = ['#007aff', '#af52de', '#30b0c7', '#ff9500', '#ff2d55', '#34c759', '#5856d6', '#a2845e', '#ffcc00', '#64d2ff'];

@@ -33,3 +33,14 @@ load('auth', () => document.body, './auth/index.js');
 load('offres', () => document.body, './offres/index.js');
 // NEXORA #042 : couche visuelle « Flex » (accent de l'espace, lumière des tuiles, compteurs).
 load('look', () => document.body, './look/index.js');
+// NEXORA #048 : espace Sécurité en six onglets (vue d'ensemble, audits du site, du domaine, du code et des
+// applications, supervision), posés avant la première ouverture de l'espace.
+load('secu', () => document.body, './secu/index.js');
+// NEXORA #052 : outils du Dev Lab (Problèmes, scripts, variables protégées, Git avancé, débogueur, API, tests,
+// dépendances, mise en ligne, contrôles, bases de données, assistant IA du projet), posés à la création du Dev Lab.
+load('devplus', () => state.devLab && state.devLab.el && state.devLab.st && state.devLab, './devplus/index.js');
+// NEXORA #053 : NEX-DESIGN (mise en page automatique, variables, variantes, prototype, code, accessibilité, polices,
+// série, impression, import, IA, icônes, versions, validation, équipe), posé après les fonctions du #011.
+load('designplus', () => state.design && state.design.ready && state.design.nxInstalled && state.design, './designplus/index.js');
+// NEXORA #053 : liens de validation (#/revue/…) et de partage (#/share/…), dès le démarrage (application et web).
+load('revue', () => document.body, './designplus/share.js');

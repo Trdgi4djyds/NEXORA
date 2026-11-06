@@ -58,7 +58,7 @@ function banner(inst) {
     return `<div class="nxo-ab-banner trial">
       <span class="nxo-ab-ic">${ico('clock', 15)}</span>
       <div><b>Essai gratuit · encore ${left} jour${left > 1 ? 's' : ''}</b><small>Fin de l’essai le ${esc(longDate(st.trial.trial_ends_at))}. Ensuite, l’application sera verrouillée dans l’App Builder.</small><i class="nxo-bar"><em style="width:${((used / days) * 100).toFixed(0)}%"></em></i></div>
-      <button type="button" class="nxo-btn primary small" data-nxo-ask="standard">Garder mon app · 10 $ / mois</button>
+      <button type="button" class="nxo-btn primary small" data-nxo-ask="standard">Garder mon app · 12 $ / mois</button>
     </div>`;
   }
   const t = st.t || {};
@@ -87,7 +87,7 @@ function lockCard(inst, st) {
       <p>${esc(text)}</p>
       <div class="nxo-ab-lock-acts">
         ${st.reason === 'auth' ? '<button type="button" class="nxo-btn primary" data-nxo-login>Se connecter</button>'
-          : '<button type="button" class="nxo-btn primary" data-nxo-ask="standard">Passer à Standard · 10 $ / mois</button><button type="button" class="nxo-btn ghost" data-nxo-offers>Voir les offres</button>'}
+          : '<button type="button" class="nxo-btn primary" data-nxo-ask="standard">Passer à Standard · 12 $ / mois</button><button type="button" class="nxo-btn ghost" data-nxo-offers>Voir les offres</button>'}
       </div>
       ${others ? '<small class="nx-muted">Tu peux choisir une autre application dans la liste à gauche.</small>' : ''}
     </div>

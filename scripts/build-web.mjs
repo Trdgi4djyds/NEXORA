@@ -15,6 +15,8 @@ import {
   RENDERER_DIR,
   ROOT,
   renderPage,
+  statusConfig,
+  WEB_DIR,
   WEB_FILE,
   WEB_PATH,
 } from "../preview/server.mjs"
@@ -41,6 +43,13 @@ fs.copyFileSync(WEB_FILE, path.join(OUT_DIR, WEB_PATH))
 for (const [file, data] of Object.entries(PREVIEW_DATA)) {
   fs.writeFileSync(path.join(OUT_DIR, file), JSON.stringify(data()))
 }
+
+// NEXORA #048 : page de statut publique (/status/?p=…) et script des visiteurs réels (/rum.js).
+fs.cpSync(WEB_DIR, OUT_DIR, { recursive: true })
+fs.writeFileSync(
+  path.join(OUT_DIR, "status", "config.json"),
+  JSON.stringify(statusConfig()),
+)
 
 // Modules du compte NEXORA que dist/main.js ne charge pas en mode web (noms à empreinte).
 const mainJs = fs.readFileSync(

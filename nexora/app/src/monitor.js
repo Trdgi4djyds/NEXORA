@@ -18,17 +18,55 @@ const tls = require('tls');
 const { probe: realProbe, reasonOf } = require('./supervision/probe');
 const { SiteStore } = require('./supervision/store');
 const S = require('./supervision/stats');
+// NEXORA #048 : autres types de vérification (API, port TCP, DNS, domaine, parcours) et empreinte du contenu.
+const checks = require('./supervision/checks');
 // NEXORA #038 : détail technique d'un refus d'envoi gardé dans le journal local, pas affiché.
 const { techLog } = require('./plain');
 
 const timeout = (ms) => (typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined);
 
-// NEXORA #030 : seul canal gardé, l'e-mail (Brevo). Une ancienne configuration e-mail (SMTP) reste active ;
-// les jetons et mots de passe de Telegram, WhatsApp et SMTP ne sont plus gardés.
+// NEXORA #030 : l'e-mail (Brevo). Une ancienne configuration e-mail (SMTP) reste active ; les jetons et mots de
+// passe de Telegram, WhatsApp et SMTP ne sont plus gardés.
+// NEXORA #048 : webhooks (Slack, Discord, Teams, Google Chat, ntfy ou adresse quelconque) en plus de l'e-mail.
+function cleanHook(h) {
+  if (!h || typeof h.url !== 'string') return null;
+  let u;
+  try { u = new URL(h.url.trim()); } catch { return null; }
+  const local = /^(localhost|127\.|\[::1\])/.test(u.hostname);
+  if (u.protocol !== 'https:' && !(u.protocol === 'http:' && local)) return null;
+  return {
+    id: String(h.id || Math.random().toString(36).slice(2, 9)).slice(0, 20), name: String(h.name || u.hostname).slice(0, 60), url: u.href,
+    events: ['all', 'critical', 'escalation'].includes(h.events) ? h.events : 'all', enabled: h.enabled !== false,
+  };
+}
+
 function cleanChannels(ch) {
   const em = (ch && ch.email) || {};
   const enabled = typeof em.enabled === 'boolean' ? em.enabled : Boolean(em.host && em.to);
-  return { email: { enabled } };
+  const webhooks = (Array.isArray(ch && ch.webhooks) ? ch.webhooks : []).map(cleanHook).filter(Boolean).slice(0, 10);
+  return { email: { enabled }, webhooks };
+}
+
+// Forme du message selon le service qui reçoit le webhook.
+function hookKind(url) {
+  if (/hooks\.slack\.com/.test(url)) return 'slack';
+  if (/discord(app)?\.com\/api\/webhooks/.test(url)) return 'discord';
+  if (/webhook\.office\.com|logic\.azure\.com|powerplatform\.com|powerautomate/.test(url)) return 'teams';
+  if (/chat\.googleapis\.com/.test(url)) return 'gchat';
+  if (/ntfy\.sh|\/ntfy\//.test(url)) return 'ntfy';
+  return 'json';
+}
+
+function hookPayload(url, { subject, text, level, site, at }) {
+  const kind = hookKind(url);
+  const color = level === 'critique' ? '#e5302a' : level === 'ok' ? '#1f9d55' : '#d97706';
+  const plain = String(text || '').replace(/^[^\p{L}\p{N}]+/u, '').trim();
+  if (kind === 'slack') return { headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: `*${subject}*\n${plain}` }) };
+  if (kind === 'discord') return { headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: 'NEXORA', embeds: [{ title: subject.slice(0, 250), description: plain.slice(0, 4000), color: parseInt(color.slice(1), 16), timestamp: new Date(at).toISOString() }] }) };
+  if (kind === 'teams') return { headers: { 'content-type': 'application/json' }, body: JSON.stringify({ '@type': 'MessageCard', '@context': 'https://schema.org/extensions', summary: subject, themeColor: color.slice(1), title: subject, text: plain.replace(/\n/g, '<br>') }) };
+  if (kind === 'gchat') return { headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: `*${subject}*\n${plain}` }) };
+  if (kind === 'ntfy') return { headers: { 'content-type': 'text/plain; charset=utf-8', Title: /^[\x20-\x7e]*$/.test(subject) ? subject : 'Alerte NEXORA', Priority: level === 'critique' ? '5' : '3', Tags: level === 'ok' ? 'white_check_mark' : 'warning' }, body: plain };
+  return { headers: { 'content-type': 'application/json' }, body: JSON.stringify({ source: 'nexora', level, title: subject, text: plain, site: site ? { name: site.siteName, id: site.siteId } : null, at: new Date(at).toISOString() }) };
 }
 
 // Objet de l'e-mail : le texte de l'alerte sans son pictogramme de tête, sur une ligne.
@@ -57,10 +95,17 @@ const DEFAULTS = {
   certDays: 14, // alerte quand le certificat expire dans ce nombre de jours
   notifyRecovery: true, // message quand tout revient à la normale
   silenceUntil: 0, // sourdine générale (horodatage)
+  // NEXORA #048
+  escalateMin: 0, // escalade si une panne n'est pas prise en charge après ce délai (0 : jamais)
+  quietFrom: -1, // heures calmes : alertes non critiques regroupées et envoyées à la fin (-1 : désactivé)
+  quietTo: -1,
+  groupSec: 60, // alertes rapprochées regroupées en un seul envoi
 };
 const RANGES = { '1h': 3600e3, '24h': 86400e3, '7j': 7 * 86400e3, '30j': 30 * 86400e3, '90j': 90 * 86400e3 };
 const RAW_MAX_SPAN = 7 * 86400e3 + 60000; // au-delà : agrégats horaires
-const RECOVERY = new Set(['up', 'slow-ok', 'errors-ok', 'cert-ok']);
+const RECOVERY = new Set(['up', 'slow-ok', 'errors-ok', 'cert-ok', 'domain-ok']);
+// NEXORA #048 : fréquence minimale par type (le domaine se vérifie une fois toutes les 6 h, un parcours toutes les 5 min).
+const MIN_IV = { domain: 21600, journey: 300, dns: 60 };
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
 function fmtDur(ms) {
@@ -77,7 +122,7 @@ function readJson(file, fallback) {
 }
 
 class Monitor {
-  constructor({ app, fetchImpl, send, pageErrors, probe, now }) {
+  constructor({ app, fetchImpl, send, pageErrors, probe, now, journey, planCheck }) {
     this.now = now || Date.now;
     this.file = path.join(app.getPath('userData'), 'monitor.json');
     this.dir = path.join(app.getPath('userData'), 'supervision');
@@ -85,6 +130,12 @@ class Monitor {
     this.send = send;
     this.pageErrors = pageErrors || null;
     this.probeImpl = probe || realProbe;
+    this.journey = journey || null; // NEXORA #048 : parcours rejoués (fourni par main.js)
+    this.planCheck = planCheck || null;
+    this.quietQueue = [];
+    this.batch = [];
+    this.batchT = null;
+    this.lastSend = 0;
     this.timers = new Map();
     this.rechecks = new Map();
     this.saveT = {};
@@ -96,6 +147,8 @@ class Monitor {
     this.settings = { ...DEFAULTS, ...(this.state.settings || {}) };
     this.incidents = readJson(path.join(this.dir, 'incidents.json'), []);
     this.alertLog = readJson(path.join(this.dir, 'alerts.json'), []);
+    if (!Array.isArray(this.state.maintenance)) this.state.maintenance = [];
+    if (!Array.isArray(this.state.marks)) this.state.marks = [];
     // Ancien historique (500 mesures par site dans monitor.json) : repris dans le nouveau stockage.
     if (this.state.history) {
       for (const [id, list] of Object.entries(this.state.history)) this.store.importLegacy(id, list);
@@ -159,7 +212,8 @@ class Monitor {
 
   config() { return { endpoints: this.state.endpoints || [], channels: this.state.channels || {}, settings: this.settings }; }
 
-  setChannels(ch) { this.state.channels = cleanChannels(ch); this.save(); }
+  // NEXORA #048 : un appel sans « webhooks » (interface d'origine) garde les webhooks déjà enregistrés.
+  setChannels(ch) { this.state.channels = cleanChannels({ ...(this.state.channels || {}), ...(ch || {}) }); this.save(); }
 
   // NEXORA #030 : session du compte NEXORA transmise par l'interface (renderer/nx/alerts/), gardée en mémoire
   // seulement ; elle sert à appeler les fonctions d'alerte e-mail des serveurs NEXORA.
@@ -203,6 +257,10 @@ class Monitor {
     if ('certDays' in p) s.certDays = num(p.certDays, 1, 90, DEFAULTS.certDays);
     if ('notifyRecovery' in p) s.notifyRecovery = Boolean(p.notifyRecovery);
     if ('silenceUntil' in p) s.silenceUntil = Number(p.silenceUntil) || 0;
+    if ('escalateMin' in p) s.escalateMin = num(p.escalateMin, 0, 1440, 0);
+    if ('quietFrom' in p) s.quietFrom = num(p.quietFrom, -1, 23, -1);
+    if ('quietTo' in p) s.quietTo = num(p.quietTo, -1, 23, -1);
+    if ('groupSec' in p) s.groupSec = num(p.groupSec, 0, 900, 60);
     this.save();
     return s;
   }
@@ -255,7 +313,8 @@ class Monitor {
   }
 
   schedule(e) {
-    const ms = Math.max(30, Number(e.intervalSec) || 300) * 1000;
+    if (e.type === 'heartbeat') return; // NEXORA #048 : vérifié par les serveurs NEXORA seulement
+    const ms = Math.max(30, MIN_IV[e.type] || 0, Number(e.intervalSec) || 300) * 1000;
     this.timers.set(e.id, setInterval(() => this.check(e).catch(() => {}), ms));
     this.check(e).catch(() => {});
   }
@@ -290,11 +349,19 @@ class Monitor {
 
   async check(e) {
     const at = this.now();
-    const iv = Math.max(30, Number(e.intervalSec) || 300);
+    const iv = Math.max(30, MIN_IV[e.type] || 0, Number(e.intervalSec) || 300);
     const st = this.st(e.id);
+    // NEXORA #048 : pendant une fenêtre de maintenance, aucune mesure (exclue de la disponibilité), aucune alerte.
+    if (this.inMaint(e, at)) {
+      if (!st.maint) { st.maint = true; this.save(); this.send('mon:update', { id: e.id, state: 'maint' }); }
+      return null;
+    }
+    if (st.maint) st.maint = false;
+    if (e.type === 'heartbeat') return null;
+    if (e.type && e.type !== 'http') return this.checkOther(e, at, iv);
     let rec;
     try {
-      const r = await this.probeImpl(e.url, { timeout: 20000, keyword: e.keyword || '' });
+      const r = await this.probeImpl(e.url, { timeout: 20000, keyword: e.keyword || '', body: Boolean(e.watchChange) });
       const okStatus = e.expectStatus ? r.status === Number(e.expectStatus) : r.status < 400;
       const okKeyword = !e.keyword || String(r.body || '').includes(e.keyword);
       rec = {
@@ -305,6 +372,13 @@ class Monitor {
       if (r.cert) { rec.certDays = r.cert.days; st.cert = r.cert; }
       if (r.ip) st.ip = r.ip;
       if (r.http) st.http = r.http;
+      // NEXORA #048 : empreinte du contenu visible ; une modification ouvre un incident « contenu modifié ».
+      if (e.watchChange && rec.up && r.body) {
+        const h = checks.contentHash(r.body);
+        if (st.contentHash && st.contentHash !== h.hash) rec.changed = { from: st.contentSize || 0, to: h.size };
+        st.contentHash = h.hash;
+        st.contentSize = h.size;
+      }
     } catch (err) {
       const viaNet = await this.fetchCheck(e, at, iv);
       rec = viaNet && viaNet.up ? viaNet : {
@@ -321,6 +395,48 @@ class Monitor {
     this.ingest(cur, rec);
     // Premier échec : on revérifie vite pour confirmer ou écarter la panne sans attendre l'intervalle.
     if (!rec.up && st.state !== 'down' && !this.rechecks.has(e.id)) {
+      this.rechecks.set(e.id, setTimeout(() => { this.rechecks.delete(e.id); this.check(cur).catch(() => {}); }, Math.min(20000, iv * 500)));
+    }
+    return rec;
+  }
+
+  // NEXORA #048 : vérifications autres que la page web (API, port, DNS, domaine, parcours).
+  async checkOther(e, at, iv) {
+    const st = this.st(e.id);
+    const fx = this.fetch || ((u, o) => fetch(u, o));
+    let r;
+    if (e.type === 'api') r = await checks.api(e, fx);
+    else if (e.type === 'tcp') r = await checks.tcp(e);
+    else if (e.type === 'dns') r = await checks.dnsCheck(e);
+    else if (e.type === 'domain') r = await checks.domainCheck(e, fx);
+    else if (e.type === 'journey') {
+      if (!this.journey) return null;
+      if (this.planCheck) {
+        try { await this.planCheck('synthetic', 0); } catch {
+          st.reason = 'offre Pro requise pour les parcours';
+          this.send('mon:update', { id: e.id, state: st.state || 'unknown' });
+          return null;
+        }
+      }
+      const j = await this.journey(e).catch((err) => ({ ok: false, ms: 0, steps: [], error: String((err && err.message) || err) }));
+      r = { up: Boolean(j.ok), status: j.ok ? 1 : 0, ms: j.ms || 0, reason: j.ok ? '' : j.error || 'étape en échec', steps: (j.steps || []).map((s) => [String(s.label || '').slice(0, 80), Math.round(s.ms || 0), s.ok ? 1 : 0]), shot: j.shot || '' };
+    } else return null;
+    const rec = { at, iv, up: r.up, status: r.status, ms: Math.round(r.ms || 0), reason: r.reason || '' };
+    if (r.size != null) rec.size = r.size;
+    if (r.value != null) { rec.value = r.value; st.apiValue = r.value; }
+    if (r.steps) { rec.steps = r.steps; st.journey = { at, steps: r.steps, ok: r.up, shot: r.shot || '' }; }
+    if (e.type === 'domain') { rec.domainDays = r.domainDays; st.domainDays = r.domainDays; rec.up = true; }
+    if (e.type === 'dns') {
+      const v = (r.values || []).join(' | ');
+      if (e.dnsWatch && r.up && st.dnsValues != null && st.dnsValues !== '' && st.dnsValues !== v) rec.changed = { dns: true, from: st.dnsValues, to: v };
+      if (r.up) st.dnsValues = v;
+    }
+    const thr = Number(e.thresholdMs) || 0;
+    if (rec.up && thr && rec.ms > thr && (e.type === 'api' || e.type === 'tcp' || e.type === 'journey')) rec.slow = 1;
+    const cur = (this.state.endpoints || []).find((x) => x.id === e.id);
+    if (!cur || cur.url !== e.url) return rec;
+    this.ingest(cur, rec);
+    if (!rec.up && st.state !== 'down' && !this.rechecks.has(e.id) && e.type !== 'journey') {
       this.rechecks.set(e.id, setTimeout(() => { this.rechecks.delete(e.id); this.check(cur).catch(() => {}); }, Math.min(20000, iv * 500)));
     }
     return rec;
@@ -357,7 +473,7 @@ class Monitor {
       st.firstFailAt = null;
       const down = this.closeIncident(e.id, 'down', rec.at, 'auto', 'Le site répond de nouveau');
       if (down && this.settings.notifyRecovery) this.alert(e, 'up', 'ok', `🟢 ${name} est de nouveau en ligne (${rec.ms} ms) après ${fmtDur(rec.at - down.start)} de panne.`, down);
-      const thr = Number(e.thresholdMs) || 0;
+      const thr = e.type === 'dns' || e.type === 'domain' ? 0 : Number(e.thresholdMs) || 0;
       const slow = this.openOf(e.id, 'slow');
       if (thr && rec.ms > thr) {
         st.slows = (st.slows || 0) + 1;
@@ -403,6 +519,26 @@ class Monitor {
         if (this.settings.notifyRecovery) this.alert(e, 'errors-ok', 'ok', `🟢 ${name} : plus aucune erreur détectée sur la page.`, done);
       }
     }
+    // NEXORA #048 : contenu ou enregistrement DNS modifié (incident clos à la main : « nouvelle version acceptée »).
+    if (rec.changed) {
+      const open = this.openOf(e.id, 'change');
+      const cause = rec.changed.dns ? `DNS : ${String(rec.changed.from).slice(0, 60)} → ${String(rec.changed.to).slice(0, 60)}` : `contenu modifié (${rec.changed.from} → ${rec.changed.to} caractères)`;
+      if (!open) this.alert(e, 'change', 'alerte', rec.changed.dns ? `🟠 L’enregistrement DNS surveillé par « ${name} » a changé : ${cause}.` : `🟠 Le contenu de ${name} a changé. Vérifie qu’il s’agit bien d’une mise à jour de ta part.`, this.openIncident(e, 'change', rec.at, cause, rec));
+      else { open.checks += 1; open.lastCause = cause; }
+    }
+    // NEXORA #048 : expiration du nom de domaine (seuil réglable, 30 jours par défaut).
+    if (rec.domainDays != null) {
+      const warn = Math.max(1, Number(e.domainWarn) || 30);
+      const open = this.openOf(e.id, 'domain');
+      const cause = rec.domainDays < 0 ? 'domaine expiré' : `expire dans ${rec.domainDays} jour(s)`;
+      if (rec.domainDays <= warn) {
+        if (!open) this.alert(e, 'domain', rec.domainDays <= 7 ? 'critique' : 'alerte', `${rec.domainDays <= 7 ? '🔴' : '🟠'} Le nom de domaine de ${name} ${rec.domainDays < 0 ? 'a expiré' : `expire dans ${rec.domainDays} jour(s)`} : renouvelle-le chez ton registraire.`, this.openIncident(e, 'domain', rec.at, cause, rec));
+        else open.lastCause = cause;
+      } else if (open) {
+        this.closeIncident(e.id, 'domain', rec.at, 'auto', 'Domaine renouvelé');
+        if (this.settings.notifyRecovery) this.alert(e, 'domain-ok', 'ok', `🟢 Le nom de domaine de ${name} a été renouvelé (${rec.domainDays} jours restants).`, open);
+      }
+    }
     // État affiché : panne > lenteur > en ligne ; un échec pas encore confirmé laisse l'état précédent.
     const prev = st.state;
     let next = prev;
@@ -445,6 +581,13 @@ class Monitor {
 
   // Rappel tant qu'une panne dure et que personne ne l'a prise en charge.
   remind(e, inc, rec) {
+    // NEXORA #048 : escalade (une seule fois) quand personne n'a pris la panne en charge après le délai réglé.
+    const esc = Number(this.settings.escalateMin) || 0;
+    const t = this.now();
+    if (esc && !inc.ackAt && !inc.escalatedAt && t - inc.start >= esc * 60000) {
+      inc.escalatedAt = t;
+      this.alert(e, 'escalade', 'critique', `🔴 Escalade : ${e.name || e.url} est hors ligne depuis ${fmtDur(t - inc.start)} et personne n’a pris l’incident en charge (${rec.reason}).`, inc, true, { escalation: true });
+    }
     const every = Number(this.settings.repeatMin) || 0;
     if (!every || inc.ackAt) return;
     const at = this.now();
@@ -473,29 +616,200 @@ class Monitor {
   }
 
   // Envoie une alerte (sauf sourdine) et la consigne dans le journal des alertes.
-  alert(e, key, level, text, inc, force = false) {
+  alert(e, key, level, text, inc, force = false, opts = {}) {
     const at = this.now();
     const k = `${e.id}:${key}`;
     // Anti-répétition : une même alerte n'est pas renvoyée avant 30 min (sauf retours à la normale et rappels).
     if (!force && !RECOVERY.has(key) && this.lastAlert[k] && at - this.lastAlert[k] < 1800000) return null;
     this.lastAlert[k] = at;
     if (inc) { inc.notified = (inc.notified || 0) + 1; inc.lastNotified = at; }
-    const muted = Boolean((e.mutedUntil && e.mutedUntil > at) || (this.settings.silenceUntil && this.settings.silenceUntil > at));
+    const muted = Boolean((e.mutedUntil && e.mutedUntil > at) || (this.settings.silenceUntil && this.settings.silenceUntil > at) || this.inMaint(e, at));
     const entry = { id: uid(), at, siteId: e.id, siteName: e.name || e.url, kind: key, level, text, muted, incidentId: inc ? inc.id : null, results: null };
     this.alertLog.unshift(entry);
     if (this.alertLog.length > 500) this.alertLog.length = 500;
     this.saveAlerts();
     if (muted) { entry.results = []; return entry; }
-    this.dispatch(text, e.alerts || null).then((res) => { entry.results = res; this.saveAlerts(); this.send('mon:alert', entry); }).catch(() => {});
+    // NEXORA #048 : heures calmes (les alertes non critiques partent en un résumé à la fin) et regroupement.
+    if (level !== 'critique' && this.inQuiet(at)) {
+      entry.quiet = true;
+      entry.results = [];
+      this.quietQueue.push(entry);
+      this.ensureQuietTimer();
+      return entry;
+    }
+    this.queueSend({ entry, only: e.alerts || null, opts });
     return entry;
   }
 
-  async dispatch(text, only) {
+  queueSend(item) {
+    const g = Number(this.settings.groupSec) || 0;
+    const at = this.now();
+    if (g > 0 && this.lastSend && at - this.lastSend < g * 1000) {
+      this.batch.push(item);
+      if (!this.batchT) this.batchT = setTimeout(() => this.flushBatch(), Math.max(1000, this.lastSend + g * 1000 - at));
+      return;
+    }
+    this.lastSend = at;
+    this.sendEntries([item]);
+  }
+
+  flushBatch() {
+    this.batchT = null;
+    const list = this.batch.splice(0);
+    if (!list.length) return;
+    this.lastSend = this.now();
+    this.sendEntries(list);
+  }
+
+  sendEntries(list, title) {
+    const one = list.length === 1 && !title;
+    const head = title || `${list.length} alertes NEXORA`;
+    const text = one ? list[0].entry.text : `${head} :\n\n${list.map((x) => `• ${x.entry.text.replace(/^[^\p{L}\p{N}]+/u, '')}`).join('\n')}`;
+    const level = list.some((x) => x.entry.level === 'critique') ? 'critique' : list.some((x) => x.entry.level === 'alerte') ? 'alerte' : 'ok';
+    const meta = { subject: one ? subjectOf(text) : head, level, escalation: list.some((x) => x.opts && x.opts.escalation), site: one ? list[0].entry : null, at: this.now() };
+    this.dispatch(text, one ? list[0].only : null, meta).then((res) => {
+      for (const x of list) x.entry.results = res;
+      this.saveAlerts();
+      this.send('mon:alert', list[0].entry);
+    }).catch(() => {});
+  }
+
+  inQuiet(at) {
+    const f = Number(this.settings.quietFrom);
+    const t = Number(this.settings.quietTo);
+    if (!(f >= 0 && t >= 0) || f === t) return false;
+    const h = new Date(at).getHours();
+    return f < t ? h >= f && h < t : h >= f || h < t;
+  }
+
+  ensureQuietTimer() {
+    if (this.quietT) return;
+    this.quietT = setInterval(() => {
+      if (this.inQuiet(this.now())) return;
+      clearInterval(this.quietT);
+      this.quietT = null;
+      const list = this.quietQueue.splice(0).map((entry) => ({ entry, only: null, opts: {} }));
+      if (list.length) this.sendEntries(list, `Pendant les heures calmes : ${list.length} alerte${list.length > 1 ? 's' : ''}`);
+    }, 60000);
+  }
+
+  async dispatch(text, only, meta = {}) {
     const ch = this.state.channels || {};
     const want = (name) => !only || only[name] !== false;
     const jobs = [];
-    if (ch.email && ch.email.enabled && want('email')) jobs.push(['email', () => this.sendEmail(subjectOf(text), text)]);
+    if (ch.email && ch.email.enabled && want('email')) jobs.push(['email', () => this.sendEmail(meta.subject || subjectOf(text), text)]);
+    for (const h of ch.webhooks || []) {
+      if (!h.enabled || !want('webhook')) continue;
+      if (h.events === 'critical' && meta.level !== 'critique') continue;
+      if (h.events === 'escalation' && !meta.escalation) continue;
+      jobs.push([`webhook:${h.id}`, () => this.postWebhook(h.url, { subject: meta.subject || subjectOf(text), text, level: meta.level || 'alerte', site: meta.site || null, at: meta.at || this.now() })]);
+    }
     return Promise.all(jobs.map(([channel, run]) => Promise.resolve().then(run).then(() => ({ channel, ok: true }), (err) => ({ channel, ok: false, error: String((err && err.message) || err) }))));
+  }
+
+  async postWebhook(url, msg) {
+    if (!this.fetch) throw new Error('Envoi impossible.');
+    const p = hookPayload(url, msg);
+    let r;
+    try { r = await this.fetch(url, { method: 'POST', headers: p.headers, body: p.body, signal: timeout(15000) }); } catch { throw new Error('Le service du webhook n’a pas répondu.'); }
+    if (!r.ok) {
+      techLog('erreurs', `webhook refusé (${r.status}) : ${new URL(url).host}`);
+      throw new Error(`Le service du webhook a refusé le message (${r.status}).`);
+    }
+    return true;
+  }
+
+  async testWebhook({ url } = {}) {
+    const h = cleanHook({ url });
+    if (!h) throw new Error('Adresse du webhook invalide : elle doit commencer par https://.');
+    await this.postWebhook(h.url, { subject: 'Test des alertes NEXORA', text: 'Test d’alerte NEXORA : le webhook fonctionne. Tu recevras ici les pannes, lenteurs et retours à la normale de tes sites.', level: 'ok', site: null, at: this.now() });
+    return { ok: true, kind: hookKind(h.url) };
+  }
+
+  // Alerte venue d'un autre module (audits de sécurité programmés, NEXORA #048).
+  notify({ id, name, url, key = 'secu', level = 'alerte', text }) {
+    return this.alert({ id: String(id || 'nexora'), name: name || url || 'NEXORA', url: url || '', alerts: null }, key, level, text, null, true);
+  }
+
+  // ---------- Fenêtres de maintenance (NEXORA #048) ----------
+  inMaint(e, at = this.now()) {
+    for (const w of this.state.maintenance || []) {
+      if (w.siteId && w.siteId !== e.id) continue;
+      const start = Number(w.start); const end = Number(w.end);
+      if (!(end > start) || at < start) continue;
+      const span = w.recur === 'daily' ? 86400e3 : w.recur === 'weekly' ? 7 * 86400e3 : 0;
+      if (!span) { if (at < end) return w; continue; }
+      if ((at - start) % span < end - start) return w;
+    }
+    return null;
+  }
+
+  setMaintenance(list) {
+    const at = this.now();
+    this.state.maintenance = (Array.isArray(list) ? list : []).map((w) => ({
+      id: String(w.id || uid()), siteId: w.siteId ? String(w.siteId) : '', label: String(w.label || 'Maintenance').slice(0, 120),
+      start: Number(w.start) || 0, end: Number(w.end) || 0, recur: ['daily', 'weekly'].includes(w.recur) ? w.recur : 'none',
+    })).filter((w) => w.end > w.start && (w.recur !== 'none' || w.end > at - 30 * 86400e3)).slice(0, 100);
+    this.save();
+    return this.state.maintenance;
+  }
+
+  // ---------- Repères de déploiement (NEXORA #048) ----------
+  addMark({ label, siteId = '', at, source = 'manuel', url = '' } = {}) {
+    let sid = siteId ? String(siteId) : '';
+    if (!sid && url) {
+      try {
+        const h = new URL(url).host;
+        const e = (this.state.endpoints || []).find((x) => { try { return new URL(x.url).host === h; } catch { return false; } });
+        if (e) sid = e.id;
+      } catch { /* adresse invalide */ }
+    }
+    const m = { id: uid(), at: Number(at) || this.now(), siteId: sid, label: String(label || 'Déploiement').slice(0, 140), source: String(source).slice(0, 20) };
+    this.state.marks.unshift(m);
+    if (this.state.marks.length > 300) this.state.marks.length = 300;
+    this.save();
+    this.send('mon:mark', m);
+    return m;
+  }
+
+  marks({ siteId, from = 0, to = Infinity } = {}) {
+    return (this.state.marks || []).filter((m) => m.at >= from && m.at < to && (!siteId || !m.siteId || m.siteId === siteId));
+  }
+
+  // ---------- Objectif de disponibilité (NEXORA #048) : budget d'erreur sur 30 jours glissants ----------
+  sloOf(e) {
+    const target = Math.min(99.999, Math.max(90, Number(e.slo) || 99.9));
+    const at = this.now();
+    const from = at - 30 * 86400e3;
+    let down = 0;
+    for (const i of this.incidents) {
+      if (i.siteId !== e.id || i.kind !== 'down') continue;
+      const s = Math.max(from, i.start); const en = Math.min(at, i.end == null ? at : i.end);
+      if (en > s) down += en - s;
+    }
+    const budget = (1 - target / 100) * 30 * 86400e3;
+    return { target, downMs: down, budgetMs: budget, leftMs: budget - down, used: budget ? down / budget : 0 };
+  }
+
+  // ---------- Rapport mensuel (NEXORA #048) ----------
+  report({ month, from, to } = {}) {
+    let a = Number(from); let b = Number(to);
+    if (!a || !b) {
+      const ref = new Date(this.now());
+      const d = month && /^\d{4}-\d{2}$/.test(month) ? new Date(`${month}-01T00:00:00`) : new Date(ref.getFullYear(), ref.getMonth() - 1, 1);
+      a = d.getTime();
+      b = new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime();
+    }
+    const sites = (this.state.endpoints || []).map((e) => {
+      const src = this.source(e.id, a, b);
+      const tot = S.totals(src.items, a, b, src.hourly);
+      const incs = this.incidents.filter((i) => i.siteId === e.id && i.start < b && (i.end == null || i.end > a));
+      const stats = S.incidentStats(incs, a, b, tot.cov, this.now());
+      const target = Math.min(99.999, Math.max(90, Number(e.slo) || 99.9));
+      return { id: e.id, name: e.name || e.url, url: e.url, type: e.type || 'http', avail: tot.avail, p95: tot.p95, avg: tot.avg, n: tot.n, fails: tot.fails, incidents: incs.length, down: stats.down || 0, downtime: stats.downtime || 0, mttr: stats.mttr || null, slo: target, met: tot.avail == null ? null : tot.avail >= target };
+    });
+    const incidents = this.incidents.filter((i) => i.start < b && (i.end == null || i.end > a)).slice(0, 200);
+    return { from: a, to: b, at: this.now(), sites, incidents, marks: this.marks({ from: a, to: b }), maintenance: this.state.maintenance };
   }
 
   // Test depuis l'interface : l'e-mail part, puis la réponse de Brevo est lue (quelques secondes).
@@ -552,10 +866,13 @@ class Monitor {
     return {
       id: e.id, name: e.name || '', url: e.url || '', enabled: e.enabled !== false, intervalSec: Number(e.intervalSec) || 300,
       thresholdMs: Number(e.thresholdMs) || 0, keyword: e.keyword || '', watchErrors: Boolean(e.watchErrors),
-      state: e.enabled === false ? 'paused' : st.state || 'unknown', pending: Boolean(st.pending), since: st.since || null,
+      state: e.enabled === false ? 'paused' : this.inMaint(e, at) ? 'maint' : st.state || 'unknown', pending: Boolean(st.pending), since: st.since || null,
       muted: Boolean(e.mutedUntil && e.mutedUntil > at), mutedUntil: e.mutedUntil || 0,
       last, reason: st.reason || '', ip: st.ip || '', http: st.http || '',
       cert: st.cert || (last && last.certDays != null ? { days: last.certDays } : null),
+      // NEXORA #048
+      type: e.type || 'http', watchChange: Boolean(e.watchChange), slo: this.sloOf(e), maint: this.inMaint(e, at),
+      domainDays: st.domainDays != null ? st.domainDays : null, dnsValues: st.dnsValues || '', apiValue: st.apiValue || '', journey: st.journey || null,
       avail: tot.avail, p50: tot.p50, p95: tot.p95, p99: tot.p99, avg: tot.avg, n: tot.n, fails: tot.fails, slow: tot.slow, cov: tot.cov,
       step: b.step,
       bars: b.points.map((p) => ({ t: p.t, n: p.n, avail: p.avail, fails: p.fails, slow: p.slow, p95: p.p95, avg: p.avg })),
@@ -587,6 +904,7 @@ class Monitor {
         down: sites.filter((s) => s.state === 'down').length,
         slow: sites.filter((s) => s.state === 'slow').length,
         paused: sites.filter((s) => s.state === 'paused').length,
+        maint: sites.filter((s) => s.state === 'maint').length,
         avail: w ? S.round((wUp / w) * 100, 3) : null,
         checks: n, fails,
         p95: p95s.length ? S.round(S.quantile(p95s, 0.5)) : null,
@@ -595,6 +913,7 @@ class Monitor {
         incidents: incStats,
       },
       incidents: this.incidents.filter((i) => i.start < to && (i.end == null || i.end > from)).slice(0, 12),
+      marks: this.marks({ from, to }).slice(0, 50),
     };
   }
 
@@ -613,6 +932,7 @@ class Monitor {
       points: b.points, totals: tot,
       incidents: incs, stats: S.incidentStats(incs, win.from, win.to, tot.cov, this.now()),
       recent: this.store.recent(id).slice(-60).reverse(),
+      marks: this.marks({ siteId: id, from: win.from, to: win.to }),
     };
   }
 
@@ -657,15 +977,17 @@ class Monitor {
     this.timers.clear();
     this.rechecks.clear();
     if (this.pruneTimer) { clearInterval(this.pruneTimer); this.pruneTimer = null; }
+    if (this.quietT) { clearInterval(this.quietT); this.quietT = null; }
+    if (this.batchT) { clearTimeout(this.batchT); this.batchT = null; }
   }
 }
 
 function register({
-  ipcMain, app, net, send, pageErrors, probe, now,
+  ipcMain, app, net, send, pageErrors, probe, now, journey, planCheck,
 }) {
   const fetchImpl = (u, o) => (net && net.fetch ? net.fetch(u, o) : fetch(u, o));
   const mon = new Monitor({
-    app, fetchImpl, send, pageErrors, probe, now,
+    app, fetchImpl, send, pageErrors, probe, now, journey, planCheck,
   });
   ipcMain.handle('mon:errors', (_e, id) => mon.errReports[id] || null);
   ipcMain.handle('mon:check-errors', async (_e, id) => {
@@ -696,8 +1018,16 @@ function register({
   ipcMain.handle('mon:set-settings', (_e, patch) => mon.setSettings(patch));
   ipcMain.handle('mon:silence', (_e, opts) => mon.silence(opts || {}));
   ipcMain.handle('mon:alerts-log', (_e, { limit = 200 } = {}) => mon.alertLog.slice(0, Math.max(1, Math.min(500, Number(limit) || 200))));
+  // NEXORA #048 : webhooks, maintenance, repères de déploiement, rapport mensuel.
+  ipcMain.handle('mon:test-webhook', (_e, opts) => mon.testWebhook(opts || {}));
+  ipcMain.handle('mon:maintenance', () => mon.state.maintenance);
+  ipcMain.handle('mon:set-maintenance', (_e, list) => mon.setMaintenance(list));
+  ipcMain.handle('mon:marks', (_e, opts) => mon.marks(opts || {}));
+  ipcMain.handle('mon:mark-add', (_e, opts) => mon.addMark({ ...(opts || {}), source: 'manuel' }));
+  ipcMain.handle('mon:mark-del', (_e, id) => { mon.state.marks = mon.state.marks.filter((m) => m.id !== id); mon.save(); return true; });
+  ipcMain.handle('mon:report', (_e, opts) => mon.report(opts || {}));
   app.on('before-quit', () => { mon.stopAll(); mon.flush(); });
   return mon;
 }
 
-module.exports = { register, Monitor, DEFAULTS, RANGES };
+module.exports = { register, Monitor, DEFAULTS, RANGES, hookPayload, hookKind, cleanChannels };

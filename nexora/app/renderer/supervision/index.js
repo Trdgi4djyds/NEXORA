@@ -9,6 +9,10 @@ import { renderIncidents } from './incidents.js';
 import { renderLoad, onLoadProgress } from './load.js';
 import { renderPlatform } from './platform.js';
 import { renderAlerts } from './alerts.js';
+// NEXORA #048 : maintenance et déploiements, page de statut publique, visiteurs réels.
+import { renderPlanning } from './planning.js';
+import { renderStatus } from './status.js';
+import { renderRum } from './rum.js';
 import { siteSheet } from './ui.js';
 import { links, onAccount } from './cloud.js';
 
@@ -17,6 +21,9 @@ const TABS = [
   ['sites', 'Sites', 'globe', renderSites],
   ['incidents', 'Incidents', 'warn', renderIncidents],
   ['load', 'Tests de charge', 'bolt', renderLoad],
+  ['planning', 'Planning', 'clock', renderPlanning],
+  ['status', 'Page publique', 'globe', renderStatus],
+  ['rum', 'Visiteurs réels', 'user', renderRum],
   ['platform', 'Plateforme', 'laptop', renderPlatform],
   ['alerts', 'Alertes', 'bell', renderAlerts],
 ];
@@ -223,5 +230,11 @@ export function mount(hostEl, opts) {
 }
 
 export function refresh() { if (inst) inst.refresh(); }
+
+// NEXORA #048 : ouvrir une vue précise depuis la vue d'ensemble de l'espace Sécurité.
+export function goTo(tab, opts = {}) {
+  if (inst) { inst.tab = tab; if (opts.siteId) inst.siteId = opts.siteId; inst.savePref(); return; }
+  try { sessionStorage.setItem(PREF_KEY, JSON.stringify({ tab, siteId: opts.siteId || null, range: '24h' })); } catch { /* */ }
+}
 
 export { $ };

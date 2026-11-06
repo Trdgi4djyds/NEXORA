@@ -73,8 +73,8 @@ export function Plans() {
               )}
               <div className="kpis">
                 <Kpi label="Espaces Gratuit" object="team" value={fmtNum(Math.max(0, orgs - countOf("standard") - countOf("pro")))} hint="sans abonnement payant" />
-                <Kpi label="Espaces Standard" object="chart" value={fmtNum(countOf("standard"))} hint="10 $ par mois" />
-                <Kpi label="Espaces Pro" object="star" value={fmtNum(countOf("pro"))} hint="25 $ par mois" />
+                <Kpi label="Espaces Standard" object="chart" value={fmtNum(countOf("standard"))} hint="12 $ par mois" />
+                <Kpi label="Espaces Pro" object="star" value={fmtNum(countOf("pro"))} hint="18 $ par mois" />
                 <Kpi label="Revenu mensuel" object="coins" value={price(mrr, "USD")} hint="abonnements actifs" />
               </div>
               <div className="po-grid">

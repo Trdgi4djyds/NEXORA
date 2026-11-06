@@ -4,6 +4,8 @@
 //   2. migration supabase/migrations/20261104000007_offres_limites.sql rejouée deux fois sur un vrai
 //      Postgres (PGlite, en WebAssembly) avec un schéma minimal reprenant les colonnes du vrai projet :
 //      offres, quotas atomiques, essais des applications, limites des données, fonctions soumises à l'offre.
+//      Puis migration des prix du #051 (20261106000001_prix_offres.sql) : anciens prix corrigés,
+//      prix retouché conservé, second passage sans effet.
 // PGlite n'est pas une dépendance du dépôt : l'installer à part, par exemple
 //   mkdir -p /tmp/pgtest && cd /tmp/pgtest && echo '{}' > package.json && pnpm add @electric-sql/pglite@0.3
 // puis : node scripts/test-offres.mjs (dossier réglable par PGLITE_DIR). Sans PGlite, la partie 2 est sautée.
@@ -87,8 +89,8 @@ async function gates() {
     }
   }
   ok(
-    Object.keys(plan.GATES).length === 41,
-    "41 canaux contrôlés",
+    Object.keys(plan.GATES).length === 75,
+    "75 canaux contrôlés (41 du #037, 10 du #048, 22 du #052, 2 du #053)",
     Object.keys(plan.GATES).length,
   )
   let r = await inv("lab:fetch")
@@ -231,6 +233,10 @@ async function sql() {
     path.join(ROOT, "supabase/migrations/20261104000007_offres_limites.sql"),
     "utf8",
   )
+  const MIG_PRIX = fs.readFileSync(
+    path.join(ROOT, "supabase/migrations/20261106000001_prix_offres.sql"),
+    "utf8",
+  )
   const db = new PGlite()
   const q = async (text, params) => (await db.query(text, params)).rows
   const ex = (text) => db.exec(text)
@@ -319,11 +325,34 @@ insert into plans (id, name, price_month_cents, price_year_cents, currency, sort
     "trois offres proposées : Gratuit, Standard, Pro",
   )
   ok(
-    plans.find((p) => p.id === "standard").price_month_cents === 1000 &&
-      plans.find((p) => p.id === "pro").price_month_cents === 2500 &&
+    plans.find((p) => p.id === "standard").price_month_cents === 1200 &&
+      plans.find((p) => p.id === "pro").price_month_cents === 1800 &&
       plans.every((p) => !p.active || p.currency === "USD"),
-    "prix 0, 10 et 25 $",
+    "prix 0, 12 et 18 $",
   )
+  // NEXORA #051 : offres créées aux anciens prix (10 $ / 100 $ et 25 $ / 250 $), Pro annuel retouché.
+  await q(
+    "update plans set price_month_cents = 1000, price_year_cents = 10000 where id = 'standard'",
+  )
+  await q(
+    "update plans set price_month_cents = 2500, price_year_cents = 20000 where id = 'pro'",
+  )
+  await ex(MIG_PRIX)
+  await ex(MIG_PRIX)
+  const prix = Object.fromEntries(
+    (
+      await q(
+        "select id, price_month_cents as m, price_year_cents as y from plans where id in ('free', 'standard', 'pro')",
+      )
+    ).map((p) => [p.id, `${p.m}/${p.y}`]),
+  )
+  ok(
+    prix.free === "0/0" &&
+      prix.standard === "1200/12000" &&
+      prix.pro === "1800/20000",
+    "migration des prix : 12 $ et 18 $, prix retouché conservé, second passage sans effet",
+  )
+  await q("update plans set price_year_cents = 18000 where id = 'pro'")
   ok(
     plans.find((p) => p.id === "free").projects === "4",
     "retouche du back office conservée au second passage",

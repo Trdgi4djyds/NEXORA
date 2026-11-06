@@ -352,3 +352,95 @@ html[data-theme='dark'] .nxc-body > :is(.nx-form, .nx-list, .nx-quotas, .nx-org-
   .nxc-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 14px; }
   .nxc-id { flex-wrap: wrap; }
 }
+
+/* ------------------------------------------------------------------ NEXORA #047 : bannière personnalisée */
+.nxc-cover { height: clamp(104px, 18vh, 168px); isolation: isolate; }
+.nxc-cover-img { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; user-select: none; }
+.nxc-cover.has-img::after { display: none; }
+.nxc-cover-acts { position: absolute; z-index: 2; top: 10px; right: 10px; display: flex; gap: 6px; }
+/* Boutons sur l'image : fond plein et contour net, lisibles sur n'importe quelle photo (#007). */
+.nxc-cover-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 13px; border-radius: 99px;
+  color: var(--text); background: var(--surface); box-shadow: inset 0 0 0 1px var(--info-edge);
+  font-size: 12.5px; font-weight: 600; white-space: nowrap; transition: background .15s, transform .15s;
+}
+.nxc-cover-btn:hover { background: var(--info-bg-hover); }
+.nxc-cover-btn:active { transform: scale(.97); }
+.nxc-cover-btn:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--info-edge), 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent); }
+.nxc-cover-btn.icon { width: 32px; padding: 0; }
+.nxc-cover-btn.icon:hover { color: #dc2626; }
+/* Image glissée au-dessus de la bannière, puis envoi en cours. */
+.nxc-cover.is-drop::before, .nxc-cover.is-busy::before {
+  position: absolute; inset: 0; z-index: 3; display: grid; place-items: center;
+  font-size: 13px; font-weight: 650; color: var(--text); background: var(--surface);
+}
+.nxc-cover.is-drop::before { content: 'Dépose ton image pour en faire ta bannière'; box-shadow: inset 0 0 0 2px var(--accent); border-radius: inherit; }
+.nxc-cover.is-busy::before { content: 'Envoi de la bannière…'; }
+.nxc-cover.is-busy .nxc-cover-acts { visibility: hidden; }
+/* Mini carte du menu du compte : même bannière. */
+html[data-nx-banner] #popover .nx-me::before { background: var(--nxc-banner) center / cover no-repeat !important; }
+
+/* ------------------------------------------------------------------ NEXORA #047 : « Mon compte » à toute taille */
+/* La colonne défile au lieu d'écraser la carte de l'offre (texte coupé dans une fenêtre basse). */
+.nxc-side > * { flex-shrink: 0; }
+.nxc-side { scrollbar-width: thin; }
+.nxc-who h3, .nxc-who p { min-width: 0; }
+.nxc-acts { flex-shrink: 0; }
+
+/* Fenêtre basse : en-tête, rubriques et carte de l'offre plus compacts, la fenêtre prend toute la hauteur. */
+@media (max-height: 780px) {
+  .sheet:has(> .nxc) { height: calc(100dvh - 24px); }
+  .nxc-head { padding: 16px 24px 10px; }
+  .nxc-head .nxc-kicker { display: none; }
+  .nxc-head h2 { margin: 0 0 2px; font-size: 21px; }
+  .nxc-side { gap: 12px; padding: 16px 12px 12px; }
+  .nxc-nav button { height: 40px; }
+  .nxc-promo { gap: 4px; padding: 14px 12px 12px; }
+  .nxc-promo-ic { display: none; }
+  .nxc-promo b { font-size: 14.5px; }
+  .nxc-promo small { font-size: 11.5px; line-height: 1.4; }
+  .nxc-promo-btn { margin-top: 6px; height: 32px; }
+}
+@media (max-height: 640px) {
+  .nxc-head p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nxc-promo small { display: none; }
+}
+
+/* Fenêtre basse ou étroite : carte de profil resserrée, la bannière laisse voir les chiffres. */
+@media (max-height: 780px), (max-width: 920px) {
+  .nxc-hero { padding: 10px 10px 14px; }
+  .nxc-cover { height: clamp(92px, 15vh, 128px); }
+  .nxc-id { gap: 12px; margin-top: -36px; padding: 0 6px; }
+  .nxc-av > .nx-av { width: 76px !important; height: 76px !important; font-size: 30px !important; }
+  .nxc-av-edit { width: 26px; height: 26px; right: 1px; bottom: 4px; }
+  .nxc-who { padding-bottom: 4px; }
+  .nxc-who h3, .nx-acc-body .nxc-who h3 { font-size: 18px; }
+  .nxc-acts { padding-bottom: 4px; }
+  .nxc-pill, .nxc-round { height: 34px; }
+  .nxc-round { width: 34px; }
+  .nxc-tags { padding: 10px 6px 0; }
+  .nxc-stats { margin: 12px 6px 0; padding-top: 12px; }
+  .nxc-stat b { font-size: 22px; }
+  .nxc-cta { height: 48px; margin-top: 14px; font-size: 14px; }
+  .nxc-cta-ic { width: 34px; height: 34px; left: 7px; top: 7px; }
+}
+
+/* Fenêtre étroite : rubriques en bande qui défile (l'onglet ouvert reste visible), marges réduites. */
+@media (max-width: 920px) {
+  .nxc-side { gap: 8px; padding: 8px 10px; scroll-snap-type: x proximity; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .nxc-side::-webkit-scrollbar { display: none; }
+  .nxc-brand { display: none; }
+  .nxc-nav { gap: 4px; }
+  .nxc-nav button { height: 36px; padding: 0 12px 0 4px; gap: 8px; border-radius: 12px; scroll-snap-align: start; flex-shrink: 0; }
+  .nxc-nav-ic { width: 28px; height: 28px; border-radius: 9px; }
+  .nxc-head { padding-inline: 18px; }
+  .nx-acc-body.nxc-body { padding: 2px 18px 18px; gap: 14px; }
+  .nxc-cols .nx-grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nxc-kv dd { text-align: left; }
+}
+/* Très étroit : bouton photo en icône (la photo reste cliquable), formulaire sur une colonne. */
+@media (max-width: 820px) {
+  .nxc-pill { width: 34px; padding: 0; justify-content: center; }
+  .nxc-pill span { display: none; }
+  .nxc-cols .nx-grid2 { grid-template-columns: minmax(0, 1fr); }
+}

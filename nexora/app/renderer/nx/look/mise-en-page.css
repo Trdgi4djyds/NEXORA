@@ -39,3 +39,47 @@ html .dz-left .seg.wide { gap: 2px; }
 html .dz-left .seg.wide > button { min-width: 0; padding-inline: 3px; font-weight: 560; letter-spacing: -.01em; }
 /* Fenêtre étroite (panneau réduit) : les quatre onglets passent sur deux lignes plutôt que d'être coupés. */
 @media (max-width: 1100px) { html body .dz-left .seg.wide { grid-template-columns: repeat(2, minmax(0, 1fr)); } html .dz-left .seg.wide > button { flex: 1 1 40%; } }
+
+/* NEXORA #046 : fenêtres desktop lisibles à toute taille.
+   En-tête et pied restent visibles ; seul le corps défile. Les tuiles de « Nouveau » tiennent sur
+   deux rangées dans une fenêtre basse, au lieu d'être cachées derrière le pied. */
+html .sheet {
+  max-width: calc(100vw - 20px);
+  max-height: calc(100dvh - 20px);
+}
+html .sheet > form,
+html .sheet > :is(.nxc, .nxr) {
+  min-height: 0;
+}
+html .sheet > .sheet-body,
+html .sheet > form > .sheet-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+html .sheet > .sheet-foot,
+html .sheet > form > .sheet-foot {
+  flex: none;
+  position: relative;
+  z-index: 2;
+}
+html .sheet-foot { flex-wrap: wrap; }
+@media (min-width: 821px) and (max-height: 720px) {
+  html .sheet.wide .nw-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  html .sheet.wide .nw-tile { padding: 10px; }
+}
+@media (max-width: 820px) {
+  html .sheet-head p { display: block; }
+  html .sheet-head { padding-inline: 18px; }
+  html .sheet-body { padding-inline: 18px; }
+  html .nw-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  html .nw-grid { grid-template-columns: 1fr; }
+}
+
+/* La barre native Windows est désormais hors du contenu : aucune réservation ni superposition. */
+html body.os-win32 .toolbar { margin-right: 0; }
+html body.os-win32 .tb-spacer-controls { width: 0; }

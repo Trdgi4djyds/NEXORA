@@ -4,6 +4,7 @@
 //
 // Utilisation : pnpm captures [écrans…] [options]
 //   écrans                accueil, responsive, browser, dev, apps, studio, design, securite, desktop (défaut : les 9),
+//                         statut (page de statut publique, données fictives, #048),
 //                         premier-lancement (visite guidée et « Préparer les outils », capturé en premier),
 //                         tout (premier lancement puis les 9 espaces)
 //   --label <nom>         série rangée dans captures/AAAA-MM-JJ-<nom>/ (défaut : « apercu »)
@@ -18,6 +19,8 @@
 //                         montre les fonctions réservées aux comptes connectés (supervision 24 h/24, #022)
 //   --demo                supervision de démonstration : sites fictifs et un mois de mesures simulées,
 //                         servis par le vrai code du processus principal (preview/demo-main.mjs)
+//   --demo-dev            Dev Lab de démonstration (#052) : projet de preview/demo-dev.mjs ouvert, canaux dev:,
+//                         git: et devx: servis par le vrai code du processus principal
 // Le script signale aussi les erreurs de la page (exceptions, console, requêtes en échec) et se termine
 // en erreur si une exception survient : il sert de test rapide de l'interface.
 import { spawnSync } from "node:child_process"
@@ -39,6 +42,8 @@ const SPACES = [
   { slug: "desktop", mode: "desktop", label: "Desktop Builder" },
 ]
 const FIRST_RUN = "premier-lancement"
+// NEXORA #048 : page de statut publique (web/status/), avec ses données fictives (?demo=1).
+const STATUS = "statut"
 // Même clé que preview/bridge.js : réglages de NEXORA dans l'aperçu.
 const SETTINGS_KEY = "nexora-preview:settings"
 // Réglages d'un PC neuf dont la visite guidée et la préparation des outils sont déjà passées.
@@ -107,6 +112,7 @@ function parseArgs(argv) {
     else if (arg === "--theme") opts.theme = value()
     else if (arg === "--upload") opts.upload = true
     else if (arg === "--demo") opts.demo = true
+    else if (arg === "--demo-dev") opts.demoDev = true
     else if (arg === "--compte") {
       if (value() !== "demo") throw new Error("--compte attend « demo ».")
       opts.account = true
@@ -118,7 +124,7 @@ function parseArgs(argv) {
     } else if (arg.startsWith("--")) throw new Error(`Option inconnue : ${arg}`)
     else opts.screens.push(arg)
   }
-  const known = [...SPACES.map((s) => s.slug), FIRST_RUN, "tout"]
+  const known = [...SPACES.map((s) => s.slug), FIRST_RUN, STATUS, "tout"]
   const unknown = opts.screens.filter((s) => !known.includes(s))
   if (unknown.length)
     throw new Error(
@@ -129,6 +135,7 @@ function parseArgs(argv) {
 
   const everything = opts.screens.includes("tout")
   opts.firstRun = everything || opts.screens.includes(FIRST_RUN)
+  opts.status = opts.screens.includes(STATUS)
   // Sans écran précisé : les 9 espaces. Toujours dans l'ordre du rail.
   opts.spaces =
     everything || opts.screens.length === 0
@@ -264,7 +271,7 @@ async function useDemoAccount(page) {
         ? {}
         : {
             body:
-              typeof res.body === "string"
+              typeof res.body === "string" || Buffer.isBuffer(res.body)
                 ? res.body
                 : JSON.stringify(res.body),
           }),
@@ -303,17 +310,27 @@ async function main() {
     // Réglages de départ : thème demandé, et premier lancement déjà passé sauf s'il faut le capturer.
     const theme = opts.theme === "sombre" ? { appTheme: "dark" } : {}
     const seed = opts.firstRun ? theme : { ...theme, ...SETUP_DONE }
+    // NEXORA #052 : Dev Lab de démonstration, projet de preview/demo-dev.mjs déjà ouvert.
+    if (opts.demoDev) {
+      const { DEMO_DEV_ROOT } = await import("../preview/demo-dev.mjs")
+      seed.devLab = {
+        root: DEMO_DEV_ROOT,
+        open: [],
+        bottom: true,
+        preview: false,
+      }
+    }
     await page.evaluateOnNewDocument(
       (key, value, demo) => {
         // Seulement la page de NEXORA (version web, #025 : les appareils affichent des iframes).
         if (window !== window.top) return
         if (!localStorage.getItem(key)) localStorage.setItem(key, value)
-        // Même clé que preview/bridge.js (mode démonstration de la supervision).
-        if (demo) localStorage.setItem("nexora-preview:demo", "supervision")
+        // Même clé que preview/bridge.js (mode démonstration de la supervision ou du Dev Lab, #052).
+        if (demo) localStorage.setItem("nexora-preview:demo", demo)
       },
       SETTINGS_KEY,
       JSON.stringify(seed),
-      opts.demo,
+      opts.demoDev ? "devlab" : opts.demo ? "supervision" : "",
     )
     // Requêtes HEAD servies par l'interception : abouties, mais signalées « annulées » par Puppeteer.
     const servedHead = opts.account ? await useDemoAccount(page) : new Set()
@@ -403,6 +420,21 @@ async function main() {
       )
       await page.screenshot({ path: file })
       shots.push({ file, label: space.label })
+    }
+    if (opts.status) {
+      where = "Page de statut"
+      if (opts.theme === "sombre")
+        await page.emulateMediaFeatures([
+          { name: "prefers-color-scheme", value: "dark" },
+        ])
+      await page.goto(new URL("status/?demo=1", url).href, {
+        waitUntil: "load",
+        timeout: 30000,
+      })
+      await settle(page, 800)
+      const file = path.join(dir, "10-statut.png")
+      await page.screenshot({ path: file })
+      shots.push({ file, label: "Page de statut" })
     }
   } finally {
     await browser.close()

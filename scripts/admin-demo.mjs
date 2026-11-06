@@ -2,6 +2,9 @@
 // captures intercepte les appels à Supabase et reçoit ces réponses (même forme que l'API réelle,
 // d'après admin/src/database.types.ts). Personnes et sites fictifs : aucune donnée réelle dans les
 // captures rangées dans captures/.
+import { readFileSync } from "node:fs"
+import { fileURLToPath } from "node:url"
+
 const now = Date.now()
 const ago = (days, hours = 0) =>
   new Date(now - days * 86400000 - hours * 3600000).toISOString()
@@ -232,8 +235,8 @@ export const plans = [
     id: "standard",
     name: "Standard",
     description: "Pour créer, importer et publier tes projets.",
-    price_month_cents: 1000,
-    price_year_cents: 10000,
+    price_month_cents: 1200,
+    price_year_cents: 12000,
     currency: "USD",
     sort: 2,
     active: true,
@@ -270,8 +273,8 @@ export const plans = [
     id: "pro",
     name: "Pro",
     description: "Toute la puissance de NEXORA, sans compromis.",
-    price_month_cents: 2500,
-    price_year_cents: 25000,
+    price_month_cents: 1800,
+    price_year_cents: 18000,
     currency: "USD",
     sort: 3,
     active: true,
@@ -387,9 +390,9 @@ export const organization_members = memberDefs.map(([o, u, role]) => ({
     // NX_DEMO_OFFRE=standard : l'espace du compte de démonstration a un abonnement payé, avec son échéance
     // (calendrier et minuteur de l'onglet Offre et usage, #040).
     subscriptions: [
-      o === 0 && process.env.NX_DEMO_OFFRE === "standard"
+      o === 0 && ["standard", "pro"].includes(process.env.NX_DEMO_OFFRE)
         ? {
-            plan_id: "standard",
+            plan_id: process.env.NX_DEMO_OFFRE,
             status: "active",
             current_period_end: ago(-18, -6),
           }
@@ -1105,6 +1108,92 @@ export const nx_app_trials = [
   profiles: person(u),
 }))
 
+// NEXORA #048 : pages de statut et visiteurs réels (supabase/migrations/20261105000008_fiabilite.sql).
+export const status_pages = organizations.map((o, i) => ({
+  id: id(5200 + i),
+  org_id: o.id,
+  slug: i ? `statut-${i}` : "statut-boutique",
+  title: "Statut de la boutique",
+  intro: "Suis ici l’état de nos services en temps réel.",
+  monitor_ids: monitors.filter((m) => m.org_id === o.id).map((m) => m.id),
+  published: true,
+  show_incidents: true,
+  created_at: ago(12),
+  updated_at: ago(1),
+}))
+export const rum_sites = organizations.map((o, i) => ({
+  id: id(5300 + i),
+  org_id: o.id,
+  key: "3f9a1c2b7d4e8f60a1b2c3d4",
+  name: "boutique-moreau.fr",
+  origins: ["https://boutique-moreau.fr"],
+  created_at: ago(20),
+}))
+function demoRumSummary() {
+  const series = []
+  for (let h = 167; h >= 0; h -= 1) {
+    const t = new Date(Math.floor(now / 3600e3) * 3600e3 - h * 3600e3)
+    const day = Math.sin((t.getHours() - 6) / 3.8)
+    series.push({
+      t: t.toISOString(),
+      lcp: Math.round(
+        2050 + day * 420 + ((h * 37) % 230) + (h > 40 && h < 52 ? 1300 : 0),
+      ),
+    })
+  }
+  return {
+    views: 18420,
+    errors_total: 37,
+    p75: { lcp: 2380, inp: 168, cls: 0.06, ttfb: 640 },
+    pages: [
+      { path: "/panier", views: 2310, lcp: 3420, inp: 240, cls: 0.12 },
+      {
+        path: "/produits/chaise-lounge",
+        views: 1840,
+        lcp: 2910,
+        inp: 150,
+        cls: 0.04,
+      },
+      { path: "/", views: 7420, lcp: 2140, inp: 120, cls: 0.03 },
+      { path: "/commande", views: 980, lcp: 1980, inp: 310, cls: 0.02 },
+      {
+        path: "/blog/tendances-2026",
+        views: 640,
+        lcp: 1720,
+        inp: 90,
+        cls: 0.01,
+      },
+    ],
+    devices: [
+      { device: "mobile", views: 11260, lcp: 2710 },
+      { device: "desktop", views: 6120, lcp: 1690 },
+      { device: "tablet", views: 1040, lcp: 2240 },
+    ],
+    errors: [
+      {
+        message:
+          "TypeError: Cannot read properties of undefined (reading 'prix')",
+        source: "app.js:214",
+        path: "/panier",
+        count: 21,
+      },
+      {
+        message: "Promesse rejetée : délai dépassé (paiement)",
+        source: "",
+        path: "/commande",
+        count: 9,
+      },
+      {
+        message: "ReferenceError: gtag is not defined",
+        source: "index.html:48",
+        path: "/",
+        count: 7,
+      },
+    ],
+    series,
+  }
+}
+
 const TABLES = {
   profiles,
   nx_app_trials,
@@ -1137,6 +1226,32 @@ const TABLES = {
   invoices,
   nx_private_config,
   nx_email_log,
+  status_pages,
+  rum_sites,
+  monitor_maintenance: [],
+  monitor_events: [],
+  nx_alert_prefs: [],
+}
+
+// NEXORA #054 : avis reçus il y a quelques minutes sur un lien de validation, et deux bibliothèques d'équipe ;
+// les variables sont « republiées » à chaque lecture (date du moment) : après un import, « Actualiser » montre
+// la mise à jour proposée.
+function demoReviewLinks(doc) {
+  const ago = (min) => new Date(Date.now() - min * 60000).toISOString()
+  return [{
+    token: "demo0000000000000000000000000001", name: "Mon premier design", created_at: ago(180), active: true, doc_local_id: doc,
+    design_reviews: [
+      { author: "Awa Koné", decision: "changes", comment: "Le titre pourrait être un peu plus grand sur téléphone.", page: 0, created_at: ago(42) },
+      { author: "Awa Koné", decision: "comment", comment: "J’adore la pastille −20 %.", page: 0, created_at: ago(38) },
+      { author: "Marc Diallo", decision: "approve", comment: "Validé pour la mise en ligne.", page: 0, created_at: ago(9) },
+    ],
+  }]
+}
+function demoLibraries() {
+  return [
+    { id: "lib-demo-variables", kind: "variables", name: "Couleurs Boutique Moreau", updated_at: new Date().toISOString(), data: { modes: ["Clair", "Sombre"], mode: "Clair", list: [{ id: "v-demo-1", name: "primaire", type: "color", values: { Clair: "#6a4cff", Sombre: "#8b74ff" } }, { id: "v-demo-2", name: "accent", type: "color", values: { Clair: "#ffcc00", Sombre: "#ffd84d" } }] } },
+    { id: "lib-demo-brand", kind: "brand", name: "Kit Boutique Moreau", updated_at: "2026-11-02T10:00:00.000Z", data: { name: "Boutique Moreau", colors: ["#6a4cff", "#ff3d7f", "#ffcc00", "#14151a", "#f5f5f7"], fonts: {} } },
+  ]
 }
 
 function rpc(name, args) {
@@ -1213,7 +1328,7 @@ function rpc(name, args) {
       projects: projects.filter((x) => x.org_id === o.id).length,
       designs: design_documents.filter((x) => x.org_id === o.id).length,
     }))
-  // Offres du #037 : état réglable par NX_DEMO_OFFRE (essai, expire, standard).
+  // Offres du #037 : état réglable par NX_DEMO_OFFRE (essai, expire, standard, pro depuis #052).
   if (name === "nx_plan_status") return demoPlanStatus(args)
   if (name === "nx_app_status") return demoAppStatus(args)
   if (name === "nx_app_claim")
@@ -1222,7 +1337,7 @@ function rpc(name, args) {
   if (name === "nx_use_feature")
     return {
       ok: true,
-      plan: demoOffer() === "standard" ? "standard" : "free",
+      plan: ["standard", "pro"].includes(demoOffer()) ? demoOffer() : "free",
       remaining: 12,
     }
   if (name === "nx_app_trial_extend")
@@ -1237,6 +1352,9 @@ function rpc(name, args) {
     }
   // Supervision par le serveur (NEXORA #022) : mêmes formes que monitor_overview et monitor_series
   // (supabase/migrations/20261104000002_supervision_serveur.sql), courbes calculées pour la démonstration.
+  // NEXORA #048 : visiteurs réels et jeton des repères de déploiement.
+  if (name === "rum_summary") return demoRumSummary()
+  if (name === "nx_monitor_hook_token") return "b7c2e91f04d6a3b85c1e2f90d4a7"
   if (name === "monitor_overview") return demoMonitorOverview(args)
   if (name === "monitor_series") return demoMonitorSeries(args)
   if (name === "monitor_incident_action")
@@ -1627,10 +1745,11 @@ function demoPlanStatus(args = {}) {
       },
     }
   }
-  const id = demoOffer() === "standard" ? "standard" : "free"
+  // NEXORA #052 : NX_DEMO_OFFRE=pro (outils Pro du Dev Lab).
+  const id = ["standard", "pro"].includes(demoOffer()) ? demoOffer() : "free"
   const p = plans.find((x) => x.id === id)
   const usage =
-    id === "standard"
+    id !== "free"
       ? {
           projects: 9,
           designs: 14,
@@ -1678,7 +1797,7 @@ function demoPlanStatus(args = {}) {
 function demoAppRow(localId, name, age, kind = "url") {
   const created = now - age * 86400000
   const ends = created + 7 * 86400000
-  const paid = demoOffer() === "standard"
+  const paid = ["standard", "pro"].includes(demoOffer())
   const status = paid ? "active" : ends > now ? "trial" : "expired"
   return {
     ok: true,
@@ -1703,7 +1822,7 @@ function demoAppStatus(args) {
         demoAppRow("demo-a", "Boutique Lumière", 2),
         demoAppRow("demo-b", "Blog de l’Atelier", 11),
       ]
-  const paid = demoOffer() === "standard"
+  const paid = ["standard", "pro"].includes(demoOffer())
   return {
     ok: true,
     plan: paid ? "standard" : "free",
@@ -1824,16 +1943,22 @@ export function demoResponse(method, rawUrl, headers, postData) {
   }
   if (!url.hostname.endsWith(".supabase.co")) return null
   const path = url.pathname
-  if (path.startsWith("/auth/v1/user"))
+  if (path.startsWith("/auth/v1/user")) {
+    // #047 : les données du compte envoyées (bannière) sont gardées pour la suite de la démonstration.
+    if (method === "PUT") {
+      const body = JSON.parse(postData || "{}")
+      if (body.data) Object.assign(demoMeta(), body.data)
+    }
     return json({
       id: P(0).id,
       email: P(0).email,
       aud: "authenticated",
       role: "authenticated",
       app_metadata: {},
-      user_metadata: { full_name: P(0).full_name },
+      user_metadata: demoMeta(),
       created_at: P(0).created_at,
     })
+  }
   if (path.startsWith("/auth/v1/logout")) return { status: 204, body: "" }
   if (path.startsWith("/auth/v1/")) return json({})
   if (path.startsWith("/functions/v1/admin-users")) {
@@ -1853,11 +1978,26 @@ export function demoResponse(method, rawUrl, headers, postData) {
     return json({ ok: true })
   }
   if (path.startsWith("/functions/v1/")) return json({ ok: true })
+  // #047 : une bannière du compte de démonstration s'affiche avec un fond d'écran de l'App Builder.
+  if (
+    /^\/storage\/v1\/object\/public\/avatars\/.+\/banner-/.test(path) &&
+    method === "GET"
+  )
+    return {
+      status: 200,
+      headers: { "content-type": "image/jpeg", "cache-control": "no-store" },
+      body: readFileSync(DEMO_BANNER_FILE),
+    }
   if (path.startsWith("/storage/v1/"))
-    return json({ signedURL: "/demo", signedUrl: "/demo" })
+    return json({ signedURL: "/demo", signedUrl: "/demo", Key: "avatars/demo" })
   const rpcMatch = /^\/rest\/v1\/rpc\/(\w+)/.exec(path)
   if (rpcMatch) return json(rpc(rpcMatch[1], JSON.parse(postData || "{}")))
   const tableMatch = /^\/rest\/v1\/(\w+)/.exec(path)
+  // NEXORA #054 : NEX-DESIGN, liens de validation du document demandé et bibliothèques d'équipe.
+  if (tableMatch && method === "GET" && tableMatch[1] === "design_review_links")
+    return json(demoReviewLinks((url.searchParams.get("doc_local_id") || "").replace(/^eq\./, "")))
+  if (tableMatch && method === "GET" && tableMatch[1] === "design_libraries")
+    return json(demoLibraries())
   if (tableMatch) {
     const rows = TABLES[tableMatch[1]]
     if (!rows)
@@ -1884,6 +2024,24 @@ export function demoResponse(method, rawUrl, headers, postData) {
   return json({})
 }
 
+// #047 : données du compte de démonstration ; NX_DEMO_BANNIERE=1 lui donne une bannière dès l'ouverture.
+const DEMO_BANNER_FILE = fileURLToPath(
+  new URL("../nexora/app/renderer/nx/android/walls/dunes.jpg", import.meta.url),
+)
+let demoMetaValue = null
+function demoMeta() {
+  if (!demoMetaValue)
+    demoMetaValue = {
+      full_name: P(0).full_name,
+      ...(process.env.NX_DEMO_BANNIERE
+        ? {
+            banner_url: `https://dcwfgnwaxsrtuvomttbp.supabase.co/storage/v1/object/public/avatars/${P(0).id}/banner-demo.jpg`,
+          }
+        : {}),
+    }
+  return demoMetaValue
+}
+
 /** Session enregistrée par supabase-js (clé nexora-admin-auth) pour le compte de démonstration. */
 export function demoSession() {
   const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url")
@@ -1894,7 +2052,7 @@ export function demoSession() {
     aud: "authenticated",
     role: "authenticated",
     app_metadata: { provider: "email" },
-    user_metadata: { full_name: P(0).full_name },
+    user_metadata: demoMeta(),
     created_at: P(0).created_at,
   }
   return {

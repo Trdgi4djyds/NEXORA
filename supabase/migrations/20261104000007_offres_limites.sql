@@ -1,4 +1,4 @@
--- NEXORA #037 : offres Gratuit (0 $), Standard (10 $) et Pro (25 $) par mois.
+-- NEXORA #037 : offres Gratuit (0 $), Standard (12 $) et Pro (18 $) par mois (prix du #051 ; 10 $ et 25 $ au #037).
 -- Les limites (nombres) et les permissions (fonctions incluses) de chaque offre sont lues par le serveur :
 --   * nx_plan_status    : offre, limites, permissions et consommation de l'utilisateur et d'un espace ;
 --   * nx_use_feature    : autorise une fonction réservée et consomme son quota de façon atomique ;
@@ -25,7 +25,7 @@ declare
     "standard_support": false, "studio_advanced": false, "transform_extended": false,
     "projects_multi": false, "notifications_advanced": false, "messaging_events": false,
     "automation": false, "custom_notifications": false, "api_sdk": false, "integrations": false,
-    "priority_support": false, "early_access": false
+    "priority_support": false, "early_access": false, "devlab_pro": false
   }'::jsonb;
   v_standard_perms jsonb;
   v_pro_perms jsonb;
@@ -47,7 +47,7 @@ begin
         "Responsive Design et prévisualisation multi-écrans", "Browser : navigation et consultation de sites",
         "Tableau de bord", "30 requêtes IA par mois, 3 audits de sécurité par jour"]'::jsonb,
       v_free_perms, ''),
-    ('standard', 'Standard', 'Pour créer, importer et publier tes projets.', 1000, 10000, 'USD', 2, true,
+    ('standard', 'Standard', 'Pour créer, importer et publier tes projets.', 1200, 12000, 'USD', 2, true,
       '{"projects": 25, "designs": 50, "members": 3, "monitors": 10, "storage_mb": 5120, "apps": 10, "app_trial_days": 0,
         "ai_requests_month": 500, "scans_per_day": 30, "crawls_per_day": 20, "builds_month": 60, "push_month": 10000}'::jsonb,
       '["Tout le Gratuit, sans limite d’essai", "Import de projets web et de code source",
@@ -56,7 +56,7 @@ begin
         "500 requêtes IA par mois", "Notifications push et in-app, alertes et rappels",
         "Gestion de projets (25 projets, 3 membres)", "Assistance standard"]'::jsonb,
       v_standard_perms, 'Le plus choisi'),
-    ('pro', 'Pro', 'Toute la puissance de NEXORA, sans compromis.', 2500, 25000, 'USD', 3, true,
+    ('pro', 'Pro', 'Toute la puissance de NEXORA, sans compromis.', 1800, 18000, 'USD', 3, true,
       '{"projects": 200, "designs": -1, "members": 10, "monitors": 50, "storage_mb": 51200, "apps": 50, "app_trial_days": 0,
         "ai_requests_month": 3000, "scans_per_day": 200, "crawls_per_day": 150, "builds_month": 400, "push_month": 100000}'::jsonb,
       '["Tout Standard", "NEX-DESIGN complet, documents illimités",

@@ -260,6 +260,8 @@ async function scan(url, { fetchImpl, page = null, onStep = () => {} } = {}) {
   onStep({ label: 'Terminé', progress: 1 });
   return {
     url: u.href, host: u.hostname, isLocal, https, score, counts, findings: findings.slice(), tls: findings.tls || null, at: Date.now(),
+    // NEXORA #048 : en-têtes de la réponse (hébergeur reconnu pour écrire les correctifs).
+    headers: H,
   };
 }
 

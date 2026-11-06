@@ -363,3 +363,73 @@
 /* NEXORA #030 : un seul canal d’alerte (e-mail par Brevo) : carte sur une colonne. */
 .sup-chs.sup-chs-one { grid-template-columns: minmax(0, 680px); }
 .sup-chs-one .pop-note { margin: 0; }
+
+/* NEXORA #048 : types de vérification, parcours, webhooks, planning, page de statut, visiteurs réels.
+ * Interface plate (#045) : contours seulement, aucune ombre portée ni dégradé décoratif. */
+.sup-dot.maint { background: var(--accent); opacity: .7; }
+.sup-nav > button span { white-space: nowrap; }
+@media (max-width: 1320px) { .sup-nav > button { padding: 0 9px; } }
+@media (max-width: 1180px) { .sup-nav > button span { display: none; } .sup-nav > button { padding: 0 10px; } }
+.sup-types { display: flex; flex-wrap: wrap; }
+.sup-types > button { gap: 5px; min-height: 30px; padding: 0 10px; }
+.sup-types > button:disabled { opacity: .45; }
+.sup-form [hidden] { display: none !important; }
+.sup-steps { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: var(--r-lg); background: var(--info-bg, var(--fill-2)); box-shadow: inset 0 0 0 1px var(--info-edge, var(--sep)); }
+.sup-step { display: flex; align-items: center; gap: 6px; }
+.sup-step > select { flex: 0 0 170px; }
+.sup-step-f { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.sup-step-f .input { flex: 1; min-width: 120px; }
+.sup-step-n { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 10.5px; font-weight: 700; background: var(--surface); color: var(--text-2); box-shadow: inset 0 0 0 1px var(--sep); }
+.sup-steps-a { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.sup-steps-res { margin-top: 6px; font-size: 12px; }
+.sup-jres { display: flex; flex-direction: column; gap: 3px; }
+.sup-jres > div { display: flex; align-items: center; gap: 6px; color: var(--text-2); }
+.sup-jres > div.bad { color: var(--bad); }
+.sup-jsteps { display: flex; flex-direction: column; gap: 6px; }
+.sup-jstep { display: grid; grid-template-columns: 20px minmax(0, 1.3fr) minmax(0, 1fr) 70px 16px; align-items: center; gap: 8px; font-size: 12.5px; }
+.sup-jstep-l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sup-jstep-b { height: 8px; border-radius: 99px; background: var(--fill-2, var(--sep)); overflow: hidden; }
+.sup-jstep-b i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+.sup-jstep b { text-align: right; font-variant-numeric: tabular-nums; }
+.sup-jstep.bad { color: var(--bad); }
+.sup-jstep.bad .sup-jstep-b i { background: var(--bad-dot); }
+.sup-jstep svg { color: var(--ok-dot); }
+.sup-jstep.bad svg { color: var(--bad-dot); }
+.sup-checks-col { flex-direction: column; align-items: stretch; }
+.sup-checks-col .sup-check small { margin-left: auto; color: var(--text-3); }
+.sup-hooks { display: flex; flex-direction: column; gap: 8px; }
+.sup-hook { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-lg); background: var(--surface); box-shadow: inset 0 0 0 1px var(--sep); }
+.sup-hook.off { opacity: .6; }
+.sup-hook-i { width: 28px; height: 28px; border-radius: var(--r); display: grid; place-items: center; background: var(--fill-2, var(--sep)); color: var(--text-2); flex: none; }
+.sup-hook-t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sup-hook-t small { color: var(--text-3); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sup-hook .tog-row.tiny { padding: 0; min-height: 0; border: 0; background: none; }
+.sup-hook-add { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.sup-hook-add .input:first-child { flex: 1; min-width: 200px; }
+.sup-hook-add select.input { flex: 0 0 auto; }
+.sup-quiet { display: flex; gap: 6px; flex-wrap: wrap; }
+.sup-mrow { display: flex; align-items: center; gap: 10px; padding: 9px 2px; border-bottom: 1px solid var(--sep); }
+.sup-mrow:last-child { border-bottom: 0; }
+.sup-mrow > div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.sup-mrow small { color: var(--text-3); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sup-mark-i { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, #7b4fe6 14%, var(--surface)); color: #7b4fe6; flex: none; }
+.sup-mform { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid var(--sep); }
+.sup-mform .sup-form-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.sup-report { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sup-report .pop-note { flex: 1; min-width: 280px; margin: 0; }
+.sup-report-a { display: flex; gap: 8px; align-items: center; }
+.sup-hb { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: var(--r-lg); background: var(--info-bg, var(--fill-2)); box-shadow: inset 0 0 0 1px var(--info-edge, var(--sep)); }
+.sup-hb small { font-size: 11.5px; color: var(--text-2); }
+.sup-hb-u { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sup-hb-u code { flex: 1; min-width: 0; padding: 6px 9px; border-radius: var(--r); background: var(--surface); box-shadow: inset 0 0 0 1px var(--sep); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sup-verif { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: var(--r-lg); background: var(--info-bg, var(--fill-2)); box-shadow: inset 0 0 0 1px var(--info-edge, var(--sep)); }
+.sup-verif small { color: var(--text-2); font-size: 12px; line-height: 1.45; }
+.sup-slug { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.sup-slug small { color: var(--text-3); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%; }
+.sup-slug .input { flex: 1; min-width: 80px; }
+.sup-rum-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sup-rum-top .grow { flex: 1; }
+.sup-rum-top .sup-hook-add { flex: 0 1 420px; }
+.sup-report-a { flex: none; }
+.sup-report-a .btn { white-space: nowrap; }
+.sup-report-a select.input { min-width: 170px; }

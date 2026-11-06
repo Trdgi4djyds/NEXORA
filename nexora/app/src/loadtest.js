@@ -365,7 +365,15 @@ services:
 
 function register({ ipcMain, app, net, send, dialog, shell, getWin }) {
   const fetchImpl = (u, o) => (net && net.fetch ? net.fetch(u, o) : fetch(u, o));
-  ipcMain.handle('mon:loadtest', (_e, opts) => run(app, fetchImpl, opts, (p) => send('mon:loadtest-progress', p)));
+  // NEXORA #048 : un test de charge ne se lance que sur un site dont la propriété est prouvée (fichier ou DNS).
+  const { Ownership } = require('./supervision/ownership');
+  const owner = new Ownership(path.join(app.getPath('userData'), 'supervision'), fetchImpl);
+  ipcMain.handle('mon:verify-status', (_e, { url } = {}) => owner.status(url));
+  ipcMain.handle('mon:verify-check', (_e, { url } = {}) => owner.check(url));
+  ipcMain.handle('mon:loadtest', (_e, opts) => {
+    owner.assert(normalizeUrls(opts || {}));
+    return run(app, fetchImpl, opts, (p) => send('mon:loadtest-progress', p));
+  });
   ipcMain.handle('mon:loadtest-stop', () => stop());
   ipcMain.handle('mon:loadtests', () => history(app));
   ipcMain.handle('mon:loadtest-delete', (_e, id) => { saveHistory(app, history(app).filter((r) => r.id !== id)); return history(app); });

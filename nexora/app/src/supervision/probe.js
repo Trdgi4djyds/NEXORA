@@ -100,7 +100,8 @@ function once(url, { timeout, wantBody, method }) {
 
 // Vérifie une adresse : renvoie le statut final, le temps total et le détail de chaque étape (cumulé sur
 // les redirections). Rejette en cas d'erreur réseau (message en français dans `reason`).
-async function probe(url, { timeout = 20000, keyword = '', method = 'GET', maxRedirects = 5 } = {}) {
+// NEXORA #048 : `body` garde aussi le contenu sans mot-clé (empreinte du contenu, détection de modification).
+async function probe(url, { timeout = 20000, keyword = '', method = 'GET', maxRedirects = 5, body = false } = {}) {
   const sum = { dns: 0, tcp: 0, tls: 0, ttfb: 0, dl: 0 };
   const started = Date.now();
   let current = url;
@@ -110,7 +111,7 @@ async function probe(url, { timeout = 20000, keyword = '', method = 'GET', maxRe
     const left = timeout - (Date.now() - started);
     if (left <= 0) { const e = new Error('timeout'); e.code = 'ETIMEDOUT'; e.reason = reasonOf(e); throw e; }
     try {
-      r = await once(current, { timeout: left, wantBody: Boolean(keyword), method });
+      r = await once(current, { timeout: left, wantBody: Boolean(keyword) || Boolean(body), method });
     } catch (err) {
       err.reason = reasonOf(err);
       throw err;
