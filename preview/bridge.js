@@ -588,6 +588,11 @@
             },
       ),
     "desktop:cert-info": () => ({ ok: false }),
+    // NEXORA #058 : PC neuf, aucun jeton GitHub ni identifiant Azure enregistré.
+    "desktop:gh-token-info": () => ({ ok: false }),
+    "desktop:azure-info": () => ({ ok: false }),
+    // Calendrier des versions d'Electron : lu en ligne par le processus principal, absent de l'aperçu.
+    "desktop:electron-support": () => ({ error: "Calendrier lu par l’application NEXORA pour Windows.", newest: "", versions: {} }),
   }
 
   window.vitrine = {

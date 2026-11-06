@@ -89,8 +89,8 @@ async function gates() {
     }
   }
   ok(
-    Object.keys(plan.GATES).length === 75,
-    "75 canaux contrôlés (41 du #037, 10 du #048, 22 du #052, 2 du #053)",
+    Object.keys(plan.GATES).length === 76,
+    "76 canaux contrôlés (41 du #037, 10 du #048, 22 du #052, 2 du #053, 1 du #058)",
     Object.keys(plan.GATES).length,
   )
   let r = await inv("lab:fetch")

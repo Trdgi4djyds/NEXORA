@@ -8,6 +8,9 @@ import {
 } from '../core.js';
 import { a as resizable } from '../../dist/chunks/chunk-W2YYTHPL.js';
 import { iconDataUrl, sidebarCanvas, buildAssets, initials } from './icons.js';
+import { pcHtml, MODES, modeOf, SCREEN } from './preview.js';
+import { b as supabase, e as cloud } from '../../dist/chunks/chunk-EZKHFSAB.js';
+import { explain as insExplain, chart as insChart, table as insTable } from '../android/insights.js';
 
 export const SECTIONS = [
   ['source', 'Source', 'globe', 'Site en ligne, dossier ou projet de bureau'],
@@ -20,7 +23,14 @@ export const SECTIONS = [
   ['updates', 'Mises à jour', 'sync', 'Mise à jour automatique du logiciel'],
   ['signing', 'Signature', 'key', 'Certificat et avertissement SmartScreen'],
   ['build', 'Construction', 'rocket', 'Fichiers d’installation et historique'],
+  // NEXORA #058
+  ['ready', 'Prêt pour la distribution', 'nxCheckCircle', 'Contrôle avant de publier'],
+  ['distrib', 'Distribution', 'upload', 'Mise à jour, Store, winget, essai'],
+  ['insights', 'Statistiques', 'timeline', 'Installations, versions, plantages'],
 ];
+const ACCEL_RE = /^((CommandOrControl|Ctrl|Alt|Shift|Super)\+){1,3}([A-Z0-9]|F([1-9]|1[0-2]))$/;
+const RESERVED_EXT = ['exe', 'com', 'bat', 'cmd', 'msi', 'msix', 'appx', 'ps1', 'vbs', 'js', 'jse', 'wsf', 'lnk', 'url', 'scr', 'dll', 'sys', 'reg', 'html', 'htm', 'zip'];
+const AZURE_REGIONS = [['https://weu.codesigning.azure.net/', 'Europe de l’Ouest'], ['https://neu.codesigning.azure.net/', 'Europe du Nord'], ['https://eus.codesigning.azure.net/', 'Est des États-Unis'], ['https://wus.codesigning.azure.net/', 'Ouest des États-Unis'], ['https://wcus.codesigning.azure.net/', 'Centre-ouest des États-Unis'], ['https://wus2.codesigning.azure.net/', 'Ouest des États-Unis 2']];
 const KINDS = {
   url: ['Site en ligne', 'globe', 'Ton site dans une fenêtre de logiciel : chaque mise à jour du site est visible sans réinstaller.'],
   folder: ['Dossier de site', 'folderOpen', 'Un site (HTML) ou un projet web (React, Vue, Angular, Astro…) intégré au logiciel : il marche hors connexion.'],
@@ -44,6 +54,7 @@ const PERM_LABEL = { allow: 'Autoriser', ask: 'Demander', deny: 'Refuser' };
 const SIZES = [['1024x700', 'Compact'], ['1280x800', 'Standard'], ['1440x900', 'Grand'], ['1600x1000', 'Très grand']];
 const SPELL = [['fr', 'Français'], ['en-US', 'Anglais (États-Unis)'], ['en-GB', 'Anglais (Royaume-Uni)'], ['de', 'Allemand'], ['es', 'Espagnol'], ['it', 'Italien'], ['pt-BR', 'Portugais (Brésil)'], ['nl', 'Néerlandais']];
 const FORMATS = [['nsis', 'Installateur', 'Assistant d’installation .exe (recommandé)'], ['portable', 'Portable', 'Un seul .exe, sans installation'], ['zip', 'ZIP', 'Archive à décompresser'], ['msi', 'MSI', 'Déploiement en entreprise (GPO, Intune)']];
+const FORMATS_ALL = [...FORMATS, ['appx', 'Microsoft Store', 'Paquet MSIX signé par le Store (section Distribution)']];
 const STEP_LABELS = [['tools', 'Outils de construction'], ['electron', 'Moteur du logiciel'], ['source', 'Source'], ['project', 'Projet du logiciel'], ['package', 'Emballage et installateur'], ['msi', 'Paquet MSI'], ['copy', 'Fichiers d’installation']];
 
 // ---------------------------------------------------------------- modèle d'un logiciel
@@ -73,6 +84,7 @@ function defaults() {
     },
     behavior: {
       singleInstance: true, external: 'browser', offline: true, tray: false, closeToTray: false, autostartOption: true, downloads: 'ask', spellcheck: ['fr', 'en-US'], contextMenu: true, userAgent: 'chrome', customUserAgent: '', zoom: true, protocol: '',
+      badge: false, jumpList: [], shortcut: '', fileTypes: [],
     },
     permissions: {
       notifications: 'allow', camera: 'ask', microphone: 'ask', display: 'ask', geolocation: 'ask', clipboard: 'ask', localNetwork: 'deny', midi: 'deny',
@@ -82,18 +94,34 @@ function defaults() {
     },
     install: {
       mode: 'assisted', scope: 'user', changeDir: true, desktop: true, startMenu: true, runAfter: true, deleteData: false, license: '',
-      formats: { nsis: true, portable: false, zip: false, msi: false }, archs: { x64: true, arm64: false }, electron: 'latest', compression: 'normal', ci: false,
+      formats: {
+        nsis: true, portable: false, zip: false, msi: false, appx: false,
+      },
+      archs: { x64: true, arm64: false },
+      electron: 'latest',
+      compression: 'normal',
+      ci: false,
     },
     updates: {
-      mode: 'none', url: '', owner: '', repo: '', checkOnStart: true,
+      mode: 'none', url: '', owner: '', repo: '', checkOnStart: true, channel: 'latest',
     },
-    signing: { enabled: false },
+    signing: {
+      enabled: false, mode: 'pfx', azure: { endpoint: AZURE_REGIONS[0][0], account: '', profile: '', publisherName: '' },
+    },
+    store: { identityName: '', publisher: '', publisherDisplayName: '' },
+    insights: {
+      enabled: false, key: '', app: '', appId: '', days: 30,
+    },
+    distrib: {
+      staging: 100, mandatory: false, notes: '', license: 'Propriétaire', wingetUrl: '',
+    },
+    lastPublish: null,
     out: '',
     inspect: null,
     builds: [],
   };
 }
-const OBJ = ['source', 'icon', 'window', 'behavior', 'permissions', 'security', 'install', 'updates', 'signing'];
+const OBJ = ['source', 'icon', 'window', 'behavior', 'permissions', 'security', 'install', 'updates', 'signing', 'store', 'insights', 'distrib'];
 function merge(saved) {
   const d = defaults();
   const out = { ...d, ...saved };
@@ -102,6 +130,8 @@ function merge(saved) {
   out.install.archs = { ...d.install.archs, ...((saved && saved.install && saved.install.archs) || {}) };
   for (const k of ['internal', 'logins', 'builds']) if (!Array.isArray(out[k])) out[k] = [];
   if (!Array.isArray(out.behavior.spellcheck)) out.behavior.spellcheck = d.behavior.spellcheck;
+  for (const k of ['jumpList', 'fileTypes']) if (!Array.isArray(out.behavior[k])) out.behavior[k] = [];
+  out.signing.azure = { ...d.signing.azure, ...((saved && saved.signing && saved.signing.azure) || {}) };
   return out;
 }
 const getp = (o, p) => p.split('.').reduce((x, k) => (x == null ? undefined : x[k]), o);
@@ -156,7 +186,7 @@ class DesktopSpace {
     if (!st.apps.length) st.apps.push(defaults());
     if (!st.apps.some((x) => x.id === st.current)) st.current = st.apps[0].id;
     st.section = SECTIONS.some((s) => s[0] === st.section) ? st.section : 'source';
-    st.preview = ['window', 'installer', 'desktop'].includes(st.preview) ? st.preview : 'window';
+    st.preview = modeOf(st.preview);
     settings.desktop = st;
     this.status = null;
     this.building = false;
@@ -280,6 +310,11 @@ class DesktopSpace {
     this.renderTools();
     if (sec[0] === 'icon') this.paintIconPreviews();
     if (sec[0] === 'signing' && !this.cert) this.loadCert();
+    if (sec[0] === 'signing' && !this.azure) this.loadAzure();
+    if ((sec[0] === 'ready' || sec[0] === 'distrib') && !this.elSupport) this.loadElectron();
+    if ((sec[0] === 'ready' || sec[0] === 'distrib') && !this.gh) this.loadGh();
+    if (sec[0] === 'ready' && !this.cert) this.loadCert();
+    if (sec[0] === 'ready' && !this.azure) this.loadAzure();
   }
 
   // ------------------------------------------------------------ sections
@@ -425,7 +460,27 @@ class DesktopSpace {
       + card('Compatibilité des sites', `
       ${seg(a, 'behavior.userAgent', { chrome: 'Navigateur standard', electron: 'Application de bureau', custom: 'Personnalisé' })}
       ${b.userAgent === 'custom' ? inp(a, 'behavior.customUserAgent', { placeholder: 'Mozilla/5.0 …', mono: true }) : ''}
-      ${hint('« Navigateur standard » utilise une identité web classique : les connexions, messageries et sites qui refusent les navigateurs intégrés restent compatibles.')}`);
+      ${hint('« Navigateur standard » utilise une identité web classique : les connexions, messageries et sites qui refusent les navigateurs intégrés restent compatibles.')}`)
+      + this.win11Cards(a);
+  }
+  /** NEXORA #058 : pastille, raccourci global, actions de l'icône et types de fichiers. */
+  win11Cards(a) {
+    const b = a.behavior;
+    const accelOk = !b.shortcut || ACCEL_RE.test(b.shortcut);
+    const jl = b.jumpList.map((j, i) => `<div class="dsk-li"><span><b>${esc(j.label)}</b><small>${esc(j.path)}</small></span><button class="icon-btn small" data-act="jl-del" data-i="${i}" title="Retirer" aria-label="Retirer ${esc(j.label)}">${ico('close', 12)}</button></div>`).join('');
+    const ft = b.fileTypes.map((f, i) => `<div class="dsk-li"><span><b>.${esc(f.ext)}</b><small>${esc(f.name)}</small></span><button class="icon-btn small" data-act="ft-del" data-i="${i}" title="Retirer" aria-label="Retirer .${esc(f.ext)}">${ico('close', 12)}</button></div>`).join('');
+    return card('Intégration à Windows', `
+      ${tog(a, 'behavior.badge', 'Pastille du nombre de non-lus', 'Quand le titre de la page commence par un nombre, comme « (3) Messages », une pastille rouge s’affiche sur l’icône de la barre des tâches.')}
+      ${field('Raccourci clavier global (facultatif)', `<div class="ab-row">${inp(a, 'behavior.shortcut', { placeholder: 'CommandOrControl+Alt+M', mono: true })}<button class="btn small" data-act="shortcut-suggest">${ico('sparkle', 13)}<span>Proposer</span></button></div>`, accelOk ? 'Ouvre le logiciel depuis n’importe quel programme, ou le réduit s’il est déjà au premier plan. CommandOrControl = Ctrl sous Windows.' : '')}
+      ${accelOk ? '' : hint(`Forme attendue : une à trois touches parmi Ctrl, Alt, Shift (ou CommandOrControl), puis une lettre, un chiffre ou F1 à F12. Exemple : CommandOrControl+Alt+M.`, 'bad')}
+      <div class="field"><span>Actions au clic droit sur l’icône (5 au plus)</span>${jl ? `<div class="dsk-list">${jl}</div>` : '<span class="ab-empty">Aucune action.</span>'}</div>
+      ${b.jumpList.length < 5 ? `<div class="dsk-add2"><input class="input" data-jl-label placeholder="Nouvelle commande" maxlength="40"><input class="input mono" data-jl-path placeholder="/commandes/nouvelle" maxlength="200" data-enter="jl-add" spellcheck="false"><button class="btn" data-act="jl-add">${ico('plus', 14)}<span>Ajouter</span></button></div>` : ''}
+      ${hint('Chaque action ouvre le logiciel sur une page de ton site (chemin commençant par /). Elles apparaissent au clic droit sur l’icône de la barre des tâches et du menu Démarrer.')}`)
+      + card('Types de fichiers', `
+      ${ft ? `<div class="dsk-list">${ft}</div>` : hint('Aucun type de fichier : le logiciel n’apparaît pas dans « Ouvrir avec ».')}
+      ${b.fileTypes.length < 5 ? `<div class="dsk-add2"><input class="input mono" data-ft-ext placeholder="devis" maxlength="12" spellcheck="false"><input class="input" data-ft-name placeholder="Devis" maxlength="40" data-enter="ft-add"><button class="btn" data-act="ft-add">${ico('plus', 14)}<span>Ajouter</span></button></div>` : ''}
+      ${hint('Double-clic sur un fichier de ce type : le logiciel s’ouvre et la page reçoit le fichier par l’événement <code>nexora-open-file</code> (nom, taille, contenu ; jamais le chemin du PC).')}
+      <pre class="dsk-code">window.addEventListener('nexora-open-file', (e) =&gt; {\n  const { name, size, dataUrl } = e.detail;\n  // ouvrir le fichier dans ton site\n});</pre>`);
   }
   form_security(a) {
     const row = ([k, l, d, opts]) => `<div class="dsk-perm"><div><b>${l}</b><small>${d}</small></div>${seg(a, `permissions.${k}`, Object.fromEntries((opts || ['allow', 'ask', 'deny']).map((o) => [o, PERM_LABEL[o]])), '')}</div>`;
@@ -471,21 +526,38 @@ class DesktopSpace {
       ${u.mode === 'none' ? hint(a.source.kind === 'url' ? 'Le contenu de ton site se met à jour tout seul. Pour mettre à jour le moteur du logiciel, reconstruis puis réinstalle une nouvelle version.' : 'Pour diffuser une nouvelle version, augmente le numéro de version, reconstruis et envoie le nouvel installateur.') : ''}
       ${u.mode === 'generic' ? `${field('Adresse du dossier de mise à jour', inp(a, 'updates.url', { placeholder: 'https://monsite.com/telechargements/monlogiciel', mono: true }))}${hint(`Après chaque construction, dépose ${files} dans ce dossier (en https).`)}` : ''}
       ${u.mode === 'github' ? `<div class="ab-grid2">${field('Propriétaire', inp(a, 'updates.owner', { placeholder: 'mon-compte', mono: true }))}${field('Dépôt (public)', inp(a, 'updates.repo', { placeholder: 'mon-logiciel', mono: true }))}</div>${hint(`Crée une version (Release) par numéro de version et joins-y ${files}.`)}` : ''}
+      ${u.mode !== 'none' ? field('Canal', seg(a, 'updates.channel', { latest: 'Stable (tout le monde)', beta: 'Bêta (testeurs)' }), u.channel === 'beta' ? 'Ce logiciel reçoit aussi les versions bêta. Construis-en une version à part (autre identifiant) pour tes testeurs ; sur GitHub, elles sont publiées comme « pré-versions ».' : 'Les versions bêta ne sont proposées qu’aux logiciels construits sur le canal bêta.') : ''}
       ${u.mode !== 'none' ? tog(a, 'updates.checkOnStart', 'Vérifier au démarrage', 'Puis toutes les 6 heures. La mise à jour est téléchargée en arrière-plan, installée à la fermeture, et un message propose de redémarrer.') : ''}`)
       + (u.mode !== 'none' ? card('Bon à savoir', `<ul class="ab-feat"><li>Le module de mise à jour est ajouté au logiciel ; seuls les changements nécessaires sont téléchargés.</li><li>L’installateur doit garder le même identifiant (section Identité) d’une version à l’autre.</li><li>Un logiciel signé (section Signature) vérifie que la mise à jour vient bien de toi.</li></ul>`) : '');
   }
   form_signing(a) {
     const c = this.cert;
-    return `<div class="ab-banner">${ico('info', 18)}<div><b>Pourquoi signer ?</b><p>Sans signature, Windows affiche « Windows a protégé votre ordinateur » au premier lancement d’un installateur téléchargé : il faut cliquer sur « Informations complémentaires », puis « Exécuter quand même ». Un certificat de signature de code (fourni par une autorité comme DigiCert, Sectigo ou Certum, ou Azure Trusted Signing) supprime ou réduit cet avertissement.</p></div></div>`
+    const g = a.signing;
+    const az = this.azure;
+    const pfx = `<div class="ab-pick"><div><b>${c && c.ok ? esc(c.name) : 'Aucun certificat'}</b><small>${c && c.ok ? `Enregistré le ${esc(fmtDate(c.at))}, mot de passe protégé par le trousseau de Windows.` : c && c.error ? esc(c.error) : 'Fichier .pfx ou .p12 et son mot de passe.'}</small></div>
+        <div class="ab-row">${c && c.ok ? `<button class="btn small" data-act="cert-remove">${ico('trash', 13)}<span>Retirer</span></button>` : ''}<button class="btn" data-act="cert-add">${ico('key', 14)}<span>${c && c.ok ? 'Remplacer…' : 'Ajouter un certificat…'}</span></button></div></div>
+      ${hint('Depuis 2023, les autorités ne livrent plus de certificat en fichier .pfx : la clé reste sur une clé USB matérielle ou dans le cloud. Ce mode convient à un certificat déjà exporté ; sinon, choisis la signature Microsoft dans le cloud.')}`;
+    const azure = `
+      ${field('Région du compte de signature', `<select class="input" data-k="signing.azure.endpoint">${AZURE_REGIONS.map(([v, l]) => `<option value="${esc(v)}" ${g.azure.endpoint === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`)}
+      <div class="ab-grid2">${field('Compte de signature', inp(a, 'signing.azure.account', { placeholder: 'mon-compte-signature', mono: true }))}${field('Profil de certificat', inp(a, 'signing.azure.profile', { placeholder: 'profil-public', mono: true }))}</div>
+      ${field('Nom de l’éditeur (sur le certificat)', inp(a, 'signing.azure.publisherName', { placeholder: a.publisher || 'Mon entreprise' }), 'Exactement comme sur le profil de certificat (champ CN) : Windows l’affiche à la place de « Éditeur inconnu ».')}
+      <div class="ab-pick"><div><b>${az && az.ok ? 'Identifiants Azure enregistrés' : 'Identifiants Azure'}</b><small>${az && az.ok ? `Application ${esc(String(az.client || '').slice(0, 8))}…, secret protégé par le trousseau de Windows (${esc(fmtDate(az.at))}).` : az && az.error ? esc(az.error) : 'Locataire (tenant), application (client) et secret d’une inscription d’application qui a le rôle « Trusted Signing Certificate Profile Signer ».'}</small></div>
+        <div class="ab-row">${az && az.ok ? `<button class="btn small" data-act="azure-remove">${ico('trash', 13)}<span>Retirer</span></button>` : ''}<button class="btn" data-act="azure-add">${ico('key', 14)}<span>${az && az.ok ? 'Remplacer…' : 'Ajouter…'}</span></button></div></div>
+      <ol class="dsk-howto"><li>Portail Azure › <b>Trusted Signing</b> (Artifact Signing) : crée un compte de signature (offre de base, environ 10 $ par mois).</li><li>Fais valider ton identité (entreprise ou personne), puis crée un <b>profil de certificat</b> « Public Trust ».</li><li>Microsoft Entra ID › <b>Inscriptions d’applications</b> : crée une application et un secret client, puis donne-lui le rôle « Trusted Signing Certificate Profile Signer » sur le compte.</li><li>Au premier envoi, electron-builder installe le module PowerShell de signature de Microsoft (connexion Internet nécessaire).</li></ol>`;
+    return `<div class="ab-banner">${ico('info', 18)}<div><b>Pourquoi signer ?</b><p>Sans signature, Windows affiche « Windows a protégé votre ordinateur » au premier lancement d’un installateur téléchargé, avec « Éditeur inconnu ». Une signature fait apparaître ton nom et réduit l’avertissement ; depuis 2024, même un certificat EV ne le supprime plus d’office : la réputation SmartScreen se construit avec les téléchargements. La publication sur le Microsoft Store évite l’avertissement (le Store signe le paquet).</p></div></div>`
       + card('Signature du logiciel', `
       ${tog(a, 'signing.enabled', 'Signer l’installateur et l’exécutable', 'Avec horodatage : la signature reste valable après l’expiration du certificat.')}
-      <div class="ab-pick"><div><b>${c && c.ok ? esc(c.name) : 'Aucun certificat'}</b><small>${c && c.ok ? `Enregistré le ${esc(fmtDate(c.at))}, mot de passe protégé par le trousseau de Windows.` : c && c.error ? esc(c.error) : 'Fichier .pfx ou .p12 et son mot de passe.'}</small></div>
-        <div class="ab-row">${c && c.ok ? `<button class="btn small" data-act="cert-remove">${ico('trash', 13)}<span>Retirer</span></button>` : ''}<button class="btn" data-act="cert-add">${ico('key', 14)}<span>${c && c.ok ? 'Remplacer…' : 'Ajouter un certificat…'}</span></button></div></div>
-      ${hint('Le certificat est copié dans le dossier de NEXORA sur ce PC ; il n’est jamais envoyé en ligne ni écrit dans le projet.')}`);
+      ${field('Méthode', seg(a, 'signing.mode', { azure: 'Microsoft, dans le cloud (recommandé)', pfx: 'Certificat (.pfx)' }))}
+      ${g.mode === 'azure' ? azure : pfx}
+      ${hint('Certificats et secrets restent dans le dossier de NEXORA sur ce PC ; ils ne sont jamais envoyés en ligne ni écrits dans le projet.')}`);
+  }
+  async loadAzure() {
+    try { this.azure = await api.invoke('desktop:azure-info', { appId: this.cfg.appId }); } catch (e) { this.azure = { ok: false, error: e.message }; }
+    if (this.section === 'signing' || this.section === 'ready') this.renderForm();
   }
   async loadCert() {
     try { this.cert = await api.invoke('desktop:cert-info', { appId: this.cfg.appId }); } catch (e) { this.cert = { ok: false, error: e.message }; }
-    if (this.section === 'signing') this.renderForm();
+    if (this.section === 'signing' || this.section === 'ready') this.renderForm();
   }
   form_build(a) {
     const s = this.status;
@@ -519,8 +591,199 @@ class DesktopSpace {
       + res + hist
       + card('Espace disque', `<div class="ab-row"><button class="btn" data-act="clear-cache">${ico('trash', 14)}<span>Vider le cache de construction</span></button></div>${hint('Retire les dossiers de travail et les versions de test. Les composants téléchargés sont gardés.')}`);
   }
+  // ------------------------------------------------------------ NEXORA #058 : prêt pour la distribution
+  async loadElectron() {
+    const versions = [...new Set(this.cfg.builds.map((b) => b.electron).filter(Boolean))].slice(0, 5);
+    try { this.elSupport = await api.invoke('desktop:electron-support', { versions }); } catch (e) { this.elSupport = { error: e.message || String(e), versions: {} }; }
+    if (!this.elSupport.versions) this.elSupport.versions = {};
+    if (this.section === 'ready' || this.section === 'distrib') this.renderForm();
+  }
+  async loadGh() {
+    try { this.gh = await api.invoke('desktop:gh-token-info'); } catch (e) { this.gh = { ok: false, error: e.message }; }
+    if (this.section === 'ready' || this.section === 'distrib') this.renderForm();
+  }
+  readyGroups(a) {
+    const it = (state, label, detail = '', sec = '', go = 'Régler') => ({ state, label, detail, sec, go });
+    const last = a.builds[0] || null;
+    const groups = [];
+    const id = [];
+    if (!String(a.name || '').trim()) id.push(it('bad', 'Donne un nom au logiciel', '', 'identity'));
+    if (!VERSION_RE.test(a.version)) id.push(it('bad', 'Version à corriger (forme 1.0.0)', '', 'identity'));
+    if (!APP_ID_RE.test(a.appId)) id.push(it('bad', 'Identifiant à corriger (com.monentreprise.monlogiciel)', '', 'identity'));
+    id.push(a.publisher ? it('ok', `Éditeur : ${esc(a.publisher)}`, '', 'identity', 'Voir') : it('warn', 'Indique l’éditeur', 'Affiché dans l’installateur, les paramètres de Windows et les fiches du Store et de winget.', 'identity'));
+    id.push(a.description ? it('ok', 'Description renseignée', '', 'identity', 'Voir') : it('warn', 'Ajoute une description', 'Demandée par winget et le Microsoft Store.', 'identity'));
+    id.push(a.icon.image ? it('ok', 'Icône personnalisée', '', 'icon', 'Voir') : it('warn', 'Icône en initiales', 'Ajoute ton logo : c’est lui que les utilisateurs repèrent dans la barre des tâches.', 'icon'));
+    if (a.lastPublish && a.lastPublish.version === a.version) id.push(it('warn', `Version ${esc(a.version)} déjà publiée`, 'Augmente le numéro avant de publier de nouveau : sinon les logiciels installés ne voient pas la mise à jour.', 'identity'));
+    groups.push(['Identité', id]);
+    const g = a.signing;
+    const sig = [];
+    if (!g.enabled) sig.push(it('warn', 'Logiciel non signé', 'Windows affiche « Éditeur inconnu » et l’avertissement SmartScreen au premier lancement.', 'signing'));
+    else if (g.mode === 'azure') {
+      const okF = /^https:\/\/[a-z0-9]+\.codesigning\.azure\.net\/?$/.test(g.azure.endpoint) && g.azure.account && g.azure.profile && g.azure.publisherName;
+      sig.push(okF ? it('ok', `Signature Microsoft dans le cloud (${esc(g.azure.publisherName)})`, '', 'signing', 'Voir') : it('bad', 'Signature dans le cloud : compte, profil ou éditeur à indiquer', '', 'signing'));
+      if (this.azure && !this.azure.ok) sig.push(it('bad', 'Identifiants Azure à enregistrer', '', 'signing', 'Ajouter'));
+    } else sig.push(this.cert && this.cert.ok ? it('ok', `Signé avec ${esc(this.cert.name)}`, '', 'signing', 'Voir') : it('bad', 'Signature activée sans certificat', '', 'signing', 'Ajouter'));
+    if (a.install.formats.appx) sig.push(it('info', 'Paquet Microsoft Store', 'Signé par le Store à la publication : pas d’avertissement SmartScreen pour les utilisateurs du Store.', 'distrib', 'Voir'));
+    groups.push(['Signature et confiance', sig]);
+    const sec = [];
+    if (a.security.devtools) sec.push(it('bad', 'Outils de développement (F12) activés', 'Désactive-les pour la version publiée.', 'security'));
+    if (!a.security.fuses) sec.push(it('warn', 'Exécutable non verrouillé', 'Le logiciel pourrait être détourné pour lancer d’autres programmes.', 'security'));
+    if (!a.security.httpsOnly && !(a.source.kind === 'url' && /^http:/i.test(a.source.url))) sec.push(it('warn', 'HTTPS non imposé', '', 'security'));
+    if (!sec.length) sec.push(it('ok', 'Réglages de sécurité recommandés', 'Exécutable verrouillé, HTTPS imposé, outils de développement désactivés.', 'security', 'Voir'));
+    groups.push(['Sécurité', sec]);
+    const up = [];
+    if (a.updates.mode === 'none') up.push(it(a.source.kind === 'url' ? 'info' : 'warn', 'Pas de mise à jour automatique', a.source.kind === 'url' ? 'Le contenu du site se met à jour seul ; le moteur du logiciel, seulement par réinstallation.' : 'Les utilisateurs devront réinstaller chaque nouvelle version.', 'updates'));
+    else {
+      up.push(it('ok', a.updates.mode === 'github' ? `Mises à jour par GitHub (${esc(a.updates.owner)}/${esc(a.updates.repo)})` : 'Mises à jour par ton serveur web', a.updates.channel === 'beta' ? 'Canal bêta.' : '', 'updates', 'Voir'));
+      if (a.updates.mode === 'github' && this.gh && !this.gh.ok) up.push(it('warn', 'Jeton GitHub absent', 'Nécessaire pour publier la mise à jour depuis NEXORA (section Distribution).', 'distrib', 'Ajouter'));
+    }
+    if (a.install.formats.portable && !a.install.formats.nsis) up.push(it('warn', 'Version portable seule', 'Elle ne se met pas à jour seule et n’affiche pas les notifications de Windows.', 'install'));
+    groups.push(['Mises à jour', up]);
+    const bd = [];
+    if (!last) bd.push(it('bad', 'Logiciel jamais construit', '', 'build', 'Construire'));
+    else if (last.version !== a.version) bd.push(it('warn', `Version ${esc(a.version)} pas encore construite`, `Dernière construction : ${esc(last.version)}, le ${esc(fmtDate(last.at))}.`, 'build', 'Construire'));
+    else bd.push(it('ok', `Version ${esc(a.version)} construite le ${esc(fmtDate(last.at))}`, (last.files || []).filter((f) => f.kind !== 'update').map((f) => esc(f.name)).join(', '), 'build', 'Voir'));
+    const el = last && last.electron;
+    const sup = el && this.elSupport && this.elSupport.versions ? this.elSupport.versions[el] : null;
+    if (!el) bd.push(it('info', 'Moteur du logiciel : connu après la construction', '', 'build', 'Voir'));
+    else if (!sup) bd.push(it('info', `Electron ${esc(el)}`, this.elSupport && this.elSupport.error ? 'Calendrier de prise en charge indisponible (connexion nécessaire).' : 'Vérification de la prise en charge…', 'distrib', 'Voir'));
+    else if (sup.state === 'ended') bd.push(it('bad', `Electron ${esc(el)} n’est plus suivi`, `Plus de correctifs de sécurité${sup.eol ? ` depuis le ${esc(new Date(sup.eol).toLocaleDateString('fr-FR'))}` : ''} : reconstruis avec la dernière version (${esc(sup.newest || 'récente')}).`, 'distrib', 'Reconstruire'));
+    else if (sup.state === 'soon') bd.push(it('warn', `Electron ${esc(el)} : fin du suivi le ${esc(new Date(sup.eol).toLocaleDateString('fr-FR'))}`, 'Prévois une reconstruction avec une version plus récente.', 'distrib', 'Voir'));
+    else bd.push(it('ok', `Electron ${esc(el)} encore suivi`, sup.eol ? `Correctifs de sécurité jusqu’au ${esc(new Date(sup.eol).toLocaleDateString('fr-FR'))}.` : '', 'distrib', 'Voir'));
+    groups.push(['Construction', bd]);
+    const ds = [];
+    if (a.install.formats.appx && (!/^[A-Za-z0-9.-]{3,50}$/.test(a.store.identityName) || !/^CN=.+/.test(a.store.publisher))) ds.push(it('bad', 'Microsoft Store : identité du paquet à indiquer', '', 'distrib'));
+    ds.push(a.insights.enabled && a.insights.key ? it('ok', 'Statistiques et plantages envoyés à ton compte', '', 'insights', 'Voir') : it('info', 'Statistiques et plantages désactivés', 'Active-les pour suivre les installations et corriger les plantages.', 'insights', 'Activer'));
+    ds.push(it('info', 'Essai sur un Windows neuf', 'Installe le logiciel dans le Bac à sable Windows avant de le diffuser.', 'distrib', 'Essayer'));
+    groups.push(['Distribution', ds]);
+    return groups;
+  }
+  form_ready(a) {
+    const groups = this.readyGroups(a);
+    const all = groups.flatMap(([, g]) => g).filter((i) => i.state !== 'info');
+    const ok = all.filter((i) => i.state === 'ok').length;
+    const bad = all.filter((i) => i.state === 'bad').length;
+    const warn = all.filter((i) => i.state === 'warn').length;
+    const pct = all.length ? Math.round((ok / all.length) * 100) : 0;
+    const v = !bad ? ['ok', 'Prêt à distribuer', warn ? `${warn} point(s) à vérifier, sans blocage.` : 'Tout est en ordre.'] : ['bad', 'Pas encore prêt', `${bad} point(s) à régler avant de distribuer le logiciel.`];
+    const icon = { ok: 'pass', warn: 'warn', bad: 'error', info: 'info' };
+    return `<section class="ab-card"><div class="dskr-head dskr-${v[0]}"><div class="dskr-score"><b>${pct} %</b><small>${ok} sur ${all.length}</small></div><div class="dskr-verdict"><b>${v[1]}</b><span>${v[2]}</span><div class="dskr-meter"><i style="width:${pct}%"></i></div></div><button class="icon-btn small" data-act="ready-refresh" title="Vérifier de nouveau">${ico('refreshCw', 14)}</button></div>
+      ${hint('Ce qui compte pour les utilisateurs et pour Windows avant de diffuser le logiciel. Chaque point mène à la section où le régler.')}</section>`
+      + groups.map(([n, list]) => card(n, `<ul class="dskr-list">${list.map((i) => `<li class="dskr-${i.state}"><span class="dskr-ic">${ico(icon[i.state], 15)}</span><div><b>${i.label}</b>${i.detail ? `<small>${i.detail}</small>` : ''}</div>${i.sec ? `<button class="btn small" data-act="go" data-to="${i.sec}">${esc(i.go)}</button>` : ''}</li>`).join('')}</ul>`)).join('');
+  }
+
+  // ------------------------------------------------------------ NEXORA #058 : distribution
+  publicUrl(a, file) {
+    const n = String(file || '').split(/[\\/]/).pop().replace(/ /g, '.');
+    if (a.updates.mode === 'github' && a.updates.owner && a.updates.repo) return `https://github.com/${a.updates.owner}/${a.updates.repo}/releases/download/v${a.version}/${encodeURIComponent(n)}`;
+    if (a.updates.mode === 'generic' && /^https:/i.test(a.updates.url || '')) return `${a.updates.url.replace(/\/+$/, '')}/${encodeURIComponent(n)}`;
+    return '';
+  }
+  form_distrib(a) {
+    const last = a.builds[0] && a.builds[0].version === a.version ? a.builds[0] : null;
+    const installers = last ? (last.files || []).filter((f) => ['nsis', 'msi', 'portable'].includes(f.kind)) : [];
+    const d = a.distrib;
+    const needBuild = hint(`Construis d’abord la version ${esc(a.version)} (section Construction).`);
+    // 1. Mise à jour
+    let pub;
+    if (a.updates.mode === 'none') pub = `${hint('Choisis d’abord comment le logiciel se met à jour : ton serveur web ou un dépôt GitHub.')}<div class="ab-row"><button class="btn" data-act="go" data-to="updates">${ico('sync', 14)}<span>Mises à jour</span></button></div>`;
+    else {
+      const gh = a.updates.mode === 'github';
+      const tok = this.gh;
+      pub = `
+        <div class="ab-grid2">${field(`Déploiement progressif : ${d.staging} %`, `<input type="range" min="5" max="100" step="5" data-k="distrib.staging" value="${d.staging}">`, d.staging < 100 ? `Proposée d’abord à ${d.staging} % des installations, tirées au hasard ; republie ensuite à 100 %.` : 'Proposée à toutes les installations.')}
+        <div>${tog(a, 'distrib.mandatory', 'Mise à jour obligatoire', 'Pour un correctif de sécurité : pas de « Plus tard », le logiciel redémarre pour l’installer.')}</div></div>
+        ${field('Nouveautés de la version', `<textarea class="input" data-k="distrib.notes" rows="3" placeholder="• Démarrage plus rapide&#10;• Corrections">${esc(d.notes)}</textarea>`, 'Affichées sur GitHub et transmises au logiciel avec la mise à jour.')}
+        ${gh ? `<div class="ab-pick"><div><b>${tok && tok.ok ? `Jeton GitHub ${esc(tok.hint || '')}` : 'Jeton GitHub'}</b><small>${tok && tok.ok ? 'Chiffré par le trousseau de Windows, jamais affiché.' : 'Jeton à accès précis (fine-grained) limité à ce dépôt, autorisation « Contents : Read and write ».'}</small></div><div class="ab-row">${tok && tok.ok ? `<button class="btn small" data-act="gh-remove">${ico('trash', 13)}<span>Retirer</span></button>` : ''}<button class="btn" data-act="gh-add">${ico('key', 14)}<span>${tok && tok.ok ? 'Remplacer…' : 'Ajouter…'}</span></button><button class="btn small" data-external="https://github.com/settings/personal-access-tokens/new">${ico('external', 13)}<span>Créer</span></button></div></div>` : ''}
+        ${last ? `<div class="ab-row"><button class="btn primary" data-act="publish" ${gh && !(tok && tok.ok) ? 'disabled' : ''}>${ico('upload', 14)}<span>${gh ? `Publier la version ${esc(a.version)} sur GitHub` : 'Préparer les fichiers à déposer'}</span></button></div>` : needBuild}
+        ${gh ? '' : hint('NEXORA complète latest.yml (déploiement, obligation, nouveautés) ; dépose ensuite l’installateur, son .blockmap et latest.yml dans le dossier de mise à jour de ton serveur.')}
+        ${a.lastPublish ? hint(`Dernière publication : version ${esc(a.lastPublish.version)}, le ${esc(fmtDate(a.lastPublish.at))}${a.lastPublish.url ? ` · <button class="link-btn" data-external="${esc(a.lastPublish.url)}">voir sur GitHub</button>` : ''}.`) : ''}`;
+    }
+    // 2. Bac à sable
+    const sandbox = installers.length ? `<div class="dsk-files">${installers.map((f) => `<div class="dsk-file">${ico('download', 15)}<span><b>${esc(f.name)}</b><small>${esc(fmtSize(f.size || 0))}</small></span><button class="btn small" data-act="sandbox" data-path="${esc(f.path)}">${ico('play', 12)}<span>Essayer</span></button></div>`).join('')}</div>` : needBuild;
+    // 3. winget
+    const inst = installers.find((f) => f.kind === 'nsis') || installers[0];
+    const auto = inst ? this.publicUrl(a, inst.name) : '';
+    const winget = `
+      ${field('Adresse publique de l’installateur (https)', inp(a, 'distrib.wingetUrl', { placeholder: auto || 'https://monsite.com/telechargements/MonLogiciel-Setup-1.0.0.exe', mono: true }), auto ? `Laisse vide pour utiliser ${esc(auto)}.` : 'winget télécharge l’installateur à cette adresse.')}
+      <div class="ab-grid2">${field('Licence', inp(a, 'distrib.license', { placeholder: 'Propriétaire, Gratuit, MIT…' }))}${field('Identifiant winget', `<input class="input mono" value="${esc(wingetIdOf(a))}" disabled>`)}</div>
+      ${inst ? `<div class="ab-row"><button class="btn" data-act="winget" data-path="${esc(inst.path)}">${ico('file', 14)}<span>Créer les fichiers winget</span></button></div>` : needBuild}
+      ${hint('Trois fichiers YAML, rangés comme dans le dépôt microsoft/winget-pkgs. Pour les proposer : <code>wingetcreate submit &lt;dossier&gt;</code>, ou une demande de fusion sur GitHub. Les clients installent ensuite avec <code>winget install</code>.')}`;
+    // 4. Store
+    const st = a.store;
+    const store = `
+      ${tog(a, 'install.formats.appx', 'Construire le paquet Microsoft Store (MSIX)', 'En plus des autres formats. Le Store signe le paquet : pas de certificat nécessaire, pas d’avertissement SmartScreen.')}
+      ${a.install.formats.appx ? `<div class="ab-grid2">${field('Nom d’identité du paquet', inp(a, 'store.identityName', { placeholder: '12345Entreprise.MonLogiciel', mono: true }))}${field('Éditeur (Publisher)', inp(a, 'store.publisher', { placeholder: 'CN=XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', mono: true }))}</div>${field('Nom affiché de l’éditeur', inp(a, 'store.publisherDisplayName', { placeholder: a.publisher || 'Mon entreprise' }))}` : ''}
+      <ol class="dsk-howto"><li>Espace partenaires Microsoft : inscris-toi comme développeur d’applications (gratuit pour les particuliers selon les conditions actuelles de Microsoft).</li><li>Réserve le nom du logiciel, puis copie les valeurs de <b>Gestion des produits › Identité du produit</b> ci-dessus.</li><li>Construis, puis envoie le fichier .appx dans une nouvelle soumission, avec la fiche (description, captures, âge, confidentialité).</li></ol>
+      <div class="ab-row"><button class="btn small" data-external="https://partner.microsoft.com/dashboard/apps-and-games/overview">${ico('external', 13)}<span>Espace partenaires</span></button></div>`;
+    // 5. macOS et Linux
+    const proj = a.builds[0] && a.builds[0].project;
+    const mac = `
+      ${tog(a, 'install.ci', 'Ajouter la construction automatique pour macOS et Linux', 'Fichier d’automatisation GitHub Actions ajouté au code source du logiciel.')}
+      <ol class="dsk-howto"><li>Construis le logiciel : son code source est rangé dans le dossier « projet ».</li><li>Ouvre ce dossier dans le Dev Lab, puis envoie-le dans un dépôt GitHub (Git › Publier sur GitHub).</li><li>GitHub construit les versions macOS (.dmg) et Linux (.AppImage) à chaque envoi : récupère-les dans l’onglet Actions du dépôt.</li></ol>
+      <div class="ab-row">${proj ? `<button class="btn" data-act="open-devlab" data-path="${esc(proj)}">${ico('code', 14)}<span>Ouvrir le projet dans le Dev Lab</span></button>` : ''}${a.updates.mode === 'github' && a.updates.owner && a.updates.repo ? `<button class="btn small" data-external="https://github.com/${esc(a.updates.owner)}/${esc(a.updates.repo)}/actions">${ico('external', 13)}<span>Actions du dépôt</span></button>` : ''}</div>
+      ${hint('macOS : sans compte Apple Developer (99 $ par an), le .dmg n’est ni signé ni notarisé ; macOS demande alors un clic droit › Ouvrir.')}`;
+    // 6. Electron
+    const el = a.builds[0] && a.builds[0].electron;
+    const sup = el && this.elSupport && this.elSupport.versions ? this.elSupport.versions[el] : null;
+    const newest = this.elSupport && this.elSupport.newest;
+    const eng = `<p class="dsk-summary">${el ? `Dernière construction avec Electron <b>${esc(el)}</b>` : 'Aucune construction pour l’instant'}${newest ? ` · dernière version stable : <b>${esc(newest)}</b>` : ''}</p>
+      ${sup ? hint(sup.state === 'ended' ? `Cette version ne reçoit plus de correctifs de sécurité.` : sup.state === 'soon' ? `Fin du suivi le ${esc(new Date(sup.eol).toLocaleDateString('fr-FR'))}.` : `Version suivie${sup.eol ? ` jusqu’au ${esc(new Date(sup.eol).toLocaleDateString('fr-FR'))}` : ''}.`, sup.state === 'ended' ? 'bad' : '') : this.elSupport && this.elSupport.error ? hint('Calendrier de prise en charge indisponible pour l’instant (connexion nécessaire).') : ''}
+      ${hint('Electron publie une version majeure toutes les 8 semaines et ne corrige les failles que des trois dernières : reconstruis tes logiciels au moins deux fois par an.')}
+      <div class="ab-row"><button class="btn" data-act="rebuild-latest">${ico('refreshCw', 14)}<span>Reconstruire avec la dernière version</span></button></div>`;
+    return card('Publier la mise à jour', pub, a.updates.mode === 'github' ? 'GitHub' : a.updates.mode === 'generic' ? 'serveur web' : '')
+      + card('Essayer sur un Windows neuf', `${hint('Le Bac à sable Windows ouvre un Windows vierge et jetable, y installe le logiciel comme chez un client, puis s’efface à la fermeture (Windows 10 et 11 Professionnel ou Entreprise).')}${sandbox}`)
+      + card('winget, le gestionnaire de paquets de Windows', winget)
+      + card('Microsoft Store', store)
+      + card('macOS et Linux', mac)
+      + card('Moteur du logiciel', eng);
+  }
+
+  // ------------------------------------------------------------ NEXORA #058 : statistiques et plantages
+  insLoad(force = false) {
+    const i = this.cfg.insights;
+    const k = `${i.app}|${i.days}`;
+    if (!i.app || (!force && this.ins && this.ins.k === k) || this.insLoading === k) return;
+    this.insLoading = k;
+    supabase.rpc('app_insights_summary', { p_app: i.app, p_days: Number(i.days) || 30 }).then(({ data, error }) => {
+      this.ins = { k, data: error ? null : data, error: error ? insExplain(error) : null, at: Date.now() };
+    }, (e) => { this.ins = { k, data: null, error: insExplain(e), at: Date.now() }; }).then(() => {
+      this.insLoading = null;
+      if (this.section === 'insights') this.renderForm();
+    });
+  }
+  form_insights(a) {
+    const i = a.insights;
+    const user = cloud.user;
+    const stale = i.key && i.appId && i.appId !== a.appId;
+    let h = card('Statistiques du logiciel', `
+      ${hint('À chaque lancement et à chaque plantage, le logiciel installé envoie à ton compte NEXORA : un identifiant d’installation tiré au hasard, la version du logiciel et de Windows, la langue et, pour un plantage, sa cause. Rien d’autre ; données gardées 180 jours, visibles par toi seul.')}
+      ${user ? '' : `<div class="ab-note">${ico('user', 15)}<span>Connecte-toi à ton compte NEXORA : les statistiques y sont rangées.</span><button class="btn small primary" data-act="ins-login">${ico('user', 13)}<span>Se connecter</span></button></div>`}
+      ${tog(a, 'insights.enabled', 'Envoyer les statistiques et les plantages', 'Pris en compte à la prochaine construction.')}
+      ${i.enabled && (!i.key || stale) ? `<div class="ab-row"><button class="btn small primary" data-act="ins-register" ${user && APP_ID_RE.test(a.appId) ? '' : 'disabled'}>${ico('cloud', 13)}<span>${stale ? 'Inscrire de nouveau (identifiant changé)' : 'Inscrire le logiciel sur mon compte'}</span></button></div>` : ''}
+      ${i.enabled && i.key && !stale ? hint(`Logiciel inscrit : les premières données arrivent après la construction et l’installation.`) : ''}
+      ${i.err ? hint(esc(i.err), 'bad') : ''}`);
+    if (!i.app || !user) return h;
+    const st = this.ins && this.ins.k === `${i.app}|${i.days}` ? this.ins : null;
+    if (!st) this.insLoad();
+    const head = `<div class="ab-row dskr-insh">${seg(a, 'insights.days', { 7: '7 jours', 30: '30 jours', 90: '90 jours' }, '')}<button class="icon-btn small" data-act="ins-refresh" title="Actualiser">${ico('refreshCw', 14)}</button></div>`;
+    if (!st) return h + card('Tableau de bord', `${head}${hint('Lecture des statistiques…')}`);
+    if (st.error) return h + card('Tableau de bord', `${head}${hint(esc(st.error), 'bad')}`);
+    const d = st.data || {};
+    const t = d.totals || {};
+    const free = t.installs ? Math.max(0, 100 - (100 * (t.crashInstalls || 0)) / t.installs) : null;
+    const kpi = (l, v, sub, cls = '') => `<div class="nxi-kpi ${cls}"><small>${l}</small><b>${v}</b><span>${sub}</span></div>`;
+    const n = (x) => Number(x || 0).toLocaleString('fr-FR');
+    h += card('Tableau de bord', `${head}<div class="nxi-kpis">${kpi('Installations actives', n(t.installs), `sur ${d.days || i.days} jours`)}${kpi('Lancements', n(t.launches), t.installs ? `${(t.launches / t.installs).toFixed(1).replace('.', ',')} par installation` : '—')}${kpi('Plantages', n(t.crashes), `${n(t.errors)} autre(s) erreur(s)`, t.crashes ? 'bad' : '')}${kpi('Sans plantage', free == null ? '—' : `${free.toFixed(1).replace('.', ',')} %`, 'des installations', free != null && free < 99 ? 'warn' : '')}</div>
+      ${t.installs ? insChart(d.daily || []) : hint('Aucune donnée sur cette période : construis le logiciel avec l’option ci-dessus, installe-le et ouvre-le.')}`);
+    if (t.installs) h += card('Répartition', `<div class="nxi-tbls">${insTable('Versions du logiciel', d.versions, ['version', 'crashes'])}${insTable('Versions de Windows', d.os, ['os'])}</div>`);
+    const cr = d.crashes || [];
+    h += card('Plantages et erreurs', cr.length ? `<div class="nxi-crashes">${cr.map((c, k) => `<details class="nxi-crashitem"${k === 0 ? ' open' : ''}><summary><span class="nxi-kind ${esc(c.kind)}">${c.kind === 'crash' ? 'Plantage' : 'Erreur'}</span><code>${esc(c.signature || '—')}</code><span class="nxi-meta">${n(c.count)} fois · ${n(c.installs)} installation(s)</span></summary>${c.detail && c.detail.message ? hint(esc(c.detail.message)) : ''}${c.detail && c.detail.stack ? `<pre class="nxi-stack">${esc(c.detail.stack)}</pre>` : ''}</details>`).join('')}</div>` : hint(`Aucun plantage sur cette période.`));
+    return h;
+  }
+
   summary(a) {
-    const fm = FORMATS.filter(([k]) => a.install.formats[k]).map(([, l]) => l.toLowerCase());
+    const fm = FORMATS_ALL.filter(([k]) => a.install.formats[k]).map(([, l]) => l.toLowerCase());
     const ar = [a.install.archs.x64 ? 'Intel/AMD 64 bits' : '', a.install.archs.arm64 ? 'ARM 64 bits' : ''].filter(Boolean).join(' et ');
     const src = a.source.kind === 'url' ? (hostOf(a.source.url) || 'adresse à indiquer') : (a.source.dir ? a.source.dir.split(/[\\/]/).filter(Boolean).pop() : 'dossier à choisir');
     return `<b>${esc(a.name)}</b> ${esc(a.version)} · ${esc(src)} · ${esc(fm.join(', ') || 'installateur')} · ${esc(ar)}${a.signing.enabled ? ' · signé' : ''}`;
@@ -537,56 +800,79 @@ class DesktopSpace {
     const stage = $('.dsk-stage', this.el);
     if (!head || !stage) return;
     const a = this.cfg;
-    const mode = this.st.preview;
-    head.innerHTML = `<div class="seg wide" role="radiogroup">${[['window', 'Fenêtre'], ['installer', 'Installateur'], ['desktop', 'Bureau']].map(([v, l]) => `<button type="button" role="radio" aria-checked="${mode === v}" class="${mode === v ? 'on' : ''}" data-prev="${v}">${l}</button>`).join('')}</div>`;
+    const mode = modeOf(this.st.preview);
+    head.innerHTML = `<div class="seg wide" role="radiogroup">${MODES.map(([v, l, t]) => `<button type="button" role="radio" aria-checked="${mode === v}" class="${mode === v ? 'on' : ''}" data-prev="${v}" title="${esc(t)}">${l}</button>`).join('')}</div>`;
     const dark = a.window.theme === 'dark' || (a.window.theme === 'system' && document.documentElement.dataset.theme === 'dark');
+    const { html, note } = pcHtml(a, mode, { dark, webview: true });
     const name = esc(a.name || 'Mon logiciel');
-    if (mode === 'window') {
-      const w = a.window;
-      const url = a.source.kind === 'url' ? a.source.url : '';
-      const part = typeof globalThis.nxPartition === 'function' ? globalThis.nxPartition() : '';
-      const content = url && /^https?:/i.test(url)
-        ? `<webview class="dsk-wv" src="${esc(url)}" ${part ? `partition="${esc(part)}"` : ''} style="width:${w.width}px;height:${w.height - 32}px"></webview><div class="dsk-wv-empty"><img data-prev-icon alt=""><span>${esc(hostOf(url))}</span><small>Le site s’affiche ici dans l’application NEXORA pour Windows.</small></div>`
-        : `<div class="dsk-wv-empty"><img data-prev-icon alt=""><span>${a.source.kind === 'url' ? 'Indique l’adresse du site pour l’aperçu.' : a.source.dir ? 'app://local/index.html' : 'Choisis le dossier du site.'}</span>${a.source.kind !== 'url' && a.source.dir ? '<small>Utilise « Tester sans installer » après la construction pour essayer le logiciel.</small>' : ''}</div>`;
-      const ink = luminance(w.background) > 0.45 ? '#4a4a55' : '#c9c9d2';
-      stage.innerHTML = `<div class="dsk-win-wrap"><div class="dsk-win ${dark ? 'dark' : ''}" style="--ratio:${w.width}/${w.height};--wbg:${esc(w.background)};--wink:${ink}">
-          <div class="dsk-title"><img data-prev-icon alt=""><span>${w.title === 'fixed' || !url ? name : `${esc(hostOf(url) || name)}`}</span><i class="cap">${capMin}</i><i class="cap">${capMax}</i><i class="cap close">${capClose}</i></div>
-          ${w.menu === 'visible' ? '<div class="dsk-menubar"><span>Fichier</span><span>Édition</span><span>Affichage</span><span>Navigation</span><span>Aide</span></div>' : ''}
-          <div class="dsk-content">${content}</div>
-        </div></div>
-        <p class="dsk-dim">${w.width} × ${w.height} px · minimum ${w.minWidth} × ${w.minHeight}${w.start !== 'normal' ? ` · ${w.start === 'maximized' ? 'démarre agrandie' : 'démarre en plein écran'}` : ''}${w.menu === 'auto' ? ' · menus avec Alt' : ''}</p>`;
-    } else if (mode === 'installer') {
-      const i = a.install;
-      const pages = i.mode === 'oneclick' ? ['Installation automatique', 'Lancement'] : ['Bienvenue', ...(i.license ? ['Licence'] : []), ...(i.scope === 'user' ? ['Pour qui'] : []), ...(i.changeDir ? ['Dossier'] : []), 'Installation', 'Fin'];
-      stage.innerHTML = i.mode === 'oneclick' ? `<div class="dsk-inst one"><div class="dsk-inst-title"><img data-prev-icon alt=""><span>Installation de ${name}</span></div>
-          <div class="dsk-inst-one"><img data-prev-icon alt=""><b>${name}</b><span>En cours d’installation... Veuillez patienter s’il vous plaît.</span><div class="ab-bar"><i style="width:62%"></i></div></div></div>
-          <p class="dsk-dim">Étapes : ${pages.join(' → ')}</p>`
-        : `<div class="dsk-inst"><div class="dsk-inst-title"><img data-prev-icon alt=""><span>Installation de ${name}</span></div>
-          <div class="dsk-inst-body"><canvas class="dsk-sidebar" width="164" height="314"></canvas><div class="dsk-inst-text"><b>Bienvenue dans le programme d’installation de ${name}</b><p>Vous êtes sur le point d’installer ${name} ${esc(a.version)} sur votre ordinateur.</p><p>Cliquez sur Suivant pour continuer.</p></div></div>
-          <div class="dsk-inst-foot"><span>${esc(a.publisher || '')}</span><i>Suivant &gt;</i><i>Annuler</i></div></div>
-          <p class="dsk-dim">Étapes : ${pages.join(' → ')}${i.scope === 'machine' ? ' · droits administrateur demandés' : ' · sans droits administrateur'}</p>`;
-      const cv = $('.dsk-sidebar', stage);
-      if (cv) sidebarCanvas(a).then((c) => cv.getContext('2d').drawImage(c, 0, 0)).catch(() => {});
-    } else {
-      stage.innerHTML = `<div class="dsk-desk ${dark ? 'dark' : ''}">
-          ${a.install.desktop ? `<div class="dsk-shortcut"><img data-prev-icon alt=""><span>${name}</span></div>` : ''}
-          <div class="dsk-start"><div class="dsk-start-search">${ico('search', 12)}<span>${name}</span></div><div class="dsk-start-hit"><img data-prev-icon alt=""><span><b>${name}</b><small>Application</small></span></div></div>
-          <div class="dsk-taskbar"><i class="win">${winLogo}</i><img data-prev-icon alt="" class="on">${a.behavior.tray ? `<span class="tray"><img data-prev-icon alt="">12:30</span>` : '<span class="tray">12:30</span>'}</div>
-        </div>
-        <div class="dsk-apps-row"><img data-prev-icon alt=""><span><b>${name}</b><small>${esc(a.version)}${a.publisher ? ` · ${esc(a.publisher)}` : ''}</small></span><i>Désinstaller</i></div>
-        <p class="dsk-dim">Paramètres → Applications installées : désinstallation propre${a.install.deleteData && a.install.mode === 'oneclick' ? ', données effacées' : ', données gardées'}.</p>`;
-    }
+    stage.innerHTML = `${html}<p class="dsk-dim">${note}</p><button class="btn small dsk-zoom-btn" data-act="zoom">${ico('eye', 13)}<span>Voir en grand</span></button>${mode === 'start' ? `<div class="dsk-apps-row"><img data-prev-icon alt=""><span><b>${name}</b><small>${esc(a.version)}${a.publisher ? ` · ${esc(a.publisher)}` : ''} · Paramètres › Applications installées</small></span><i>Désinstaller</i></div>` : ''}`;
+    const cv = $('.dsk-sidebar', stage);
+    if (cv) sidebarCanvas(a).then((c) => cv.getContext('2d').drawImage(c, 0, 0)).catch(() => {});
     this.paintPreviewIcons();
     if (!this.iconUrl) iconDataUrl(a.icon, a.name, 256).then((u) => { this.iconUrl = u; this.paintPreviewIcons(); }).catch(() => {});
     this.layoutPreview();
   }
-  paintPreviewIcons() { if (this.iconUrl) for (const img of this.el.querySelectorAll('[data-prev-icon]')) img.src = this.iconUrl; }
+  paintPreviewIcons() { if (this.iconUrl) for (const img of document.querySelectorAll('.dsk [data-prev-icon], .dsk-zoom [data-prev-icon]')) img.src = this.iconUrl; }
+  /** Aperçu en grand : le même PC sur presque tout l'écran, avec les quatre vues (Échap ou la croix pour fermer). */
+  openZoom() {
+    this.closeZoom();
+    const box = document.createElement('div');
+    box.className = 'dsk-zoom';
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-label', 'Aperçu sur un PC Windows 11');
+    document.body.append(box);
+    this.zoomEl = box;
+    box.addEventListener('click', (e) => {
+      if (e.target === box || e.target.closest('[data-zclose]')) { this.closeZoom(); return; }
+      const m = e.target.closest('[data-zprev]');
+      if (m) { this.st.preview = m.dataset.zprev; this.save(); this.renderZoom(); this.renderPreview(); }
+    });
+    this.zoomKey = (e) => { if (e.key === 'Escape') this.closeZoom(); };
+    document.addEventListener('keydown', this.zoomKey);
+    this.zoomRO = new ResizeObserver(() => this.layoutZoom());
+    this.zoomRO.observe(box);
+    this.renderZoom();
+  }
+  renderZoom() {
+    const box = this.zoomEl;
+    if (!box) return;
+    const a = this.cfg;
+    const mode = modeOf(this.st.preview);
+    const dark = a.window.theme === 'dark' || (a.window.theme === 'system' && document.documentElement.dataset.theme === 'dark');
+    const { html, note } = pcHtml(a, mode, { dark, webview: true });
+    box.innerHTML = `<div class="dsk-zoom-box"><div class="dsk-zoom-head"><b>${esc(a.name || 'Mon logiciel')} sur un PC Windows 11</b><div class="seg" role="radiogroup">${MODES.map(([v, l, t]) => `<button type="button" role="radio" aria-checked="${mode === v}" class="${mode === v ? 'on' : ''}" data-zprev="${v}" title="${esc(t)}">${l}</button>`).join('')}</div><button class="icon-btn" data-zclose title="Fermer (Échap)" aria-label="Fermer">${ico('close', 16)}</button></div><div class="dsk-zoom-stage">${html}<p class="dsk-dim">${note}</p></div></div>`;
+    const cv = box.querySelector('.dsk-sidebar');
+    if (cv) sidebarCanvas(a).then((c) => cv.getContext('2d').drawImage(c, 0, 0)).catch(() => {});
+    this.paintPreviewIcons();
+    this.layoutZoom();
+  }
+  layoutZoom() {
+    const box = this.zoomEl;
+    if (!box) return;
+    const stage = box.querySelector('.dsk-zoom-stage');
+    const pc = box.querySelector('.dsk-pc');
+    const scr = box.querySelector('.pc-screen');
+    const os = box.querySelector('.pc-os');
+    if (!stage || !pc || !scr || !os) return;
+    pc.style.maxWidth = `${Math.max(320, Math.floor((stage.clientHeight - 90) * 1.6) + 14)}px`;
+    os.style.transform = `scale(${scr.clientWidth / SCREEN.w})`;
+  }
+  closeZoom() {
+    if (this.zoomRO) { this.zoomRO.disconnect(); this.zoomRO = null; }
+    if (this.zoomKey) { document.removeEventListener('keydown', this.zoomKey); this.zoomKey = null; }
+    if (this.zoomEl) { this.zoomEl.remove(); this.zoomEl = null; }
+  }
+  /** Écran de 1536 × 960 mis à l'échelle : la largeur du panneau, sans dépasser sa hauteur. */
   layoutPreview() {
-    const win = $('.dsk-win', this.el);
-    const wv = $('.dsk-wv', this.el);
-    if (!win || !wv) return;
-    const k = win.clientWidth / this.cfg.window.width;
-    wv.style.transform = `scale(${k})`;
+    const stage = $('.dsk-stage', this.el);
+    const pc = $('.dsk-pc', this.el);
+    const scr = $('.pc-screen', this.el);
+    const os = $('.pc-os', this.el);
+    if (!stage || !pc || !scr || !os) return;
+    const extra = [...stage.children].filter((x) => x !== pc).reduce((h, x) => h + x.offsetHeight + 12, 0);
+    const room = stage.clientHeight - 36 - extra - 30;
+    pc.style.maxWidth = `${Math.max(260, Math.floor(room * 1.6) + 14)}px`;
+    os.style.transform = `scale(${scr.clientWidth / SCREEN.w})`;
   }
 
   // ------------------------------------------------------------ barre de construction
@@ -659,7 +945,7 @@ class DesktopSpace {
     if (t.type === 'number' && !Number.isFinite(v)) return;
     this.set(k, v, { quiet: !committed });
     // Réglages qui changent d'autres champs : formulaire redessiné quand la saisie est validée.
-    if (committed && (t.type === 'checkbox' || /^(source\.(url|dir)|appId|version|install\.formats|icon\.padding)/.test(k))) this.renderForm();
+    if (committed && (t.type === 'checkbox' || t.tagName === 'SELECT' || /^(source\.(url|dir)|appId|version|install\.formats|icon\.padding|distrib\.staging|behavior\.shortcut)/.test(k))) this.renderForm();
   }
   set(path, value, { quiet = false } = {}) {
     const a = this.cfg;
@@ -710,11 +996,144 @@ class DesktopSpace {
         case 'reveal': await api.invoke('desktop:open', { file: btn.dataset.path, action: 'reveal' }); break;
         case 'install': await api.invoke('desktop:open', { file: btn.dataset.path, action: 'install' }); toast('Installateur lancé.'); break;
         case 'run-test': await api.invoke('desktop:open', { file: btn.dataset.path, action: 'run' }); toast(`« ${a.name} » est lancé sans installation.`); break;
+        // NEXORA #058
+        case 'go': this.goSection(btn.dataset.to); break;
+        case 'zoom': this.openZoom(); break;
+        case 'ready-refresh': this.elSupport = null; this.gh = null; this.cert = null; this.azure = null; this.renderForm(); break;
+        case 'shortcut-suggest': { const l = (slugWord(a.name)[0] || 'n').toUpperCase(); this.set('behavior.shortcut', `CommandOrControl+Alt+${/[A-Z]/.test(l) ? l : 'N'}`); this.renderForm(); break; }
+        case 'jl-add': this.listAdd('jumpList'); break;
+        case 'jl-del': a.behavior.jumpList.splice(Number(btn.dataset.i), 1); this.set('behavior.jumpList', a.behavior.jumpList); this.renderForm(); break;
+        case 'ft-add': this.listAdd('fileTypes'); break;
+        case 'ft-del': a.behavior.fileTypes.splice(Number(btn.dataset.i), 1); this.set('behavior.fileTypes', a.behavior.fileTypes); this.renderForm(); break;
+        case 'azure-add': this.addAzure(); break;
+        case 'azure-remove': this.azure = await api.invoke('desktop:azure-remove', { appId: a.appId }); this.renderForm(); toast('Identifiants Azure retirés de ce PC.'); break;
+        case 'gh-add': this.addGhToken(); break;
+        case 'gh-remove': this.gh = await api.invoke('desktop:gh-token-remove'); this.renderForm(); toast('Jeton GitHub retiré de ce PC.'); break;
+        case 'publish': await this.publish(); break;
+        case 'sandbox': await api.invoke('desktop:sandbox', { file: btn.dataset.path }); toast('Bac à sable Windows en cours d’ouverture : l’installateur s’y lance tout seul.'); break;
+        case 'winget': await this.winget(btn.dataset.path); break;
+        case 'open-devlab': await this.openInDevLab(btn.dataset.path); break;
+        case 'rebuild-latest': a.install.electron = 'latest'; this.save(); this.elSupport = null; await this.build(); break;
+        case 'ins-login': { const ui = await import('../../dist/chunks/ui-AVQ7QKWX.js'); ui.openAuthSheet(); break; }
+        case 'ins-register': await this.insRegister(); break;
+        case 'ins-refresh': this.ins = null; this.insLoad(true); this.renderForm(); break;
         default: break;
       }
     } catch (err) {
       toast(err.message || String(err), { kind: 'bad' });
     }
+  }
+
+  // ------------------------------------------------------------ NEXORA #058 : actions de distribution
+  listAdd(kind) {
+    const a = this.cfg;
+    const b = a.behavior;
+    if (kind === 'jumpList') {
+      const label = String((this.el.querySelector('[data-jl-label]') || {}).value || '').trim().slice(0, 40);
+      let p = String((this.el.querySelector('[data-jl-path]') || {}).value || '').trim();
+      if (p && !p.startsWith('/')) p = `/${p}`;
+      if (!label || !/^\/[^\s]*$/.test(p)) { toast('Indique un nom et un chemin de page (par exemple /commandes/nouvelle).', { kind: 'bad' }); return; }
+      b.jumpList = [...b.jumpList, { label, path: p.slice(0, 200) }].slice(0, 5);
+      this.set('behavior.jumpList', b.jumpList);
+    } else {
+      const ext = String((this.el.querySelector('[data-ft-ext]') || {}).value || '').trim().toLowerCase().replace(/^\./, '');
+      const name = String((this.el.querySelector('[data-ft-name]') || {}).value || '').trim().slice(0, 40);
+      if (!/^[a-z0-9]{1,12}$/.test(ext)) { toast('Extension invalide : lettres et chiffres, sans point (par exemple devis).', { kind: 'bad' }); return; }
+      if (RESERVED_EXT.includes(ext)) { toast(`.${ext} est réservé à Windows ou à d’autres programmes : choisis une extension propre à ton logiciel.`, { kind: 'bad' }); return; }
+      if (b.fileTypes.some((f) => f.ext === ext)) { toast(`.${ext} est déjà dans la liste.`, { kind: 'bad' }); return; }
+      b.fileTypes = [...b.fileTypes, { ext, name: name || ext.toUpperCase() }].slice(0, 5);
+      this.set('behavior.fileTypes', b.fileTypes);
+    }
+    this.renderForm();
+  }
+  addAzure() {
+    const a = this.cfg;
+    const s = sheet('dsk-azure', sheetHtml({
+      icon: 'key', title: 'Identifiants Azure', sub: 'Inscription d’application qui a le rôle « Trusted Signing Certificate Profile Signer » sur ton compte de signature.',
+      body: `<label class="field"><span>Locataire (Directory / tenant ID)</span><input class="input mono" data-az="tenant" placeholder="00000000-0000-0000-0000-000000000000" spellcheck="false" data-autofocus></label>
+        <label class="field"><span>Application (Application / client ID)</span><input class="input mono" data-az="client" placeholder="00000000-0000-0000-0000-000000000000" spellcheck="false"></label>
+        <label class="field"><span>Secret client</span><input class="input" type="password" data-az="secret" autocomplete="off"></label>
+        <p class="sheet-note">Le secret est protégé par le trousseau de Windows sur ce PC ; il n’est donné qu’à l’outil de construction, jamais affiché ni envoyé ailleurs qu’à Microsoft.</p>`,
+      go: 'Enregistrer', goIcon: 'key',
+    }));
+    const go = async () => {
+      const v = (k) => s.querySelector(`[data-az="${k}"]`).value.trim();
+      try {
+        this.azure = await api.invoke('desktop:azure-save', { appId: a.appId, tenant: v('tenant'), client: v('client'), secret: v('secret') });
+        closeSheet('dsk-azure');
+        a.signing.enabled = true; a.signing.mode = 'azure';
+        this.save(); this.renderForm();
+        toast('Identifiants enregistrés : la prochaine construction sera signée par Microsoft.');
+      } catch (err) { toast(err.message || String(err), { kind: 'bad' }); }
+    };
+    s.onclick = (e) => { if (e.target.closest('[data-nx-go]')) go(); };
+    s.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } };
+  }
+  addGhToken() {
+    const s = sheet('dsk-gh', sheetHtml({
+      icon: 'key', title: 'Jeton GitHub', sub: 'Pour publier les versions de tes logiciels depuis NEXORA.',
+      body: '<label class="field"><span>Jeton (github_pat_… ou ghp_…)</span><input class="input mono" type="password" data-tok data-autofocus autocomplete="off" spellcheck="false"></label><p class="sheet-note">Crée un jeton « fine-grained » limité au dépôt des mises à jour, avec l’autorisation « Contents : Read and write ». Il est chiffré par le trousseau de Windows et ne s’affiche plus.</p>',
+      go: 'Enregistrer', goIcon: 'key',
+    }));
+    const go = async () => {
+      try {
+        this.gh = await api.invoke('desktop:gh-token-save', { token: s.querySelector('[data-tok]').value });
+        closeSheet('dsk-gh');
+        this.renderForm();
+        toast('Jeton GitHub enregistré sur ce PC.');
+      } catch (err) { toast(err.message || String(err), { kind: 'bad' }); }
+    };
+    s.onclick = (e) => { if (e.target.closest('[data-nx-go]')) go(); };
+    s.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } };
+  }
+  async publish() {
+    const a = this.cfg;
+    const last = a.builds[0];
+    if (!last || last.version !== a.version) throw new Error(`Construis d’abord la version ${a.version} (section Construction).`);
+    const files = (last.files || []).filter((f) => ['nsis', 'update', 'msi', 'portable', 'zip'].includes(f.kind)).map((f) => f.path);
+    if (!files.some((f) => /\.yml$/i.test(f))) throw new Error('Cette construction ne contient pas de fichier de mise à jour (latest.yml) : choisis le mode de mise à jour, puis reconstruis.');
+    const d = a.distrib;
+    const t = toast(a.updates.mode === 'github' ? 'Publication sur GitHub…' : 'Préparation des fichiers…', { busy: true, sticky: true });
+    try {
+      const r = await api.invoke('desktop:publish', {
+        mode: a.updates.mode, owner: a.updates.owner, repo: a.updates.repo, version: a.version, files, notes: d.notes, staging: d.staging, mandatory: d.mandatory, beta: a.updates.channel === 'beta',
+      });
+      a.lastPublish = { version: a.version, at: Date.now(), url: r.url || '', dir: r.dir || '', mode: a.updates.mode };
+      this.save();
+      this.renderForm();
+      if (r.url) toast(`Version ${a.version} publiée${d.staging < 100 ? ` pour ${d.staging} % des installations` : ''}.`, { action: 'Voir', onAction: () => api.invoke('shell:external', r.url) });
+      else toast('Fichiers prêts : dépose l’installateur, son .blockmap et latest.yml sur ton serveur.', { action: 'Ouvrir le dossier', onAction: () => api.invoke('desktop:open', { file: r.dir, action: 'folder' }) });
+    } finally { if (t && t.close) t.close(); }
+  }
+  async winget(file) {
+    const a = this.cfg;
+    const name = String(file).split(/[\\/]/).pop();
+    const url = String(a.distrib.wingetUrl || '').trim() || this.publicUrl(a, name);
+    if (!/^https:\/\//i.test(url)) throw new Error('Indique l’adresse https publique de l’installateur (winget le télécharge à cette adresse).');
+    const r = await api.invoke('desktop:winget', {
+      file, url, app: { id: wingetIdOf(a), name: a.name, publisher: a.publisher, version: a.version, description: a.description, homepage: a.homepage, license: a.distrib.license, copyright: a.copyright, scope: a.install.scope },
+    });
+    toast(`Fichiers winget créés (${r.id}).`, { action: 'Ouvrir le dossier', onAction: () => api.invoke('desktop:open', { file: r.dir, action: 'folder' }) });
+  }
+  async openInDevLab(dir) {
+    const rail = document.querySelector('#modeSeg button[data-mode="dev"]');
+    if (!rail) throw new Error('Dev Lab introuvable.');
+    rail.click();
+    for (let i = 0; i < 40 && !(state.devLab && state.devLab.openFolder); i++) await new Promise((r) => setTimeout(r, 150));
+    if (!state.devLab || !state.devLab.openFolder) throw new Error('Le Dev Lab n’a pas pu s’ouvrir.');
+    await state.devLab.openFolder(dir);
+  }
+  async insRegister() {
+    const a = this.cfg;
+    if (!cloud.user) { const ui = await import('../../dist/chunks/ui-AVQ7QKWX.js'); ui.openAuthSheet(); return; }
+    const { data, error } = await supabase.rpc('app_insights_register', { p_app_id: a.appId, p_name: a.name || '' });
+    if (error) { a.insights.err = insExplain(error); this.save(); this.renderForm(); return; }
+    const row = Array.isArray(data) ? data[0] : data;
+    Object.assign(a.insights, { app: row.id, key: row.ingest_key, appId: a.appId, err: null });
+    this.ins = null;
+    this.save();
+    this.renderForm();
+    toast('Logiciel inscrit : construis-le pour qu’il envoie ses statistiques.');
   }
 
   // ------------------------------------------------------------ logiciels : créer sans conflit
@@ -988,6 +1407,9 @@ class DesktopSpace {
     if (a.source.analysis && a.source.analysis.kind === 'unsupported') return fail('source', a.source.analysis.unsupported.message);
     if (a.updates.mode === 'generic' && !/^https:\/\//i.test(a.updates.url || '')) return fail('updates', 'Indique l’adresse https du dossier de mise à jour.');
     if (a.updates.mode === 'github' && (!a.updates.owner || !a.updates.repo)) return fail('updates', 'Indique le propriétaire et le nom du dépôt distant.');
+    if (a.behavior.shortcut && !ACCEL_RE.test(a.behavior.shortcut)) return fail('behavior', 'Raccourci clavier invalide : par exemple CommandOrControl+Alt+M (ou laisse vide).');
+    if (a.signing.enabled && a.signing.mode === 'azure' && (!a.signing.azure.account || !a.signing.azure.profile || !a.signing.azure.publisherName)) return fail('signing', 'Signature dans le cloud : indique le compte de signature, le profil de certificat et le nom de l’éditeur.');
+    if (a.install.formats.appx && (!/^[A-Za-z0-9.-]{3,50}$/.test(a.store.identityName) || !/^CN=.+/.test(a.store.publisher))) return fail('distrib', 'Paquet Microsoft Store : indique le nom d’identité et l’éditeur (CN=…) copiés depuis l’Espace partenaires.');
     return true;
   }
   payload(a) {
@@ -995,6 +1417,9 @@ class DesktopSpace {
     return {
       name: a.name.trim(), appId: a.appId.trim(), version: a.version.trim(), publisher: a.publisher, email: a.email, description: a.description, homepage: a.homepage, copyright: a.copyright, lang: a.lang,
       source, internal: a.internal, logins: a.logins, window: a.window, behavior: a.behavior, permissions: a.permissions, security: a.security, install: a.install, updates: a.updates, signing: a.signing,
+      store: a.store,
+      // Statistiques : seulement pour un logiciel inscrit sous son identifiant actuel (clé d'envoi, clé publique anon).
+      insights: a.insights.enabled && a.insights.key && a.insights.appId === a.appId ? { url: supabase.supabaseUrl, anon: supabase.supabaseKey, key: a.insights.key } : null,
     };
   }
   async build() {
@@ -1038,6 +1463,10 @@ class DesktopSpace {
   }
 }
 
+function wingetIdOf(a) {
+  const part = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9-]+/g, '').slice(0, 32);
+  return `${part(a.publisher) || part(a.name) || 'Editeur'}.${part(a.name) || 'App'}`;
+}
 function slugName(name) {
   return String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'Logiciel';
 }

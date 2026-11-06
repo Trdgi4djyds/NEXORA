@@ -26,7 +26,7 @@ export function explain(err) {
   return m || 'Erreur inconnue.';
 }
 
-function chart(daily) {
+export function chart(daily) {
   const W = 640; const H = 150; const pad = 22;
   const n = daily.length || 1;
   const max = Math.max(1, ...daily.map((d) => d.installs));
@@ -41,7 +41,7 @@ function chart(daily) {
   </svg>`;
 }
 
-function table(title, rows, cols) {
+export function table(title, rows, cols) {
   if (!rows || !rows.length) return '';
   const max = Math.max(1, ...rows.map((r) => r.installs || 0));
   return `<div class="nxi-tbl"><b class="nxa-sub">${title}</b>${rows.map((r) => `<div class="nxi-row"><span class="nxi-name" title="${esc(r[cols[0]])}">${esc(r[cols[0]])}</span><span class="nxi-meter"><i style="width:${Math.round(((r.installs || 0) / max) * 100)}%"></i></span><span class="nxi-num">${fmtN(r.installs)}</span>${cols[1] ? `<span class="nxi-num${r[cols[1]] ? ' bad' : ''}" title="Plantages">${r[cols[1]] ? `${fmtN(r[cols[1]])} ✕` : '0'}</span>` : ''}</div>`).join('')}</div>`;

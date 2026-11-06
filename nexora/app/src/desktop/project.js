@@ -22,6 +22,10 @@ const DOMAIN_RE = /^(\*\.)?([a-z0-9-]+\.)*[a-z0-9-]+$/;
 const HEX_RE = /^#[0-9a-f]{6}$/i;
 const SCHEME_RE = /^[a-z][a-z0-9+.-]{1,30}$/;
 const GH_RE = /^[A-Za-z0-9_.-]{1,100}$/;
+const ACCEL_RE = /^((CommandOrControl|Ctrl|Alt|Shift|Super)\+){1,3}([A-Z0-9]|F([1-9]|1[0-2]))$/;
+// Extensions qu'un logiciel ne doit jamais s'approprier (programmes, scripts, raccourcis, documents du système).
+const RESERVED_EXT = new Set(['exe', 'com', 'bat', 'cmd', 'msi', 'msix', 'appx', 'ps1', 'vbs', 'js', 'jse', 'wsf', 'lnk', 'url', 'scr', 'dll', 'sys', 'reg', 'html', 'htm', 'zip']);
+const AZURE_RE = /^https:\/\/[a-z0-9]+\.codesigning\.azure\.net\/?$/;
 const SPELL = ['fr', 'en-US', 'en-GB', 'de', 'es', 'it', 'pt-BR', 'pt-PT', 'nl', 'pl', 'ar', 'tr', 'ru', 'uk', 'ja', 'zh-CN'];
 
 const pick = (v, allowed, def) => (allowed.includes(v) ? v : def);
@@ -103,14 +107,14 @@ function sanitize(raw = {}) {
   const sec = raw.security || {};
   const inst = raw.install || {};
   const formats = {
-    nsis: bool((inst.formats || {}).nsis, true), portable: bool((inst.formats || {}).portable, false), zip: bool((inst.formats || {}).zip, false), msi: bool((inst.formats || {}).msi, false),
+    nsis: bool((inst.formats || {}).nsis, true), portable: bool((inst.formats || {}).portable, false), zip: bool((inst.formats || {}).zip, false), msi: bool((inst.formats || {}).msi, false), appx: bool((inst.formats || {}).appx, false),
   };
   if (!Object.values(formats).some(Boolean)) formats.nsis = true;
   const archs = { x64: bool((inst.archs || {}).x64, true), arm64: bool((inst.archs || {}).arm64, false) };
   if (!archs.x64 && !archs.arm64) archs.x64 = true;
   const up = raw.updates || {};
   const updates = {
-    mode: pick(up.mode, ['none', 'generic', 'github'], 'none'), url: '', owner: '', repo: '', checkOnStart: bool(up.checkOnStart, true),
+    mode: pick(up.mode, ['none', 'generic', 'github'], 'none'), url: '', owner: '', repo: '', checkOnStart: bool(up.checkOnStart, true), channel: pick(up.channel, ['latest', 'beta'], 'latest'),
   };
   if (updates.mode === 'generic') {
     updates.url = webUrl(up.url);
@@ -124,6 +128,37 @@ function sanitize(raw = {}) {
   const httpSource = kind === 'url' && /^http:/i.test(source.url);
   const scheme = text(b.protocol, 31).toLowerCase();
   const perm = (k, def, allowed = ['allow', 'ask', 'deny']) => pick(p[k], allowed, def);
+  // NEXORA #058 : paquet MSIX pour le Microsoft Store (identité réservée dans l'Espace partenaires).
+  const st = raw.store || {};
+  const store = { identityName: text(st.identityName, 50), publisher: text(st.publisher, 300), publisherDisplayName: text(st.publisherDisplayName, 100) };
+  if (formats.appx) {
+    if (!/^[A-Za-z0-9.-]{3,50}$/.test(store.identityName)) throw new Error('Paquet Microsoft Store : indique le nom d’identité du paquet (Espace partenaires › Identité du produit).');
+    if (!/^CN=.+/.test(store.publisher)) throw new Error('Paquet Microsoft Store : indique l’éditeur, de la forme CN=… (Espace partenaires › Identité du produit).');
+    if (!store.publisherDisplayName) store.publisherDisplayName = publisher || name;
+  }
+  // Signature : certificat .pfx enregistré sur le PC, ou signature Microsoft dans le cloud (Azure Trusted Signing).
+  const sg = raw.signing || {};
+  const az = sg.azure || {};
+  const signing = {
+    enabled: bool(sg.enabled, false),
+    mode: pick(sg.mode, ['pfx', 'azure'], 'pfx'),
+    azure: { endpoint: text(az.endpoint, 120).replace(/\/?$/, '/'), account: text(az.account, 64), profile: text(az.profile, 64), publisherName: text(az.publisherName, 200) },
+  };
+  if (signing.enabled && signing.mode === 'azure') {
+    if (!AZURE_RE.test(signing.azure.endpoint)) throw new Error('Signature dans le cloud : choisis la région de ton compte de signature (adresse https://….codesigning.azure.net/).');
+    if (!/^[A-Za-z0-9-]{3,64}$/.test(signing.azure.account) || !/^[A-Za-z0-9-]{3,64}$/.test(signing.azure.profile)) throw new Error('Signature dans le cloud : indique le compte de signature et le profil de certificat (lettres, chiffres, tirets).');
+    if (!signing.azure.publisherName) throw new Error('Signature dans le cloud : indique le nom de l’éditeur tel qu’il figure sur le certificat.');
+  }
+  const jumpList = (Array.isArray(b.jumpList) ? b.jumpList : []).map((j) => ({ label: text(j && j.label, 40), path: text(j && j.path, 200) }))
+    .filter((j) => j.label && /^\/[^\s]*$/.test(j.path)).slice(0, 5);
+  const fileTypes = [];
+  for (const f of Array.isArray(b.fileTypes) ? b.fileTypes : []) {
+    const ext = text(f && f.ext, 12).toLowerCase().replace(/^\./, '');
+    if (/^[a-z0-9]{1,12}$/.test(ext) && !RESERVED_EXT.has(ext) && !fileTypes.some((x) => x.ext === ext)) fileTypes.push({ ext, name: text(f && f.name, 40) || ext.toUpperCase() });
+  }
+  const shortcut = ACCEL_RE.test(text(b.shortcut, 60)) ? text(b.shortcut, 60) : '';
+  const ins = raw.insights || {};
+  const insights = /^https:\/\/[a-z0-9.-]+$/i.test(text(ins.url, 200)) && text(ins.key, 200) && text(ins.anon, 2000) ? { url: text(ins.url, 200), anon: text(ins.anon, 2000), key: text(ins.key, 200) } : null;
   let internal = domains(raw.internal);
   for (const id of Array.isArray(raw.logins) ? raw.logins : []) if (LOGINS[id]) internal = domains([...internal, ...LOGINS[id]]);
   return {
@@ -168,6 +203,10 @@ function sanitize(raw = {}) {
       customUserAgent: text(b.customUserAgent, 400),
       zoom: bool(b.zoom, true),
       protocol: SCHEME_RE.test(scheme) && !['http', 'https', 'file', 'app', 'javascript', 'data', 'mailto', 'tel'].includes(scheme) ? scheme : '',
+      badge: bool(b.badge, false),
+      jumpList,
+      shortcut,
+      fileTypes: fileTypes.slice(0, 5),
     },
     permissions: {
       notifications: perm('notifications', 'allow', ['allow', 'deny']),
@@ -202,14 +241,21 @@ function sanitize(raw = {}) {
       ci: bool(inst.ci, false),
     },
     updates,
-    signing: { enabled: bool((raw.signing || {}).enabled, false) },
+    signing,
+    store,
+    insights,
   };
 }
 
 /** Réglages de construction (electron-builder.json), identiques pour NEXORA et pour une construction à la main. */
 function builderConfig(c, { electronVersion }) {
   const archs = Object.keys(c.install.archs).filter((a) => c.install.archs[a]);
-  const winTargets = ['nsis', 'portable', 'zip', 'msi'].filter((t) => c.install.formats[t]).map((target) => ({ target, arch: target === 'msi' ? ['x64'] : archs }));
+  const winTargets = ['nsis', 'portable', 'zip', 'msi', 'appx'].filter((t) => c.install.formats[t]).map((target) => ({ target, arch: target === 'msi' ? ['x64'] : archs }));
+  const publish = c.updates.mode === 'generic' ? { provider: 'generic', url: c.updates.url }
+    : c.updates.mode === 'github' ? { provider: 'github', owner: c.updates.owner, repo: c.updates.repo, releaseType: c.updates.channel === 'beta' ? 'prerelease' : 'release' } : null;
+  if (publish && c.updates.channel === 'beta') publish.channel = 'beta';
+  const signing = c.signing || { enabled: false };
+  const azure = signing.enabled && signing.mode === 'azure';
   const cfg = {
     $schema: 'https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json',
     appId: c.appId,
@@ -223,15 +269,20 @@ function builderConfig(c, { electronVersion }) {
     npmRebuild: false,
     // Sans service de mise à jour, aucun fichier de publication n'est produit (electron-builder 26 échoue sinon
     // quand il ne trouve pas de dépôt Git).
-    publish: c.updates.mode === 'generic' ? { provider: 'generic', url: c.updates.url }
-      : c.updates.mode === 'github' ? { provider: 'github', owner: c.updates.owner, repo: c.updates.repo, releaseType: 'release' } : null,
+    publish,
     win: {
       target: winTargets,
       icon: 'build/icon.ico',
       requestedExecutionLevel: 'asInvoker',
       // Nom des archives ZIP (les autres formats ont leur propre nom ci-dessous).
       artifactName: `${c.slug}-\${version}-win-\${arch}.\${ext}`,
-      ...(c.signing.enabled ? { signtoolOptions: { rfc3161TimeStampServer: 'http://timestamp.digicert.com' } } : {}),
+      ...(signing.enabled && !azure ? { signtoolOptions: { rfc3161TimeStampServer: 'http://timestamp.digicert.com' } } : {}),
+      // NEXORA #058 : signature Microsoft dans le cloud ; identifiants Azure passés par l'environnement de construction.
+      ...(azure ? {
+        azureSignOptions: {
+          publisherName: signing.azure.publisherName, endpoint: signing.azure.endpoint, codeSigningAccountName: signing.azure.account, certificateProfileName: signing.azure.profile,
+        },
+      } : {}),
     },
     mac: {
       target: ['dmg', 'zip'], category: 'public.app-category.productivity', icon: 'build/icon.png', hardenedRuntime: true,
@@ -276,6 +327,14 @@ function builderConfig(c, { electronVersion }) {
     };
   }
   if (c.behavior.protocol) cfg.protocols = [{ name: c.name, schemes: [c.behavior.protocol] }];
+  if (c.behavior.fileTypes && c.behavior.fileTypes.length) cfg.fileAssociations = c.behavior.fileTypes.map((f) => ({ ext: f.ext, name: f.name, description: `${f.name} (${c.name})`, role: 'Editor' }));
+  if (c.install.formats.appx && c.store) {
+    // Paquet pour le Microsoft Store : non signé ici, le Store le signe à la publication.
+    cfg.appx = {
+      identityName: c.store.identityName, publisher: c.store.publisher, publisherDisplayName: c.store.publisherDisplayName, displayName: c.name,
+      applicationId: (c.slug.replace(/[^A-Za-z0-9]/g, '') || 'App').replace(/^\d/, 'A$&').slice(0, 64), backgroundColor: 'transparent', languages: ['fr-FR', 'en-US'], artifactName: `${c.slug}-\${version}-\${arch}.\${ext}`,
+    };
+  }
   return cfg;
 }
 
@@ -300,7 +359,8 @@ function appConfig(c, { nexoraVersion = '', entry = 'index.html' } = {}) {
     behavior: c.behavior,
     permissions: c.permissions,
     security: { devtools: c.security.devtools },
-    updates: { mode: c.updates.mode, checkOnStart: c.updates.checkOnStart },
+    updates: { mode: c.updates.mode, checkOnStart: c.updates.checkOnStart, channel: c.updates.channel || 'latest' },
+    insights: c.insights || null,
     builtWith: `NEXORA ${nexoraVersion}`.trim(),
   };
 }
@@ -408,6 +468,8 @@ function writeProject(projectDir, c, assets = {}, { electronVersion, nexoraVersi
   writeBytes(path.join(app, 'assets', 'icon.ico'), assets.ico);
   writeBytes(path.join(app, 'assets', 'icon.png'), png256);
   writeBytes(path.join(app, 'pages', 'icon.png'), png256);
+  // NEXORA #058 : pastilles de la barre des tâches (1 à 9 et 9+), dessinées par l'interface.
+  if (c.behavior.badge && assets.badges) for (const [k, bytes] of Object.entries(assets.badges)) if (/^(\d|9plus)$/.test(k)) writeBytes(path.join(app, 'assets', 'badges', `${k}.png`), bytes);
   if (c.install.mode === 'assisted') writeBytes(path.join(projectDir, 'build', 'installerSidebar.bmp'), assets.sidebar);
   if (c.install.license) fs.writeFileSync(path.join(projectDir, 'build', 'license.txt'), licenseText(c.install.license));
   const builder = builderConfig(c, { electronVersion });

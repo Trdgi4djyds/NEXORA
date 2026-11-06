@@ -14,8 +14,9 @@
  *  - journal local (logs/main.log) pour l'assistance.
  */
 const {
-  app, BrowserWindow, Menu, Tray, Notification, dialog, shell, session, nativeTheme, protocol, net, screen, desktopCapturer,
+  app, BrowserWindow, Menu, Tray, Notification, dialog, shell, session, nativeTheme, protocol, net, screen, desktopCapturer, globalShortcut, nativeImage,
 } = require('electron');
+const os = require('node:os');
 const path = require('node:path');
 const fs = require('node:fs');
 const { pathToFileURL } = require('node:url');
@@ -29,12 +30,14 @@ const DEFAULTS = {
   },
   behavior: {
     singleInstance: true, external: 'browser', offline: true, tray: false, closeToTray: false, autostartOption: true, downloads: 'ask', spellcheck: ['fr', 'en-US'], contextMenu: true, userAgent: 'chrome', customUserAgent: '', zoom: true, protocol: '',
+    badge: false, jumpList: [], shortcut: '', fileTypes: [],
   },
   permissions: {
     notifications: 'allow', camera: 'ask', microphone: 'ask', display: 'ask', geolocation: 'ask', clipboard: 'ask', localNetwork: 'deny', midi: 'deny',
   },
   security: { devtools: false },
-  updates: { mode: 'none', checkOnStart: true },
+  updates: { mode: 'none', checkOnStart: true, channel: 'latest' },
+  insights: null,
 };
 function loadConfig() {
   let raw = {};
@@ -81,7 +84,7 @@ const TEXTS = {
     restart: 'Redémarrer', later: 'Plus tard', restartNeeded: 'Le changement s’appliquera au prochain démarrage.', restartNow: 'Redémarrer maintenant',
     downloaded: (f) => `Téléchargement terminé : ${f}`, downloadFailed: (f) => `Le téléchargement a échoué : ${f}`,
     trayKeep: (n) => `${n} reste ouvert dans la zone de notification. Clique sur son icône pour le retrouver.`,
-    updateReady: (v) => `La version ${v} est prête. Redémarrer pour l’installer ?`, updateNone: 'Tu as déjà la dernière version.', updateError: 'Impossible de vérifier les mises à jour pour le moment.',
+    updateReady: (v) => `La version ${v} est prête. Redémarrer pour l’installer ?`, updateMandatory: (v) => `La version ${v} corrige un problème important : le logiciel va redémarrer pour l’installer.`, badge: (n) => `${n} non lu${n > 1 ? 's' : ''}`, updateNone: 'Tu as déjà la dernière version.', updateError: 'Impossible de vérifier les mises à jour pour le moment.',
     builtWith: 'Créé avec NEXORA',
   },
   en: {
@@ -105,7 +108,7 @@ const TEXTS = {
     restart: 'Restart', later: 'Later', restartNeeded: 'The change will apply next time the app starts.', restartNow: 'Restart now',
     downloaded: (f) => `Download complete: ${f}`, downloadFailed: (f) => `Download failed: ${f}`,
     trayKeep: (n) => `${n} keeps running in the notification area. Click its icon to bring it back.`,
-    updateReady: (v) => `Version ${v} is ready. Restart to install it?`, updateNone: 'You already have the latest version.', updateError: 'Updates cannot be checked right now.',
+    updateReady: (v) => `Version ${v} is ready. Restart to install it?`, updateMandatory: (v) => `Version ${v} fixes an important problem: the app will restart to install it.`, badge: (n) => `${n} unread`, updateNone: 'You already have the latest version.', updateError: 'Updates cannot be checked right now.',
     builtWith: 'Made with NEXORA',
   },
 };
@@ -162,6 +165,37 @@ const store = {
     } catch (err) { log('Mémoire locale non enregistrée :', err); }
   },
 };
+
+// ---------------------------------------------------------------- statistiques et plantages (NEXORA #058)
+// Envoyés au compte NEXORA du propriétaire (fonction app_track, clé du logiciel) : identifiant d'installation tiré
+// au hasard, version, Windows, langue et, pour un plantage, sa cause. Rien n'est envoyé hors version installée.
+const INS = CFG.insights && /^https:\/\//.test(CFG.insights.url || '') && CFG.insights.key ? CFG.insights : null;
+const insQueue = [];
+let insTimer = null;
+function installId() {
+  let id = store.get('installId', '');
+  if (!id) { id = require('node:crypto').randomUUID(); store.set('installId', id); }
+  return id;
+}
+function versionCode(v) { const n = String(v || '').split(/[.-]/).map(Number); return (n[0] || 0) * 1000000 + (n[1] || 0) * 1000 + (n[2] || 0); }
+function track(kind, signature = '', detail = null) {
+  if (!INS || !app.isPackaged) return;
+  insQueue.push({
+    kind, at: Date.now(), install: installId(), version: app.getVersion(), version_code: String(versionCode(app.getVersion())), os: `Windows ${os.release()}`, model: `PC ${os.arch()}`, locale: app.isReady() ? app.getLocale() : '', signature: String(signature).slice(0, 300), detail,
+  });
+  clearTimeout(insTimer);
+  insTimer = setTimeout(flushInsights, kind === 'launch' ? 8000 : 500);
+}
+async function flushInsights() {
+  const batch = insQueue.splice(0, 50);
+  if (!batch.length || !app.isReady()) return;
+  try {
+    await net.fetch(`${INS.url}/rest/v1/rpc/app_track`, {
+      method: 'POST', headers: { apikey: INS.anon, Authorization: `Bearer ${INS.anon}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_key: INS.key, p_events: batch }),
+    });
+  } catch (err) { log('Statistiques non envoyées :', err.message); }
+}
+process.on('uncaughtException', (err) => track('crash', `main:${String((err && err.message) || err).split('\n')[0]}`, { message: String((err && err.message) || err).slice(0, 500), stack: String((err && err.stack) || '').slice(0, 6000) }));
 
 // ---------------------------------------------------------------- adresses
 const START = new URL(CFG.startUrl);
@@ -244,7 +278,52 @@ function deepLinkTarget(arg) {
   target.hash = u.hash;
   return isInternal(target) ? target.href : null;
 }
-function findDeepLink(argv) { for (const a of argv || []) { const t = deepLinkTarget(a); if (t) return t; } return null; }
+function findDeepLink(argv) {
+  for (const a of argv || []) {
+    const t = deepLinkTarget(a) || taskTarget(a);
+    if (t) return t;
+  }
+  return null;
+}
+// NEXORA #058 : actions de la liste de raccourcis (clic droit sur l'icône de la barre des tâches) : --nx-open=/chemin.
+function taskTarget(arg) {
+  if (typeof arg !== 'string' || !arg.startsWith('--nx-open=')) return null;
+  const p = arg.slice(10);
+  if (!/^\/[^\s]*$/.test(p) || !(CFG.behavior.jumpList || []).some((j) => j.path === p)) return null;
+  const target = new URL(p, CFG.kind === 'local' ? `${LOCAL_ORIGIN}/` : START.href);
+  return isInternal(target) ? target.href : null;
+}
+// Fichier ouvert avec le logiciel (double-clic, « Ouvrir avec ») : transmis à la page par l'événement
+// « nexora-open-file » (nom, type, taille et contenu en data: URL ; jamais le chemin du PC).
+function findFileArg(argv) {
+  const exts = (CFG.behavior.fileTypes || []).map((f) => `.${f.ext}`);
+  if (!exts.length) return null;
+  for (const a of (argv || []).slice(1)) {
+    if (typeof a !== 'string' || a.startsWith('-') || !exts.includes(path.extname(a).toLowerCase())) continue;
+    try { if (fs.statSync(a).isFile()) return a; } catch { /* argument qui n'est pas un fichier */ }
+  }
+  return null;
+}
+function deliverFile(file) {
+  if (!file || !win || win.isDestroyed()) return;
+  let size = 0;
+  try { size = fs.statSync(file).size; } catch { return; }
+  if (size > 25 * 1048576) { box(win, { type: 'warning', message: `${path.basename(file)} : fichier trop gros (25 Mo au plus).`, buttons: [T.ok] }); return; }
+  const send = () => {
+    const detail = { name: path.basename(file), size, type: 'application/octet-stream', dataUrl: `data:application/octet-stream;base64,${fs.readFileSync(file).toString('base64')}` };
+    win.webContents.executeJavaScript(`window.dispatchEvent(new CustomEvent('nexora-open-file', { detail: ${JSON.stringify(detail)} }))`).catch((err) => log('Fichier non transmis :', err.message));
+  };
+  if (win.webContents.isLoading()) win.webContents.once('did-finish-load', send); else send();
+}
+// Pastille de la barre des tâches : nombre au début du titre de la page, « (3) Messages ».
+let badgeShown = -1;
+function setBadge(n) {
+  if (!IS_WIN || !CFG.behavior.badge || !win || win.isDestroyed() || n === badgeShown) return;
+  badgeShown = n;
+  if (n <= 0) { win.setOverlayIcon(null, ''); return; }
+  const img = nativeImage.createFromPath(path.join(__dirname, 'assets', 'badges', n > 9 ? '9plus.png' : `${n}.png`));
+  win.setOverlayIcon(img.isEmpty() ? null : img, T.badge(n));
+}
 
 // ---------------------------------------------------------------- fenêtre principale
 function visibleOnSomeScreen(b) {
@@ -302,6 +381,7 @@ function createWindow({ hidden = false } = {}) {
   win.once('ready-to-show', show);
   // Site lent : la fenêtre (à la couleur de fond choisie) s'affiche sans attendre la première image.
   setTimeout(show, 2500);
+  if (CFG.behavior.badge) win.on('page-title-updated', (_e, title) => { const m = /^\s*\((\d{1,4})\+?\)/.exec(String(title || '')); setBadge(m ? Number(m[1]) : 0); });
   if (w.title === 'fixed') win.on('page-title-updated', (e) => e.preventDefault());
   let saveTimer = null;
   const later = () => { clearTimeout(saveTimer); saveTimer = setTimeout(saveWindowState, 800); };
@@ -412,6 +492,7 @@ function guardContents(contents) {
   contents.on('render-process-gone', (_e, details) => {
     log('Page arrêtée :', details.reason, details.exitCode);
     if (details.reason === 'clean-exit') return;
+    track('crash', `page:${details.reason}`, { message: `Page arrêtée (${details.reason}, code ${details.exitCode})` });
     const now = Date.now();
     crashTimes.push(now);
     while (crashTimes.length && now - crashTimes[0] > 60000) crashTimes.shift();
@@ -764,7 +845,14 @@ function setupUpdates() {
   updater.autoDownload = true;
   updater.autoInstallOnAppQuit = true;
   updater.logger = { info: (m) => log('[maj]', m), warn: (m) => log('[maj]', m), error: (m) => log('[maj]', m), debug: () => {} };
+  // NEXORA #058 : canal bêta (versions de test) et mise à jour obligatoire (nxMandatory dans latest.yml).
+  if (CFG.updates.channel === 'beta') { updater.channel = 'beta'; updater.allowPrerelease = true; }
   updater.on('update-downloaded', async (info) => {
+    if (info && info.nxMandatory) {
+      await box(win, { type: 'warning', buttons: [T.restartNow], defaultId: 0, cancelId: 0, message: T.updateMandatory(info.version) });
+      quitting = true; updater.quitAndInstall();
+      return;
+    }
     const r = await box(win, { type: 'info', buttons: [T.restartNow, T.later], defaultId: 0, cancelId: 1, message: T.updateReady(info.version) });
     if (r.response === 0) { quitting = true; updater.quitAndInstall(); }
   });
@@ -783,6 +871,25 @@ async function checkUpdates(manual) {
   }
 }
 
+// ---------------------------------------------------------------- intégration à Windows (NEXORA #058)
+function setupWindowsIntegration() {
+  const b = CFG.behavior;
+  if (IS_WIN && (b.jumpList || []).length && !PORTABLE) {
+    try {
+      app.setUserTasks(b.jumpList.map((j) => ({
+        program: process.execPath, arguments: `--nx-open=${j.path}`, iconPath: process.execPath, iconIndex: 0, title: j.label, description: j.label,
+      })));
+    } catch (err) { log('Liste de raccourcis :', err.message); }
+  }
+  if (b.shortcut) {
+    // Raccourci global : ouvre le logiciel, ou le réduit s'il est déjà au premier plan.
+    const ok = globalShortcut.register(b.shortcut, () => {
+      if (win && !win.isDestroyed() && win.isVisible() && win.isFocused()) win.minimize(); else showWindow();
+    });
+    if (!ok) log(`Raccourci ${b.shortcut} déjà utilisé par un autre programme.`);
+  }
+}
+
 // ---------------------------------------------------------------- démarrage
 let gpuCrashes = 0;
 if (gotLock) {
@@ -790,6 +897,7 @@ if (gotLock) {
     const link = findDeepLink(argv);
     showWindow();
     if (link && win) win.loadURL(link).catch(() => {});
+    deliverFile(findFileArg(argv));
   });
   app.on('open-url', (e, url) => {
     e.preventDefault();
@@ -801,6 +909,7 @@ if (gotLock) {
   app.on('child-process-gone', (_e, details) => {
     if (details.type !== 'GPU' || details.reason === 'clean-exit') return;
     log('Processus graphique arrêté :', details.reason);
+    track('error', `gpu:${details.reason}`, { message: `Processus graphique arrêté (${details.reason})` });
     gpuCrashes += 1;
     if (gpuCrashes === 2 && !store.get('gpuOff', false)) {
       box(win, { type: 'warning', buttons: [T.restart, T.later], defaultId: 0, cancelId: 1, message: T.gpuAsk }).then((r) => {
@@ -830,9 +939,13 @@ if (gotLock) {
     setupTray();
     pendingDeepLink = pendingDeepLink || findDeepLink(process.argv);
     createWindow({ hidden: process.argv.includes('--hidden') && Boolean(tray) });
+    deliverFile(findFileArg(process.argv));
+    setupWindowsIntegration();
     setupUpdates();
+    track('launch');
     app.on('activate', () => showWindow());
   });
   app.on('before-quit', () => { quitting = true; saveWindowState(); store.flush(); });
+  app.on('will-quit', () => { try { globalShortcut.unregisterAll(); } catch { /* rien à retirer */ } });
   app.on('window-all-closed', () => { if (!IS_MAC) app.quit(); });
 }

@@ -56,6 +56,8 @@ const GATES = {
   'desktop:pick-source': ['desktop_builder', 0],
   'desktop:build': ['desktop_builder', 1],
   'desktop:export': ['desktop_builder', 0],
+  // NEXORA #058 : publication d'une mise à jour (GitHub ou serveur web).
+  'desktop:publish': ['desktop_builder', 0],
   // Dev Lab
   'dev:pick-folder': ['devlab', 0],
   'dev:open': ['devlab', 0],

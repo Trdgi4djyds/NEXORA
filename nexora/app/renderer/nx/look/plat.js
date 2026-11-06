@@ -5,8 +5,9 @@
 // contours et les anneaux de focus ou de sélection (0 0 0 Npx, inset compris), indispensables pour voir l'élément
 // choisi. Il retire aussi les ombres de texte et les drop-shadow(), et filtre de la même façon les variables
 // d'ombre (--card-shadow, --panel-shadow, --nx2-pop…). Les écrans d'appareils simulés de l'App Builder (contenu,
-// règle #004) gardent les leurs. Module autonome : chargé par index.html et par le back office (admin/src/main.tsx).
-const KEEP = /\b(ab-phone|ab-wall|ab-sp-|ab-home|nxh-)/;
+// règle #004) gardent les leurs, comme le PC simulé du Desktop Builder (#058 : dsk-pc, pc-*). Module autonome : chargé
+// par index.html et par le back office (admin/src/main.tsx).
+const KEEP = /\b(ab-phone|ab-wall|ab-sp-|ab-home|nxh-|dsk-pc|pc-)/;
 const VAR_NAME = /(shadow|glow|lift|raise|pop)/i;
 const LEN = /^-?(\d*\.?\d+)(px|r?em|%|vh|vw|ch)?$/;
 

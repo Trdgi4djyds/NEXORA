@@ -243,12 +243,31 @@ export async function sidebarCanvas(app) {
 }
 
 /** Toutes les images nécessaires à la construction. */
+/** NEXORA #058 : pastilles de la barre des tâches (rond rouge de Windows, chiffre blanc), 32 × 32 px. */
+async function badgeBytes(label) {
+  const c = document.createElement('canvas');
+  c.width = 32; c.height = 32;
+  const x = c.getContext('2d');
+  x.fillStyle = '#c42b1c';
+  x.beginPath(); x.arc(16, 16, 15, 0, Math.PI * 2); x.fill();
+  x.fillStyle = '#ffffff';
+  x.font = `600 ${label.length > 1 ? 15 : 19}px "Segoe UI", system-ui, sans-serif`;
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText(label, 16, 17);
+  return canvasBytes(c, 'image/png');
+}
 export async function buildAssets(app) {
   const cv = await iconCanvases(app.icon || {}, app.name, [1024, 256]);
-  return {
+  const out = {
     ico: await icoBytes(app.icon || {}, app.name),
     png: await canvasBytes(cv[1024], 'image/png'),
     png256: await canvasBytes(cv[256], 'image/png'),
     sidebar: bmp24(await sidebarCanvas(app)),
   };
+  if (app.behavior && app.behavior.badge) {
+    out.badges = {};
+    for (let n = 1; n <= 9; n++) out.badges[String(n)] = await badgeBytes(String(n)); // eslint-disable-line no-await-in-loop
+    out.badges['9plus'] = await badgeBytes('9+');
+  }
+  return out;
 }

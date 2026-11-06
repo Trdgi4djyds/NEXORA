@@ -222,6 +222,7 @@ class DesktopBuilder extends EventEmitter {
     delete env.NODE_OPTIONS;
     delete env.CSC_LINK;
     delete env.CSC_KEY_PASSWORD;
+    for (const k of ['AZURE_TENANT_ID', 'AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET']) delete env[k];
     Object.assign(env, extra);
     return env;
   }
@@ -479,6 +480,33 @@ class DesktopBuilder extends EventEmitter {
     return { CSC_LINK: this.certFile(appId), CSC_KEY_PASSWORD: password };
   }
 
+  // ------------------------------------------------------------ signature Microsoft dans le cloud (NEXORA #058)
+  azureMeta(appId) { return path.join(this.certsDir, `${project.packageName(appId)}.azure.json`); }
+  azureInfo(appId) {
+    try { const m = JSON.parse(fs.readFileSync(this.azureMeta(appId), 'utf8')); return { ok: Boolean(m.secret), tenant: m.tenant, client: m.client, at: m.at }; } catch { return { ok: false }; }
+  }
+  async saveAzure(appId, { tenant, client, secret } = {}) {
+    if (!this.crypt) throw new Error('Le trousseau sécurisé de Windows n’est pas disponible : le secret ne peut pas être protégé.');
+    const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!GUID.test(String(tenant || '')) || !GUID.test(String(client || ''))) throw new Error('L’identifiant du locataire (tenant) et celui de l’application (client) ont la forme 00000000-0000-0000-0000-000000000000.');
+    if (String(secret || '').length < 8) throw new Error('Colle le secret client de l’application Azure.');
+    fs.mkdirSync(this.certsDir, { recursive: true });
+    fs.writeFileSync(this.azureMeta(appId), JSON.stringify({ tenant, client, secret: await this.crypt.encrypt(String(secret)), at: new Date().toISOString() }, null, 2), { mode: 0o600 });
+    return this.azureInfo(appId);
+  }
+  removeAzure(appId) { fs.rmSync(this.azureMeta(appId), { force: true }); return { ok: false }; }
+  async azureEnv(appId) {
+    const info = this.azureInfo(appId);
+    if (!info.ok) throw new Error('Signature dans le cloud activée, mais les identifiants Azure ne sont pas enregistrés : ajoute-les dans la section Signature.');
+    const m = JSON.parse(fs.readFileSync(this.azureMeta(appId), 'utf8'));
+    return { AZURE_TENANT_ID: m.tenant, AZURE_CLIENT_ID: m.client, AZURE_CLIENT_SECRET: await this.crypt.decrypt(m.secret) };
+  }
+  /** Variables de signature données à electron-builder seulement : certificat .pfx ou identifiants Azure. */
+  async signEnv(c) {
+    if (!c.signing || !c.signing.enabled) return {};
+    return c.signing.mode === 'azure' ? this.azureEnv(c.appId) : this.certEnv(c.appId);
+  }
+
   // ------------------------------------------------------------ construction complète
   async build({ app: raw, assets = {}, out = '' } = {}) {
     if (this.busy) throw new Error('Une construction est déjà en cours.');
@@ -570,9 +598,9 @@ class DesktopBuilder extends EventEmitter {
       }
     }
     const cli = path.join(this.kitDir, 'node_modules', 'electron-builder', 'cli.js');
-    const env = this.env(c.signing.enabled ? await this.certEnv(c.appId) : {});
+    const env = this.env(await this.signEnv(c));
     const archFlags = archs.map((a) => `--${a}`);
-    const main = ['nsis', 'portable', 'zip'].filter((t) => c.install.formats[t]);
+    const main = ['nsis', 'portable', 'zip', 'appx'].filter((t) => c.install.formats[t]);
     const common = ['--projectDir', projectDir, '--publish', 'never', `-c.directories.output=${dist}`, `-c.electronDist=${this.electronDir}`];
     this.step('package', 'Emballage de l’application', 0.6);
     if (main.length) await this.runBuilder(cli, ['--win', ...main, ...archFlags, ...common], { cwd: projectDir, env, from: 0.6, to: 0.9, title: 'La construction a échoué' });
@@ -593,7 +621,7 @@ class DesktopBuilder extends EventEmitter {
     if (a.kind !== 'electron') throw new Error('Ce dossier n’est pas un projet Electron (aucune dépendance « electron » dans package.json).');
     // Environnement de NEXORA comme base (ses retraits, NODE_OPTIONS ou CSC_LINK, restent faits) ; le certificat et son
     // mot de passe ne vont qu'à electron-builder, pas aux scripts d'installation des dépendances.
-    const certVars = c.signing.enabled ? await this.certEnv(c.appId) : {};
+    const certVars = await this.signEnv(c);
     const env = projectEnv(dir, {}, this.env());
     await this.ensurePm(a.pm);
     this.step('source', 'Installation des dépendances du projet', 0.12);
@@ -658,7 +686,7 @@ class DesktopBuilder extends EventEmitter {
     } else {
       warnings.push('Configuration de construction du projet utilisée : icône, installateur et réglages du projet ; formats et processeurs de la section Installation.');
     }
-    const main = ['nsis', 'portable', 'zip'].filter((t) => c.install.formats[t]);
+    const main = ['nsis', 'portable', 'zip', 'appx'].filter((t) => c.install.formats[t]);
     this.step('package', 'Emballage de l’application', 0.45);
     if (main.length) await this.runBuilder(cli, ['--win', ...main, ...archFlags, ...common], { cwd: dir, env: buildEnv, from: 0.45, to: 0.9, title: 'La construction a échoué' });
     if (c.install.formats.msi) await this.buildMsi(cli, common, { cwd: dir, env: buildEnv, from: 0.9, to: 0.96, warnings, required: !main.length });
