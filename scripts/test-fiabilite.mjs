@@ -777,5 +777,37 @@ ok(
   "politique évaluée une fois par requête",
 )
 
+console.log("\n— Droits des fonctions (A-033, migration 20261106000006, #059)")
+const anonCall = async (sql) => {
+  try {
+    await as(null, () => q(sql))
+    return "ok"
+  } catch (e) {
+    return e.message
+  }
+}
+const PRIV = [
+  `select nx_org_perm('${O.pro}', 'monitors')`,
+  `select nx_monitor_hook_token('${O.pro}')`,
+  `select rum_summary('${O.pro}', 24)`,
+]
+const avant = await anonCall(PRIV[0])
+ok(avant === "ok", "défaut reproduit avant correction : nx_org_perm appelable sans compte (droit PUBLIC)", avant)
+await ex(mig("20261106000006_reajustements.sql"))
+await ex(mig("20261106000006_reajustements.sql"))
+const apres = await Promise.all(PRIV.map(anonCall))
+ok(
+  apres.every((m) => /permission denied/.test(m)),
+  "sans compte : nx_org_perm, nx_monitor_hook_token et rum_summary refusées",
+  apres,
+)
+const signed = await as(U.pro, () => q(`select nx_org_perm('${O.pro}', 'status_page') r`))
+ok(typeof signed[0].r === "boolean", "compte connecté : nx_org_perm toujours appelable", signed[0].r)
+ok(
+  (await anonCall("select nx_status_page('inconnue')")) === "ok" &&
+    (await anonCall("select nx_heartbeat_ping('inconnu')")) === "ok",
+  "fonctions publiques prévues (page de statut, signal de vie) toujours appelables sans compte",
+)
+
 console.log(`\n${count - fails}/${count} essais réussis.`)
 process.exit(fails ? 1 : 0)

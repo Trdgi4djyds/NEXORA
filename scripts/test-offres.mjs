@@ -69,6 +69,7 @@ async function gates() {
   for (const ch of [
     "android:build",
     "dev:open",
+    "tunnel:start",
     "ai:chat",
     "lab:fetch",
     "mon:cloud-session",
@@ -89,8 +90,8 @@ async function gates() {
     }
   }
   ok(
-    Object.keys(plan.GATES).length === 76,
-    "76 canaux contrôlés (41 du #037, 10 du #048, 22 du #052, 2 du #053, 1 du #058)",
+    Object.keys(plan.GATES).length === 63,
+    "63 canaux contrôlés (41 du #037, 10 du #048, 22 du #052, 2 du #053, 1 du #058 ; 13 libérés au #059 : Dev Lab de base et IA)",
     Object.keys(plan.GATES).length,
   )
   let r = await inv("lab:fetch")
@@ -101,12 +102,20 @@ async function gates() {
     "invité : APK refusé, événement plan:blocked",
     r,
   )
+  // NEXORA #059 : assistant IA (clé de l'utilisateur) et Dev Lab de base libres, partage en ligne réservé.
   r = await inv("ai:chat")
+  ok(r === "ran:ai:chat", "invité : assistant IA libre (clé de l’utilisateur)", r)
+  r = await inv("dev:open", "C:/x")
+  ok(r === "ran:dev:open", "invité : Dev Lab de base libre (dossier, éditeur, terminal, Git)", r)
   ok(
-    /compte NEXORA \(gratuit\)/.test(r),
-    "invité : l’assistant IA demande un compte",
-    r,
+    ["dev:pick-folder", "dev:term-open", "git:clone", "git:push", "git:publish", "ai:image"].every((c) => !plan.GATES[c]) &&
+      plan.GATES["tunnel:start"]?.[0] === "devlab" &&
+      plan.GATES["devx:problems"]?.[0] === "devlab" &&
+      plan.GATES["devx:debug-start"]?.[0] === "devlab_pro",
+    "partage en ligne et outils avancés toujours contrôlés",
   )
+  r = await inv("tunnel:start")
+  ok(/Dev Lab avancé/.test(r) && /offre Standard/.test(r), "invité : partage en ligne refusé", r)
   r = await inv("device:devtools", { wcId: 1 })
   ok(
     /Responsive avancé/.test(r),
@@ -134,8 +143,8 @@ async function gates() {
     usage: {},
   }
   server.use = (b) =>
-    b.p_feature === "ai"
-      ? { ok: true, remaining: 29 }
+    b.p_feature === "scan"
+      ? { ok: true, remaining: 2 }
       : {
           ok: false,
           reason: "plan",
@@ -143,10 +152,10 @@ async function gates() {
           message:
             "La génération d’APK fait partie de l’offre Standard. Ton offre actuelle : Gratuit.",
         }
-  r = await inv("ai:chat")
+  r = await inv("sec:scan", { url: "https://a.com" })
   ok(
-    r === "ran:ai:chat" && calls.some((c) => /nx_use_feature/.test(c)),
-    "Gratuit connecté : IA acceptée après consommation du quota sur le serveur",
+    r === "ran:sec:scan" && calls.some((c) => /nx_use_feature/.test(c)),
+    "Gratuit connecté : audit accepté après consommation du quota sur le serveur",
   )
   r = await inv("android:build")
   ok(
@@ -154,10 +163,10 @@ async function gates() {
     "Gratuit connecté : APK refusé par le serveur",
     r,
   )
-  r = await inv("dev:open", "C:/x")
+  r = await inv("tunnel:start")
   ok(
-    /Dev Lab fait partie de l’offre Standard/.test(r),
-    "Gratuit connecté : Dev Lab refusé",
+    /Dev Lab avancé .* fait partie de l’offre Standard/.test(r),
+    "Gratuit connecté : partage en ligne du Dev Lab refusé",
     r,
   )
   server.status = {
@@ -166,11 +175,11 @@ async function gates() {
     plan_name: "Standard",
     perms: { devlab: true, apk: true },
   }
-  r = await inv("dev:open", "C:/x")
+  r = await inv("tunnel:start")
   ok(/Dev Lab/.test(r), "offre gardée 5 minutes avant plan:refresh")
   await inv("plan:refresh")
-  r = await inv("dev:open", "C:/x")
-  ok(r === "ran:dev:open", "Standard : Dev Lab accepté après plan:refresh")
+  r = await inv("tunnel:start")
+  ok(r === "ran:tunnel:start", "Standard : partage en ligne accepté après plan:refresh")
   server.mode = "offline"
   await inv("mon:cloud-session", {
     url: "https://x.supabase.co",
@@ -178,9 +187,9 @@ async function gates() {
     token: `${tok}b`,
     email: "a@b.c",
   })
-  r = await inv("dev:open", "C:/x")
+  r = await inv("tunnel:start")
   ok(
-    r === "ran:dev:open",
+    r === "ran:tunnel:start",
     "hors ligne : fonction réservée selon la dernière offre confirmée (même compte)",
     r,
   )
@@ -231,6 +240,10 @@ async function sql() {
   }
   const MIG = fs.readFileSync(
     path.join(ROOT, "supabase/migrations/20261104000007_offres_limites.sql"),
+    "utf8",
+  )
+  const MIG_REAJ = fs.readFileSync(
+    path.join(ROOT, "supabase/migrations/20261106000006_reajustements.sql"),
     "utf8",
   )
   const MIG_PRIX = fs.readFileSync(
@@ -670,6 +683,43 @@ insert into plans (id, name, price_month_cents, price_year_cents, currency, sort
     "(select id from nx_app_trials where local_id = 'a2' limit 1), 7",
   )
   ok(!!r, "administrateur : essai prolongé")
+
+  // NEXORA #059 : Pro à 24 $ (240 $ par an), assistant IA sans quota, textes des avantages. Les fonctions de la
+  // migration de fiabilité (droits d'A-033) sont absentes ici : la migration doit les ignorer sans erreur.
+  await q(`update plans set limits = limits || '{"ai_requests_month": 777}' where id = 'standard'`)
+  await ex(MIG_REAJ)
+  await ex(MIG_REAJ)
+  const reaj = Object.fromEntries(
+    (
+      await q(
+        "select id, price_month_cents as m, price_year_cents as y, limits->>'ai_requests_month' as ai, features from plans where id in ('free', 'standard', 'pro')",
+      )
+    ).map((p) => [p.id, p]),
+  )
+  ok(
+    `${reaj.pro.m}/${reaj.pro.y}` === "2400/24000" &&
+      `${reaj.standard.m}/${reaj.standard.y}` === "1200/12000",
+    "réajustements : Pro à 24 $ et 240 $, Standard inchangé",
+    `${reaj.pro.m}/${reaj.pro.y}`,
+  )
+  ok(
+    reaj.free.ai === "-1" && reaj.pro.ai === "-1" && reaj.standard.ai === "777",
+    "réajustements : IA sans limite, limite retouchée dans le back office conservée",
+  )
+  const all = [...reaj.free.features, ...reaj.standard.features, ...reaj.pro.features]
+  ok(
+    !all.some((f) => /requêtes IA/.test(f)) &&
+      reaj.free.features[0] === "NEX-DESIGN limité (3 documents)" &&
+      reaj.free.features.filter((f) => f.startsWith("Dev Lab :")).length === 1 &&
+      reaj.free.features.includes("Assistant IA avec ta propre clé, sans limite ; 3 audits de sécurité par jour") &&
+      reaj.standard.features.includes("Desktop Builder : logiciels Windows installables") &&
+      !reaj.pro.features.includes("3 000 requêtes IA par mois") &&
+      reaj.pro.features.includes("Studio 3D avancé"),
+    "réajustements : avantages réécrits dans l’ordre, une seule fois après deux passages",
+    reaj.free.features,
+  )
+  r = await rpc(U.free, "nx_use_feature", "'ai'")
+  ok(r.ok, "réajustements : requête IA acceptée après le quota d’origine (illimité)", r)
   return true
 }
 

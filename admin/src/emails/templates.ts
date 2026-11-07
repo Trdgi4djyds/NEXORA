@@ -414,10 +414,10 @@ export function updateEmail(d: UpdateData): Rendered {
 }
 
 const UPDATE_SAMPLE: UpdateData = {
-  version: "1.1.0",
+  version: "1.2.0",
   title: "",
-  intro: "Cette version apporte des alertes par e-mail plus claires et une supervision encore plus fiable.",
-  highlights: ["Alertes de supervision par e-mail, aux couleurs de NEXORA.", "Factures PDF envoyées par e-mail.", "Démarrage plus rapide sur Windows."],
+  intro: "Cette version rend le Dev Lab gratuit, libère l’assistant IA et prépare tes logiciels Windows à la distribution.",
+  highlights: ["Dev Lab gratuit : dossiers, éditeur, terminal, Git et aperçu.", "Assistant IA sans limite avec ta propre clé.", "Desktop Builder : aperçu sur un vrai PC Windows 11 et publication des mises à jour."],
   url: NEXORA_WEB_URL,
   greeting: "Bonjour Camille,",
 }

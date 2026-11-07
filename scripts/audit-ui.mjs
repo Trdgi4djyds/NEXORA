@@ -14,6 +14,7 @@
 //     attribut data-audit-recouvre) ;
 //   - masqué (#047, fenêtre « Mon compte ») : bloc qui coupe son contenu en hauteur sans le faire défiler.
 // Code de sortie 1 s'il reste un relevé.
+import fs from "node:fs"
 import puppeteer from "puppeteer-core"
 
 const CHROMIUM = process.env.CHROME_PATH || "/usr/bin/chromium"
@@ -45,12 +46,16 @@ const wanted = args.filter(
     !(i > 0 && args[i - 1].startsWith("--") && args[i - 1] !== "--json"),
 )
 const screens = wanted.length ? wanted : Object.keys(SPACES)
+// NEXORA #059 : version marquée comme vue (pas de fenêtre « Nouveautés » pendant l'audit).
+const APP_VERSION = JSON.parse(
+  fs.readFileSync(new globalThis.URL("../nexora/app/package.json", import.meta.url), "utf8"),
+).version
 
 // Compte NEXORA fictif (#047) : session sous « nexora-auth » et réponses Supabase de démonstration.
 async function useDemoAccount(page, dark) {
   const { demoResponse, demoSession } = await import("./admin-demo.mjs")
   await page.evaluateOnNewDocument(
-    (s, d) => {
+    (s, d, v) => {
       if (window !== window.top) return
       if (!localStorage.getItem("nexora-auth"))
         localStorage.setItem("nexora-auth", s)
@@ -60,12 +65,14 @@ async function useDemoAccount(page, dark) {
           JSON.stringify({
             tourDone: true,
             setup: { done: true, chosen: [], pending: [] },
+            nxSeenVersion: v,
             ...(d ? { appTheme: "dark" } : {}),
           }),
         )
     },
     JSON.stringify(demoSession()),
     dark,
+    APP_VERSION,
   )
   await page.setRequestInterception(true)
   page.on("request", (req) => {
@@ -324,7 +331,7 @@ try {
   for (const [w, h] of sizes) {
     const page = await browser.newPage()
     await page.setViewport({ width: w, height: h })
-    await page.evaluateOnNewDocument((d) => {
+    await page.evaluateOnNewDocument((d, v) => {
       if (window !== window.top) return
       if (!localStorage.getItem("nexora-preview:settings"))
         localStorage.setItem(
@@ -332,10 +339,11 @@ try {
           JSON.stringify({
             tourDone: true,
             setup: { done: true, chosen: [], pending: [] },
+            nxSeenVersion: v,
             ...(d ? { appTheme: "dark" } : {}),
           }),
         )
-    }, dark)
+    }, dark, APP_VERSION)
     await page.goto(URL, { waitUntil: "load", timeout: 30000 })
     await new Promise((r) => setTimeout(r, 2500))
     for (const name of screens) {

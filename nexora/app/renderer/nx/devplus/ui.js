@@ -34,7 +34,7 @@ export function has(perm) {
 }
 export function proGate(title, text) {
   return `<div class="nxd-gate">${ico('nxCrown', 22)}<div><b>${esc(title)} fait partie de l’offre Pro</b><p>${esc(text)}</p></div>
-    <div class="nxd-row"><button class="btn small primary" data-nxo-ask="pro">Passer à Pro · 18 $ / mois</button><button class="btn small" data-nxo-offers>Voir les offres</button></div></div>`;
+    <div class="nxd-row"><button class="btn small primary" data-nxo-ask="pro">Passer à Pro · 24 $ / mois</button><button class="btn small" data-nxo-offers>Voir les offres</button></div></div>`;
 }
 
 export const empty = (icon, title, text, action = '') => `<div class="nxd-empty">${ico(icon, 26)}<b>${esc(title)}</b><p>${esc(text)}</p>${action}</div>`;

@@ -50,7 +50,7 @@ function planCard(p, s) {
   const perMonthYear = y ? Math.round(y / 12) : 0;
   const lim = p.limits || {};
   const rec = id === 'standard';
-  const keys = [`${limitText(lim.projects)} projets`, `${limitText(lim.apps)} apps${lim.app_trial_days > 0 ? ` · essai ${lim.app_trial_days} j` : ''}`, `${limitText(lim.ai_requests_month)} IA / mois`];
+  const keys = [`${limitText(lim.projects)} projets`, `${limitText(lim.apps)} apps${lim.app_trial_days > 0 ? ` · essai ${lim.app_trial_days} j` : ''}`, `${limitText(lim.builds_month)} constructions / mois`];
   const cta = cur ? `<span class="nxo-btn current">${ico('check', 13)}Ton offre actuelle</span>`
     : !cloud.user ? `<button type="button" class="nxo-btn ${rec ? 'primary' : 'soft'}" data-nxo-login>Se connecter pour choisir</button>`
     : rank > mine ? `<button type="button" class="nxo-btn primary" data-plan-ask="${esc(p.id)}">Passer à ${esc(p.name)}${ico('nxArrowRight', 14)}</button>`

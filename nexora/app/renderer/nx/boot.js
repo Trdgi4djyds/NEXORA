@@ -48,3 +48,7 @@ load('revue', () => document.body, './designplus/share.js');
 // repères, rendus par lots, packs web et réalité augmentée, Lottie, validation des vidéos, versions, équipe), posé
 // après les fonctions du #011.
 load('studioplus', () => state.studio && state.studio.ready && state.studio.nxInstalled && state.studio, './studioplus/index.js');
+// NEXORA #059 : version de NEXORA (fenêtre « Nouveautés » une fois par version, dépôt des mises à jour déduit de
+// l'adresse de téléchargement publiée), une fois les réglages lus ; démarrage par objectif sur l'Accueil.
+load('version', () => settings.uiV2 && document.body, './version/index.js');
+load('accueil', () => settings.uiV2 && document.getElementById('home'), './accueil/index.js');

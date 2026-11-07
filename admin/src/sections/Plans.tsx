@@ -74,7 +74,7 @@ export function Plans() {
               <div className="kpis">
                 <Kpi label="Espaces Gratuit" object="team" value={fmtNum(Math.max(0, orgs - countOf("standard") - countOf("pro")))} hint="sans abonnement payant" />
                 <Kpi label="Espaces Standard" object="chart" value={fmtNum(countOf("standard"))} hint="12 $ par mois" />
-                <Kpi label="Espaces Pro" object="star" value={fmtNum(countOf("pro"))} hint="18 $ par mois" />
+                <Kpi label="Espaces Pro" object="star" value={fmtNum(countOf("pro"))} hint="24 $ par mois" />
                 <Kpi label="Revenu mensuel" object="coins" value={price(mrr, "USD")} hint="abonnements actifs" />
               </div>
               <div className="po-grid">
@@ -137,7 +137,7 @@ function PlanPanel({ plan, subscribers, editable, onSaved, compact = false }: { 
         <small className="muted">{p.price_year_cents ? `${price(p.price_year_cents, p.currency)} par an` : "Gratuit, pour toujours"} · {subscribers} espace{subscribers > 1 ? "s" : ""} abonné{subscribers > 1 ? "s" : ""}</small>
         <p className="po-desc">{p.description}</p>
         <div className="po-keys">
-          {["projects", "apps", "ai_requests_month", "builds_month"].filter((k) => k in limits && Number(limits[k]) !== 0).map((k) => <span key={k}>{limitText(limits[k])} {(LIMIT_LABEL[k] || k).toLowerCase()}</span>)}
+          {["projects", "apps", "builds_month"].filter((k) => k in limits && Number(limits[k]) !== 0).map((k) => <span key={k}>{limitText(limits[k])} {(LIMIT_LABEL[k] || k).toLowerCase()}</span>)}
           {Number(limits.app_trial_days) > 0 && <span>essai de {limits.app_trial_days} j par application</span>}
         </div>
         {!compact && <ul className="po-feats">{feats.map((f) => <li key={f}><Icon name="check" size={11} />{f}</li>)}</ul>}

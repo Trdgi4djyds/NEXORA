@@ -1,0 +1,516 @@
+/* NEXORA #060 — site vitrine : polices, jetons, base, typographie, boutons.
+   Même langage que l'application : Inter, violet de NEXORA, une couleur par espace (palette de nx/look/flex.css),
+   interface plate (#045) : aucune ombre portée, aucun dégradé décoratif, aucun effet lumineux ; des contours,
+   des aplats et du mouvement. Clair et sombre suivent le thème (blanc en clair, noir en sombre). */
+
+@font-face {
+  font-family: "Inter";
+  src: url("../../../nexora/app/renderer/fonts/inter-latin-opsz-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("../../../nexora/app/renderer/fonts/inter-latin-ext-opsz-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-2: #f6f5fb;
+  --bg-3: #eeedf6;
+  --card: #ffffff;
+  --line: #e7e5f0;
+  --line-2: #d6d3e3;
+  --ink: #13111c;
+  --ink-2: #3c3a4f;
+  --muted: #625f76;
+  --dot: #d8d5e6;
+  --brand: #6450f0;
+  --brand-hover: #5340de;
+  --brand-ink: #5440e2;
+  --brand-soft: #efecff;
+  --brand-line: #d6cfff;
+  --ok: #16884a;
+  --ok-soft: #e1f5e9;
+  --warn: #b45309;
+  --warn-soft: #fdf0dc;
+  --bad: #c62828;
+  --radius-sm: 12px;
+  --radius: 20px;
+  --radius-lg: 28px;
+  --maxw: 1200px;
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono", Menlo, "DejaVu Sans Mono", monospace;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0a0910;
+  --bg-2: #100f17;
+  --bg-3: #17161f;
+  --card: #13121a;
+  --line: #25232f;
+  --line-2: #363342;
+  --ink: #f4f3fa;
+  --ink-2: #d0cee0;
+  --muted: #a09eb3;
+  --dot: #2a2836;
+  --brand: #6450f0;
+  --brand-hover: #7462ff;
+  --brand-ink: #afa4ff;
+  --brand-soft: #1d1938;
+  --brand-line: #3a3368;
+  --ok: #4fd18b;
+  --ok-soft: #13291d;
+  --warn: #f5b04a;
+  --warn-soft: #2e2311;
+  --bad: #ff7a7a;
+}
+
+/* Palette par espace (mêmes valeurs que nx/look/flex.css de l'application) ; --sp-* suit le thème. */
+[data-space="home"] { --u: #7b6cf6; --u-soft: #edeafe; --u-tile: #dfdcfd; --u-ink: #4b3fd6; --u-deep: #5446c9; --u-dsoft: #26253f; --u-dink: #ada4f9; }
+[data-space="preview"] { --u: #3d8bfd; --u-soft: #e4efff; --u-tile: #d0e3ff; --u-ink: #145fd6; --u-deep: #2c62cf; --u-dsoft: #1c2a40; --u-dink: #87b7fe; }
+[data-space="browser"] { --u: #19b5a5; --u-soft: #dff5f2; --u-tile: #c8ede9; --u-ink: #0a6f66; --u-deep: #13786e; --u-dsoft: #163032; --u-dink: #70d1c7; }
+[data-space="dev"] { --u: #ff8a34; --u-soft: #ffefe3; --u-tile: #ffe3ce; --u-ink: #b04708; --u-deep: #b45716; --u-dsoft: #3b2920; --u-dink: #ffb681; }
+[data-space="android"] { --u: #35c46a; --u-soft: #e3f7ea; --u-tile: #cff1db; --u-ink: #137537; --u-deep: #1f7a45; --u-dsoft: #1b3328; --u-dink: #82daa3; }
+[data-space="studio"] { --u: #f05a9b; --u-soft: #fde8f1; --u-tile: #fbd7e7; --u-ink: #c21d68; --u-deep: #b0396f; --u-dsoft: #392230; --u-dink: #f699c1; }
+[data-space="design"] { --u: #9b6bff; --u-soft: #f1eaff; --u-tile: #e7dbff; --u-ink: #6d3fe0; --u-deep: #6b45c8; --u-dsoft: #2b2440; --u-dink: #c1a3ff; }
+[data-space="security"] { --u: #ff6b5b; --u-soft: #ffeae8; --u-tile: #ffdbd8; --u-ink: #bf2a1b; --u-deep: #b93c2f; --u-dsoft: #3b2426; --u-dink: #ffa399; }
+[data-space="desktop"] { --u: #ffbe2e; --u-soft: #fff6e2; --u-tile: #ffefcd; --u-ink: #8f5d00; --u-deep: #8a650f; --u-dsoft: #3b321f; --u-dink: #ffd77d; }
+[data-space] {
+  --sp: var(--u);
+  --sp-bg: var(--u-soft);
+  --sp-tile: var(--u-tile);
+  --sp-ink: var(--u-ink);
+  --sp-solid: var(--u-deep);
+  --sp-line: color-mix(in srgb, var(--u) 30%, var(--line));
+}
+html[data-theme="dark"] [data-space] {
+  --sp-bg: var(--u-dsoft);
+  --sp-tile: color-mix(in srgb, var(--u) 24%, #15141c);
+  --sp-ink: var(--u-dink);
+  --sp-line: color-mix(in srgb, var(--u) 34%, var(--line));
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 88px;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 17px/1.6 var(--font);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+::selection {
+  background: color-mix(in srgb, var(--brand) 26%, transparent);
+}
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+.ico {
+  flex: none;
+}
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Mise en page ---------- */
+.container {
+  width: min(var(--maxw), 100% - 48px);
+  margin-inline: auto;
+}
+.container.wide {
+  width: min(1320px, 100% - 48px);
+}
+.section {
+  padding: clamp(80px, 10vw, 136px) 0;
+  position: relative;
+}
+.section.tight {
+  padding-top: clamp(48px, 6vw, 80px);
+}
+.section.alt {
+  background: var(--bg-2);
+  border-block: 1px solid var(--line);
+}
+.section-head {
+  max-width: 780px;
+  margin: 0 auto clamp(40px, 5vw, 64px);
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+}
+.section-head.left {
+  margin-inline: 0;
+  text-align: left;
+  justify-items: start;
+}
+
+/* ---------- Typographie ---------- */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font: 600 12.5px/1 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sp-ink, var(--brand-ink));
+}
+.eyebrow::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--sp, var(--brand));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--sp, var(--brand)) 18%, transparent);
+}
+.h-display {
+  font-size: clamp(44px, 7vw, 92px);
+  line-height: 0.98;
+  letter-spacing: -0.048em;
+  font-weight: 800;
+}
+.h-1 {
+  font-size: clamp(40px, 5.6vw, 72px);
+  line-height: 1;
+  letter-spacing: -0.044em;
+  font-weight: 800;
+}
+.h-2 {
+  font-size: clamp(32px, 4.3vw, 54px);
+  line-height: 1.04;
+  letter-spacing: -0.038em;
+  font-weight: 780;
+}
+/* Titres en deux tons : la seconde partie passe à la ligne sur les grands écrans. */
+@media (min-width: 720px) {
+  .section-head :is(.h-1, .h-2) > .tone {
+    display: block;
+  }
+}
+.h-3 {
+  font-size: clamp(22px, 2vw, 26px);
+  line-height: 1.18;
+  letter-spacing: -0.022em;
+  font-weight: 720;
+}
+.tone {
+  color: var(--muted);
+}
+.tone-brand {
+  color: var(--brand-ink);
+}
+.tone-space {
+  color: var(--sp-ink);
+}
+.lead {
+  font-size: clamp(17px, 1.4vw, 20px);
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 680px;
+}
+.muted {
+  color: var(--muted);
+}
+.kbd {
+  font: 600 12px/1 var(--mono);
+  padding: 4px 7px;
+  border: 1px solid var(--line-2);
+  border-radius: 7px;
+  color: var(--muted);
+  background: var(--card);
+}
+
+/* ---------- Boutons ---------- */
+.btn {
+  --h: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: var(--h);
+  padding: 0 22px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-weight: 650;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s,
+    transform 0.25s var(--ease);
+}
+.btn:active {
+  transform: translateY(1px) scale(0.985);
+}
+.btn .ico-go {
+  transition: transform 0.3s var(--ease);
+}
+.btn:hover .ico-go {
+  transform: translateX(4px);
+}
+.btn-primary {
+  background: var(--brand);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--brand-hover);
+}
+.btn-ghost {
+  background: var(--card);
+  color: var(--ink);
+  border-color: var(--line-2);
+}
+.btn-ghost:hover {
+  border-color: var(--ink);
+}
+.btn-ink {
+  background: var(--ink);
+  color: var(--bg);
+}
+.btn-ink:hover {
+  background: color-mix(in srgb, var(--ink) 86%, var(--brand));
+}
+.btn-white {
+  background: #fff;
+  color: #1a1530;
+}
+.btn-white:hover {
+  background: #f1efff;
+}
+.btn-outline-white {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.55);
+}
+.btn-outline-white:hover {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+.btn-sm {
+  --h: 38px;
+  padding: 0 16px;
+  font-size: 14.5px;
+  gap: 8px;
+}
+.btn-lg {
+  --h: 56px;
+  padding: 0 28px;
+  font-size: 17px;
+}
+.btn[aria-disabled="true"],
+.btn:disabled {
+  cursor: not-allowed;
+  background: var(--bg-3);
+  color: var(--muted);
+  border-color: var(--line);
+}
+.btn-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.btn-stack.center {
+  justify-content: center;
+}
+.link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 650;
+  color: var(--sp-ink, var(--brand-ink));
+}
+.link-arrow .ico {
+  transition: transform 0.3s var(--ease);
+}
+.link-arrow:hover .ico,
+a:hover > .link-arrow .ico {
+  transform: translateX(4px);
+}
+
+/* Bouton rond fléché de NEXORA (↗ qui tourne au survol, #044). */
+.round-go {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  color: var(--bg);
+  flex: none;
+  transition: transform 0.4s var(--spring);
+}
+a:hover .round-go,
+button:hover .round-go {
+  transform: rotate(45deg);
+}
+
+/* Pastille d'icône d'un espace : pastel et pictogramme de la teinte de l'espace, ou plein. */
+.sp-ic {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--sp-tile);
+  color: var(--sp-ink);
+  flex: none;
+}
+.sp-ic.solid {
+  background: var(--sp-solid);
+  color: #fff;
+}
+.sp-ic.sm {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+.sp-ic.lg {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+}
+
+/* Étiquette d'offre. */
+.plan-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  background: var(--bg-3);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.plan-tag.standard {
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  border-color: var(--brand-line);
+}
+.plan-tag.pro {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+.plan-tag.free {
+  background: var(--ok-soft);
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 25%, transparent);
+}
+
+/* Puces d'information. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  font-size: 14.5px;
+  font-weight: 550;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.chip .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sp, var(--brand));
+}
+
+/* Motif de points de NEXORA (le quadrillage de la toile reste, #045). */
+.dots {
+  background-image: radial-gradient(var(--dot) 1.1px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+
+/* ---------- Apparitions au défilement ---------- */
+.rv {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.8s var(--ease),
+    transform 0.8s var(--ease);
+  transition-delay: var(--d, 0ms);
+}
+.rv.in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rv {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}

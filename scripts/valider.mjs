@@ -208,6 +208,16 @@ function localChecks() {
     r.code === 0 ? "ok" : "echec",
     r.code === 0 ? "aucune erreur" : lastLine(r.out),
   )
+  // NEXORA #060 : site vitrine (site/, React).
+  r = fs.existsSync(tsc)
+    ? run(tsc, ["--noEmit", "-p", "site"])
+    : { code: null, out: "tsc introuvable" }
+  rec(
+    R,
+    "Types du site vitrine (tsc --noEmit)",
+    r.code === 0 ? "ok" : "echec",
+    r.code === 0 ? "aucune erreur" : lastLine(r.out),
+  )
 
   if (!NO_BUILD) {
     r = run("pnpm", ["-s", "build"])
@@ -219,7 +229,13 @@ function localChecks() {
     )
   }
   const dist = path.join(ROOT, "dist")
-  const need = ["index.html", "admin/index.html", "_headers", "nx/boot.js"]
+  const need = [
+    "index.html",
+    "admin/index.html",
+    "site/index.html",
+    "_headers",
+    "nx/boot.js",
+  ]
   const missing = need.filter((f) => !fs.existsSync(path.join(dist, f)))
   rec(
     R,
@@ -300,6 +316,7 @@ function secretChecks() {
   }
   walk("nexora/app/renderer/nx")
   walk("nexora/app/renderer/supervision")
+  walk("site/src")
   files.push(
     "admin/src/auth.tsx",
     "admin/src/emails/templates.ts",
@@ -387,6 +404,16 @@ async function siteChecks() {
     "Back office répond",
     admin.status === 200 ? "ok" : "echec",
     `${admin.status} en ${admin.ms} ms`,
+  )
+  // NEXORA #060 : site vitrine (alerte et non blocage tant qu'il n'a jamais été publié).
+  const vitrine = await http(`${SITE}site/`)
+  rec(
+    R,
+    "Site vitrine répond",
+    vitrine.status === 200 ? "ok" : "alerte",
+    vitrine.status === 200
+      ? `${vitrine.status} en ${vitrine.ms} ms`
+      : `${vitrine.status} : publier la version qui contient dist/site/ (#060)`,
   )
   const missing = await http(`${SITE}introuvable-${Date.now()}`)
   rec(
@@ -729,12 +756,27 @@ async function supabaseChecks() {
       const { lints } = await get("/advisors/security")
       const err = lints.filter((l) => l.level === "ERROR")
       // Fonctions publiques voulues : statistiques des applications (clé), liens de partage, droits d'organisation, incidents (droits contrôlés dans la fonction).
+      // NEXORA #059 (A-033) : supervision publique, chacune protégée par un jeton, un secret ou un lien, avec débit
+      // limité : signal de vie et repère de déploiement (jeton), seconde région (secret partagé avec Cloudflare),
+      // visiteurs réels (clé du site), page de statut et abonnés (jetons de confirmation), liens de validation.
+      // nx_monitor_hook_token, nx_org_perm et rum_summary n'en font pas partie (réservées aux comptes, migration 06).
       const anonOk = new Set([
         "app_track",
         "get_shared",
         "nx_can_read_org",
         "nx_can_edit_org",
         "monitor_incident_action",
+        "nx_heartbeat_ping",
+        "nx_deploy_mark",
+        "nx_probe_jobs",
+        "nx_probe_report",
+        "nx_rum_collect",
+        "nx_status_page",
+        "nx_status_subscribe",
+        "nx_status_confirm",
+        "nx_status_unsubscribe",
+        "nx_review_get",
+        "nx_review_post",
       ])
       const anon = lints.filter(
         (l) =>

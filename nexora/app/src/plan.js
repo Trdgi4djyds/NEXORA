@@ -4,7 +4,8 @@
  * s'exécuter : fonction nx_use_feature de Supabase (migration 20261104000007), qui vérifie l'offre du compte et
  * consomme le quota de façon atomique. La session du compte est celle que l'interface transmet au processus
  * principal (canal mon:cloud-session, #030), gardée en mémoire seulement.
- *   - sans compte connecté : offre Gratuite ; les quotas (IA, audits) demandent un compte (gratuit) ;
+ *   - sans compte connecté : offre Gratuite ; les quotas (audits de sécurité, constructions…) demandent un
+ *     compte (gratuit) ;
  *   - serveurs injoignables : une fonction à quota est refusée ; une fonction réservée suit la dernière offre
  *     confirmée par le serveur (moins de 24 h), sinon elle est refusée ;
  *   - serveurs sans la migration : la fonction réservée suit l'offre lue dans l'abonnement, sans quota compté.
@@ -58,17 +59,8 @@ const GATES = {
   'desktop:export': ['desktop_builder', 0],
   // NEXORA #058 : publication d'une mise à jour (GitHub ou serveur web).
   'desktop:publish': ['desktop_builder', 0],
-  // Dev Lab
-  'dev:pick-folder': ['devlab', 0],
-  'dev:open': ['devlab', 0],
-  'dev:new-project': ['devlab', 0],
-  'dev:term-open': ['devlab', 0],
-  'dev:static-start': ['devlab', 0],
-  'dev:vscode-start': ['devlab', 0],
-  'git:clone': ['devlab', 0],
-  'git:download-zip': ['devlab', 0],
-  'git:push': ['devlab', 0],
-  'git:publish': ['devlab', 0],
+  // Dev Lab. NEXORA #059 : dossiers, éditeur, terminal, Git, GitHub, VS Code et aperçu sont gratuits (canaux
+  // dev:* et git:* libres) ; le partage en ligne (tunnel public) reste réservé à Standard.
   'tunnel:start': ['devlab', 0],
   // NEXORA #052 : outils du Dev Lab. Standard : Problèmes, scripts, variables protégées, Git avancé, demandes de
   // fusion, client d'API, tests, dépendances. Pro : assistant IA du projet, débogueur, mise en ligne, contrôles
@@ -98,10 +90,7 @@ const GATES = {
   // NEXORA #053 : NEX-DESIGN complet (Pro) : import de fichiers Figma.
   'dzx:figma-file': ['design_full', 0],
   'dzx:figma-svg': ['design_full', 0],
-  // Assistant IA (requêtes par mois ; une image compte pour 5, une transcription pour 2)
-  'ai:chat': ['ai', 1],
-  'ai:image': ['ai', 5],
-  'ai:transcribe': ['ai', 2],
+  // NEXORA #059 : l'assistant IA (ai:*) utilise la clé de l'utilisateur ou Ollama sur son PC : plus de quota.
 };
 
 // Fonction → permission de l'offre (même catalogue que nx_feature_rule côté serveur).
@@ -121,7 +110,7 @@ const LABEL = {
   apk: 'La génération d’APK', pwa: 'Le paquet PWA', source_import: 'L’import de dossiers et de code source',
   play_publish: 'La publication sur le Play Store', push: 'Les notifications push', automation: 'Les notifications programmées',
   integrations: 'Les achats intégrés et les outils d’intégration', crawler: 'Le Crawler (aspirateur de site)',
-  audit_advanced: 'Les tests et audits avancés', desktop_builder: 'Le Desktop Builder', devlab: 'Le Dev Lab',
+  audit_advanced: 'Les tests et audits avancés', desktop_builder: 'Le Desktop Builder', devlab: 'Le Dev Lab avancé (partage en ligne, Problèmes, scripts, tests, API, Git avancé)',
   scan: 'L’audit de sécurité', ai: 'L’assistant IA',
   responsive_advanced: 'Le Responsive avancé (enregistrement vidéo et outils de développement des appareils)',
   ci_export: 'L’intégration continue et l’export SARIF', rum: 'La mesure des visiteurs réels', synthetic: 'Les parcours rejoués',

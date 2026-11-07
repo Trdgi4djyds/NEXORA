@@ -1,6 +1,9 @@
-// NEXORA #037 : espaces réservés à une offre (Dev Lab et Desktop Builder : offre Standard). Sans l'offre,
+// NEXORA #037 : espaces réservés à une offre (Desktop Builder : offre Standard). Sans l'offre,
 // l'espace reste visible mais voilé, avec une carte qui dit ce qu'il comprend et comment l'obtenir. Le
 // processus principal refuse aussi leurs canaux (src/plan.js).
+// NEXORA #059 : le Dev Lab n'est plus voilé : dossiers, éditeur, terminal, Git et aperçu sont gratuits ; ses
+// outils avancés gardent leur verrou dans le tiroir (nx/devplus/ui.js) et le partage en ligne (tunnel:start)
+// ouvre la fenêtre « offre requise ».
 // Cartes de fonctions réservées : fonctions avancées du Studio 3D (#011, #013 : offre Pro) et fonctions
 // étendues de NEX-DESIGN (#011 : offre Standard) ; la carte reste visible, voilée et inerte.
 import { ico, esc } from '../core.js';
@@ -8,8 +11,6 @@ import { cloud, can } from './status.js';
 import { FALLBACK } from './catalog.js';
 
 const SPACES = [
-  { id: 'devlab', perm: 'devlab', label: 'Le Dev Lab', object: 'code', tone: 'orange',
-    perks: ['Fichiers, éditeur et terminal de tes projets', 'Versions, dépôt et éditeur externe', 'Prévisualisation en direct et partage', 'Import de projets et de code source'] },
   { id: 'desktop', perm: 'desktop_builder', label: 'Le Desktop Builder', object: 'monitor', tone: 'jaune',
     perks: ['Ton site transformé en logiciel Windows', 'Installateur, version portable, ZIP et MSI', '60 constructions par mois', 'Signature et mises à jour'] },
 ];

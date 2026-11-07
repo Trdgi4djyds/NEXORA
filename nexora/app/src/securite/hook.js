@@ -114,7 +114,7 @@ function toSarif(report) {
   }
   return {
     $schema: 'https://json.schemastore.org/sarif-2.1.0.json', version: '2.1.0',
-    runs: [{ tool: { driver: { name: 'NEXORA Sécurité', informationUri: 'https://nexora.abrahamtogbonon0.workers.dev/', version: '1.1.0', rules: [...rules.values()] } }, results, properties: { score: report.score, target: report.target || report.url || '' } }],
+    runs: [{ tool: { driver: { name: 'NEXORA Sécurité', informationUri: 'https://nexora.abrahamtogbonon0.workers.dev/', version: require('../../package.json').version, rules: [...rules.values()] } }, results, properties: { score: report.score, target: report.target || report.url || '' } }],
   };
 }
 

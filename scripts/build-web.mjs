@@ -3,7 +3,9 @@
 // web de NEXORA (preview/web.js, #025) : compte et synchronisation, appareils affichés par iframe.
 // Le back office web (admin/, React) est assemblé par Vite dans dist/admin/, avec des chemins
 // relatifs : il fonctionne quelle que soit l'adresse de publication (Figma Make, GitHub Pages…).
+// Le site vitrine (site/, React, NEXORA #060) est assemblé de la même façon dans dist/site/.
 // Les arguments passés par Figma Make (par exemple `--mode development`) n'ont pas d'effet ici.
+import crypto from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
 import react from "@vitejs/plugin-react"
@@ -102,6 +104,9 @@ fs.writeFileSync(
     "/admin/*",
     "  X-Frame-Options: DENY",
     "  Content-Security-Policy: frame-ancestors 'none'",
+    // NEXORA #060 : fichiers du site vitrine nommés avec leur empreinte, gardés en cache un an.
+    "/site/assets/*",
+    "  Cache-Control: public, max-age=31536000, immutable",
     "",
   ].join("\n"),
 )
@@ -126,6 +131,53 @@ await build({
   },
 })
 
+// NEXORA #060 : site vitrine, servi sous /site/ (NEXORA web reste à la racine : liens des e-mails, partages).
+await build({
+  configFile: false,
+  mode: "production",
+  root: path.join(ROOT, "site"),
+  base: "./",
+  publicDir: false,
+  logLevel: "warn",
+  plugins: [react()],
+  build: {
+    outDir: path.join(OUT_DIR, "site"),
+    emptyOutDir: true,
+    chunkSizeWarningLimit: 1000,
+  },
+})
+// Politique de sécurité du site vitrine, posée dans la page publiée seulement (Vite en a besoin d'une plus
+// large pendant le développement) : fichiers du site, script de thème autorisé par son empreinte, lectures
+// publiques sur le serveur de NEXORA (offres, lien de téléchargement), aucune ressource tierce.
+const sitePage = path.join(OUT_DIR, "site", "index.html")
+let siteHtml = fs.readFileSync(sitePage, "utf8")
+const inline = [...siteHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(
+  (m) => `'sha256-${crypto.createHash("sha256").update(m[1]).digest("base64")}'`,
+)
+const { projectRef } = statusConfigRef()
+const siteCsp = [
+  "default-src 'self'",
+  `script-src 'self' ${inline.join(" ")}`.trim(),
+  "style-src 'self'",
+  "img-src 'self' data:",
+  "font-src 'self'",
+  `connect-src 'self' https://${projectRef}.supabase.co`,
+  "base-uri 'none'",
+  "form-action 'none'",
+  "object-src 'none'",
+].join("; ")
+if (!siteHtml.includes('<meta charset="UTF-8" />'))
+  throw new Error("site/index.html : balise meta charset introuvable.")
+siteHtml = siteHtml.replace(
+  '<meta charset="UTF-8" />',
+  [
+    '<meta charset="UTF-8" />',
+    `    <meta http-equiv="Content-Security-Policy" content="${siteCsp}" />`,
+    ...(noIndex ? ['    <meta name="robots" content="noindex, nofollow" />'] : []),
+  ].join("\n"),
+)
+fs.writeFileSync(sitePage, siteHtml)
+
 let files = 0
 let bytes = 0
 for (const entry of fs.readdirSync(OUT_DIR, {
@@ -139,3 +191,11 @@ for (const entry of fs.readdirSync(OUT_DIR, {
 console.log(
   `Version web de NEXORA construite dans dist/ : ${files} fichiers, ${(bytes / 1048576).toFixed(1)} Mo.`,
 )
+
+function statusConfigRef() {
+  const { url } = statusConfig()
+  const projectRef = new URL(url).hostname.split(".")[0]
+  if (!/^[a-z0-9]{10,40}$/.test(projectRef))
+    throw new Error("supabase/nexora.json : identifiant du projet invalide.")
+  return { projectRef }
+}

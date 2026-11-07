@@ -28,20 +28,20 @@ export const FALLBACK = {
   free: {
     id: 'free', name: 'Gratuit', description: 'Découvre NEXORA et teste tes premières applications.', price_month_cents: 0, price_year_cents: 0,
     currency: 'USD', sort: 1, badge: '', perms: FREE_PERMS,
-    limits: { projects: 3, designs: 3, members: 1, monitors: 1, storage_mb: 200, apps: 2, app_trial_days: 7, ai_requests_month: 30, scans_per_day: 3, crawls_per_day: 0, builds_month: 0, push_month: 0 },
-    features: ['NEX-DESIGN limité (3 documents)', '2 applications créées depuis une adresse web, essai de 7 jours chacune', 'Responsive Design et prévisualisation multi-écrans', 'Browser : navigation et consultation de sites', 'Tableau de bord', '30 requêtes IA par mois, 3 audits de sécurité par jour'],
+    limits: { projects: 3, designs: 3, members: 1, monitors: 1, storage_mb: 200, apps: 2, app_trial_days: 7, ai_requests_month: -1, scans_per_day: 3, crawls_per_day: 0, builds_month: 0, push_month: 0 },
+    features: ['NEX-DESIGN limité (3 documents)', '2 applications créées depuis une adresse web, essai de 7 jours chacune', 'Responsive Design et prévisualisation multi-écrans', 'Browser : navigation et consultation de sites', 'Tableau de bord', 'Assistant IA avec ta propre clé, sans limite ; 3 audits de sécurité par jour', 'Dev Lab : dossiers, éditeur, terminal, Git et aperçu'],
   },
   standard: {
     id: 'standard', name: 'Standard', description: 'Pour créer, importer et publier tes projets.', price_month_cents: 1200, price_year_cents: 12000,
     currency: 'USD', sort: 2, badge: 'Le plus choisi', perms: STANDARD_PERMS,
-    limits: { projects: 25, designs: 50, members: 3, monitors: 10, storage_mb: 5120, apps: 10, app_trial_days: 0, ai_requests_month: 500, scans_per_day: 30, crawls_per_day: 20, builds_month: 60, push_month: 10000 },
-    features: ['Tout le Gratuit, sans limite d’essai', 'Import de projets web et de code source', 'Génération Android et APK (60 constructions par mois)', 'NEX-DESIGN étendu (50 documents)', 'Responsive avancé, Crawler et audits avancés', 'Dev Lab, Desktop Builder et prévisualisation', '500 requêtes IA par mois', 'Notifications push et in-app, alertes et rappels', 'Gestion de projets (25 projets, 3 membres)', 'Assistance standard'],
+    limits: { projects: 25, designs: 50, members: 3, monitors: 10, storage_mb: 5120, apps: 10, app_trial_days: 0, ai_requests_month: -1, scans_per_day: 30, crawls_per_day: 20, builds_month: 60, push_month: 10000 },
+    features: ['Tout le Gratuit, sans limite d’essai', 'Import de projets web et de code source', 'Génération Android et APK (60 constructions par mois)', 'NEX-DESIGN étendu (50 documents)', 'Responsive avancé, Crawler et audits avancés', 'Desktop Builder : logiciels Windows installables', 'Dev Lab avancé : Problèmes, scripts, tests, API, Git avancé, partage en ligne', 'Notifications push et in-app, alertes et rappels', 'Gestion de projets (25 projets, 3 membres)', 'Assistance standard'],
   },
   pro: {
-    id: 'pro', name: 'Pro', description: 'Toute la puissance de NEXORA, sans compromis.', price_month_cents: 1800, price_year_cents: 18000,
+    id: 'pro', name: 'Pro', description: 'Toute la puissance de NEXORA, sans compromis.', price_month_cents: 2400, price_year_cents: 24000,
     currency: 'USD', sort: 3, badge: 'Tout inclus', perms: PRO_PERMS,
-    limits: { projects: 200, designs: -1, members: 10, monitors: 50, storage_mb: 51200, apps: 50, app_trial_days: 0, ai_requests_month: 3000, scans_per_day: 200, crawls_per_day: 150, builds_month: 400, push_month: 100000 },
-    features: ['Tout Standard', 'NEX-DESIGN complet, documents illimités', 'Création et transformation étendues (400 constructions par mois)', 'Projets multiples (200 projets, 10 membres)', '3 000 requêtes IA par mois', 'Studio 3D avancé', 'Notifications avancées et personnalisées, événements de messagerie', 'Automatisations', 'API, SDK et outils d’intégration', 'Support prioritaire et accès en avant-première aux nouveautés', 'Dev Lab Pro : assistant IA sur tout le projet, débogueur, mise en ligne, contrôles et bases de données'],
+    limits: { projects: 200, designs: -1, members: 10, monitors: 50, storage_mb: 51200, apps: 50, app_trial_days: 0, ai_requests_month: -1, scans_per_day: 200, crawls_per_day: 150, builds_month: 400, push_month: 100000 },
+    features: ['Tout Standard', 'NEX-DESIGN complet, documents illimités', 'Création et transformation étendues (400 constructions par mois)', 'Projets multiples (200 projets, 10 membres)', 'Studio 3D avancé', 'Notifications avancées et personnalisées, événements de messagerie', 'Automatisations', 'API, SDK et outils d’intégration', 'Support prioritaire et accès en avant-première aux nouveautés', 'Dev Lab Pro : assistant IA sur tout le projet, débogueur, mise en ligne, contrôles et bases de données'],
   },
 };
 export const PLAN_ORDER = ['free', 'standard', 'pro'];
@@ -62,7 +62,6 @@ export const METERS = [
   ['monitors', 'Sites surveillés', '', 'org', 'sync'],
   ['storage_mb', 'Stockage', 'Mo', 'org', 'download'],
   ['apps', 'Applications', '', 'user', 'android'],
-  ['ai_requests_month', 'Requêtes IA ce mois-ci', '', 'user', 'sparkle'],
   ['builds_month', 'Constructions ce mois-ci', '', 'user', 'wrench'],
   ['scans_per_day', 'Audits de sécurité aujourd’hui', '', 'user', 'shield'],
   ['crawls_per_day', 'Crawls aujourd’hui', '', 'user', 'globe'],
@@ -98,9 +97,10 @@ export const COMPARE = [
     { label: 'Audits avancés et tests', perm: 'audits_advanced' },
     { label: 'Audits de sécurité par jour', limit: 'scans_per_day' },
     { label: 'Import de projets et de code source', perm: 'source_import' },
-    { label: 'Dev Lab et prévisualisation', perm: 'devlab' },
+    { label: 'Dev Lab : dossiers, éditeur, terminal, Git, GitHub, VS Code et aperçu', text: { free: 'Inclus', standard: 'Inclus', pro: 'Inclus' } },
+    { label: 'Partage en ligne d’un projet (adresse publique temporaire)', perm: 'devlab' },
     { label: 'Desktop Builder', perm: 'desktop_builder' },
-    { label: 'Dev Lab : Problèmes, scripts, variables protégées, Git avancé, API, tests, dépendances', perm: 'devlab' },
+    { label: 'Dev Lab avancé : Problèmes, scripts, variables protégées, Git avancé, API, tests, dépendances', perm: 'devlab' },
     { label: 'Dev Lab Pro : assistant IA du projet, débogueur, mise en ligne, contrôles, bases de données', perm: 'devlab_pro' },
   ]],
   ['Sécurité et supervision', [
@@ -112,7 +112,7 @@ export const COMPARE = [
     { label: 'Visiteurs réels, intégration continue et SARIF', perm: 'api_sdk' },
   ]],
   ['Intelligence artificielle', [
-    { label: 'Requêtes IA par mois', limit: 'ai_requests_month' },
+    { label: 'Assistant IA avec ta propre clé (Claude, GPT, Gemini, Mistral, Ollama…)', text: { free: 'Sans limite', standard: 'Sans limite', pro: 'Sans limite' } },
   ]],
   ['Notifications et automatisations', [
     { label: 'Notifications push et in-app', perm: 'push' },
@@ -143,7 +143,7 @@ export const FEATURES = {
   automation: ['Les notifications programmées et les automatisations', 'automation'], custom_notifications: ['Les notifications personnalisées', 'custom_notifications'],
   integrations: ['Les achats intégrés et les outils d’intégration', 'integrations'], api_sdk: ['L’API et le SDK de statistiques', 'api_sdk'],
   crawler: ['Le Crawler (aspirateur de site)', 'crawler'], audit_advanced: ['Les tests et audits avancés', 'audits_advanced'],
-  devlab: ['Le Dev Lab', 'devlab'], desktop_builder: ['Le Desktop Builder', 'desktop_builder'], studio_advanced: ['Le Studio 3D avancé', 'studio_advanced'],
+  devlab: ['Le Dev Lab avancé', 'devlab'], desktop_builder: ['Le Desktop Builder', 'desktop_builder'], studio_advanced: ['Le Studio 3D avancé', 'studio_advanced'],
   design_extended: ['NEX-DESIGN étendu', 'design_extended'], design_full: ['NEX-DESIGN complet', 'design_full'],
   responsive_advanced: ['Le Responsive avancé', 'responsive_advanced'],
   alerts: ['Les alertes par e-mail', 'alerts'], scan: ['L’audit de sécurité', null], ai: ['L’assistant IA', null],

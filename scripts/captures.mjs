@@ -5,9 +5,11 @@
 // Utilisation : pnpm captures [écrans…] [options]
 //   écrans                accueil, responsive, browser, dev, apps, studio, design, securite, desktop (défaut : les 9),
 //                         statut (page de statut publique, données fictives, #048),
+//                         site (site vitrine, #060 : haut de page puis chaque section marquée data-capture),
 //                         premier-lancement (visite guidée et « Préparer les outils », capturé en premier),
 //                         tout (premier lancement puis les 9 espaces)
 //   --label <nom>         série rangée dans captures/AAAA-MM-JJ-<nom>/ (défaut : « apercu »)
+//   --route <#/chemin>    avec « site » : page du site à capturer (répétable ; défaut : #/, l'accueil du site)
 //   --click <texte>       avec un seul espace : clique ensuite sur le bouton portant ce texte, ou cette
 //                         infobulle pour un bouton à icône seule (répétable)
 //   --theme sombre        thème sombre de NEXORA (défaut : clair)
@@ -44,12 +46,19 @@ const SPACES = [
 const FIRST_RUN = "premier-lancement"
 // NEXORA #048 : page de statut publique (web/status/), avec ses données fictives (?demo=1).
 const STATUS = "statut"
+// NEXORA #060 : site vitrine (site/, servi sous /site/).
+const SITE = "site"
 // Même clé que preview/bridge.js : réglages de NEXORA dans l'aperçu.
 const SETTINGS_KEY = "nexora-preview:settings"
 // Réglages d'un PC neuf dont la visite guidée et la préparation des outils sont déjà passées.
+// NEXORA #059 : version de NEXORA marquée comme vue (pas de fenêtre « Nouveautés ») ; NX_NOUVEAUTES=1 la montre.
+const APP_VERSION = JSON.parse(
+  fs.readFileSync(new URL("../nexora/app/package.json", import.meta.url), "utf8"),
+).version
 const SETUP_DONE = {
   tourDone: true,
   setup: { done: true, chosen: [], pending: [] },
+  ...(process.env.NX_NOUVEAUTES ? {} : { nxSeenVersion: APP_VERSION }),
 }
 const CHROMIUM = process.env.CHROME_PATH || "/usr/bin/chromium"
 // Messages du rendu WebGL logiciel d'un Chromium sans carte graphique : sans rapport avec NEXORA.
@@ -90,6 +99,7 @@ function parseArgs(argv) {
     screens: [],
     label: "apercu",
     clicks: [],
+    routes: [],
     theme: "clair",
     size: [1440, 900],
     upload: false,
@@ -108,6 +118,7 @@ function parseArgs(argv) {
     if (arg === "--") continue
     else if (arg === "--label") opts.label = value()
     else if (arg === "--click") opts.clicks.push(value())
+    else if (arg === "--route") opts.routes.push(value())
     else if (arg === "--scroll") opts.scroll = value()
     else if (arg === "--theme") opts.theme = value()
     else if (arg === "--upload") opts.upload = true
@@ -124,7 +135,7 @@ function parseArgs(argv) {
     } else if (arg.startsWith("--")) throw new Error(`Option inconnue : ${arg}`)
     else opts.screens.push(arg)
   }
-  const known = [...SPACES.map((s) => s.slug), FIRST_RUN, STATUS, "tout"]
+  const known = [...SPACES.map((s) => s.slug), FIRST_RUN, STATUS, SITE, "tout"]
   const unknown = opts.screens.filter((s) => !known.includes(s))
   if (unknown.length)
     throw new Error(
@@ -136,6 +147,9 @@ function parseArgs(argv) {
   const everything = opts.screens.includes("tout")
   opts.firstRun = everything || opts.screens.includes(FIRST_RUN)
   opts.status = opts.screens.includes(STATUS)
+  opts.site = opts.screens.includes(SITE)
+  if (opts.routes.length && !opts.site)
+    throw new Error("--route demande l'écran « site ».")
   // Sans écran précisé : les 9 espaces. Toujours dans l'ordre du rail.
   opts.spaces =
     everything || opts.screens.length === 0
@@ -360,9 +374,12 @@ async function main() {
         }),
     )
 
-    await page.goto(url, { waitUntil: "load", timeout: 30000 })
-    await settle(page, 2500)
     const dir = outputDir(opts.label)
+    // L'interface de NEXORA n'est chargée que si un de ses écrans est demandé (pas pour le site seul).
+    if (opts.firstRun || opts.spaces.length) {
+      await page.goto(url, { waitUntil: "load", timeout: 30000 })
+      await settle(page, 2500)
+    }
 
     if (opts.firstRun) {
       const file = path.join(dir, "00-premier-lancement.png")
@@ -435,6 +452,56 @@ async function main() {
       const file = path.join(dir, "10-statut.png")
       await page.screenshot({ path: file })
       shots.push({ file, label: "Page de statut" })
+    }
+    if (opts.site) {
+      where = "Site vitrine"
+      // Thème du site : clé propre au site (site/index.html), et réglage du système pour la première visite.
+      await page.emulateMediaFeatures([
+        {
+          name: "prefers-color-scheme",
+          value: opts.theme === "sombre" ? "dark" : "light",
+        },
+      ])
+      await page.evaluateOnNewDocument((dark) => {
+        if (window !== window.top) return
+        localStorage.setItem("nexora-site-theme", dark ? "dark" : "light")
+      }, opts.theme === "sombre")
+      const base = url.endsWith("/") ? url : `${url}/`
+      for (const route of opts.routes.length ? opts.routes : ["#/"]) {
+        const hash = route.startsWith("#") ? route : `#${route}`
+        const rest = hash.replace(/^#\/?/, "")
+        const slug = rest ? slugify(rest) : "accueil"
+        where = `Site vitrine ${hash}`
+        await page.goto(new URL(`site/${hash}`, base).href, {
+          waitUntil: "load",
+          timeout: 30000,
+        })
+        await settle(page, 2600)
+        const top = path.join(dir, `site-${slug}-00-haut.png`)
+        await page.screenshot({ path: top })
+        shots.push({ file: top, label: `Site vitrine ${hash} — haut de page` })
+        const sections = await page.$$eval("[data-capture]", (els) =>
+          els.map((el) => el.getAttribute("data-capture")),
+        )
+        let n = 0
+        for (const name of sections) {
+          if (name === "haut") continue
+          n += 1
+          await page.evaluate((wanted) => {
+            const el = document.querySelector(`[data-capture="${wanted}"]`)
+            if (!el) return
+            const y = el.getBoundingClientRect().top + window.scrollY - 70
+            window.scrollTo({ top: y, behavior: "instant" })
+          }, name)
+          await sleep(1500)
+          const file = path.join(
+            dir,
+            `site-${slug}-${String(n).padStart(2, "0")}-${slugify(name)}.png`,
+          )
+          await page.screenshot({ path: file })
+          shots.push({ file, label: `Site vitrine ${hash} — ${name}` })
+        }
+      }
     }
   } finally {
     await browser.close()

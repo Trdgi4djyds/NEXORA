@@ -2,7 +2,7 @@
 //  - onglet « Offre et usage » de Mon compte (crochet globalThis.__nxOffres dans chunk-EOM7FQDL.js) ;
 //  - fenêtre « offre requise » quand une action est refusée (événement plan:blocked du processus principal) ;
 //  - App Builder : essai de 7 jours des applications de l'offre Gratuite, verrou après l'essai ;
-//  - Dev Lab et Desktop Builder voilés sans l'offre Standard.
+//  - Desktop Builder voilé sans l'offre Standard (Dev Lab de base gratuit depuis #059).
 // Chargé au démarrage par nx/boot.js.
 import { a as ICONS } from '../../dist/chunks/chunk-S4I2LXHS.js';
 import { nxAppBuilder } from '../../dist/chunks/android-W5CZA2A2.js';
