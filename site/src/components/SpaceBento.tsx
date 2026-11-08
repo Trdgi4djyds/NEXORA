@@ -1,16 +1,8 @@
-import type { MouseEvent } from "react"
 import { SPACE_FACTS } from "../data/content"
 import { SPACES, spaceHref, type SpaceId } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
-import { shareShot } from "../lib/transitions"
 import { Pixel, Screen } from "./Screen"
-
-// #070 : au clic simple, la capture de la carte devient celle de la page de l'espace (transition de page).
-const share = (e: MouseEvent<HTMLAnchorElement>) => {
-  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
-  shareShot(e.currentTarget.querySelector<HTMLElement>(".card-img"))
-}
 
 // Ordre et taille des cartes (grille de 3 colonnes) : les espaces phares en grand, l'Accueil en bandeau.
 const LAYOUT: [SpaceId, string][] = [
@@ -37,7 +29,7 @@ export function SpaceBento() {
         const n = String(SPACES.indexOf(s) + 1).padStart(2, "0")
         const [value, caption] = SPACE_FACTS[id]
         return (
-          <Reveal as="a" key={id} href={spaceHref(s)} className={`card glow ${size} card-${id}`} data-space={id} delay={(i % 3) * 70} onClick={share}>
+          <Reveal as="a" key={id} href={spaceHref(s)} className={`card glow ${size} card-${id}`} data-space={id} delay={(i % 3) * 70}>
             <span className="card-t">
               <span className="label">
                 <Icon name={s.icon} size={14} /> {n} · {s.name}

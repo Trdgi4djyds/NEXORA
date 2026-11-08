@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { Screen } from "../components/Screen"
 import { CtaBand } from "../components/CtaBand"
 import { DownloadButton } from "../components/Download"
@@ -7,7 +6,6 @@ import { PLAN_LABEL, SPACES, spaceHref, type Feature, type Space } from "../data
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
 import { APP_VERSION, DEVICE_CATEGORIES, DEVICE_LIST } from "../lib/product"
-import { cameFromCard } from "../lib/transitions"
 import type { PlanId } from "../lib/remote"
 
 const GLYPH: Record<string, string> = { phone: "phone", fold: "fold", tablet: "tablet", laptop: "laptop", display: "display", watch: "watch", tv: "tv", xr: "xr", gamepad: "gamepad", car: "car", kiosk: "kiosk" }
@@ -109,8 +107,6 @@ function PlanSplit({ space }: { space: Space }) {
 }
 
 export function SpacePage({ space }: { space: Space }) {
-  // #070 : venue d'une carte d'espace, la capture de la carte se transforme en celle-ci (sans apparition retardée).
-  const [shared] = useState(cameFromCard)
   const idx = SPACES.indexOf(space)
   const prev = SPACES[(idx + SPACES.length - 1) % SPACES.length]
   const next = SPACES[(idx + 1) % SPACES.length]
@@ -148,9 +144,9 @@ export function SpacePage({ space }: { space: Space }) {
             </div>
           </div>
         </div>
-        <div className={`container wide${shared ? "" : " rise"}`} style={{ animationDelay: "260ms" }}>
+        <div className="container wide rise" style={{ animationDelay: "260ms" }}>
           <div className="sp-show" data-capture="apercu" data-tilt>
-            <div className={`frame${shared ? " vt-shot" : ""}`}>
+            <div className="frame">
               <Screen space={space.id} eager />
               <i className="glare" aria-hidden="true" />
             </div>

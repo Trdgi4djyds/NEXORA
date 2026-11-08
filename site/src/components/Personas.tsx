@@ -15,7 +15,7 @@ export function Personas() {
     <section className="section personas" data-capture="pour-qui">
       <div className="container">
         <SectionHead
-          index="06"
+          index="05"
           eyebrow="Pour qui ?"
           title={["Quatre façons", "de travailler avec NEXORA."]}
           lead="Freelance, agence, commerce ou salle de classe : chacun y trouve l’espace qui lui fait gagner le plus de temps."

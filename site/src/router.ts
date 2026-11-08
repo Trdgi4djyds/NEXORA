@@ -1,7 +1,5 @@
 // Routes après # (comme le back office) : le site fonctionne sur tout hébergement statique, sans réécriture.
-// #070 : chaque changement de page passe par une transition de page (`lib/transitions.ts`).
 import { useEffect, useState } from "react"
-import { withPageTransition } from "./lib/transitions"
 
 export type Route = { path: string; parts: string[] }
 
@@ -19,10 +17,7 @@ function parse(): Route {
 export function useRoute(): Route {
   const [route, setRoute] = useState(parse)
   useEffect(() => {
-    const on = () => {
-      const next = parse()
-      withPageTransition(() => setRoute(next))
-    }
+    const on = () => setRoute(parse())
     window.addEventListener("hashchange", on)
     return () => window.removeEventListener("hashchange", on)
   }, [])

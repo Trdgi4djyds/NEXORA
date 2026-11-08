@@ -8,7 +8,7 @@ export function Trust() {
     <section className="section trust" data-space="security" data-capture="confiance">
       <div className="container trust-grid">
         <SectionHead
-          index="07"
+          index="06"
           align="left"
           eyebrow="Confiance"
           title={["Tes projets restent", "chez toi."]}

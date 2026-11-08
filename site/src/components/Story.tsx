@@ -33,7 +33,7 @@ export function Story() {
     <section className="section story" id="parcours" data-capture="parcours">
       <div className="container">
         <SectionHead
-          index="03"
+          index="02"
           eyebrow="De l’idée à la publication"
           title={["Du premier écran", "au logiciel installé."]}
           lead="Conçois, code, teste, sécurise, publie et présente sans changer d’outil : chaque espace reprend là où le précédent s’est arrêté."

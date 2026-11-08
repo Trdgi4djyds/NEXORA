@@ -2,13 +2,11 @@ import { useEffect, useRef, useState, type CSSProperties } from "react"
 import type { SpaceId } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { Reveal, useInView, usePageVisible, useReducedMotion } from "../lib/motion"
-import { CLIPS, LOOP } from "../lib/videos"
-import { ClipVideo, useAutoVideo, VideoToggle } from "./ClipVideo"
-import { Pixel } from "./Screen"
+import { KORA_DESKTOP } from "../lib/screens"
+import { Pixel, Screen } from "./Screen"
 import { SectionHead } from "./SectionHead"
 
-// #070 : une boucle complète par plateforme (accueil, fiche produit, commande, retour à l'accueil).
-const PERIOD = LOOP * 1000
+const PERIOD = 5200
 
 const PLATFORMS: { id: string; space: SpaceId; icon: string; title: string; text: string; points: string[] }[] = [
   {
@@ -40,30 +38,16 @@ const PLATFORMS: { id: string; space: SpaceId; icon: string; title: string; text
 /**
  * « Un projet, trois plateformes » : le projet Kora publié sur le web, sur Android et sur Windows, en carrousel.
  * #069 : onglets à bordure lumineuse et scène éclairée par le pointeur (`lib/glow.ts`), appareils qui flottent.
- * #070 : chaque plateforme montre la maquette animée de Kora (navigateur, Pixel 10 Pro, Surface Laptop sous
- * Windows 11) avec ses transitions de page ; seule la vidéo de l'onglet ouvert est chargée et lue. Le bouton
- * pause arrête aussi le carrousel.
  */
 export function Platforms() {
   const [active, setActive] = useState(0)
   const [hover, setHover] = useState(false)
   const [round, setRound] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
-  const web = useRef<HTMLVideoElement>(null)
-  const android = useRef<HTMLVideoElement>(null)
-  const windows = useRef<HTMLVideoElement>(null)
-  const videos = [web, android, windows]
-  const clip = useAutoVideo(videos[active])
   const visible = useInView(ref, { margin: "-60px 0px" })
   const page = usePageVisible()
   const reduced = useReducedMotion()
-  const playing = !reduced && visible && page && !hover && clip.wanted
-
-  // L'onglet ouvert reprend sa boucle au début, calée sur la barre de progression de l'onglet.
-  useEffect(() => {
-    const v = videos[active].current
-    if (v && v.currentTime > 0) v.currentTime = 0
-  }, [active, round])
+  const playing = !reduced && visible && page && !hover
 
   useEffect(() => {
     if (!playing) return
@@ -79,7 +63,7 @@ export function Platforms() {
     <section className="section platforms" id="plateformes" data-capture="plateformes">
       <div className="container">
         <SectionHead
-          index="04"
+          index="03"
           eyebrow="Un projet, trois plateformes"
           title={["Publie partout,", "sans tout refaire."]}
           lead="Ton site reste la source. NEXORA en tire une adresse web, une application Android et un logiciel Windows, chacun prêt à distribuer."
@@ -138,33 +122,17 @@ export function Platforms() {
                     <i />
                     <span>kora-boutique.fr</span>
                   </div>
-                  <ClipVideo
-                    clip={CLIPS.koraWeb}
-                    videoRef={web}
-                    label="Le site de démonstration Kora dans un navigateur : accueil, fiche produit puis commande, avec leurs transitions de page."
-                  />
+                  <img src={KORA_DESKTOP} alt="Le site de démonstration Kora dans un navigateur" width={1440} height={900} loading="lazy" />
                 </div>
               </div>
               <div className={`pf-v pf-android${active === 1 ? " on" : ""}`}>
-                <Pixel
-                  screen={
-                    <ClipVideo
-                      clip={CLIPS.koraMobile}
-                      videoRef={android}
-                      label="Le site de démonstration Kora sur un Pixel 10 Pro : accueil, fiche produit puis commande, avec leurs transitions de page."
-                    />
-                  }
-                />
+                <Pixel />
               </div>
               <div className={`pf-v pf-windows${active === 2 ? " on" : ""}`}>
-                <ClipVideo
-                  clip={CLIPS.windows}
-                  videoRef={windows}
-                  className="clip-device"
-                  label="Kora installé comme logiciel sur un Surface Laptop 15 sous Windows 11 : accueil, fiche produit puis commande, dans sa fenêtre."
-                />
+                <div className="frame">
+                  <Screen space="desktop" />
+                </div>
               </div>
-              <VideoToggle playing={clip.wanted} onToggle={clip.toggle} className="pf-toggle" />
             </div>
           </Reveal>
         </div>

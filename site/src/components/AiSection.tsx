@@ -13,7 +13,7 @@ export function AiSection() {
     <section className="section ai-sec" data-space="home" data-capture="ia">
       <div className="container">
         <SectionHead
-          index="05"
+          index="04"
           eyebrow="Assistant IA"
           title={["Ton IA, ta clé,", "sans limite."]}
           lead="Branche ton propre compte Claude, GPT, Gemini ou Mistral, ou fais tourner Ollama sur ton PC. NEXORA ne compte pas tes requêtes et ne facture rien pour l’IA."
