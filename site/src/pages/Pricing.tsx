@@ -19,7 +19,7 @@ export function Pricing() {
             align="left"
             eyebrow="Tarifs"
             title={["Une offre pour chaque projet,", "gratuite pour commencer."]}
-            lead="Garde l’offre Gratuite aussi longtemps que tu veux. Standard débloque la publication sur Android et Windows, Pro ouvre tout NEXORA."
+            lead="Garde l’offre Gratuite aussi longtemps que tu veux : Responsive Lab et Browser Lab y sont complets. Pro ouvre tout NEXORA, et ton premier jour est un essai complet de 24 h."
           />
           <PricingCards />
         </div>

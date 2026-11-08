@@ -3,7 +3,7 @@
 //
 // Utilisation : pnpm captures:admin [écrans…] [options]
 //   écrans                connexion, vue, utilisateurs, utilisateur, equipes, equipe, appareils,
-//                         invitations, contenus, fichiers, supervision, site, audits, audit-site,
+//                         licences, licences-appareils (#076), licences-reglages (#077), invitations, contenus, fichiers, supervision, site, audits, audit-site,
 //                         support, ticket, annonces, offres, fonctionnalites, configuration,
 //                         journal, supabase, emails, email-maj, email-journal, factures, facture,
 //                         facture-brouillon (défaut : tous)
@@ -37,6 +37,9 @@ const SCREENS = [
   ["equipes", "Équipes et offres", "orgs"],
   ["equipe", "Fiche équipe", `orgs/${demoIds.org}`],
   ["appareils", "Appareils", "devices"],
+  ["licences", "Licences", "licences"],
+  ["licences-appareils", "Licences : appareils", "licences/appareils"],
+  ["licences-reglages", "Licences : réglages et sécurité", "licences/reglages"],
   ["invitations", "Invitations", "invitations"],
   ["contenus", "Contenus", "content"],
   ["fichiers", "Fichiers", "files"],

@@ -246,6 +246,27 @@ async function migration() {
   const libs = await as(A, () => q("select data from public.design_libraries"))
   ok(libs.length === 1 && libs[0].data.list.length === 1, "Bibliothèques : publication puis mise à jour")
   ok((await as(B, () => q("select * from public.design_libraries"))).length === 0, "Bibliothèques : invisibles hors de l’espace")
+  // NEXORA #075 : liens en lecture seule (mode « view »), après la migration du Studio (20261106000005).
+  const MIG5 = fs.readFileSync(path.join(ROOT, "supabase/migrations/20261106000005_studio_motion.sql"), "utf8")
+  const MIG8 = fs.readFileSync(path.join(ROOT, "supabase/migrations/20261108000001_nex_design_lecture.sql"), "utf8")
+  await db.exec(MIG5); await db.exec(MIG8); await db.exec(MIG8)
+  ok(true, "Lecture seule : 20261108000001 rejouée deux fois sans erreur (après 20261106000005)")
+  const [view] = await as(A, () => q("insert into public.design_review_links (org_id, doc_local_id, name, pages, created_by, mode) values ($1, 'doc1', 'Boutique', $2, $3, 'view') returning token", [ORG, pages, A]))
+  await db.exec("set role anon;")
+  const gv = (await q("select public.nx_review_get($1) as r", [view.token]))[0].r
+  ok(gv && gv.mode === "view" && gv.pages.length === 2 && gv.reviews.length === 0, "Lecture seule : toutes les pages lues sans compte, sans avis", gv)
+  let ro = false
+  try { await q("select public.nx_review_post($1, 'Awa', 'comment', 'Bonjour', 0)", [view.token]) } catch (e) { ro = /lecture seule/.test(e.message) }
+  ok(ro, "Lecture seule : aucun avis possible sur ce lien")
+  await db.exec("reset role;")
+  const [rev] = await as(A, () => q("insert into public.design_review_links (org_id, doc_local_id, name, pages, created_by) values ($1, 'doc2', 'Affiche', $2, $3) returning token, mode", [ORG, pages, A]))
+  await db.exec("set role anon;")
+  const pr = (await q("select public.nx_review_post($1, 'Awa', 'approve', 'Parfait', 0) as r", [rev.token]))[0].r
+  ok(rev.mode === "review" && pr.length === 1 && (await q("select public.nx_review_get($1) as r", [rev.token]))[0].r.mode === "review", "Lecture seule : les liens de validation restent ouverts aux avis (mode par défaut)")
+  await db.exec("reset role;")
+  let badMode = false
+  try { await as(A, () => q("insert into public.design_review_links (org_id, doc_local_id, name, mode) values ($1, 'x', 'x', 'edit')", [ORG])) } catch { badMode = true }
+  ok(badMode, "Lecture seule : mode inconnu refusé")
 }
 await migration()
 console.log(`\n${count} vérifications, ${fails ? `${fails} échec(s)` : "aucun échec"}.`)

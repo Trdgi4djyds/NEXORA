@@ -363,6 +363,10 @@ html[data-theme='dark'] :is(.nxo-ab-lock-card, .nxo-space-card) { box-shadow: va
 }
 .nxo-card-lock b { font-size: 12.5px; font-weight: 680; }
 .nxo-card-lock .nxo-chip { padding: 3px 9px; font-size: 11px; color: var(--accent); }
+/* NEXORA #075 (A-039) : cartes de NEX-DESIGN réservées, réduites à leur titre et à une ligne (plus de mur flouté). */
+.dz-card.nxo-card-locked > :not(.nxo-card-lock):not(.dz-card-h) { display: none; }
+.dz-card.nxo-card-locked > .dz-card-h { filter: none; opacity: .62; }
+.nxo-card-lock.compact { position: static; inset: auto; flex-direction: row; justify-content: space-between; padding: 6px 0 0; text-align: left; }
 
 @media (max-width: 1080px) { .nxo-plans { grid-template-columns: 1fr; } .nxo-plan-wrap:not(.rec) { padding-top: 0; } .nxo-sub-grid { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .nxo-now { flex-wrap: wrap; padding-left: 26px; } .nxo-now-art { opacity: .25; } .nxo-now-acts { align-items: flex-start; } }

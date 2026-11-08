@@ -15,7 +15,7 @@ const PLATFORMS: { id: string; space: SpaceId; icon: string; title: string; text
     icon: "globe",
     title: "Sur le web",
     text: "Partage ton projet par une adresse publique, puis mets-le en ligne chez les principaux hébergeurs, contrôlé sur trois appareils avant chaque publication.",
-    points: ["Partage en ligne (Standard)", "Cloudflare, Vercel, Netlify, GitHub Pages (Pro)", "Contrôles avant mise en ligne"],
+    points: ["Partage en ligne (Pro)", "Cloudflare, Vercel, Netlify, GitHub Pages (Pro)", "Contrôles avant mise en ligne"],
   },
   {
     id: "android",

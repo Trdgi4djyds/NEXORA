@@ -57,7 +57,7 @@ export async function onClick(e) {
   const feat = e.target.closest('[data-nxo-feature]');
   if (feat) {
     const perm = feat.dataset.nxoFeature;
-    openUpsell({ feature: perm, reason: 'plan', need: perm === 'studio_advanced' ? 'pro' : 'standard', message: perm === 'studio_advanced' ? 'Rendu avancé, exports GIF et vidéo, page web 3D, matières, animation physique et formes combinées font partie de l’offre Pro.' : 'Retouche d’image, effets, outils vectoriels, éléments et pages font partie de NEX-DESIGN étendu, dans l’offre Standard.' });
+    openUpsell({ feature: perm, reason: 'plan', need: 'pro', message: perm === 'studio_advanced' ? 'Rendu avancé, exports GIF et vidéo, page web 3D, matières, animation physique et formes combinées font partie de l’offre Pro.' : 'Retouche d’image, effets, outils vectoriels, éléments et pages font partie de NEX-DESIGN étendu, dans l’offre Pro.' });
     return true;
   }
   const offers = e.target.closest('[data-nxo-offers]');
@@ -65,6 +65,9 @@ export async function onClick(e) {
   const ask = e.target.closest('[data-nxo-ask]');
   if (ask) {
     if (!cloud.user) { await openAccount('login'); return true; }
+    // NEXORA #076 : l'abonnement se paie dans le navigateur (site de NEXORA, page « Ma licence ») ; le logiciel passe
+    // en Pro au contrôle de licence suivant. Sans le canal (aperçu), demande à l'équipe comme avant.
+    try { await window.vitrine.invoke('license:open-site', 'licence?offre=pro'); closeSheet(); toast('Paiement ouvert dans ton navigateur : NEXORA passe en Pro dès qu’il est confirmé.'); return true; } catch { /* aperçu : demande à l'équipe */ }
     ask.disabled = true;
     try {
       const t = await askPlan(ask.dataset.nxoAsk);

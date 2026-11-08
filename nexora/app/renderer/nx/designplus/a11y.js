@@ -1,7 +1,7 @@
 // NEXORA #053 : accessibilité : contraste de chaque texte (AA, AAA) mesuré sur le fond réellement affiché,
 // tailles minimales, zones cliquables trop petites, images sans texte de remplacement, simulation des
 // daltonismes ; correction du contraste en un clic.
-import { esc, ico, toast, api, sec, btn, hex, ratio, isText, objs, walk, commit, rgbHex, hexRgb } from './ui.js';
+import { esc, ico, toast, api, sec, btn, hex, ratio, isText, objs, walk, commit, rgbHex, hexRgb, pl } from './ui.js';
 
 const SIMS = { none: ['Normale', 'Vision normale'], deuter: ['Vert', 'Deutéranopie (rouge-vert)'], protan: ['Rouge', 'Protanopie (rouge)'], tritan: ['Bleu', 'Tritanopie (bleu-jaune)'], achroma: ['Gris', 'Sans couleurs'] };
 const MATRIX = {
@@ -76,7 +76,7 @@ export function panel(D, st) {
   const bad = items ? items.filter((i) => !i.ok) : [];
   return `<div class="dzp-sub">Simuler une vision différente</div><div class="dzp-bar"><div class="seg">${Object.entries(SIMS).map(([k, [s, l]]) => `<button class="${(D.nxSim || 'none') === k ? 'on' : ''}" data-sim="${k}" title="${esc(l)}">${esc(s)}</button>`).join('')}</div></div>
     <div class="nx-btns">${btn('a11y-run', 'audit', items ? 'Vérifier de nouveau' : 'Vérifier la page', '', 'primary')}</div>
-    ${items ? `<p class="dzx-hint">${bad.length ? `${bad.length} point(s) à corriger sur ${items.length} contrôle(s).` : `${ico('pass', 12)} Tout est lisible : ${items.length} contrôle(s) réussi(s).`}</p>
+    ${items ? `<p class="dzx-hint">${bad.length ? `${pl(bad.length, 'point à corriger', 'points à corriger')} sur ${pl(items.length, 'contrôle', 'contrôles')}.` : `${ico('pass', 12)} Tout est lisible : ${pl(items.length, 'contrôle réussi', 'contrôles réussis')}.`}</p>
     <div class="dzp-list">${items.map((i, n) => `<div class="dzp-item ${i.ok ? 'ok' : 'bad'}"><button class="dzp-item-main" data-a11y-go="${n}" title="${esc(`Sélectionner « ${i.label} »`)}">${i.kind === 'contrast' ? `<span class="dzp-sw" style="background:${esc(i.bg)};color:${esc(i.fg)}">Aa</span>` : ico(i.kind === 'alt' ? 'image' : i.kind === 'target' ? 'target' : 'text', 14)}<span><b>${esc(i.kind === 'contrast' ? `« ${i.label} »` : i.label)}</b>${i.kind === 'contrast' ? `<small>Contraste ${i.ratio.toFixed(2).replace('.', ',')} : 1 · ${esc(i.level)}</small>` : ''}</span></button>${i.kind === 'contrast' && !i.ok ? `<button class="btn small" data-a11y-fix="${n}">Corriger</button>` : ''}</div>`).join('')}</div>` : '<p class="dzx-hint">Contraste des textes (niveaux AA et AAA, mesuré sur le fond réel), tailles, zones cliquables et textes de remplacement des images.</p>'}`;
 }
 export async function onPanel(D, e, rerender, st) {

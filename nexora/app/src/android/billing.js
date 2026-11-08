@@ -8,6 +8,7 @@
  * L'application et le kit de notifications ne contiennent donc jamais deux fois la même classe.
  *
  * Côté Play Console (compte de service de la publication) : liste des produits et vérification d'un achat. */
+const { LIB_MSG } = require('../plain');
 const fs = require('fs');
 const path = require('path');
 const { run } = require('./toolchain');
@@ -58,7 +59,7 @@ class BillingKit extends PushKit {
     let i = 0;
     for (const art of arts) {
       i += 1;
-      onStep({ label: `Téléchargement : ${art.a} ${art.v} (${i}/${arts.length})`, progress: 0.25 + 0.3 * (i / arts.length) });
+      onStep({ label: LIB_MSG, progress: 0.25 + 0.3 * (i / arts.length) });
       // eslint-disable-next-line no-await-in-loop
       const got = await this.downloadArtifact(art, libs);
       if (!got) continue;

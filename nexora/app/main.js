@@ -4,7 +4,7 @@ const {
 } = require('electron');
 
 // Erreurs renvoyées à l'interface : message clair, détail technique gardé dans le journal local.
-const { plain, techLog } = require('./src/plain');
+const { plain, library, techLog } = require('./src/plain');
 {
   const handle = ipcMain.handle.bind(ipcMain);
   ipcMain.handle = (channel, fn) => handle(channel, async (...args) => {
@@ -17,7 +17,12 @@ const { plain, techLog } = require('./src/plain');
 }
 // NEXORA #037 : offres Gratuit, Standard et Pro : les canaux réservés à une offre ou soumis à un quota
 // demandent l'accord des serveurs NEXORA avant de s'exécuter (src/plan.js). Posé avant tout enregistrement.
+// NEXORA #076 : deux offres (Gratuit, Pro) et verrou de licence sur tous les canaux des espaces (src/license.js).
 require('./src/plan').guardIpc(ipcMain);
+// NEXORA #076 : NEXORA Devs Toolbox (le lanceur) est le seul point d'entrée : ouvert directement, NEXORA relance le
+// lanceur (vérification des fichiers, mise à jour) ; une seule fenêtre (les liens nexora:// arrivent dans celle-ci).
+const license = require('./src/license');
+if (license.viaLauncher(app) || !app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
 
 // Une seule boîte de dialogue système à la fois : un double-clic (ou deux actions rapprochées) ouvrait
 // plusieurs fenêtres Importer / Exporter l'une derrière l'autre. Les demandes faites pendant qu'une boîte
@@ -131,12 +136,18 @@ function saveSettings(data) {
 
 // ---------------------------------------------------------------- fenêtre
 // Textes envoyés à l'interface (journal de construction, étapes, progression) : sans détails internes.
-const PLAIN_CHANNELS = new Set(['android:log', 'android:step', 'android:progress', 'setup:progress', 'dev:vscode-progress', 'tunnel:progress']);
+const PLAIN_CHANNELS = new Set(['android:log', 'android:step', 'android:progress', 'setup:progress', 'dev:vscode-progress', 'tunnel:progress', 'tools:progress', 'desktop:progress', 'desktop:log']);
+// NEXORA #076 : textes susceptibles de nommer une bibliothèque chargée en coulisse.
+const PLAIN_FIELDS = ['label', 'message', 'line', 'detail', 'text'];
 function send(channel, payload) {
   if (!win || win.isDestroyed()) return;
   if (PLAIN_CHANNELS.has(channel)) {
-    if (typeof payload === 'string') payload = plain(payload);
-    else if (payload && typeof payload === 'object' && typeof payload.label === 'string') payload = { ...payload, label: plain(payload.label) };
+    if (typeof payload === 'string') payload = library(payload);
+    else if (payload && typeof payload === 'object') {
+      payload = { ...payload };
+      for (const k of PLAIN_FIELDS) if (typeof payload[k] === 'string') payload[k] = library(payload[k]);
+      if (channel === 'tools:progress') { payload.label = 'Bibliothèque NEXORA'; delete payload.version; }
+    }
   }
   win.webContents.send(channel, payload);
 }
@@ -950,6 +961,11 @@ function refreshIconCacheOnce() {
 app.whenReady().then(() => {
   refreshIconCacheOnce();
   registerAppProtocol();
+  // NEXORA #076 : contrôle de licence signé, intégrité des fichiers, sessions et journaux.
+  license.register({ ipcMain, app, shell, net, send });
+  app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
+  // NEXORA #076 : projets en fichiers .novx (export, import, ouverture par double-clic, Google Drive).
+  require('./src/novx').register({ ipcMain, app, dialog, send, getWin: () => win });
   require('./src/android/ipc').register({
     ipcMain, app, dialog, shell, safeStorage, net, send, getWin: () => win,
   });

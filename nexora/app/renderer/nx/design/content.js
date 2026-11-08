@@ -408,14 +408,46 @@ export async function insertComponent(D, id) {
   o.setPositionByOrigin({ x: page(D).w / 2 + 30, y: page(D).h / 2 + 30 }, 'center', 'center');
   place(D, o);
 }
+// NEXORA #075 (A-040) : un texte ou une image changés dans une copie sont gardés quand la copie est refaite depuis le
+// principal (mise à jour des copies, bibliothèque d'équipe) : comparaison, dans l'ordre, avec l'ancien principal.
+const TXT_T = /^(textbox|i-text|itext|text)$/i;
+const IMG_T = /^image$/i;
+function jsonParts(j, out = { t: [], i: [] }) {
+  if (!j) return out;
+  if (TXT_T.test(j.type || '')) out.t.push(j.text); else if (IMG_T.test(j.type || '')) out.i.push(j.src);
+  for (const c of j.objects || []) jsonParts(c, out);
+  return out;
+}
+function liveParts(o, out = { t: [], i: [] }) {
+  if (TXT_T.test(o.type || '')) out.t.push(o); else if (IMG_T.test(o.type || '')) out.i.push(o);
+  if (o.getObjects) for (const c of o.getObjects()) liveParts(c, out);
+  return out;
+}
+export function overridesOf(copy, oldMasterJson) {
+  const was = jsonParts(oldMasterJson); const now = liveParts(copy);
+  return {
+    t: now.t.map((x, k) => (was.t[k] !== undefined && x.text !== was.t[k] ? x.text : undefined)),
+    i: now.i.map((x, k) => { const src = x.getSrc ? x.getSrc() : x.src; return was.i[k] !== undefined && src !== was.i[k] ? src : undefined; })
+  };
+}
+export async function keepOverrides(n, ov) {
+  if (!ov) return 0;
+  const p = liveParts(n); let kept = 0;
+  p.t.forEach((x, k) => { if (ov.t[k] !== undefined) { x.set('text', ov.t[k]); if (x.initDimensions) x.initDimensions(); kept += 1; } });
+  for (const [k, x] of p.i.entries()) if (ov.i[k] !== undefined && x.setSrc) { await x.setSrc(ov.i[k]); kept += 1; }
+  if (kept && n.getObjects) { if (n.triggerLayout) n.triggerLayout(); n.dirty = true; n.setCoords(); }
+  return kept;
+}
 export async function updateComponent(D, master) {
   const id = master.nxComp.id; const c = comps(D)[id];
+  const oldJson = c.json;
   c.json = master.toObject(FabricObject.customProperties); c.updated = Date.now(); c.name = master.name || c.name;
   let count = 0;
   const fresh = async (old) => {
     const [n] = await util.enlivenObjects([c.json]);
     n.nxComp = { id }; n.name = c.name;
     n.set({ scaleX: n.scaleX * (old.getScaledWidth() / Math.max(1, n.getScaledWidth())), scaleY: n.scaleY * (old.getScaledWidth() / Math.max(1, n.getScaledWidth())), angle: old.angle });
+    await keepOverrides(n, overridesOf(old, oldJson));
     n.setPositionByOrigin(old.getCenterPoint(), 'center', 'center');
     return n;
   };

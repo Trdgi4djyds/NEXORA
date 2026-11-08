@@ -1,4 +1,3 @@
-import { WEB_URL } from "../lib/product"
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { COMPARE } from "../../../nexora/app/renderer/nx/offres/catalog.js"
 import { Icon } from "../lib/icons"
@@ -17,26 +16,25 @@ const GROUPS = (COMPARE as unknown as [string, Row[]][]).map(([group, rows]) => 
   group,
   rows
     .filter((r) => r.perm !== "early_access")
-    .map((r) => (r.label === "Assistance" ? { ...r, text: { free: "Depuis NEXORA", standard: "Standard", pro: "Prioritaire" } } : r)),
+    .map((r) => (r.label === "Assistance" ? { ...r, text: { free: "Depuis NEXORA", pro: "Prioritaire" } } : r)),
 ]) as [string, Row[]][]
 const honestFeature = (f: string) => f.replace(/\s+et accès en avant-première aux nouveautés/i, "").replace(/^Accès en avant-première aux nouveautés$/i, "")
 const honestBadge = (b: string) => (/choisi|populaire|vendu|préféré/i.test(b) ? "Recommandé" : b)
 
 const LOOK: Record<PlanId, { icon: string; space: string }> = {
   free: { icon: "nxSend", space: "browser" },
-  standard: { icon: "bolt", space: "home" },
   pro: { icon: "nxCrown", space: "desktop" },
 }
 
 function PlanCard({ plan, annual, ready, start }: { plan: Plan; annual: boolean; ready: boolean; start: string }) {
-  const featured = plan.id === "standard"
+  const featured = plan.id === "pro"
   const free = !plan.price_month_cents
   const perMonth = annual && plan.price_year_cents ? Math.round(plan.price_year_cents / 12) : plan.price_month_cents
   const offered = monthsOffered(plan)
   const look = LOOK[plan.id] ?? LOOK.pro
   const shown = useTween(perMonth)
   return (
-    <article className={`plan glow${featured ? " featured" : ""}`} data-plan={plan.id}>
+    <article className={`plan glow${featured ? " featured" : ""}`} data-plan={plan.id} data-tilt>
       {plan.badge && <span className="plan-badge">{honestBadge(plan.badge)}</span>}
       <div className="plan-top">
         <span className="sp-ic" data-space={look.space}>
@@ -56,9 +54,9 @@ function PlanCard({ plan, annual, ready, start }: { plan: Plan; annual: boolean;
             ? `${money(plan.price_year_cents)} facturés une fois par an`
             : `ou ${money(plan.price_year_cents)} par an${offered ? `, soit ${offered} mois offerts` : ""}`}
       </p>
-      <a className={`btn ${featured ? "btn-primary" : "btn-ghost"} plan-cta`} href={free ? start : WEB_URL}>
-        {/* #072 : pas de paiement sur le site ; dans NEXORA, l'offre se demande (Mon compte → Offre et usage). */}
-        {free ? "Commencer gratuitement" : `Demander ${plan.name}`}
+      <a className={`btn ${featured ? "btn-primary" : "btn-ghost"} plan-cta`} href={free ? start : "#/licence?offre=pro"}>
+        {/* #076 : paiement dans le navigateur, page « Ma licence ». */}
+        {free ? "Commencer gratuitement" : `Passer à ${plan.name}`}
         <Icon name="nxArrowRight" size={16} stroke={2} className="ico-go" />
       </a>
       <ul className="plan-feats">
@@ -109,7 +107,7 @@ export function PricingCards() {
       <div className="plans" data-glow>
         {plans.map((p, i) => (
           <Reveal key={p.id} delay={i * 90} className="plan-wrap">
-            <PlanCard plan={p} annual={annual} ready={ready} start={downloadUrl || WEB_URL} />
+            <PlanCard plan={p} annual={annual} ready={ready} start={downloadUrl || "#/telecharger"} />
           </Reveal>
         ))}
       </div>
@@ -158,7 +156,7 @@ export function CompareTable() {
           <tr>
             <th scope="col">Fonctions</th>
             {plans.map((p) => (
-              <th scope="col" key={p.id} className={p.id === "standard" ? "featured" : ""}>
+              <th scope="col" key={p.id} className={p.id === "pro" ? "featured" : ""}>
                 <b>{p.name}</b>
                 <span>{p.price_month_cents ? `${money(p.price_month_cents)} / mois` : "0 $, sans limite de durée"}</span>
               </th>
@@ -176,7 +174,7 @@ export function CompareTable() {
               <tr key={row.label}>
                 <th scope="row">{row.label}</th>
                 {plans.map((p) => (
-                  <td key={p.id} className={p.id === "standard" ? "featured" : ""}>
+                  <td key={p.id} className={p.id === "pro" ? "featured" : ""}>
                     {cell(row, p)}
                   </td>
                 ))}

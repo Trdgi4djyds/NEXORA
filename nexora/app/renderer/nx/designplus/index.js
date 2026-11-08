@@ -18,6 +18,7 @@ import * as MEASURE from './measure.js';
 import * as FONTS from './fonts.js';
 import * as RESP from './responsive.js';
 import * as LIB from './library.js';
+import * as LAYOUT from './layout.js';
 
 const TABS = [
   ['variables', 'Variables', 'nxPalette', STD, () => VAR],
@@ -30,11 +31,24 @@ const TABS = [
   ['print', 'Impression', 'pdf', STD, () => import('./print.js')],
   ['import', 'Importer', 'download', '', () => import('./importers.js')],
   ['ai', 'IA', 'sparkle', PRO, () => AI],
-  ['spaces', 'Icônes et espaces', 'android', STD, () => import('./spaces.js')],
+  ['spaces', 'Icônes d’application', 'android', STD, () => import('./spaces.js')],
   ['versions', 'Versions', 'nxHistory', STD, () => import('./versions.js')],
   ['review', 'Validation', 'pass', PRO, () => REVIEW],
   ['team', 'Équipe', 'group', PRO, () => TEAM],
 ];
+// NEXORA #075 (A-044) : le panneau ne s'ouvre plus sur 14 onglets : chaque fonction est ouverte depuis sa place
+// (fenêtre Exporter, menu Partager, menu Fichier, onglet Ressources, carte Déclinaisons, menu IA) et le panneau ne
+// montre que les onglets de ce groupe.
+const GROUPS = [
+  ['export', 'Exporter', ['print', 'code', 'proto', 'spaces', 'bulk']],
+  ['share', 'Partager', ['review', 'team']],
+  ['file', 'Fichier', ['import', 'versions']],
+  ['styles', 'Styles du document', ['variables', 'fonts']],
+  ['check', 'Vérifier', ['a11y']],
+  ['ai', 'IA de design', ['ai']],
+  ['screens', 'Déclinaisons', ['responsive']],
+];
+const groupOf = (tab) => GROUPS.find((g) => g[2].includes(tab)) || GROUPS[0];
 const states = {};
 const st = (id) => (states[id] = states[id] || {});
 const clean = (e) => String((e && e.message) || e).replace(/^Error invoking remote method '[^']+': (Error: )?/, '');
@@ -49,7 +63,7 @@ const REVIEW = {
     if (L && L.length) setTimeout(() => { let ch = false; for (const l of L) { const last = (l.design_reviews || []).map((r) => String(r.created_at)).sort().pop(); if (last && last !== seenOf(D)[l.token]) { seenOf(D)[l.token] = last; ch = true; } } if (ch) { D.changed(); news(D); } }, 0);
     return `<p class="dzx-hint">Envoie un lien à ton client : il voit les pages sans compte, épingle ses commentaires et choisit « Approuver » ou « Demander des changements ». Les pages sont publiées en images au moment de la création du lien.</p>
       <div class="nx-btns"><button class="btn small primary" data-dzx="rv-new">${ico('link', 13)}<span>Créer un lien de validation</span></button><button class="icon-btn" data-dzx="rv-load" title="Actualiser">${ico('refreshCw', 13)}</button></div>
-      ${L === null ? '<p class="dzx-hint">Connecte-toi à ton compte NEXORA pour utiliser la validation.</p>' : L ? (L.length ? `<div class="dzp-list">${L.map((l) => { const rv = l.design_reviews || []; const last = rv.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0]; return `<div class="dzp-item ${last && last.decision === 'approve' ? 'ok' : last && last.decision === 'changes' ? 'bad' : ''}"><span><b>${esc(l.name)}${unseen(D, l) ? ` <em class="dzp-new">${unseen(D, l)} nouveau${unseen(D, l) > 1 ? 'x' : ''}</em>` : ''}</b><small>${new Date(l.created_at).toLocaleDateString('fr-FR')} · ${rv.length} avis${last ? ` · dernier : ${esc(last.author)} (${esc({ approve: 'approuvé', changes: 'changements demandés', comment: 'commentaire' }[last.decision] || '')})` : ''}${l.active ? '' : ' · fermé'}</small>${rv.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 4).map((r) => `<small class="dzp-quote">« ${esc(r.comment || '—')} » — ${esc(r.author)}, page ${r.page + 1}</small>`).join('')}</span>${l.active ? `<button class="icon-btn" data-rvcopy="${esc(l.token)}" title="Copier le lien">${ico('copy', 13)}</button><button class="icon-btn" data-rvclose="${esc(l.token)}" title="Fermer le lien">${ico('lock', 13)}</button>` : ''}</div>`; }).join('')}</div>` : '<p class="dzx-hint">Aucun lien pour ce document.</p>') : ''}`;
+      ${L === null ? '<p class="dzx-hint">Connecte-toi à ton compte NEXORA pour utiliser la validation.</p>' : L ? (L.length ? `<div class="dzp-list">${L.map((l) => { const rv = l.design_reviews || []; const last = rv.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0]; return `<div class="dzp-item ${last && last.decision === 'approve' ? 'ok' : last && last.decision === 'changes' ? 'bad' : ''}"><span><b>${esc(l.name)}${unseen(D, l) ? ` <em class="dzp-new">${unseen(D, l)} nouveau${unseen(D, l) > 1 ? 'x' : ''}</em>` : ''}</b><small>${new Date(l.created_at).toLocaleDateString('fr-FR')} · ${l.mode === 'view' ? 'lecture seule, toutes les pages' : `${rv.length} avis`}${last ? ` · dernier : ${esc(last.author)} (${esc({ approve: 'approuvé', changes: 'changements demandés', comment: 'commentaire' }[last.decision] || '')})` : ''}${l.active ? '' : ' · fermé'}</small>${rv.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 4).map((r) => `<small class="dzp-quote">« ${esc(r.comment || '—')} » — ${esc(r.author)}, page ${r.page + 1}</small>`).join('')}</span>${l.active ? `<button class="icon-btn" data-rvcopy="${esc(l.token)}" title="Copier le lien">${ico('copy', 13)}</button><button class="icon-btn" data-rvclose="${esc(l.token)}" title="Fermer le lien">${ico('lock', 13)}</button>` : ''}</div>`; }).join('')}</div>` : '<p class="dzx-hint">Aucun lien pour ce document.</p>') : ''}`;
   },
   async onPanel(D, e, rerender, s) {
     const SH = await import('./share.js');
@@ -154,14 +168,18 @@ export async function render(D, keepFocus = false) {
   const s = st(current);
   if (current === 'review' && s.links === undefined && has(PRO)) { const SH = await import('./share.js'); s.links = await SH.links(D); }
   if (current === 'team' && s.libs === undefined && has(PRO)) { const SH = await import('./share.js'); s.libs = await SH.libraries(); }
+  if (current === 'versions') { const V = await import('./versions.js'); s.auto = await V.autoList(D); }
   if (current === 'import' && s.figmaToken === undefined) s.figmaToken = await api.invoke('dzx:figma-token', {}).then((r) => Boolean(r && r.saved)).catch(() => false);
   const focus = keepFocus && document.activeElement && el.contains(document.activeElement) ? [...document.activeElement.attributes].find((a) => a.name.startsWith('data-'))?.name : null;
   let body;
   if (T[3] && !has(T[3])) body = gate(T[3], T[1] === 'IA' ? 'L’IA de NEX-DESIGN' : `L’onglet « ${T[1]} »`);
   else body = current === 'import' ? mod.panel(D, s, { std: has(STD), pro: has(PRO) }) : mod.panel(D, s);
-  el.innerHTML = `<header class="dzp-top"><b>${ico(T[2], 15)} ${esc(T[1])}</b><button class="icon-btn" data-dzp-close title="Fermer" aria-label="Fermer">${ico('close', 14)}</button></header>
-    <nav class="dzp-tabs">${TABS.map(([id, label, icon, perm]) => `<button class="${id === current ? 'on' : ''}" data-dzp-tab="${id}" title="${esc(id === 'ai' ? 'IA de NEX-DESIGN' : label)}">${ico(icon, 14)}<span>${esc(label)}</span>${perm === PRO && !has(PRO) ? '<em class="dzp-pro">Pro</em>' : perm === STD && !has(STD) ? '<em class="dzp-pro">Standard</em>' : ''}</button>`).join('')}</nav>
-    <div class="dzp-body">${body}</div>`;
+  const G = groupOf(current);
+  const tabs = TABS.filter((x) => G[2].includes(x[0])).sort((a, b) => G[2].indexOf(a[0]) - G[2].indexOf(b[0]));
+  const chip = (perm) => (perm === PRO && !has(PRO) ? '<em class="dzp-pro">Pro</em>' : perm === STD && !has(STD) ? '<em class="dzp-pro">Pro</em>' : '');
+  el.innerHTML = `<header class="dzp-top"><b>${ico(T[2], 15)} ${esc(tabs.length > 1 ? G[1] : T[1])}</b><button class="icon-btn" data-dzp-close title="Fermer" aria-label="Fermer">${ico('close', 14)}</button></header>
+    ${tabs.length > 1 ? `<nav class="dzp-tabs">${tabs.map(([id, label, icon, perm]) => `<button class="${id === current ? 'on' : ''}" data-dzp-tab="${id}" title="${esc(label)}">${ico(icon, 14)}<span>${esc(label)}</span>${chip(perm)}</button>`).join('')}</nav>` : ''}
+    <div class="dzp-body">${tabs.length > 1 ? '' : chip(T[3]) ? `<p class="dzx-hint">${chip(T[3])}</p>` : ''}${body}</div>`;
   const bar = D.$.tools;
   if (bar) el.style.setProperty('--dzp-top', `${bar.offsetTop + bar.offsetHeight + 8}px`);
   el.hidden = false;
@@ -172,7 +190,8 @@ export function open(D, tab) { if (tab) current = tab; render(D); }
 // ---------- Nouveautés du document (bibliothèques d'équipe, avis de validation) ----------
 // Point sur le bouton de la barre d'outils tant qu'il reste une mise à jour ou un avis non lu.
 const newsState = { libs: [], reviews: 0, doc: null };
-function dot(D) { const b = D.$.tools && D.$.tools.querySelector('[data-dzxtb]'); if (b) b.classList.toggle('dzx-news', Boolean(newsState.libs.length || newsState.reviews)); }
+// NEXORA #075 : le point est posé sur le bouton « Partager » du groupe de droite de la barre.
+function dot(D) { const b = D.$.tools && D.$.tools.querySelector('[data-nx2="share"]'); if (b) b.classList.toggle('dzx-news', Boolean(newsState.libs.length || newsState.reviews)); }
 async function news(D, { announce = false } = {}) {
   if (!has(PRO) || !D.doc) return;
   try {
@@ -184,9 +203,10 @@ async function news(D, { announce = false } = {}) {
     newsState.reviews = (links || []).reduce((n, l) => n + unseen(D, l), 0);
     if (libs) st('team').libs = libs;
     st('review').links = links;
+    if (D.nxRenderComments) D.nxRenderComments();
     if (announce) {
       if (newsState.libs.length) await LIB.check(D, { libraries: async () => libs, onOpen: () => open(D, 'team') });
-      else if (newsState.reviews) toast(`${newsState.reviews} nouvel${newsState.reviews > 1 ? 's' : ''} avis sur la validation de ce document.`, { action: 'Voir', onAction: () => open(D, 'review') });
+      else if (newsState.reviews) toast(`${newsState.reviews} ${newsState.reviews > 1 ? 'nouveaux avis' : 'nouvel avis'} sur la validation de ce document.`, { action: 'Voir', onAction: () => open(D, 'review') });
     }
   } catch (e) { console.warn('[NEXORA #054]', e); }
   dot(D);
@@ -195,7 +215,8 @@ async function news(D, { announce = false } = {}) {
 // ---------- Panneau de droite ----------
 function propsHtml(D) {
   const s = D.sel();
-  if (!s.length) return '';
+  // NEXORA #075 : sans sélection, réglage du prototype de la page (passage automatique).
+  if (!s.length) return has(STD) && D.doc.pages.length > 1 ? PROTO.pageProps(D) : '';
   const o = s.length === 1 ? s[0] : null;
   let h = AL.props(D, o || s[0]);
   if (!o) return h;
@@ -205,6 +226,7 @@ function propsHtml(D) {
 }
 async function onField(D, k, v) {
   const s = D.sel(); const o = s.length === 1 ? s[0] : s[0];
+  if (k.startsWith('protoauto.')) { PROTO.onField(D, null, k, v); return; }
   if (!o) return;
   if (k === 'alt') { o.nxAlt = v; D.changed(); return; }
   if (AL.onField(D, o, k, v)) { D.renderProps(); return; }
@@ -248,6 +270,7 @@ export async function install(D) {
       const focused = f && f.contains(document.activeElement) && document.activeElement.matches('input, select, textarea');
       if (focused || !this.page) return;
       try { f.insertAdjacentHTML('beforeend', propsHtml(this)); } catch (e) { console.warn('[NEXORA #053]', e); }
+      try { LAYOUT.organize(this); } catch (e) { console.warn('[NEXORA #075]', e); }
     };
   }
   if (!proto.dzxLoadPage) {
@@ -265,23 +288,24 @@ export async function install(D) {
       const typing = e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable]');
       const a = this.canvas.getActiveObject();
       if (!typing && !(a && a.isEditing) && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'a' && this.sel().length) { e.preventDefault(); AL.create(this); this.renderProps(); return; }
+      // NEXORA #075 : Ctrl+Maj+C copie la sélection en PNG dans le presse-papiers.
+      if (!typing && !(a && a.isEditing) && e.shiftKey && (e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'c' && this.sel().length) { e.preventDefault(); const PGm = await import('../design/pages.js'); await PGm.copySelectionPng(this); return; }
       return this.dzxOnKey(e);
     };
   }
   const f = D.$.props;
   f.addEventListener('change', (e) => { const t = e.target; if (t.dataset.dzxk) onField(D, t.dataset.dzxk, t.type === 'checkbox' ? t.checked : t.value).catch((er) => toast(clean(er), { kind: 'bad' })); });
   f.addEventListener('click', (e) => { const b = e.target.closest('[data-dzx]'); if (!b || b.disabled) return; e.stopPropagation(); onAction(D, b.dataset.dzx).catch((er) => toast(clean(er), { kind: 'bad' })); });
-  // Bouton de la barre d'outils.
-  const bar = D.$.tools;
-  const ref = bar.querySelector('[data-nxtb="more"]') || bar.querySelector('[data-dz="export"]');
-  if (ref && !bar.querySelector('[data-dzxtb]')) ref.insertAdjacentHTML('afterend', `<button class="dz-tool nx-tb" data-dzxtb title="Fonctions de design" aria-label="Fonctions de design : variables, prototype, code, accessibilité, polices, série, impression, import, IA, icônes, versions, validation, équipe">${ico('nxGridCols', 16)}</button>`);
-  bar.addEventListener('click', (e) => { if (!e.target.closest('[data-dzxtb]')) return; e.stopPropagation(); const el = host(D); if (!el.hidden) el.hidden = true; else render(D); });
+  // NEXORA #075 : plus de bouton « Fonctions de design » : barre d'outils, menus et panneau rangés par layout.js.
+  LAYOUT.install(D, { open: (tab) => open(D, tab), action: (a) => onAction(D, a), reviews: () => st('review').links, loadReviews: async () => { const SH = await import('./share.js'); st('review').links = await SH.links(D); return st('review').links; }, news: () => ({ libs: newsState.libs.length, reviews: newsState.reviews }), close: () => { const el = D.$.stage.querySelector('.dzp'); if (el) el.hidden = true; } });
+  RESP.track(D);
+  import('./versions.js').then((V) => V.startAuto(D)).catch((e) => console.warn('[NEXORA #075]', e));
   AL.bind(D);
   MEASURE.bind(D);
   AL.afterLoad(D);
   if (D.doc.nxVars && D.doc.nxVars.list.length) VAR.applyAll(D);
   FONTS.restore(D).catch(() => {});
-  window.__nxDesignPlus = { open: (tab) => open(D, tab) };
+  window.__nxDesignPlus = { open: (tab) => open(D, tab), has, allowed };
   if (D.doc) { newsState.doc = D.doc.id; news(D, { announce: true }); }
   D.renderProps();
   void isText;

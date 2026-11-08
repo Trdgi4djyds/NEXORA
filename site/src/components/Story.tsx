@@ -96,7 +96,7 @@ export function Story() {
           {!narrow && (
             <div className="story-visual">
               <div className="story-sticky" data-space={step.space}>
-                <div className="story-plate" data-light>
+                <div className="story-plate" data-light data-tilt>
                   <div className="frame">
                     <Screens spaces={STORY.map((s) => s.space)} current={step.space} />
                     <i className="glare-spot" aria-hidden="true" />

@@ -19,7 +19,8 @@
     "binding": "ASSETS",
     // Le script ne tourne que pour le relais ; toutes les autres adresses sont servies directement.
     // NEXORA #048 : signal de vie, repères de déploiement et visiteurs réels (worker/fiabilite.js).
-    "run_worker_first": ["/__supabase-api/*", "/hb/*", "/hook/*", "/rum"],
+    // NEXORA #076 : contrôle de licence signé et abonnements (worker/licences.js).
+    "run_worker_first": ["/__supabase-api/*", "/hb/*", "/hook/*", "/rum", "/license/*", "/pay/*", "/security/*"],
     // NEXORA et le back office utilisent des routes après # : pas de repli sur index.html, une
     // adresse inconnue répond 404. /admin redirige vers /admin/ (traitement des barres obliques par défaut).
     "not_found_handling": "none",

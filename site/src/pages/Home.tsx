@@ -46,7 +46,7 @@ export function Home() {
             index="07"
             eyebrow="Tarifs"
             title={["Gratuit pour commencer,", "sans limite de durée."]}
-            lead="Standard débloque la publication sur Android et Windows, Pro donne toute la puissance de NEXORA. Tu changes d’offre quand tu veux."
+            lead="Responsive Lab et Browser Lab restent gratuits. Pro ouvre tout NEXORA : Dev Lab, applications Android et logiciels Windows. Ton premier jour, tout est ouvert."
           />
           <PricingCards />
           <Reveal className="center-row">

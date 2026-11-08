@@ -1,7 +1,7 @@
 // NEXORA #053 : variables de design : couleurs, nombres (espacements, arrondis, tailles) et polices nommés, avec
 // des modes (clair, sombre…). Un calque lié se met à jour quand la variable ou le mode change. Exports CSS,
 // Tailwind et jetons JSON.
-import { esc, ico, uid, toast, sec, btn, hex, walk, objs, slug, isText, commit, textBytes, saveBytes, api } from './ui.js';
+import { esc, ico, uid, toast, sec, btn, hex, walk, objs, slug, isText, commit, textBytes, saveBytes, api, pl } from './ui.js';
 import { getBrand } from '../services.js';
 
 export const store = (D) => (D.doc.nxVars = D.doc.nxVars || { modes: ['Clair', 'Sombre'], mode: 'Clair', list: [] });
@@ -121,7 +121,7 @@ export async function onPanel(D, e, rerender) {
   if (del) { const id = del.closest('[data-var]').dataset.var; s.list = s.list.filter((v) => v.id !== id); walk(objs(D), (o) => { if (o.nxVar) for (const k of Object.keys(o.nxVar)) if (o.nxVar[k] === id) delete o.nxVar[k]; }); D.changed(); rerender(); return true; }
   const a = t.closest('[data-dzx]') && t.closest('[data-dzx]').dataset.dzx;
   if (!a || !a.startsWith('var-')) return false;
-  if (a === 'var-auto') { const n = fromDocument(D); applyAll(D); commit(D, 'Variables créées'); toast(n ? `${n} variable(s) créée(s) ; les calques de même couleur y sont liés.` : 'Les couleurs du document ont déjà leur variable.'); rerender(); }
+  if (a === 'var-auto') { const n = fromDocument(D); applyAll(D); commit(D, 'Variables créées'); toast(n ? `${pl(n, 'variable créée', 'variables créées')} ; les calques de même couleur y sont liés.` : 'Les couleurs du document ont déjà leur variable.'); rerender(); }
   if (a.startsWith('var-add-')) { const type = a.slice(8); add(D, { name: type === 'color' ? 'couleur' : type === 'font' ? 'police' : 'taille', type, value: type === 'color' ? '#6c5ce7' : type === 'font' ? 'Inter' : 16 }); D.changed(); rerender(); }
   const out = { 'var-css': ['variables', 'css', toCss], 'var-tw': ['tailwind.config', 'js', toTailwind], 'var-json': ['jetons', 'json', toJson] }[a];
   if (out) { const text = out[2](D); await navigator.clipboard.writeText(text).catch(() => {}); await saveBytes(textBytes(text), { name: out[0], ext: out[1], kind: 'document', project: D.doc.name || 'NEXORA' }); }

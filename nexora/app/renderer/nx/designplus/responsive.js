@@ -1,7 +1,7 @@
 // NEXORA #054 : responsive dans le design : contraintes de chaque élément (gauche, droite, centre, étirer,
 // proportionnel), aperçu de la page à n'importe quelle largeur, déclinaisons téléphone, tablette et ordinateur,
 // et règles CSS des contraintes pour l'export de code. Sans réglage, les contraintes sont devinées.
-import { esc, btn, sec, select, uid, toast, busy, util, FabricObject, isText } from './ui.js';
+import { esc, ico, btn, sec, select, uid, toast, busy, util, FabricObject, isText, pl } from './ui.js';
 import { guessCons, constrain, fitInside, pushDown } from './pure.js';
 import { Canvas } from '../design/fab.js';
 import * as AL from './autolayout.js';
@@ -114,10 +114,43 @@ async function refresh(D, s) {
   if (el) el.innerHTML = `<img src="${s.img}" alt="Aperçu de la page à ${w} px de large"><small>${w} × ${pg.h} px</small>`;
 }
 const schedule = (D, s, ms = 120) => { clearTimeout(timer); timer = setTimeout(() => refresh(D, s).catch((e) => console.warn('[NEXORA #054]', e)), ms); };
+// NEXORA #075 : déclinaisons liées à leur page d'origine (pg.nxVariantOf) : quand l'original change, NEXORA le
+// signale et « Mettre à jour les déclinaisons » les refait (une version du document est gardée avant).
+export function track(D) {
+  const proto = Object.getPrototypeOf(D);
+  if (proto.nxRespChanged) return;
+  proto.nxRespChanged = proto.changed;
+  proto.changed = function () {
+    this.nxRespChanged();
+    if (!this.loading && this.page && this.doc && this.doc.pages.some((p) => p.nxVariantOf && p.nxVariantOf.src === this.page.id)) this.page.nxEditedAt = Date.now();
+  };
+}
+const variantsOf = (D, pg) => D.doc.pages.filter((p) => p.nxVariantOf && p.nxVariantOf.src === pg.id);
+function linkHtml(D) {
+  const mine = D.page.nxVariantOf; const src = mine && D.doc.pages.find((p) => p.id === mine.src);
+  const vars = variantsOf(D, D.page);
+  const stale = vars.filter((v) => (D.page.nxEditedAt || 0) > (v.nxVariantOf.at || 0));
+  if (src) return `<div class="dzp-gate dzp-update">${ico('link', 16)}<div><b>Déclinaison de « ${esc(src.name)} »</b><small>${(src.nxEditedAt || 0) > (mine.at || 0) ? 'L’original a changé depuis.' : 'À jour avec l’original.'} La mise à jour remplace les retouches faites sur cette page.</small></div><button class="btn small" data-dzx="resp-sync-one">Mettre à jour depuis l’original</button></div>`;
+  if (vars.length) return `<div class="dzp-gate ${stale.length ? 'dzp-update' : ''}">${ico('link', 16)}<div><b>${pl(vars.length, 'déclinaison liée', 'déclinaisons liées')} à cette page</b><small>${stale.length ? `La page a changé depuis : ${stale.length} sur ${vars.length} à mettre à jour.` : 'Toutes à jour.'}</small></div>${stale.length ? '<button class="btn small primary" data-dzx="resp-sync">Mettre à jour les déclinaisons</button>' : ''}</div>`;
+  return '';
+}
+async function syncVariants(D, srcPage, targets) {
+  const V = await import('./versions.js');
+  V.save(D, `Avant la mise à jour des déclinaisons de « ${srcPage.name} »`);
+  D.capturePage();
+  const json = JSON.parse(JSON.stringify(srcPage.json || (srcPage === D.page ? D.pageJson() : { objects: [] })));
+  for (const v of targets) {
+    const n = await adaptPage(srcPage, json, v.w, heightFor(D, v.w), v.name);
+    Object.assign(v, { w: n.w, h: n.h, json: n.json, bg: n.bg });
+    v.nxVariantOf = { ...v.nxVariantOf, at: Date.now() };
+  }
+  const i = D.pageIdx; await D.openPage(i, { save: false }); D.save(); if (D.renderLeft) D.renderLeft();
+  toast(`${pl(targets.length, 'déclinaison mise', 'déclinaisons mises')} à jour. La version d’avant est gardée (Fichier → Versions).`);
+}
 export function panel(D, s) {
   s.w = s.w || 390; s.pick = s.pick || { phone: true, tablet: true, desktop: false };
   if (s.imgW !== s.w || s.pageId !== D.page.id) { s.pageId = D.page.id; schedule(D, s, 30); }
-  return `<p class="dzx-hint">Chaque élément suit ses contraintes (panneau de droite, section « Contraintes ») ; sans réglage, NEXORA les devine d’après sa place. Les textes reviennent à la ligne, les éléments trop larges rentrent dans la page et ce qui est dessous descend.</p>
+  return `${linkHtml(D)}<div class="nx-btns"><button class="btn small" data-dzx="resp-formats">${ico('nxResize', 13)}<span>Autres formats (story, bannière, miniature…)</span></button></div><p class="dzx-hint">Chaque élément suit ses contraintes (panneau de droite, section « Contraintes ») ; sans réglage, NEXORA les devine d’après sa place. Les textes reviennent à la ligne, les éléments trop larges rentrent dans la page et ce qui est dessous descend.</p>
     <div class="dzp-sub">Aperçu</div>
     <div class="dzp-bar"><div class="seg">${SIZES.map(([, l, w]) => `<button class="${s.w === w ? 'on' : ''}" data-rsize="${w}">${esc(l)}</button>`).join('')}</div></div>
     <label class="dzx-num dzx-range"><span>Largeur : <b data-rw>${s.w}</b> px</span><input type="range" min="320" max="1920" step="10" value="${s.w}" data-rk="w" aria-label="Largeur de l’aperçu"></label>
@@ -131,10 +164,20 @@ export async function onPanel(D, e, rerender, s) {
   if (sz) { s.w = Number(sz.dataset.rsize); rerender(); return true; }
   const b = e.target.closest('[data-dzx]');
   if (!b) return false;
+  if (b.dataset.dzx === 'resp-formats') { const PGm = await import('../design/pages.js'); PGm.resizeSheet(D); return true; }
+  if (b.dataset.dzx === 'resp-sync') { await syncVariants(D, D.page, variantsOf(D, D.page)); rerender(); return true; }
+  if (b.dataset.dzx === 'resp-sync-one') {
+    const src = D.doc.pages.find((p) => p.id === D.page.nxVariantOf.src); if (!src) return true;
+    const me = D.page; const at = D.pageIdx;
+    D.capturePage();
+    await D.openPage(D.doc.pages.indexOf(src), { save: false });
+    await syncVariants(D, D.page, [me]);
+    await D.openPage(at, { save: false }); rerender(); return true;
+  }
   if (b.dataset.dzx === 'resp-guess') {
     let n = 0;
     for (const o of D.canvas.getObjects()) if (o.id !== '__board' && !(o.nxCons && o.nxCons.h && o.nxCons.v)) { o.nxCons = consOf(o, D.page.w, D.page.h); n += 1; }
-    D.changed(); D.renderProps(); toast(n ? `Contraintes fixées pour ${n} élément(s) : modifie-les dans le panneau de droite.` : 'Tous les éléments ont déjà leurs contraintes.');
+    D.changed(); D.renderProps(); toast(n ? `Contraintes fixées pour ${pl(n, 'élément', 'éléments')} : modifie-les dans le panneau de droite.` : 'Tous les éléments ont déjà leurs contraintes.');
     return true;
   }
   if (b.dataset.dzx === 'resp-make') {
@@ -144,11 +187,11 @@ export async function onPanel(D, e, rerender, s) {
     try {
       D.capturePage(); const src = D.page; const json = JSON.parse(JSON.stringify(src.json || D.pageJson()));
       const pages = [];
-      for (const [, l, w] of list) pages.push(await adaptPage(src, json, w, heightFor(D, w), `${src.name} · ${l}`));
+      for (const [k, l, w] of list) { const pg = await adaptPage(src, json, w, heightFor(D, w), `${src.name} · ${l}`); pg.nxVariantOf = { src: src.id, size: k, at: Date.now() }; pages.push(pg); }
       D.doc.pages.splice(D.pageIdx + 1, 0, ...pages);
       await D.openPage(D.pageIdx + 1, { save: false }); D.save();
       D.leftTab = 'pages'; D.renderLeft();
-      toast(`${pages.length} page(s) créée(s). Vérifie-les : tu peux ajuster chaque déclinaison à la main.`);
+      toast(`${pl(pages.length, 'page créée', 'pages créées')}. Vérifie-les : tu peux ajuster chaque déclinaison à la main.`);
     } finally { if (t && t.close) t.close(); }
     return true;
   }

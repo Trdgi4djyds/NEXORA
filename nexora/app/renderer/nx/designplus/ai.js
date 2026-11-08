@@ -1,7 +1,7 @@
 // NEXORA #053 : IA de NEX-DESIGN (clé API de l'utilisateur, offre Pro) : design entier et modifiable à partir
 // d'une demande (aux couleurs du kit de marque), 3 variantes d'une sélection, retouche d'image (effacer,
 // remplacer le fond, agrandir au-delà des bords, consigne libre) ; agrandissement ×2 sur ce PC.
-import { esc, ico, uid, toast, busy, api, btn, sec, util, FabricObject, Rect, Textbox, isText, hex, commit, objs, walk } from './ui.js';
+import { esc, ico, uid, toast, busy, api, btn, sec, util, FabricObject, Rect, Textbox, isText, hex, commit, objs, walk, pl } from './ui.js';
 import { getBrand } from '../services.js';
 import { FabricImage, Ellipse } from '../design/fab.js';
 
@@ -50,7 +50,7 @@ export async function createDesign(D, { prompt, images, newPage }) {
     const board = D.canvas.getObjects().find((x) => x.id === '__board');
     if (board && D.page.bg) board.set('fill', D.page.bg);
     commit(D, 'Design créé par l’IA'); D.save(); if (D.renderLeft) D.renderLeft();
-    toast(`${made} élément(s) créé(s) : tout reste modifiable.`);
+    toast(`${pl(made, 'élément créé', 'éléments créés')} : tout reste modifiable.`);
   } catch (e) { toast(clean(e), { kind: 'bad' }); } finally { done(t); }
 }
 
@@ -72,7 +72,7 @@ export async function variants(D) {
       for (const o of clones) { o.set({ left: o.left + (W + 60) * (i + 1) }); o.id = uid(); D.canvas.add(o); }
     }
     commit(D, 'Variantes de l’IA');
-    toast(`${list.length} variante(s) placée(s) à droite de la sélection.`);
+    toast(`${pl(list.length, 'variante placée', 'variantes placées')} à droite de la sélection.`);
   } catch (e) { toast(clean(e), { kind: 'bad' }); } finally { done(t); }
 }
 
@@ -132,7 +132,7 @@ export function imageProps(D, o, pro) {
 export function panel(D, st) {
   return `<p class="dzx-hint">Décris ce que tu veux : l’IA crée une maquette complète aux couleurs de ton kit de marque. Chaque texte, forme et image reste modifiable.</p>
     <textarea class="input nx-ta" rows="4" data-aik="prompt" placeholder="Exemple : une page d’accueil pour une boutique de pagnes, avec un titre accrocheur, trois produits et un bouton « Commander »">${esc(st.prompt || '')}</textarea>
-    <label class="nxd-check dzx-check"><input type="checkbox" data-aik="images" ${st.images ? 'checked' : ''}> Générer aussi les images (plus long, compte dans ton quota)</label>
+    <label class="nxd-check dzx-check"><input type="checkbox" data-aik="images" ${st.images ? 'checked' : ''}> Générer aussi les images (plus long ; facturé par ton fournisseur d’IA, avec ta clé)</label>
     <label class="nxd-check dzx-check"><input type="checkbox" data-aik="newPage" ${st.newPage !== false ? 'checked' : ''}> Sur une nouvelle page (${D.page.w} × ${D.page.h})</label>
     <div class="nx-btns">${btn('ai-create', 'sparkle', 'Créer le design', '', 'primary')}</div>
     <div class="dzp-sub">Déclinaisons</div>

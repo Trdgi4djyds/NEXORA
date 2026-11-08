@@ -521,6 +521,20 @@
       source: "invite",
       at: Date.now(),
     }),
+    // NEXORA #076 : licence (src/license.js) : l'aperçu n'est pas l'application empaquetée, rien n'est verrouillé.
+    // Pour voir un écran de verrouillage : localStorage « nexora-preview:licence » = état JSON ({"status":"auth"}…).
+    "license:state": () => {
+      try {
+        const forced = JSON.parse(localStorage.getItem("nexora-preview:licence") || "null")
+        if (forced) return { active: true, site: "https://nexora.abrahamtogbonon0.workers.dev/site/#/licence", ...forced }
+      } catch { /* état simulé invalide */ }
+      return { status: "ok", active: false, dev: true }
+    },
+    "license:check": () => handlers["license:state"](),
+    "license:log": () => true,
+    // NEXORA #076 : fichiers .novx : aucun fichier reçu au lancement, Google Drive pour ordinateur absent.
+    "novx:pending": () => null,
+    "novx:drive": () => ({ folders: [], web: "https://drive.google.com/drive/my-drive" }),
     // NEXORA #053 : NEX-DESIGN, onglet Importer : aucun jeton Figma enregistré sur un PC neuf
     // (src/designplus/ipc.js, dzx:figma-token sans argument).
     "dzx:figma-token": () => ({ saved: false }),

@@ -32,3 +32,12 @@ export const githubToken = () =>
 /** Jeton d'accès personnel Supabase (SUPABASE_ACCESS_TOKEN ou sbp_… du fichier local). */
 export const supabaseToken = () =>
   process.env.SUPABASE_ACCESS_TOKEN || fromFile(/\bsbp_\w+/)
+
+/**
+ * NEXORA #076 : clé privée Ed25519 de publication (PKCS#8 DER en base64), qui signe le manifeste lu par le lanceur
+ * NEXORA Devs Toolbox et par l'application. NX_RELEASE_SIGNING_KEY ou ligne « NX_RELEASE_SIGNING_KEY=… » du fichier
+ * local ; jamais affichée ni envoyée.
+ */
+export const releaseSigningKey = () =>
+  process.env.NX_RELEASE_SIGNING_KEY ||
+  fromFile(/(?<=NX_RELEASE_SIGNING_KEY\s*[=:]\s*)[A-Za-z0-9+/=]+/)

@@ -135,11 +135,11 @@ export const PERSONAS: Persona[] = [
 export const FAQ: { q: string; a: string }[] = [
   {
     q: "NEXORA est-il gratuit ?",
-    a: "Oui. L’offre Gratuite n’a pas de limite de durée : Dev Lab de base, Responsive Lab, Browser Lab, NEX-DESIGN (3 documents), audits de sécurité, deux applications en essai de 7 jours et l’assistant IA avec ta propre clé. Standard et Pro débloquent la publication et les outils avancés.",
+    a: "Oui. L’offre Gratuite n’a pas de limite de durée : Responsive Lab et Browser Lab complets, NEX-DESIGN (3 documents), un audit de sécurité par jour et l’assistant IA avec ta propre clé. Ton premier jour est un essai complet de Pro (24 h). Pro ouvre le Dev Lab, l’App Builder, le Desktop Builder et les outils avancés.",
   },
   {
     q: "Sur quels ordinateurs NEXORA fonctionne-t-il ?",
-    a: "Sur Windows 10 et Windows 11 en 64 bits. NEXORA web te permet aussi de retrouver ton compte, tes projets synchronisés et une partie des espaces depuis un navigateur.",
+    a: "Sur Windows 10 et Windows 11 en 64 bits. NEXORA Devs Toolbox est un logiciel de bureau : un petit lanceur l’installe, le vérifie et le met à jour. Une connexion à Internet est nécessaire au démarrage pour valider ta licence.",
   },
   {
     q: "Faut-il savoir coder ?",
@@ -151,7 +151,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Puis-je publier sur le Play Store ?",
-    a: "Oui, avec Standard ou Pro : NEXORA construit l’application signée, prépare la fiche Play Store (textes, captures, icône), vérifie que tout est prêt, puis l’envoie. Il suit aussi le test fermé de 14 jours avec tes testeurs.",
+    a: "Oui, avec Pro : NEXORA construit l’application signée, prépare la fiche Play Store (textes, captures, icône), vérifie que tout est prêt, puis l’envoie. Il suit aussi le test fermé de 14 jours avec tes testeurs.",
   },
   {
     q: "Mes projets sont-ils en sécurité ?",
@@ -159,10 +159,10 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Comment changer d’offre ?",
-    a: "Depuis NEXORA, dans Mon compte puis Offre et usage. Ta demande est traitée par l’équipe NEXORA et ta nouvelle offre est activée sous 24 heures. Le paiement annuel t’offre deux mois.",
+    a: "Sur la page Ma licence du site (ou depuis NEXORA, Mon compte puis Offre et usage, qui l’ouvre dans ton navigateur). Le paiement se fait dans le navigateur et Pro s’active au contrôle de licence suivant. Le paiement annuel t’offre deux mois.",
   },
   {
     q: "Comment se passent les mises à jour ?",
-    a: "NEXORA te prévient quand une nouvelle version sort, la télécharge et t’explique comment la remplacer. Tes réglages, tes projets et ton compte sont gardés.",
+    a: "Le lanceur NEXORA Devs Toolbox télécharge chaque nouvelle version, vérifie sa signature et l’installe, puis relance NEXORA. Tes réglages, tes projets et ton compte sont gardés.",
   },
 ]

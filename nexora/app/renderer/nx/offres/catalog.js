@@ -17,40 +17,34 @@ const FREE_PERMS = {
   // NEXORA #052 : outils Pro du Dev Lab (assistant IA du projet, débogueur, mise en ligne, contrôles, bases de données).
   devlab_pro: false,
 };
-const STANDARD_PERMS = {
-  ...FREE_PERMS, design_extended: true, responsive_advanced: true, source_import: true, apk: true, pwa: true,
-  play_publish: true, crawler: true, audits_advanced: true, devlab: true, desktop_builder: true,
-  push: true, inapp: true, alerts: true, projects_management: true, standard_support: true, status_page: true,
-};
+// NEXORA #076 : deux offres seulement. Gratuit : Responsive Lab et Browser Lab complets (produits d'appel), tout
+// NEXORA pendant le premier jour (essai Pro décompté par le serveur), puis les limites. Pro (18 $ par mois) : tout.
+FREE_PERMS.responsive_advanced = true;
+FREE_PERMS.crawler = true;
 const PRO_PERMS = Object.fromEntries(Object.keys(FREE_PERMS).map((k) => [k, true]));
 
 export const FALLBACK = {
   free: {
-    id: 'free', name: 'Gratuit', description: 'Découvre NEXORA et teste tes premières applications.', price_month_cents: 0, price_year_cents: 0,
+    id: 'free', name: 'Gratuit', description: 'Le Responsive Lab et le Browser Lab, gratuits pour toujours. Tout NEXORA pendant ton premier jour.', price_month_cents: 0, price_year_cents: 0,
     currency: 'USD', sort: 1, badge: '', perms: FREE_PERMS,
-    limits: { projects: 3, designs: 3, members: 1, monitors: 1, storage_mb: 200, apps: 2, app_trial_days: 7, ai_requests_month: -1, scans_per_day: 3, crawls_per_day: 0, builds_month: 0, push_month: 0 },
-    features: ['NEX-DESIGN limité (3 documents)', '2 applications créées depuis une adresse web, essai de 7 jours chacune', 'Responsive Design et prévisualisation multi-écrans', 'Browser : navigation et consultation de sites', 'Tableau de bord', 'Assistant IA avec ta propre clé, sans limite ; 3 audits de sécurité par jour', 'Dev Lab : dossiers, éditeur, terminal, Git et aperçu'],
-  },
-  standard: {
-    id: 'standard', name: 'Standard', description: 'Pour créer, importer et publier tes projets.', price_month_cents: 1200, price_year_cents: 12000,
-    currency: 'USD', sort: 2, badge: 'Le plus choisi', perms: STANDARD_PERMS,
-    limits: { projects: 25, designs: 50, members: 3, monitors: 10, storage_mb: 5120, apps: 10, app_trial_days: 0, ai_requests_month: -1, scans_per_day: 30, crawls_per_day: 20, builds_month: 60, push_month: 10000 },
-    features: ['Tout le Gratuit, sans limite d’essai', 'Import de projets web et de code source', 'Génération Android et APK (60 constructions par mois)', 'NEX-DESIGN étendu (50 documents)', 'Responsive avancé, Crawler et audits avancés', 'Desktop Builder : logiciels Windows installables', 'Dev Lab avancé : Problèmes, scripts, tests, API, Git avancé, partage en ligne', 'Notifications push et in-app, alertes et rappels', 'Gestion de projets (25 projets, 3 membres)', 'Assistance standard'],
+    limits: { projects: 3, designs: 3, members: 1, monitors: 1, storage_mb: 200, apps: 0, app_trial_days: 0, ai_requests_month: -1, scans_per_day: 1, crawls_per_day: -1, builds_month: 0, push_month: 0 },
+    features: ['Responsive Lab complet : tous les modèles d’appareils, vidéo et outils de développement', 'Browser Lab complet : inspection, réseau, console, tests et extraction', 'Tout NEXORA gratuitement pendant ton premier jour', 'NEX-DESIGN découverte (3 documents)', '1 audit de sécurité par jour, 1 site surveillé', 'Assistant IA avec ta propre clé'],
   },
   pro: {
-    id: 'pro', name: 'Pro', description: 'Toute la puissance de NEXORA, sans compromis.', price_month_cents: 2400, price_year_cents: 24000,
-    currency: 'USD', sort: 3, badge: 'Tout inclus', perms: PRO_PERMS,
-    limits: { projects: 200, designs: -1, members: 10, monitors: 50, storage_mb: 51200, apps: 50, app_trial_days: 0, ai_requests_month: -1, scans_per_day: 200, crawls_per_day: 150, builds_month: 400, push_month: 100000 },
-    features: ['Tout Standard', 'NEX-DESIGN complet, documents illimités', 'Création et transformation étendues (400 constructions par mois)', 'Projets multiples (200 projets, 10 membres)', 'Studio 3D avancé', 'Notifications avancées et personnalisées, événements de messagerie', 'Automatisations', 'API, SDK et outils d’intégration', 'Support prioritaire et accès en avant-première aux nouveautés', 'Dev Lab Pro : assistant IA sur tout le projet, débogueur, mise en ligne, contrôles et bases de données'],
+    id: 'pro', name: 'Pro', description: 'Toutes les options de NEXORA Devs Toolbox, sans limite d’espace.', price_month_cents: 1800, price_year_cents: 18000,
+    currency: 'USD', sort: 2, badge: 'Toutes les options', perms: PRO_PERMS,
+    limits: { projects: 200, designs: -1, members: 10, monitors: 50, storage_mb: 51200, apps: 50, app_trial_days: 0, ai_requests_month: -1, scans_per_day: 200, crawls_per_day: -1, builds_month: 400, push_month: 100000 },
+    features: ['Les 9 espaces sans restriction', 'Dev Lab complet : éditeur, terminal, Git, débogueur, tests, bases de données, mise en ligne', 'App Builder : APK, PWA, Play Store, notifications et messagerie (400 constructions par mois)', 'Desktop Builder : logiciels Windows installables et mises à jour', 'NEX-DESIGN complet : documents illimités, IA, prototype, code, équipe', 'Studio 3D & Motion avancé', 'Sécurité : audits avancés, 50 sites surveillés 24 h/24, page de statut', '200 projets, 10 membres, 50 Go', 'Assistance prioritaire'],
   },
 };
-export const PLAN_ORDER = ['free', 'standard', 'pro'];
-// Anciennes offres Équipe et Entreprise : traitées comme Pro (migration du #037).
-export const normPlan = (id) => (id === 'team' || id === 'enterprise' ? 'pro' : FALLBACK[id] ? id : id || 'free');
+// L'ancienne offre Standard (et Équipe, Entreprise) est traitée comme Pro.
+FALLBACK.standard = FALLBACK.pro;
+export const PLAN_ORDER = ['free', 'pro'];
+export const normPlan = (id) => (['standard', 'team', 'enterprise'].includes(id) ? 'pro' : FALLBACK[id] ? id : id || 'free');
 export const planOf = (id) => FALLBACK[normPlan(id)] || FALLBACK.free;
 export const PLAN_LOOK = {
   free: { object: 'plane', tone: 'turquoise', icon: 'nxSend' },
-  standard: { object: 'rocket', tone: 'violet', icon: 'bolt' },
+  standard: { object: 'crown', tone: 'jaune', icon: 'nxCrown' },
   pro: { object: 'crown', tone: 'jaune', icon: 'nxCrown' },
 };
 
@@ -68,28 +62,28 @@ export const METERS = [
   ['push_month', 'Envois push ce mois-ci', '', 'user', 'bell'],
 ];
 
-// Tableau comparatif : { label, perm } (coche), { label, limit } (nombre), { label, text: { free, standard, pro } }.
+// Tableau comparatif : { label, perm } (coche), { label, limit } (nombre), { label, text: { free, pro } }.
 export const COMPARE = [
   ['Création', [
-    { label: 'NEX-DESIGN', text: { free: 'Limité', standard: 'Étendu', pro: 'Complet' } },
+    { label: 'NEX-DESIGN', text: { free: 'Découverte', pro: 'Complet' } },
     { label: 'Documents NEX-DESIGN', limit: 'designs' },
     { label: 'Projets', limit: 'projects' },
     { label: 'Projets multiples et gestion avancée', perm: 'projects_multi' },
     { label: 'Création et transformation étendues', perm: 'transform_extended' },
     { label: 'Studio 3D avancé', perm: 'studio_advanced' },
-    { label: 'NEX-DESIGN : mise en page automatique, accessibilité, mesures, polices', text: { free: 'Inclus', standard: 'Inclus', pro: 'Inclus' } },
+    { label: 'NEX-DESIGN : mise en page automatique, accessibilité, mesures, polices', text: { free: 'Inclus', pro: 'Inclus' } },
     { label: 'NEX-DESIGN : variables, variantes, prototype, code, série, impression, PSD, icônes, versions', perm: 'design_extended' },
     { label: 'NEX-DESIGN : IA, code vers le Dev Lab, validation client, bibliothèques d’équipe, import Figma', perm: 'design_full' },
   ]],
   ['Applications', [
-    { label: 'Applications', limit: 'apps', note: { free: 'essai de 7 jours' } },
-    { label: 'Source des applications', text: { free: 'Adresse web', standard: 'Web, dossier, code', pro: 'Web, dossier, code' } },
+    { label: 'Applications', limit: 'apps', note: { free: 'pendant l’essai du premier jour' } },
+    { label: 'Source des applications', text: { free: '—', pro: 'Web, dossier, code' } },
     { label: 'Génération Android et APK', perm: 'apk' },
     { label: 'Constructions par mois', limit: 'builds_month' },
     { label: 'Paquet PWA et publication Play Store', perm: 'play_publish' },
   ]],
   ['Labs et outils', [
-    { label: 'Responsive Design et multi-écrans', perm: 'responsive' },
+    { label: 'Responsive Lab : tous les modèles d’appareils, multi-écrans', perm: 'responsive' },
     { label: 'Responsive avancé', perm: 'responsive_advanced' },
     { label: 'Browser : navigation et consultation', perm: 'browser' },
     { label: 'Crawler (aspirateur de site)', perm: 'crawler' },
@@ -97,14 +91,14 @@ export const COMPARE = [
     { label: 'Audits avancés et tests', perm: 'audits_advanced' },
     { label: 'Audits de sécurité par jour', limit: 'scans_per_day' },
     { label: 'Import de projets et de code source', perm: 'source_import' },
-    { label: 'Dev Lab : dossiers, éditeur, terminal, Git, GitHub, VS Code et aperçu', text: { free: 'Inclus', standard: 'Inclus', pro: 'Inclus' } },
+    { label: 'Dev Lab : dossiers, éditeur, terminal, Git, GitHub, VS Code et aperçu', perm: 'devlab' },
     { label: 'Partage en ligne d’un projet (adresse publique temporaire)', perm: 'devlab' },
     { label: 'Desktop Builder', perm: 'desktop_builder' },
     { label: 'Dev Lab avancé : Problèmes, scripts, variables protégées, Git avancé, API, tests, dépendances', perm: 'devlab' },
     { label: 'Dev Lab Pro : assistant IA du projet, débogueur, mise en ligne, contrôles, bases de données', perm: 'devlab_pro' },
   ]],
   ['Sécurité et supervision', [
-    { label: 'Audit de sécurité du site et du domaine', text: { free: 'Inclus', standard: 'Inclus', pro: 'Inclus' } },
+    { label: 'Audit de sécurité du site et du domaine', text: { free: '1 par jour', pro: 'Inclus' } },
     { label: 'Audits programmés, code, applications et correctifs écrits', perm: 'audits_advanced' },
     { label: 'Page de statut publique', perm: 'status_page' },
     { label: 'Parcours rejoués', perm: 'synthetic' },
@@ -112,7 +106,7 @@ export const COMPARE = [
     { label: 'Visiteurs réels, intégration continue et SARIF', perm: 'api_sdk' },
   ]],
   ['Intelligence artificielle', [
-    { label: 'Assistant IA avec ta propre clé (Claude, GPT, Gemini, Mistral, Ollama…)', text: { free: 'Sans limite', standard: 'Sans limite', pro: 'Sans limite' } },
+    { label: 'Assistant IA avec ta propre clé (Claude, GPT, Gemini, Mistral, Ollama…)', text: { free: 'Sans limite', pro: 'Sans limite' } },
   ]],
   ['Notifications et automatisations', [
     { label: 'Notifications push et in-app', perm: 'push' },
@@ -131,8 +125,7 @@ export const COMPARE = [
     { label: 'Sites surveillés', limit: 'monitors' },
     { label: 'Stockage', limit: 'storage_mb', unit: 'Mo' },
     { label: 'Tableau de bord', perm: 'dashboard' },
-    { label: 'Assistance', text: { free: 'Communauté', standard: 'Standard', pro: 'Prioritaire' } },
-    { label: 'Nouveautés en avant-première', perm: 'early_access' },
+    { label: 'Assistance', text: { free: 'Depuis NEXORA', pro: 'Prioritaire' } },
   ]],
 ];
 

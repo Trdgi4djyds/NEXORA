@@ -15,6 +15,8 @@
 //   --theme sombre        thème sombre de NEXORA (défaut : clair)
 //   --scroll <sélecteur>  après les clics, fait défiler jusqu'à l'élément visé (CSS), centré (#041)
 //   --taille 1440x900     taille de la fenêtre capturée
+//   --licence <état>      NEXORA #077 : état de licence simulé de l'aperçu (JSON, ex. {"status":"integrity",
+//                         "reason":"modified","file":"resources/app.asar"}) : écran de sécurité de NEXORA
 //   --reglages <fichier>  réglages de départ de NEXORA fusionnés à ceux d'un PC neuf (JSON ; #073 : application
 //                         de l'App Builder déjà configurée, voir scripts/reglages-captures/)
 //   --upload              envoie chaque image dans le chat (figma artifacts upload) et affiche le Markdown
@@ -134,6 +136,7 @@ function parseArgs(argv) {
       if (at < 1) throw new Error("--saisir attend « texte indicatif=valeur ».")
       opts.actions.push({ kind: "type", field: raw.slice(0, at), text: raw.slice(at + 1) })
     } else if (arg === "--reglages") opts.settings = JSON.parse(fs.readFileSync(value(), "utf8"))
+    else if (arg === "--licence") opts.licence = JSON.stringify(JSON.parse(value()))
     else if (arg === "--sans-notifications") opts.quiet = true
     else if (arg === "--attendre") opts.wait = Number(value()) || 0
     else if (arg === "--route") opts.routes.push(value())
@@ -373,16 +376,20 @@ async function main() {
       }
     }
     await page.evaluateOnNewDocument(
-      (key, value, demo) => {
+      (key, value, demo, licence) => {
         // Seulement la page de NEXORA (version web, #025 : les appareils affichent des iframes).
         if (window !== window.top) return
         if (!localStorage.getItem(key)) localStorage.setItem(key, value)
         // Même clé que preview/bridge.js (mode démonstration de la supervision ou du Dev Lab, #052).
         if (demo) localStorage.setItem("nexora-preview:demo", demo)
+        // NEXORA #077 : état de licence simulé (même clé que preview/bridge.js).
+        if (licence) localStorage.setItem("nexora-preview:licence", licence)
+        else localStorage.removeItem("nexora-preview:licence")
       },
       SETTINGS_KEY,
       JSON.stringify(seed),
       opts.demoDev ? "devlab" : opts.demo ? "supervision" : "",
+      opts.licence || "",
     )
     // Requêtes HEAD servies par l'interception : abouties, mais signalées « annulées » par Puppeteer.
     const servedHead = opts.account ? await useDemoAccount(page, opts.quiet) : new Set()

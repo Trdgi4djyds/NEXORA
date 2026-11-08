@@ -51,9 +51,15 @@ export function SectionHead({
       </span>
       <H className={`${as === "h1" ? "h-1" : "h-2"} words`}>
         <Words text={title[0]} />{" "}
-        <span className="tone">
-          <Words text={title[1]} from={n} />
-        </span>
+        {/* #074 : second ton des titres de page en dégradé vert, rose, violet (un seul bloc : le dégradé ne
+            traverse pas les mots animés séparément). */}
+        {as === "h1" ? (
+          <span className="tone grad-text">{title[1]}</span>
+        ) : (
+          <span className="tone">
+            <Words text={title[1]} from={n} />
+          </span>
+        )}
       </H>
       {(lead || children) && (
         <div className="sh-side">

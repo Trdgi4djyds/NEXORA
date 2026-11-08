@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react"
 import { SPACES, spaceHref } from "../data/spaces"
 import { Icon } from "../lib/icons"
-import { APP_VERSION, WEB_URL } from "../lib/product"
+import { APP_VERSION } from "../lib/product"
 import type { Route } from "../router"
 import { Brand } from "./Brand"
 import { MainButton, SecondButton } from "./Download"
-import { useRemote } from "../lib/remote"
 
 export function Header({ route, onSearch }: { route: Route; onSearch: () => void }) {
-  const { downloadUrl } = useRemote()
   const [mega, setMega] = useState(false)
   const [mobile, setMobile] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -181,7 +179,7 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
               <a href="#/tarifs">Tarifs</a>
               <a href="#/nouveautes">Nouveautés</a>
               <a href="#/telecharger">Télécharger</a>
-              {downloadUrl && <a href={WEB_URL}>Ouvrir NEXORA web</a>}
+              <a href="#/licence">Ma licence</a>
             </div>
             <MainButton size="lg" className="mobile-cta" />
           </div>

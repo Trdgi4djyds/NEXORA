@@ -5,6 +5,9 @@
 // sur ce dépôt (src/maint.js) : le dépôt doit être public, car l'application lit les versions sans jeton.
 // Mise en production (R26) : seulement après pnpm valider sans nouveau bloquant, et à la demande de l'utilisateur.
 // --essai : affiche ce qui serait publié et vérifie le dépôt (lecture seule), sans rien envoyer.
+// NEXORA #076 : --toolbox publie à la place le dossier préparé par `pnpm toolbox` (build/toolbox : paquet ZIP,
+// nexora.manifest.json signé, nexora.manifest.sig, lanceur NEXORA-Devs-Toolbox.exe, SHA256SUMS.txt), lu par le
+// lanceur NEXORA Devs Toolbox. desktop_download_url = …/releases/latest/download/NEXORA-Devs-Toolbox.exe.
 // Jeton : GITHUB_TOKEN ou fichier local de jetons (scripts/local-secrets.mjs), jamais affiché.
 // Ensuite, régler desktop_download_url (back office → Configuration) sur
 // https://github.com/<propriétaire/nom>/releases/latest/download/NEXORA-portable.zip : les applications déjà
@@ -43,22 +46,35 @@ const [owner, repo] = repoArg.split("/")
 const version = JSON.parse(
   fs.readFileSync(path.join(ROOT, "nexora/app/package.json"), "utf8"),
 ).version
-const zip = path.join(ROOT, "nexora/NEXORA-portable.zip")
-if (!fs.existsSync(zip))
-  fail("nexora/NEXORA-portable.zip est absent : lance d’abord pnpm pack:windows.")
-const size = fs.statSync(zip).size
-const sha256 = crypto
-  .createHash("sha256")
-  .update(fs.readFileSync(zip))
-  .digest("hex")
+const toolbox = args.includes("--toolbox")
+const TOOLBOX_DIR = path.join(ROOT, "build", "toolbox")
+let uploads
+if (toolbox) {
+  const raw = fs.existsSync(path.join(TOOLBOX_DIR, "nexora.manifest.json")) ? fs.readFileSync(path.join(TOOLBOX_DIR, "nexora.manifest.json")) : null
+  if (!raw) fail("build/toolbox est vide : lance d’abord pnpm toolbox.")
+  const pub = /RELEASE_KEY = '([^']+)'/.exec(fs.readFileSync(path.join(ROOT, "nexora/app/src/license.js"), "utf8"))[1]
+  const sig = fs.readFileSync(path.join(TOOLBOX_DIR, "nexora.manifest.sig"), "utf8").trim()
+  if (!crypto.verify(null, raw, crypto.createPublicKey({ key: Buffer.from(pub, "base64"), format: "der", type: "spki" }), Buffer.from(sig, "base64")))
+    fail("Signature du manifeste de build/toolbox refusée : relance pnpm toolbox.")
+  const m = JSON.parse(raw.toString("utf8"))
+  if (m.version !== version) fail(`build/toolbox contient NEXORA ${m.version}, l’application est en ${version} : relance pnpm toolbox.`)
+  uploads = fs.readdirSync(TOOLBOX_DIR).sort().map((f) => path.join(TOOLBOX_DIR, f))
+} else {
+  const zip = path.join(ROOT, "nexora/NEXORA-portable.zip")
+  if (!fs.existsSync(zip))
+    fail("nexora/NEXORA-portable.zip est absent : lance d’abord pnpm pack:windows.")
+  uploads = [zip]
+}
 const notes = releaseNotes(version)
 
 console.log(`Version     : v${version}`)
 console.log(`Dépôt       : ${owner}/${repo}`)
-console.log(`Fichier     : NEXORA-portable.zip (${(size / 1048576).toFixed(1)} Mo)`)
-console.log(`SHA-256     : ${sha256}`)
+for (const f of uploads) {
+  const sha256 = crypto.createHash("sha256").update(fs.readFileSync(f)).digest("hex")
+  console.log(`Fichier     : ${path.basename(f)} (${(fs.statSync(f).size / 1048576).toFixed(1)} Mo) · SHA-256 ${sha256}`)
+}
 console.log(
-  `Lien stable : https://github.com/${owner}/${repo}/releases/latest/download/NEXORA-portable.zip`,
+  `Lien stable : https://github.com/${owner}/${repo}/releases/latest/download/${toolbox ? "NEXORA-Devs-Toolbox.exe" : "NEXORA-portable.zip"}`,
 )
 console.log(`\nNotes :\n${notes}\n`)
 
@@ -88,7 +104,7 @@ const tag = await gh(
 )
 console.log(
   tag.status === 200
-    ? `La version v${version} existe déjà : son fichier NEXORA-portable.zip serait remplacé.`
+    ? `La version v${version} existe déjà : ses fichiers seraient remplacés.`
     : `La version v${version} serait créée.`,
 )
 if (essai) {
@@ -97,7 +113,7 @@ if (essai) {
 }
 if (!token) fail("Aucun jeton GitHub (GITHUB_TOKEN ou fichier local de jetons).")
 const res = await publishGithub(
-  { owner, repo, token, version, notes, name: `NEXORA ${version}`, files: [{ path: zip }] },
+  { owner, repo, token, version, notes, name: `NEXORA ${version}`, files: uploads.map((f) => ({ path: f })) },
   (u, o) => fetch(u, o),
   (step) => console.log(`… ${step}`),
 )

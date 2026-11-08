@@ -90,36 +90,37 @@ async function gates() {
     }
   }
   ok(
-    Object.keys(plan.GATES).length === 63,
-    "63 canaux contrôlés (41 du #037, 10 du #048, 22 du #052, 2 du #053, 1 du #058 ; 13 libérés au #059 : Dev Lab de base et IA)",
+    Object.keys(plan.GATES).length === 57 &&
+      plan.PREFIX_GATES.map((g) => g.join("=")).join() === "dev:=devlab,git:=devlab,gh:=devlab",
+    "57 canaux contrôlés et préfixes dev:, git:, gh: du Dev Lab (#076 : Responsive Lab et Browser Lab libres)",
     Object.keys(plan.GATES).length,
   )
   let r = await inv("lab:fetch")
   ok(r === "ran:lab:fetch", "canal libre non contrôlé")
   r = await inv("android:build")
   ok(
-    /offre Standard/.test(r) && sent.at(-1)[0] === "plan:blocked",
+    /offre Pro/.test(r) && sent.at(-1)[0] === "plan:blocked",
     "invité : APK refusé, événement plan:blocked",
     r,
   )
-  // NEXORA #059 : assistant IA (clé de l'utilisateur) et Dev Lab de base libres, partage en ligne réservé.
+  // NEXORA #059 : assistant IA (clé de l'utilisateur) libre. #076 : tout le Dev Lab dans Pro.
   r = await inv("ai:chat")
   ok(r === "ran:ai:chat", "invité : assistant IA libre (clé de l’utilisateur)", r)
   r = await inv("dev:open", "C:/x")
-  ok(r === "ran:dev:open", "invité : Dev Lab de base libre (dossier, éditeur, terminal, Git)", r)
+  ok(/Le Dev Lab .*offre Pro/.test(r), "invité : Dev Lab refusé (offre Pro depuis #076)", r)
   ok(
-    ["dev:pick-folder", "dev:term-open", "git:clone", "git:push", "git:publish", "ai:image"].every((c) => !plan.GATES[c]) &&
+    ["dev:pick-folder", "dev:term-open", "git:clone", "git:push", "git:publish", "ai:image", "lab:scrape-start", "project:start", "device:devtools"].every((c) => !plan.GATES[c]) &&
       plan.GATES["tunnel:start"]?.[0] === "devlab" &&
       plan.GATES["devx:problems"]?.[0] === "devlab" &&
       plan.GATES["devx:debug-start"]?.[0] === "devlab_pro",
-    "partage en ligne et outils avancés toujours contrôlés",
+    "partage en ligne et outils avancés contrôlés, Responsive et Browser libres",
   )
   r = await inv("tunnel:start")
-  ok(/Dev Lab avancé/.test(r) && /offre Standard/.test(r), "invité : partage en ligne refusé", r)
+  ok(/Dev Lab/.test(r) && /offre Pro/.test(r), "invité : partage en ligne refusé", r)
   r = await inv("device:devtools", { wcId: 1 })
   ok(
-    /Responsive avancé/.test(r),
-    "invité : outils de développement de l’appareil refusés (Responsive avancé)",
+    r === "ran:device:devtools",
+    "invité : outils de développement de l’appareil libres (Responsive Lab gratuit, #076)",
     r,
   )
   r = await inv("plan:status")
@@ -148,9 +149,9 @@ async function gates() {
       : {
           ok: false,
           reason: "plan",
-          need: "standard",
+          need: "pro",
           message:
-            "La génération d’APK fait partie de l’offre Standard. Ton offre actuelle : Gratuit.",
+            "La génération d’APK fait partie de l’offre Pro. Ton offre actuelle : Gratuit.",
         }
   r = await inv("sec:scan", { url: "https://a.com" })
   ok(
@@ -159,27 +160,27 @@ async function gates() {
   )
   r = await inv("android:build")
   ok(
-    /offre Standard/.test(r),
+    /offre Pro/.test(r),
     "Gratuit connecté : APK refusé par le serveur",
     r,
   )
   r = await inv("tunnel:start")
   ok(
-    /Dev Lab avancé .* fait partie de l’offre Standard/.test(r),
+    /Dev Lab .* fait partie de l’offre Pro/.test(r),
     "Gratuit connecté : partage en ligne du Dev Lab refusé",
     r,
   )
   server.status = {
     ...server.status,
-    plan: "standard",
-    plan_name: "Standard",
+    plan: "pro",
+    plan_name: "Pro",
     perms: { devlab: true, apk: true },
   }
   r = await inv("tunnel:start")
   ok(/Dev Lab/.test(r), "offre gardée 5 minutes avant plan:refresh")
   await inv("plan:refresh")
   r = await inv("tunnel:start")
-  ok(r === "ran:tunnel:start", "Standard : partage en ligne accepté après plan:refresh")
+  ok(r === "ran:tunnel:start", "Pro : partage en ligne accepté après plan:refresh")
   server.mode = "offline"
   await inv("mon:cloud-session", {
     url: "https://x.supabase.co",
@@ -209,17 +210,17 @@ async function gates() {
   r = await inv("android:build")
   ok(
     r === "ran:android:build",
-    "serveurs sans migration : APK selon l’abonnement Standard",
+    "serveurs sans migration : APK selon l’abonnement (ancienne offre Standard lue comme Pro)",
     r,
   )
   r = await inv("plan:status")
   ok(
-    r.source === "abonnement" && r.plan === "standard",
+    r.source === "abonnement" && r.plan === "pro",
     "serveurs sans migration : offre lue dans l’abonnement",
   )
   await inv("mon:cloud-session", null)
   r = await inv("android:build")
-  ok(/offre Standard/.test(r), "déconnexion : retour à l’offre Gratuite")
+  ok(/offre Pro/.test(r), "déconnexion : retour à l’offre Gratuite")
 }
 
 // ---------- 2. Migration sur PGlite ----------

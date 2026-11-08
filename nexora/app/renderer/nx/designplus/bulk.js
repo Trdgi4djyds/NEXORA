@@ -1,6 +1,6 @@
 // NEXORA #053 : création en série : un modèle (textes avec {{colonne}}, images nommées @colonne) et un fichier
 // CSV donnent une page par ligne, ou une archive ZIP d'images.
-import { esc, ico, uid, busy, toast, btn, readText, saveBytes, zip, dataUrlBytes, slug } from './ui.js';
+import { esc, ico, uid, busy, toast, btn, readText, saveBytes, zip, dataUrlBytes, slug, pl } from './ui.js';
 import { parseCsv, fill } from './pure.js';
 
 export { parseCsv, fill };
@@ -18,10 +18,10 @@ export function panel(D, st) {
   const missing = d ? ph.filter((p) => !d.head.includes(p)) : [];
   return `<p class="dzx-hint">1. Dans la page modèle, écris <code>{{nom}}</code>, <code>{{prix}}</code>… dans les textes, et nomme <code>@photo</code> une image à remplacer (adresse web de l’image dans le tableau).<br>2. Choisis un fichier CSV (exporté d’un tableur) dont la première ligne porte les noms des colonnes.</p>
     <p class="dzx-hint">Champs trouvés dans cette page : ${ph.length ? ph.map((p) => `<code>${esc(p)}</code>`).join(' ') : '<i>aucun pour l’instant</i>'}</p>
-    <div class="nx-btns">${btn('bulk-csv', 'file', d ? `${d.name || 'Tableau'} · ${d.rows.length} ligne(s)` : 'Choisir le fichier CSV', '', d ? '' : 'primary')}</div>
+    <div class="nx-btns">${btn('bulk-csv', 'file', d ? `${d.name || 'Tableau'} · ${pl(d.rows.length, 'ligne', 'lignes')}` : 'Choisir le fichier CSV', '', d ? '' : 'primary')}</div>
     ${d ? `${missing.length ? `<p class="dzx-hint bad">${ico('warn', 12)} Colonnes absentes du tableau : ${missing.map((m) => `<code>${esc(m)}</code>`).join(' ')}</p>` : ''}
       <div class="dzp-table"><table><thead><tr>${d.head.slice(0, 5).map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${d.rows.slice(0, 4).map((r) => `<tr>${d.head.slice(0, 5).map((h) => `<td>${esc(String(r[h]).slice(0, 30))}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
-      <div class="nx-btns">${btn('bulk-pages', 'layers', `Créer ${Math.min(500, d.rows.length)} page(s)`, '', 'primary')}${btn('bulk-zip', 'nxZip', 'Exporter en images (ZIP)')}</div>` : ''}`;
+      <div class="nx-btns">${btn('bulk-pages', 'layers', `Créer ${pl(Math.min(500, d.rows.length), 'page', 'pages')}`, '', 'primary')}${btn('bulk-zip', 'nxZip', 'Exporter en images (ZIP)')}</div>` : ''}`;
 }
 export function makePages(D, rows) {
   D.capturePage();
@@ -41,12 +41,12 @@ export async function onPanel(D, e, rerender, st) {
     D.doc.pages.splice(D.pageIdx + 1, 0, ...pages);
     await D.openPage(D.pageIdx + 1, { save: false });
     D.save(); if (D.renderLeft) D.renderLeft();
-    toast(`${pages.length} page(s) créée(s) après le modèle.`);
+    toast(`${pl(pages.length, 'page créée', 'pages créées')} après le modèle.`);
     return true;
   }
   if (a === 'bulk-zip') {
     const pages = makePages(D, st.data.rows);
-    const t = busy(`Export de ${pages.length} image(s)…`);
+    const t = busy(`Export de ${pl(pages.length, 'image', 'images')}…`);
     const cur = D.pageIdx;
     const files = [];
     const at = D.doc.pages.length;

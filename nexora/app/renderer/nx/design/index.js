@@ -9,7 +9,7 @@ import { PixelTools, PIX_TOOLS, pixOpts } from './pixel.js';
 import * as C from './content.js';
 import * as PG from './pages.js';
 import { SHAPES, FRAMES, GRIDS, STICKERS, stickerSvg, TEMPLATES, PATTERNS } from '../library.js';
-import { getBrand, brandSheet, onBrand } from '../services.js';
+import { getBrand, brandSheet, onBrand, brandList, useBrand, activeBrandId } from '../services.js';
 import { settings, saveSettings, esc, ico, toast, menu, prompt, uid, clamp, fmt, $, el, luminance } from '../core.js';
 
 // NEXORA #045 : l'icône Lucide déjà posée est gardée.
@@ -18,7 +18,9 @@ const TEXT = ['textbox', 'i-text', 'text'];
 const isText = (o) => o && TEXT.includes(o.type);
 
 // ---------- Petits constructeurs d'interface (même balisage que NEX-DESIGN) ----------
-const sec = (title, body, extra = '') => `<section class="dz-card nx-card"><div class="dz-card-h"><span>${title}</span>${extra}</div>${body}</section>`;
+// NEXORA #075 (A-039) : free = carte libre en offre Gratuite (outils de la barre, éléments de l'onglet Ressources,
+// composants, kit de marque) ; les autres restent réservées à l'offre Standard (nx/offres/locks.js).
+const sec = (title, body, extra = '', free = false) => `<section class="dz-card nx-card"${free ? ' data-free' : ''}><div class="dz-card-h"><span>${title}</span>${extra}</div>${body}</section>`;
 const range = (k, label, v, min, max, step, disp) => `<div class="st-field"><span>${label}<b data-nxv="${k}">${disp ?? fmt(v, 2)}</b></span><input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-nx="${k}"></div>`;
 const seg = (k, val, map) => `<div class="seg wide small dz-seg">${Object.entries(map).map(([v, l]) => `<button class="${String(val) === v ? 'on' : ''}" data-nxs="${k}" data-v="${v}">${l}</button>`).join('')}</div>`;
 const sw = (k, val, title = '') => `<button class="dz-sw${!val || val === 'transparent' ? ' none' : ''}" data-nxc="${k}" style="--c:${esc(val || 'transparent')}" title="${esc(title || val || 'Aucune')}"></button>`;
@@ -91,14 +93,15 @@ export async function install(D) {
   // Coédition : chaque modification est diffusée.
   if (!proto.nxChanged) {
     proto.nxChanged = proto.changed;
-    proto.changed = function () { this.nxChanged(); if (this.nxRoom && !this.nxRemote && !this.loading) this.nxRoom.sendState(); };
+    proto.changed = function () { this.nxChanged(); if (this.nxRoom && !this.nxRemote && !this.loading) this.nxRoom.sendPatch(); };
   }
   // Onglet « Éléments » à gauche.
   if (!proto.nxRenderLeft) {
     proto.nxRenderLeft = proto.renderLeft;
+    // NEXORA #075 (A-044) : l'ancien onglet « Éléments » est fondu dans « Ressources » (une seule bibliothèque).
     proto.renderLeft = function () {
-      if (this.leftTab !== 'nxlib') return this.nxRenderLeft();
-      for (const b of this.el.querySelectorAll('[data-dz-tab]')) b.classList.toggle('on', b.dataset.dzTab === 'nxlib');
+      if (this.leftTab === 'nxlib') this.leftTab = 'assets';
+      if (this.leftTab !== 'assets') return this.nxRenderLeft();
       renderLibrary(this);
     };
   }
@@ -108,11 +111,20 @@ export async function install(D) {
   bindProps(D);
   bindLeft(D);
   buildStage(D);
-  onBrand(() => { if (D.leftTab === 'nxlib') renderLibrary(D); D.renderProps(); });
+  onBrand(() => { if (D.leftTab === 'assets') renderLibrary(D); D.renderProps(); });
   D.renderLeft(); D.renderProps();
 }
 
+// NEXORA #075 : à l'ouverture d'un document, son kit de marque redevient le kit actif.
+let lastDocBrand = null;
+function docBrand(D) {
+  if (!D.doc || lastDocBrand === D.doc.id) return;
+  lastDocBrand = D.doc.id;
+  const id = D.doc.nxBrandId;
+  if (id && id !== activeBrandId() && brandList().some((k) => k.id === id)) { useBrand(id); toast(`Kit de marque de ce document : « ${getBrand().name || 'Sans nom'} ».`); }
+}
 function afterLoad(D) {
+  docBrand(D);
   restorePatterns(D.canvas);
   for (const o of D.canvas.getObjects()) {
     if (o.type === 'image' && Array.isArray(o.nxAdj) && o.nxAdj.length) D.applyFx(o);
@@ -130,10 +142,10 @@ function buildToolbar(D) {
   after('[data-tool="hand"]', '<span class="dz-sep nx-tb"></span>');
   after('[data-tool="line"]', '<span class="dz-sep nx-tb"></span>');
   after('[data-tool="pencil"]', `<button class="dz-tool nx-tb" data-nxtool="nodes" title="Édition des points (A)">${ico('nxNodes', 17)}</button><span class="dz-sep nx-tb"></span>`);
-  after('[data-tool="three"]', `<button class="dz-tool nx-tb" data-nxtb="retouch" title="Retouche d’image : lasso, baguette, pinceau, gomme, tampon, correcteur, masque, recadrage" aria-haspopup="true">${ico('nxBrush', 17)}</button><button class="dz-tool nx-tb" data-nxtb="elements" title="Éléments : modèles, formes, icônes, autocollants, cadres, graphiques, QR">${ico('nxSticker', 17)}</button>`);
-  after('[data-dz="redo"]', `<button class="dz-tool nx-tb" data-nxtb="history" title="Historique des actions">${ico('nxHistory', 16)}</button>`);
-  const exp = bar.querySelector('[data-dz="export"]');
-  exp && exp.insertAdjacentHTML('beforebegin', `<button class="dz-tool nx-tb" data-nxtb="ai" title="Assistant IA : textes, mise en page, palettes, images">${ico('sparkle', 16)}</button><button class="dz-tool nx-tb" data-nxtb="more" title="Plus : formats, animation, présentation, marque, coédition, commentaires, règles" aria-haspopup="true">${ico('nxMore', 16)}</button>`);
+  // NEXORA #075 (A-044) : « Éléments », « Historique », « Assistant IA » et « Plus » ne sont plus dans la barre :
+  // ressources à gauche, historique dans le menu Fichier, IA, partage et présentation dans le groupe de droite
+  // (nx/designplus/layout.js).
+  after('[data-tool="three"]', `<button class="dz-tool nx-tb" data-nxtb="retouch" title="Retouche d’image : lasso, baguette, pinceau, gomme, tampon, correcteur, masque, recadrage" aria-haspopup="true">${ico('nxBrush', 17)}</button>`);
   bar.addEventListener('click', async (e) => {
     const t = e.target.closest('[data-nxtool]');
     if (t) { e.stopPropagation(); nxTool(D, D.tool === 'nxnodes' ? null : t.dataset.nxtool); return; }
@@ -144,7 +156,7 @@ function buildToolbar(D) {
       const id = await menu(b, 'Retouche d’image', Object.entries(PIX_TOOLS).map(([k, [label, icon, key]]) => ({ id: k, icon, label, kbd: key })), { width: 320 });
       if (id) nxTool(D, id);
     }
-    if (a === 'elements') { D.leftTab = 'nxlib'; settings.designLeftTab = 'nxlib'; saveSettings(); D.renderLeft(); }
+    if (a === 'elements') { D.leftTab = 'assets'; settings.designLeftTab = 'assets'; saveSettings(); D.renderLeft(); }
     if (a === 'history') toggleFloat(D, 'history');
     if (a === 'ai') PG.aiMenu(D, b);
     if (a === 'more') moreMenu(D, b);
@@ -156,7 +168,7 @@ function markTools(D) {
   if (r) { const id = D.nxPix && D.nxPix.tool; r.classList.toggle('on', !!id); r.innerHTML = ico(id ? PIX_TOOLS[id][1] : 'nxBrush', 17); }
   if (D.tool && D.tool.startsWith('nx')) for (const b of D.el.querySelectorAll('[data-tool]')) b.classList.remove('on');
 }
-async function moreMenu(D, anchor) {
+export async function moreMenu(D, anchor) {
   const a = await menu(anchor, '', [
     { head: 'Pages' },
     { id: 'resize', icon: 'nxResize', label: 'Redimensionner en plusieurs formats…' },
@@ -191,8 +203,8 @@ async function moreMenu(D, anchor) {
   if (a === 'history') toggleFloat(D, 'history');
   if (a === 'keys') keysHelp(anchor);
 }
-function keysHelp(anchor) {
-  const rows = [['V', 'Sélection'], ['H', 'Main'], ['R', 'Rectangle'], ['O', 'Ellipse'], ['Y', 'Polygone et étoile'], ['L', 'Ligne'], ['P', 'Plume'], ['B', 'Crayon'], ['A', 'Édition des points'], ['T', 'Texte'], ['I', 'Image'], ['3', 'Objet 3D'], ['Q', 'Lasso'], ['W', 'Baguette magique'], ['J', 'Pinceau de retouche'], ['E', 'Gomme'], ['S', 'Tampon'], ['X', 'Correcteur'], ['M', 'Masque au pinceau'], ['C', 'Recadrer'], ['Espace', 'Déplacer la vue'], ['Ctrl+molette', 'Zoom'], ['Maj+1', 'Tout voir'], ['Ctrl+G', 'Grouper'], ['Ctrl+D', 'Dupliquer'], ['F5', 'Présenter'], ['Échap', 'Quitter l’outil']];
+export function keysHelp(anchor) {
+  const rows = [['V', 'Sélection'], ['H', 'Main'], ['R', 'Rectangle'], ['O', 'Ellipse'], ['Y', 'Polygone et étoile'], ['L', 'Ligne'], ['P', 'Plume'], ['B', 'Crayon'], ['A', 'Édition des points'], ['T', 'Texte'], ['I', 'Image'], ['3', 'Objet 3D'], ['Q', 'Lasso'], ['W', 'Baguette magique'], ['J', 'Pinceau de retouche'], ['E', 'Gomme'], ['S', 'Tampon'], ['X', 'Correcteur'], ['M', 'Masque au pinceau'], ['C', 'Recadrer'], ['Espace', 'Déplacer la vue'], ['Ctrl+molette', 'Zoom'], ['Maj+1', 'Tout voir'], ['Ctrl+G', 'Grouper'], ['Ctrl+D', 'Dupliquer'], ['Maj+A', 'Mise en page automatique'], ['Alt', 'Mesurer les distances'], ['Ctrl+E', 'Exporter'], ['Ctrl+Maj+C', 'Copier la sélection en PNG'], ['F5', 'Présenter'], ['Échap', 'Quitter l’outil']];
   return menu(anchor || document.body, 'Raccourcis clavier', rows.map(([k, l]) => ({ id: k, label: l, kbd: k })), { width: 300, align: 'end' });
 }
 
@@ -401,12 +413,19 @@ function drawRulers(D, rh, rv) {
     }
   }
 }
+const DECISION = { approve: 'Approuvé', changes: 'Changements demandés', comment: 'Commentaire' };
 function renderPins(D) {
   const box = D.$.stage.querySelector('.nx-pins'); if (!box || !D.page) return;
   const v = D.canvas.viewportTransform;
   const list = PG.comments(D).filter((c) => c.page === D.page.id && !c.done);
-  box.innerHTML = list.map((c, i) => `<button class="nx-pin" data-pin="${esc(c.id)}" style="left:${c.x * v[0] + v[4]}px;top:${c.y * v[3] + v[5]}px" title="${esc(c.author)} : ${esc(c.text.slice(0, 60))}">${i + 1}</button>`).join('');
-  box.onclick = (e) => { const b = e.target.closest('[data-pin]'); if (b) commentPop(D, b, b.dataset.pin); };
+  // NEXORA #075 : avis des clients (liens de validation) épinglés eux aussi, en couleur à part.
+  const client = (D.nxClientReviews ? D.nxClientReviews() : []).filter((r) => r.x != null && r.y != null && r.page === D.pageIdx);
+  box.innerHTML = list.map((c, i) => `<button class="nx-pin" data-pin="${esc(c.id)}" style="left:${c.x * v[0] + v[4]}px;top:${c.y * v[3] + v[5]}px" title="${esc(c.author)} : ${esc(c.text.slice(0, 60))}">${i + 1}</button>`).join('')
+    + client.map((r, i) => `<button class="nx-pin client ${esc(r.decision)}" data-cpin="${i}" style="left:${r.x * D.page.w * v[0] + v[4]}px;top:${r.y * D.page.h * v[3] + v[5]}px" title="${esc(r.author)} (client) : ${esc(String(r.comment || '').slice(0, 60))}">${String.fromCharCode(65 + (i % 26))}</button>`).join('');
+  box.onclick = (e) => {
+    const b = e.target.closest('[data-pin]'); if (b) { commentPop(D, b, b.dataset.pin); return; }
+    const c = e.target.closest('[data-cpin]'); if (c) { const r = client[Number(c.dataset.cpin)]; if (r) menu(c, `${r.author} · avis client`, [{ head: `${DECISION[r.decision] || 'Commentaire'} · ${new Date(r.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}` }, { head: r.comment || '—' }, { head: `Lien « ${r.link} »` }], { width: 300 }); }
+  };
 }
 async function commentPop(D, anchor, id) {
   const c = PG.comments(D).find((x) => x.id === id); if (!c) return;
@@ -441,7 +460,7 @@ function startOverlay(D) {
     if (t) { box.hidden = true; await C.applyTemplate(D, t.dataset.start); return; }
     const a = e.target.closest('[data-start-act]'); if (!a) return;
     if (a.dataset.startAct === 'blank') { D.page.nxStartDone = true; box.hidden = true; D.save(); }
-    if (a.dataset.startAct === 'all') { D.leftTab = 'nxlib'; D.renderLeft(); }
+    if (a.dataset.startAct === 'all') { D.leftTab = 'assets'; settings.designLeftTab = 'assets'; saveSettings(); D.renderLeft(); }
     if (a.dataset.startAct === 'brand') brandSheet({ onApply: () => { box.innerHTML = ''; startOverlay(D); } });
   };
 }
@@ -456,7 +475,7 @@ function selBar(D) {
   bar.onclick = (e) => { const b = e.target.closest('[data-nxa]'); if (b) action(D, b.dataset.nxa, b); };
 }
 // Panneaux flottants : historique et commentaires.
-function toggleFloat(D, kind) {
+export function toggleFloat(D, kind) {
   const st = D.$.stage; let f = st.querySelector(`.nx-float.${kind}`);
   if (f) { f.remove(); return; }
   for (const o of st.querySelectorAll('.nx-float')) o.remove();
@@ -476,10 +495,14 @@ function renderFloat(D, kind, f) {
   }
   if (kind === 'comments') {
     const list = PG.comments(D);
+    // NEXORA #075 : un seul fil : commentaires de l'équipe, puis avis des clients reçus par les liens de validation.
+    const cr = D.nxClientReviews ? D.nxClientReviews() : [];
     f.innerHTML = `<div class="nx-float-h"><b>${ico('nxComment', 14)} Commentaires</b><button class="btn small" data-fl="add">${ico('plus', 12)}<span>Ajouter</span></button><button class="icon-btn small" data-fl="close" title="Fermer">${ico('close', 12)}</button></div>
-      <div class="nx-float-list">${list.length ? list.map((c) => { const pi = D.doc.pages.findIndex((p) => p.id === c.page); return `<div class="nx-crow${c.done ? ' off' : ''}"><b>${esc(c.author)}</b><small>Page ${pi + 1} · ${new Date(c.at).toLocaleDateString('fr-FR')}</small><p>${esc(c.text)}</p>${c.replies.map((r) => `<p class="nx-reply"><b>${esc(r.author)}</b> ${esc(r.text)}</p>`).join('')}<div class="nx-row"><button class="btn small" data-cgo="${esc(c.id)}">Voir</button>${c.done ? '' : `<button class="btn small" data-cdone="${esc(c.id)}">Résolu</button>`}</div></div>`; }).join('') : '<p class="nx-muted" style="padding:10px">Aucun commentaire. Clique sur « Ajouter », puis sur la page.</p>'}</div>`;
+      <div class="nx-float-list"><div class="pop-sub">Équipe</div>${list.length ? list.map((c) => { const pi = D.doc.pages.findIndex((p) => p.id === c.page); return `<div class="nx-crow${c.done ? ' off' : ''}"><b>${esc(c.author)}</b><small>Page ${pi + 1} · ${new Date(c.at).toLocaleDateString('fr-FR')}</small><p>${esc(c.text)}</p>${c.replies.map((r) => `<p class="nx-reply"><b>${esc(r.author)}</b> ${esc(r.text)}</p>`).join('')}<div class="nx-row"><button class="btn small" data-cgo="${esc(c.id)}">Voir</button>${c.done ? '' : `<button class="btn small" data-cdone="${esc(c.id)}">Résolu</button>`}</div></div>`; }).join('') : '<p class="nx-muted" style="padding:10px">Aucun commentaire. Clique sur « Ajouter », puis sur la page.</p>'}
+      <div class="pop-sub">Clients (validation)</div>${cr.length ? cr.map((r) => `<div class="nx-crow client ${esc(r.decision)}"><b>${esc(r.author)}</b><small>${esc(DECISION[r.decision] || 'Commentaire')} · page ${r.page + 1} · ${new Date(r.created_at).toLocaleDateString('fr-FR')} · « ${esc(r.link)} »</small><p>${esc(r.comment || '—')}</p><div class="nx-row"><button class="btn small" data-cpage="${r.page}">Voir</button></div></div>`).join('') : '<p class="nx-muted" style="padding:10px">Aucun avis de client. Envoie un lien : Partager → Validation client.</p>'}</div>`;
     f.onclick = async (e) => {
       if (e.target.closest('[data-fl="close"]')) { f.remove(); return; }
+      const cp = e.target.closest('[data-cpage]'); if (cp) { const pi = Number(cp.dataset.cpage); if (D.doc.pages[pi] && pi !== D.pageIdx) await D.openPage(pi); renderPins(D); return; }
       if (e.target.closest('[data-fl="add"]')) { nxTool(D, 'comment'); return; }
       const g = e.target.closest('[data-cgo]'); if (g) { const c = list.find((x) => x.id === g.dataset.cgo); const pi = D.doc.pages.findIndex((p) => p.id === c.page); if (pi >= 0 && pi !== D.pageIdx) await D.openPage(pi); renderPins(D); return; }
       const d = e.target.closest('[data-cdone]'); if (d) { const c = list.find((x) => x.id === d.dataset.cdone); c.done = true; D.save(); renderPins(D); renderFloat(D, 'comments', f); }
@@ -489,10 +512,8 @@ function renderFloat(D, kind, f) {
 
 // ---------- Onglet « Éléments » ----------
 function buildLeftTab(D) {
-  const tabs = D.el.querySelector('.dz-tabs'); if (!tabs || tabs.querySelector('[data-dz-tab="nxlib"]')) return;
-  tabs.insertAdjacentHTML('beforeend', '<button data-dz-tab="nxlib">Éléments</button>');
-  tabs.classList.add('nx-4tabs');
-  if (settings.designLeftTab === 'nxlib') D.leftTab = 'nxlib';
+  if (settings.designLeftTab === 'nxlib') { settings.designLeftTab = 'assets'; saveSettings(); }
+  if (D.leftTab === 'nxlib') D.leftTab = 'assets';
 }
 const svgThumb = (d, fill = 'currentColor') => `<svg viewBox="-4 -4 108 108" width="34" height="34"><path d="${d}" fill="${fill}" fill-rule="evenodd"/></svg>`;
 const stickerThumbs = new Map();
@@ -503,20 +524,31 @@ function renderLibrary(D) {
   const iconNames = Object.keys(ICONS).filter((k) => !k.startsWith('nx') && m(k)).slice(0, q ? 120 : 48);
   const stick = (k) => { if (!stickerThumbs.has(k)) stickerThumbs.set(k, `data:image/svg+xml;charset=utf-8,${encodeURIComponent(stickerSvg(k, { c1: b.colors[0], c2: b.colors[2] }))}`); return stickerThumbs.get(k); };
   const block = (title, html) => (html ? `<div class="st-head">${title}</div>${html}` : '');
-  D.$.left.innerHTML = `<div class="nx-lib">
-    <input class="input small nx-lib-q" type="search" placeholder="Rechercher un élément" value="${esc(D.nxLibQ || '')}">
+  const top = `<input class="input small nx-lib-q" type="search" placeholder="Rechercher un modèle, une forme, une icône…" value="${esc(D.nxLibQ || '')}">
     ${block('Modèles', `<div class="nx-tpls">${Object.entries(TEMPLATES).filter(([, t]) => m(t.label) || m(t.usage)).map(([id, t]) => `<button class="nx-tpl" data-nxl="tpl:${id}" title="${esc(t.label)} · ${esc(t.usage)}"><img src="${C.templateThumb(id, 104)}" alt=""><span>${esc(t.label)}</span></button>`).join('')}</div>`)}
     ${!q ? `<div class="st-head">Kit de marque</div><div class="nx-brandbar"><div class="nx-chips">${b.colors.map((c) => `<button class="dz-sw" data-nxl="color:${esc(c)}" style="--c:${esc(c)}" title="Appliquer ${esc(c)} à la sélection"></button>`).join('')}</div>
-      <div class="nx-row">${b.logo ? `<button class="btn small" data-nxl="logo">${ico('image', 13)}<span>Logo</span></button>` : ''}<button class="btn small" data-nxl="brand-apply">${ico('nxPalette', 13)}<span>Appliquer</span></button><button class="btn small" data-nxl="brand-edit">${ico('nxBrand', 13)}<span>Modifier</span></button></div></div>` : ''}
-    ${block('Formes', `<div class="nx-gridlib">${Object.entries(SHAPES).filter(([, s]) => m(s[0])).map(([k, s]) => `<button class="nx-libbtn" data-nxl="shape:${k}" title="${esc(s[0])}">${svgThumb(s[1])}</button>`).join('')}</div>`)}
-    ${block('Autocollants', `<div class="nx-gridlib big">${Object.entries(STICKERS).filter(([, l]) => m(l)).map(([k, l]) => `<button class="nx-libbtn" data-nxl="sticker:${k}" title="${esc(l)}"><img src="${stick(k)}" alt=""></button>`).join('')}</div>`)}
+      <div class="nx-row">${b.logo ? `<button class="btn small" data-nxl="logo">${ico('image', 13)}<span>Logo</span></button>` : ''}<button class="btn small" data-nxl="brand-apply">${ico('nxPalette', 13)}<span>Appliquer</span></button><button class="btn small" data-nxl="brand-edit">${ico('nxBrand', 13)}<span>Modifier</span></button></div></div>
+      <div class="st-head">Styles du document</div><div class="nx-row nx-lib-links"><button class="btn small" data-nxl="panel:variables">${ico('nxPalette', 13)}<span>Variables</span></button><button class="btn small" data-nxl="panel:fonts">${ico('text', 13)}<span>Polices</span></button><button class="btn small" data-nxl="panel:team">${ico('group', 13)}<span>Bibliothèques de l’équipe</span></button></div>` : ''}`;
+  const shapes = `<div class="nx-gridlib">${Object.entries(SHAPES).filter(([, s]) => m(s[0])).map(([k, s]) => `<button class="nx-libbtn" data-nxl="shape:${k}" title="${esc(s[0])}">${svgThumb(s[1])}</button>`).join('')}</div>`;
+  const rest = `${block('Autocollants', `<div class="nx-gridlib big">${Object.entries(STICKERS).filter(([, l]) => m(l)).map(([k, l]) => `<button class="nx-libbtn" data-nxl="sticker:${k}" title="${esc(l)}"><img src="${stick(k)}" alt=""></button>`).join('')}</div>`)}
     ${block('Cadres photo', `<div class="nx-gridlib">${Object.entries(FRAMES).filter(([, f]) => m(f[0]) || m('cadre photo')).map(([k, f]) => `<button class="nx-libbtn" data-nxl="frame:${k}" title="Cadre ${esc(f[0])}">${svgThumb(f[1], 'var(--text-3)')}</button>`).join('')}</div>`)}
     ${block('Grilles de photos', `<div class="nx-gridlib">${Object.entries(GRIDS).filter(([, g]) => m(g[0]) || m('grille')).map(([k, g]) => `<button class="nx-libbtn" data-nxl="grid:${k}" title="${esc(g[0])}"><svg viewBox="0 0 100 100" width="34" height="34">${g[1].map(([x, y, w, h]) => `<rect x="${x * 100 + 3}" y="${y * 100 + 3}" width="${w * 100 - 6}" height="${h * 100 - 6}" rx="6" fill="var(--text-3)"/>`).join('')}</svg></button>`).join('')}</div>`)}
     ${block('Données', (m('graphique') || m('tableau') || m('qr') || !q) ? `<div class="nx-list">${Object.entries(C.CHARTS).map(([k, l]) => `<button class="menu-item" data-nxl="chart:${k}">${ico('nxChart', 14)}<span>Graphique · ${esc(l)}</span></button>`).join('')}<button class="menu-item" data-nxl="table">${ico('nxTable', 14)}<span>Tableau</span></button><button class="menu-item" data-nxl="qr">${ico('nxQr', 14)}<span>Code QR (lien de ton site)</span></button></div>` : '')}
     ${block('Motifs (remplissage de la sélection)', `<div class="nx-gridlib">${Object.entries(PATTERNS).filter(([, l]) => m(l) || m('motif')).map(([k, l]) => `<button class="nx-libbtn nx-pat" data-nxl="pattern:${k}" title="${esc(l)}" style="--pat:url(${patThumb(k, b)})"></button>`).join('')}</div>`)}
     ${block('Icônes', `<div class="nx-gridlib">${iconNames.map((k) => `<button class="nx-libbtn" data-nxl="icon:${k}" title="${esc(k)}">${ico(k, 20)}</button>`).join('')}</div>`)}
-    ${block('Composants du document', comps.length ? `<div class="nx-list">${comps.filter(([, c]) => m(c.name)).map(([id, c]) => `<button class="menu-item" data-nxl="comp:${id}">${ico('nxComponent', 14)}<span>${esc(c.name)}</span></button>`).join('')}</div>` : (q ? '' : '<p class="nx-muted nx-pad">Sélectionne des calques puis « Créer un composant » (panneau de droite) pour les réutiliser.</p>'))}
-  </div>`;
+    ${block('Composants du document', comps.length ? `<div class="nx-list">${comps.filter(([, c]) => m(c.name)).map(([id, c]) => `<button class="menu-item" data-nxl="comp:${id}">${ico('nxComponent', 14)}<span>${esc(c.name)}</span></button>`).join('')}</div>` : (q ? '' : '<p class="nx-muted nx-pad">Sélectionne des calques puis « Créer un composant » (panneau de droite) pour les réutiliser.</p>'))}`;
+  if (q) {
+    // Recherche : seulement les résultats, formes comprises.
+    D.$.left.innerHTML = `<div class="nx-lib">${top}${block('Formes', shapes)}${rest}</div>`;
+  } else {
+    // Bibliothèque d'origine (formes simples, textes, objets 3D, captures, images du document), complétée.
+    D.nxRenderLeft();
+    const box = D.$.left;
+    box.insertAdjacentHTML('afterbegin', `<div class="nx-lib nx-lib-top">${top}</div>`);
+    const quick = box.querySelector('.dz-quick');
+    if (quick) quick.insertAdjacentHTML('afterend', shapes); else box.insertAdjacentHTML('beforeend', block('Formes', shapes));
+    box.insertAdjacentHTML('beforeend', `<div class="nx-lib">${rest}</div>`);
+  }
   const input = D.$.left.querySelector('.nx-lib-q');
   input.oninput = () => { D.nxLibQ = input.value; const pos = input.selectionStart; renderLibrary(D); const i2 = D.$.left.querySelector('.nx-lib-q'); i2.focus(); i2.setSelectionRange(pos, pos); };
   input.onkeydown = (e) => e.stopPropagation();
@@ -549,6 +581,7 @@ function bindLeft(D) {
       if (kind === 'logo') { const br = getBrand(); const img = await FabricImage.fromURL(br.logo); const pg = D.page; const k = Math.min(pg.w * 0.2 / img.width, pg.h * 0.12 / img.height); img.set({ scaleX: k, scaleY: k, left: pg.w * 0.05, top: pg.h * 0.05 }); img.id = uid(); img.name = 'Logo'; img.nxKind = 'logo'; D.canvas.add(img); D.canvas.setActiveObject(img); D.changed(); }
       if (kind === 'brand-apply') await C.applyBrand(D);
       if (kind === 'brand-edit') brandSheet({});
+      if (kind === 'panel' && window.__nxDesignPlus) window.__nxDesignPlus.open(arg);
       void one;
     } catch (err) { console.error(err); toast(err.message || String(err), { kind: 'bad' }); }
   });
@@ -570,20 +603,20 @@ function propsHtml(D) {
     return h;
   }
   // Calque seul.
-  if (o.nxFrame && o.nxFrame.empty) h += sec('Cadre photo', `<div class="nx-btns">${btn('frame-pick', 'image', 'Choisir une image…')}</div><p class="nx-note">Astuce : dépose une image directement sur le cadre.</p>`);
+  if (o.nxFrame && o.nxFrame.empty) h += sec('Cadre photo', `<div class="nx-btns">${btn('frame-pick', 'image', 'Choisir une image…')}</div><p class="nx-note">Astuce : dépose une image directement sur le cadre.</p>`, '', true);
   if (o.type === 'image' && o.nxFrame && !o.nxFrame.empty) {
     const f = o.nxFrame;
     h += sec('Cadre photo', `${range('frameZoom', 'Zoom dans le cadre', f.zoom || 1, 1, 4, 0.01, `${Math.round((f.zoom || 1) * 100)} %`)}${range('frameDx', 'Décalage horizontal', f.dx || 0, -0.5, 0.5, 0.01, `${Math.round((f.dx || 0) * 100)} %`)}${range('frameDy', 'Décalage vertical', f.dy || 0, -0.5, 0.5, 0.01, `${Math.round((f.dy || 0) * 100)} %`)}
-      <div class="nx-btns">${btn('frame-pick', 'image', 'Changer l’image…')}${btn('frame-out', 'close', 'Sortir du cadre')}</div>`);
+      <div class="nx-btns">${btn('frame-pick', 'image', 'Changer l’image…')}${btn('frame-out', 'close', 'Sortir du cadre')}</div>`, '', true);
   }
-  if (o.nxChart) h += sec('Graphique', `${seg('chartType', o.nxChart.type, { bar: 'Barres', line: 'Courbe', pie: 'Camembert', donut: 'Anneau' })}<div class="nx-btns">${btn('chart-edit', 'nxChart', 'Modifier les données…')}</div>`);
-  if (o.nxTable) h += sec('Tableau', `<div class="nx-btns">${btn('table-edit', 'nxTable', 'Modifier le contenu…')}</div>`);
-  if (o.nxQr) h += sec('Code QR', `<div class="st-field"><span>Lien</span><input class="input small" data-nx="qrText" value="${esc(o.nxQr.text)}"></div><div class="dz-row"><span class="dz-lab">Couleur</span>${sw('qrColor', o.nxQr.color)}<span class="dz-lab">Fond</span>${sw('qrBg', o.nxQr.bg)}</div>`);
+  if (o.nxChart) h += sec('Graphique', `${seg('chartType', o.nxChart.type, { bar: 'Barres', line: 'Courbe', pie: 'Camembert', donut: 'Anneau' })}<div class="nx-btns">${btn('chart-edit', 'nxChart', 'Modifier les données…')}</div>`, '', true);
+  if (o.nxTable) h += sec('Tableau', `<div class="nx-btns">${btn('table-edit', 'nxTable', 'Modifier le contenu…')}</div>`, '', true);
+  if (o.nxQr) h += sec('Code QR', `<div class="st-field"><span>Lien</span><input class="input small" data-nx="qrText" value="${esc(o.nxQr.text)}"></div><div class="dz-row"><span class="dz-lab">Couleur</span>${sw('qrColor', o.nxQr.color)}<span class="dz-lab">Fond</span>${sw('qrBg', o.nxQr.bg)}</div>`, '', true);
   if (o.nxRepeat) {
     const r = o.nxRepeat;
     h += sec(o.nxRepeat.mode === 'radial' ? 'Répétition circulaire' : 'Répétition en grille', r.mode === 'radial' ? `${range('rep:count', 'Nombre', r.count || 8, 2, 48, 1, String(r.count || 8))}${range('rep:radius', 'Rayon', Math.round(r.radius || 200), 10, 2000, 1, `${Math.round(r.radius || 200)} px`)}${chk('rep:rotate', 'Orienter les copies', r.rotate !== false)}` : `${range('rep:cols', 'Colonnes', r.cols || 3, 1, 20, 1, String(r.cols || 3))}${range('rep:rows', 'Rangées', r.rows || 3, 1, 20, 1, String(r.rows || 3))}${range('rep:gapX', 'Espace horizontal', Math.round(r.gapX ?? 20), 0, 600, 1, `${Math.round(r.gapX ?? 20)} px`)}${range('rep:gapY', 'Espace vertical', Math.round(r.gapY ?? 20), 0, 600, 1, `${Math.round(r.gapY ?? 20)} px`)}${chk('rep:stagger', 'Décaler une rangée sur deux', !!r.stagger)}`);
   }
-  if (o.nxComp) h += sec('Composant', o.nxComp.master ? `<p class="nx-note">Composant principal : modifie-le puis mets à jour ses copies, sur toutes les pages.</p><div class="nx-btns">${btn('comp-update', 'sync', 'Mettre à jour les copies')}${btn('comp-detach', 'close', 'Détacher')}</div>` : `<p class="nx-note">Copie d’un composant : elle suit le principal.</p><div class="nx-btns">${btn('comp-detach', 'close', 'Détacher la copie')}</div>`);
+  if (o.nxComp) h += sec('Composant', o.nxComp.master ? `<p class="nx-note">Composant principal : modifie-le puis mets à jour ses copies, sur toutes les pages.</p><div class="nx-btns">${btn('comp-update', 'sync', 'Mettre à jour les copies')}${btn('comp-detach', 'close', 'Détacher')}</div>` : `<p class="nx-note">Copie d’un composant : elle suit le principal.</p><div class="nx-btns">${btn('comp-detach', 'close', 'Détacher la copie')}</div>`, '', true);
   if (isText(o)) h += textCards(D, o);
   if (V.isShape(o) && o.type !== 'group') h += vectorCards(D, o);
   if (o.type === 'group' && !o.nxChart && !o.nxTable && !o.nxQr) h += sec('Vectoriel', `<div class="nx-btns">${btn('repeat-radial', 'nxRepeat', 'Répéter en cercle')}${btn('repeat-grid', 'grid', 'Répéter en grille')}${btn('mirror', 'nxMirror', 'Symétrie')}${o.nxComp ? '' : btn('comp-new', 'nxComponent', 'Créer un composant')}</div>`);
@@ -603,25 +636,31 @@ function pageProps(D) {
       ${id === 'lasso' ? '<p class="nx-note">Entoure une zone de l’image en gardant le bouton enfoncé. Maj : ajouter à la sélection.</p>' : ''}
       ${id === 'maskbrush' ? `${seg('pix:maskMode', O.maskMode, { hide: 'Masquer', reveal: 'Révéler' })}<p class="nx-note">Le calque n’est pas modifié : le masque se retire à tout moment.</p>` : ''}
       ${['stamp', 'heal'].includes(id) ? '<p class="nx-note">Alt + clic sur la zone à copier, puis peins sur la zone à corriger.</p>' : ''}
-      <p class="nx-note">Raccourcis : [ et ] pour la taille · Échap pour quitter.</p>`);
+      <p class="nx-note">Raccourcis : [ et ] pour la taille · Échap pour quitter.</p>`, '', true);
   }
-  if (t === 'nxnodes') h += sec('Édition des points', `<p class="nx-note">Glisse les points et les poignées · double-clic sur le trait : ajouter un point · double-clic sur un point : lisse ou angle · Suppr : retirer · K : ciseaux.</p><div class="nx-btns">${btn('nodes-scissors', 'nxScissors', D.nxNodes.scissors ? 'Ciseaux : actifs' : 'Ciseaux (K)')}${btn('nodes-done', 'check', 'Terminer')}</div>`);
+  if (t === 'nxnodes') h += sec('Édition des points', `<p class="nx-note">Glisse les points et les poignées · double-clic sur le trait : ajouter un point · double-clic sur un point : lisse ou angle · Suppr : retirer · K : ciseaux.</p><div class="nx-btns">${btn('nodes-scissors', 'nxScissors', D.nxNodes.scissors ? 'Ciseaux : actifs' : 'Ciseaux (K)')}${btn('nodes-done', 'check', 'Terminer')}</div>`, '', true);
   h += '<!--nx-split-->';
-  if (t === 'pencil') h += sec('Lissage du crayon', range('pencilSmooth', 'Lissage', Number(settings.nxPencilSmooth || 0), 0, 1, 0.05, Number(settings.nxPencilSmooth || 0) ? `${Math.round(settings.nxPencilSmooth * 100)} %` : 'Aucun'));
+  if (t === 'pencil') h += sec('Lissage du crayon', range('pencilSmooth', 'Lissage', Number(settings.nxPencilSmooth || 0), 0, 1, 0.05, Number(settings.nxPencilSmooth || 0) ? `${Math.round(settings.nxPencilSmooth * 100)} %` : 'Aucun'), '', true);
   const pa = PG.pageAnim(D.page);
   h += sec('Animation de la page', `${range('pageDur', 'Durée', pa.dur, 1, 30, 0.5, `${fmt(pa.dur)} s`)}<div class="st-field"><span>Transition vers cette page</span>${sel('pageTrans', pa.trans, PG.TRANS)}</div><div class="nx-btns">${btn('play', 'play', 'Lire')}${btn('anim-export', 'film', 'Exporter…')}${btn('present', 'nxPresent', 'Présenter')}</div>`);
   const b = getBrand();
-  h += sec('Kit de marque', `<div class="nx-chips">${b.colors.map((c) => `<span class="nx-chip" style="--c:${esc(c)}" title="${esc(c)}"></span>`).join('')}<b class="nx-brandname">${esc(b.name || 'Sans nom')}</b></div><div class="nx-btns">${btn('brand-apply', 'nxPalette', 'Appliquer à la page')}${btn('brand-edit', 'nxBrand', 'Modifier…')}${btn('resize', 'nxResize', 'Autres formats…')}</div>`);
+  const kits = brandList();
+  h += sec('Kit de marque', `${kits.length > 1 ? `<div class="st-field"><span>Kit de ce document</span>${sel('brandKit', activeBrandId(), Object.fromEntries(kits.map((k) => [k.id, k.name || 'Sans nom'])))}</div>` : ''}<div class="nx-chips">${b.colors.map((c) => `<span class="nx-chip" style="--c:${esc(c)}" title="${esc(c)}"></span>`).join('')}<b class="nx-brandname">${esc(b.name || 'Sans nom')}</b></div><div class="nx-btns">${btn('brand-apply', 'nxPalette', 'Appliquer à la page')}${btn('brand-edit', 'nxBrand', 'Modifier…')}</div>`, '', true);
+  // NEXORA #075 (A-044) : un seul endroit pour décliner la page (formats des réseaux et tailles d'écran).
+  h += sec('Déclinaisons', `<p class="nx-note">Décline cette page dans d’autres formats (story, bannière, miniature…) ou pour le téléphone, la tablette et l’ordinateur.</p><div class="nx-btns">${btn('resize', 'nxResize', 'Autres formats…')}${btn('screens', 'phone', 'Tailles d’écran…')}</div>`);
   return h;
 }
-function textCards(D, o) {
+// NEXORA #075 (A-044) : les styles tout faits (néon, contour, écho…) sont rangés en tête de la section « Effets »
+// (ce sont des raccourcis vers les effets de calque) ; courbure et vectorisation rejoignent les styles de texte.
+function textPreset0(o) {
   const fx = o.nxFx || {}; const on = (k) => fx[k] && fx[k].on;
-  const preset = on('outerGlow') && !on('stroke') ? 'neon' : on('echo') ? 'echo' : on('hardShadow') ? 'hard' : on('bevel') ? 'relief' : o.paintFirst === 'stroke' && o.stroke ? 'outline' : o.textBackgroundColor ? 'mark' : 'none';
+  return on('outerGlow') && !on('stroke') ? 'neon' : on('echo') ? 'echo' : on('hardShadow') ? 'hard' : on('bevel') ? 'relief' : o.paintFirst === 'stroke' && o.stroke ? 'outline' : o.textBackgroundColor ? 'mark' : 'none';
+}
+function textCards(D, o) {
   const styles = C.textStyles(D);
-  return sec('Effets de texte', `<div class="dz-presets">${[['none', 'Aucun'], ['neon', 'Néon'], ['outline', 'Contour'], ['echo', 'Écho'], ['mark', 'Surligné'], ['hard', 'Ombre décalée'], ['relief', 'Relief']].map(([k, l]) => `<button class="st-chip${preset === k ? ' on' : ''}" data-nxa="tfx:${k}">${l}</button>`).join('')}</div>
+  return sec('Styles de texte', `<div class="st-field"><span>Style</span><select class="input small" data-nx="textStyle"><option value="">Choisir un style…</option>${styles.map((s) => `<option value="${esc(s.id)}" ${o.nxStyle === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div><div class="nx-btns">${btn('style-save', 'check', o.nxStyle ? 'Mettre à jour le style' : 'Enregistrer comme style…')}</div>
     ${range('curve', 'Courbure', o.nxCurve ? o.nxCurve.amount : 0, -100, 100, 1, o.nxCurve ? `${o.nxCurve.amount}` : 'Droit')}
-    <div class="nx-btns">${btn('text-paths', 'nxTrace', 'Vectoriser le texte')}</div>`) +
-    sec('Styles de texte', `<div class="st-field"><span>Style</span><select class="input small" data-nx="textStyle"><option value="">Choisir un style…</option>${styles.map((s) => `<option value="${esc(s.id)}" ${o.nxStyle === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div><div class="nx-btns">${btn('style-save', 'check', o.nxStyle ? 'Mettre à jour le style' : 'Enregistrer comme style…')}</div>`);
+    <div class="nx-btns">${btn('text-paths', 'nxTrace', 'Vectoriser le texte')}</div>`);
 }
 function vectorCards(D, o) {
   const open = o.type === 'line' || (o.type === 'path' && (() => { try { return V.toNodes(o).some((s) => !s.closed); } catch { return false; } })());
@@ -662,6 +701,8 @@ function adjRow(a, i, n) {
 }
 function fxCard(o) {
   const fx = o.nxFx || {};
+  const preset = isText(o) ? textPreset0(o) : null;
+  const presets = preset ? `<div class="st-field nx-fx-presets"><span>Tout faits</span><div class="dz-presets">${[['none', 'Aucun'], ['neon', 'Néon'], ['outline', 'Contour'], ['echo', 'Écho'], ['mark', 'Surligné'], ['hard', 'Ombre décalée'], ['relief', 'Relief']].map(([k, l]) => `<button class="st-chip${preset === k ? ' on' : ''}" data-nxa="tfx:${k}">${l}</button>`).join('')}</div></div>` : '';
   const rows = Object.entries(FX).map(([id, def]) => {
     const v = { ...def.def, ...(fx[id] || {}) }; const on = fx[id] && fx[id].on; const k = (x) => `fx:${id}:${x}`;
     let body = '';
@@ -676,7 +717,7 @@ function fxCard(o) {
     }
     return `<div class="nx-fx${on ? ' on' : ''}">${chk(`fxon:${id}`, def.label, on)}${body}</div>`;
   }).join('');
-  return sec('Effets de calque', rows);
+  return sec('Effets avancés', presets + rows);
 }
 function animCard(o) {
   const a = o.nxAnim || { in: 'none', dur: 0.8, delay: 0, loop: 'none' };
@@ -730,6 +771,8 @@ function onRange(D, t, done) {
 async function onField(D, t) {
   const k = t.dataset.nx; const v = t.value; const o = D.canvas.getActiveObject();
   if (k === 'pageTrans') { D.page.nxAnim = { ...PG.pageAnim(D.page), trans: v }; D.changed(); return; }
+  // NEXORA #075 : kit de marque choisi pour ce document (rappelé à son ouverture).
+  if (k === 'brandKit') { useBrand(v); D.doc.nxBrandId = v; D.changed(); D.renderLeft(); D.renderProps(); toast(`Kit « ${getBrand().name || 'Sans nom'} » choisi pour ce document.`); return; }
   if (k === 'distortKind') { settings.nxDistort = v; saveSettings(); return; }
   if (!o) return;
   if (k === 'animIn' || k === 'animLoop') { o.nxAnim = { in: 'none', dur: 0.8, delay: 0, loop: 'none', ...(o.nxAnim || {}), [k === 'animIn' ? 'in' : 'loop']: v }; act(D, 'Animation'); D.changed(); D.renderProps(); return; }
@@ -786,7 +829,8 @@ async function action(D, a, btnEl) {
       case 'present': PG.present(D, D.pageIdx); return;
       case 'anim-export': PG.animExportSheet(D); return;
       case 'resize': PG.resizeSheet(D); return;
-      case 'brand-apply': act(D, 'Kit de marque'); await C.applyBrand(D); return;
+      case 'screens': if (window.__nxDesignPlus) window.__nxDesignPlus.open('responsive'); return;
+      case 'brand-apply': act(D, 'Kit de marque'); D.doc.nxBrandId = activeBrandId(); await C.applyBrand(D); return;
       case 'brand-edit': brandSheet({}); return;
       case 'nodes': nxTool(D, 'nodes'); return;
       case 'nodes-done': D.setTool('select'); return;

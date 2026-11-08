@@ -196,7 +196,7 @@ const STANDARD_PERMS = {
 const PRO_PERMS = Object.fromEntries(
   Object.keys(FREE_PERMS).map((k) => [k, true]),
 )
-export const plans = [
+const plansV1 = [
   {
     id: "free",
     name: "Gratuit",
@@ -340,6 +340,27 @@ const orgDefs = [
   ["Fontaine Design", false, 6, "standard"],
   ["Espace de Yanis Mercier", true, 7, "free"],
 ]
+// NEXORA #076 : état après la migration 20261108000002 : Gratuit et Pro (18 $), Standard retirée de la vente.
+const V2 = {
+  free: {
+    description: "Le Responsive Lab et le Browser Lab, gratuits pour toujours. Tout NEXORA pendant ton premier jour.",
+    limits: { projects: 3, designs: 3, members: 1, monitors: 1, storage_mb: 200, apps: 0, app_trial_days: 0, ai_requests_month: -1, scans_per_day: 1, crawls_per_day: -1, builds_month: 0, push_month: 0 },
+    features: ["Responsive Lab complet : tous les modèles d’appareils, vidéo et outils de développement", "Browser Lab complet : inspection, réseau, console, tests et extraction", "Tout NEXORA gratuitement pendant ton premier jour", "NEX-DESIGN découverte (3 documents)", "1 audit de sécurité par jour, 1 site surveillé", "Assistant IA avec ta propre clé"],
+  },
+  pro: {
+    description: "Toutes les options de NEXORA Devs Toolbox, sans limite d’espace.",
+    price_month_cents: 1800,
+    price_year_cents: 18000,
+    badge: "Toutes les options",
+    limits: { projects: 200, designs: -1, members: 10, monitors: 50, storage_mb: 51200, apps: 50, app_trial_days: 0, ai_requests_month: -1, scans_per_day: 200, crawls_per_day: -1, builds_month: 400, push_month: 100000 },
+    features: ["Les 9 espaces sans restriction", "Dev Lab complet : éditeur, terminal, Git, débogueur, tests, bases de données, mise en ligne", "App Builder : APK, PWA, Play Store, notifications et messagerie (400 constructions par mois)", "Desktop Builder : logiciels Windows installables et mises à jour", "NEX-DESIGN complet : documents illimités, IA, prototype, code, équipe", "Studio 3D & Motion avancé", "Sécurité : audits avancés, 50 sites surveillés 24 h/24, page de statut", "200 projets, 10 membres, 50 Go", "Assistance prioritaire"],
+  },
+}
+export const plans = plansV1.map((p) => {
+  if (p.id === "free") return { ...p, ...V2.free, perms: { ...p.perms, responsive_advanced: true, crawler: true } }
+  if (p.id === "pro") return { ...p, ...V2.pro, sort: 2 }
+  return { ...p, active: false, badge: "" }
+})
 export const organizations = orgDefs.map(([name, personal, owner], i) => ({
   id: id(100 + i),
   name,
@@ -455,6 +476,9 @@ export const app_config = [
     {},
     "Modèles des e-mails envoyés par la base (NEXORA #031), enregistrés depuis le back office → E-mails",
   ],
+  // NEXORA #077 : politiques des licences et des versions autorisées (section Licences → Réglages et sécurité).
+  ["license_policy", { free_accounts_per_device: 3, gmail_per_device: 3, trial_hours: 24, free_devices: 3, pro_devices: 5, check_minutes: 10 }, "Licences de NEXORA Devs Toolbox (#077)"],
+  ["release_policy", { min_version: "1.2.0", min_manifest_version: 0, block_outdated: true, channel: "stable" }, "Versions autorisées de NEXORA (#077)"],
 ].map(([key, value, description], i) => ({
   key,
   value,
@@ -1194,6 +1218,61 @@ function demoRumSummary() {
   }
 }
 
+// NEXORA #076 : licences de NEXORA Devs Toolbox (section Licences). Adresses IP réservées à la documentation
+// (RFC 5737) : aucune adresse réelle.
+const KEYS = ["NXDT-7KQ4-M2ZP-HX9C-4TRB", "NXDT-3WNA-8DKE-QV6S-PJ2M", "NXDT-ZC5R-H7GU-2XMB-9KEV", "NXDT-6PTY-4NAD-RJ8W-CQ3H", "NXDT-M9EB-5VKS-T2HZ-8XAP", "NXDT-Q4JC-ZR7N-6MWD-HY2K"]
+export const nx_licenses = [0, 1, 2, 3, 4, 6].map((u, i) => ({
+  id: id(700 + i),
+  key: KEYS[i],
+  user_id: P(u).id,
+  status: i === 4 ? "revoked" : "active",
+  source: i % 2 ? "site" : "app",
+  trial_ends_at: i === 5 ? ago(-0.6) : ago(20 - i * 3),
+  created_at: ago(21 - i * 3),
+  activated_at: i === 3 ? null : ago(21 - i * 3),
+  last_check_at: i === 3 ? null : ago(0.01 + i * 0.2),
+  // #077 : licences attribuées par l'administration.
+  plan_override: i === 2 ? "pro" : i === 1 ? "pro" : null,
+  override_until: i === 2 ? ago(-27) : null,
+  max_devices: i === 1 ? 2 : null,
+  note: i === 2 ? "Bourse étudiante" : i === 1 ? "Partenaire de lancement" : "",
+  granted_at: i === 2 || i === 1 ? ago(3) : null,
+}))
+export const nx_devices = [
+  ["PC-BUREAU", "Windows_NT 10.0.22631 x64", "1.2.0", "192.0.2.14", 0.01, false],
+  ["LAPTOP-AMINA", "Windows_NT 10.0.26100 x64", "1.2.0", "198.51.100.23", 0.2, false],
+  ["DESKTOP-K7Q2", "Windows_NT 10.0.19045 x64", "1.2.0", "203.0.113.41", 0.4, false],
+  ["PC-CYBER-04", "Windows_NT 10.0.19045 x64", "1.2.0", "203.0.113.77", 1.2, true],
+].map(([name, os, app_version, ip, seen, blocked], i) => ({
+  id: id(720 + i), device_hash: `${i}`.repeat(64), name, os, app_version, first_ip: i === 1 ? "198.51.100.8" : ip, last_ip: ip,
+  trial_user: null, blocked, first_seen: ago(20 - i * 4), last_seen: ago(seen),
+}))
+export const nx_device_accounts = [[0, 0], [1, 1], [2, 2], [3, 3], [3, 4], [3, 6]].map(([d, u]) => ({
+  device_id: id(720 + d), user_id: P(u).id, email: P(u).email, email_norm: P(u).email, is_gmail: /gmail/.test(P(u).email),
+  last_ip: nx_devices[d].last_ip, first_seen: ago(10), last_seen: ago(0.2 + d),
+}))
+export const nx_license_checks = [
+  [0, 0, true, "", "pro", 0.01], [1, 1, true, "", "free", 0.2], [2, 2, true, "", "pro", 0.4], [6, 3, false, "device_accounts", "free", 0.6],
+  [4, 3, false, "revoked", "free", 0.9], [3, 3, true, "", "free", 1.2], [0, 0, true, "", "pro", 1.5], [1, 1, true, "", "free", 2.1],
+].map(([u, d, ok, reason, plan, t], i) => ({
+  id: 9000 + i, user_id: P(u).id, device_id: id(720 + d), ok, reason, plan, ip: nx_devices[d].last_ip, app_version: "1.2.0", created_at: ago(t),
+}))
+export const nx_sessions = [[0, 0, 0.01, null], [1, 1, 0.2, 0.25], [2, 2, 0.4, null], [3, 3, 1.2, 1.3]].map(([u, d, t, end], i) => ({
+  id: id(760 + i), user_id: P(u).id, device_id: id(720 + d), ip: nx_devices[d].last_ip, app_version: "1.2.0",
+  started_at: ago(t + 0.08), last_seen: ago(end ?? t), ended_at: end == null ? null : ago(end - 0.01),
+}))
+export const nx_client_logs = [
+  [0, "info", "licence_ok", { plan: "pro", trial: false, version: "1.2.0" }, 0.08],
+  [0, "info", "espace", { space: "dev" }, 0.06],
+  [1, "info", "licence_ok", { plan: "free", trial: false, version: "1.2.0" }, 0.3],
+  [1, "warn", "plan_bloque", { channel: "android:build" }, 0.28],
+  [2, "error", "erreur", { message: "Le dossier du projet est introuvable." }, 0.42],
+  [1, "info", "fermeture", {}, 0.26],
+].map(([sIdx, level, event, detail, t], i) => ({
+  id: 9500 + i, session_id: id(760 + sIdx), user_id: nx_sessions[sIdx].user_id, device_id: nx_sessions[sIdx].device_id,
+  level, event, detail, ip: nx_sessions[sIdx].ip, created_at: ago(t),
+}))
+
 const TABLES = {
   profiles,
   nx_app_trials,
@@ -1231,6 +1310,12 @@ const TABLES = {
   monitor_maintenance: [],
   monitor_events: [],
   nx_alert_prefs: [],
+  nx_licenses,
+  nx_devices,
+  nx_device_accounts,
+  nx_license_checks,
+  nx_sessions,
+  nx_client_logs,
 }
 
 // NEXORA #054 : avis reçus il y a quelques minutes sur un lien de validation, et deux bibliothèques d'équipe ;
@@ -1337,6 +1422,37 @@ function rpc(name, args) {
       projects: projects.filter((x) => x.org_id === o.id).length,
       designs: design_documents.filter((x) => x.org_id === o.id).length,
     }))
+  // NEXORA #077 : licences données et configurées par l'administration (données fictives modifiées en mémoire).
+  if (name === "nx_admin_license_grant") {
+    const who = profiles.find((p) => p.email.toLowerCase() === String(args.p_email || "").trim().toLowerCase())
+    if (!who) return null
+    let l = nx_licenses.find((x) => x.user_id === who.id)
+    if (!l) { l = { id: id(790 + nx_licenses.length), key: "NXDT-N3WK-7ABC-D2EF-9GHJ", user_id: who.id, status: "active", source: "admin", trial_ends_at: null, created_at: new Date().toISOString(), activated_at: null, last_check_at: null }; nx_licenses.unshift(l) }
+    Object.assign(l, { plan_override: args.p_plan === "auto" ? null : args.p_plan, override_until: args.p_plan !== "auto" && args.p_days > 0 ? new Date(Date.now() + args.p_days * 86400000).toISOString() : null, note: args.p_note || "", max_devices: args.p_max_devices || null, status: "active", granted_at: new Date().toISOString() })
+    return l
+  }
+  if (name === "nx_admin_license_update") {
+    const l = nx_licenses.find((x) => x.id === args.p_id)
+    const p = args.p_patch || {}
+    if (l) for (const k of ["status", "plan_override", "override_until", "trial_ends_at", "max_devices", "note"]) if (k in p) l[k] = p[k] === "" ? null : p[k]
+    if (l) l.granted_at = new Date().toISOString()
+    return l
+  }
+  if (name === "nx_admin_license_rekey") {
+    const l = nx_licenses.find((x) => x.id === args.p_id)
+    if (l) l.key = "NXDT-R8KD-2MZQ-7HTP-4WXC"
+    return l ? l.key : null
+  }
+  if (name === "nx_admin_device_unlink") {
+    const i = nx_device_accounts.findIndex((a) => a.device_id === args.p_device && a.user_id === args.p_user)
+    if (i >= 0) nx_device_accounts.splice(i, 1)
+    return { ok: i >= 0 }
+  }
+  if (name === "nx_admin_policy_set") {
+    const row = app_config.find((r) => r.key === args.p_key)
+    if (row) row.value = args.p_value
+    return args.p_value
+  }
   // Offres du #037 : état réglable par NX_DEMO_OFFRE (essai, expire, standard, pro depuis #052).
   if (name === "nx_plan_status") return demoPlanStatus(args)
   if (name === "nx_app_status") return demoAppStatus(args)

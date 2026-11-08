@@ -2,7 +2,7 @@
 import { api, esc, ico, toast, busy, sheet, closeSheet, sheetHtml, menu, prompt, state, settings, saveSettings, uid, pickFile, saveBytes, zip, dataUrlBytes, bytesB64, hexRgb, rgbHex, luminance } from '../core.js';
 import { FabricObject, util, Group, Rect, Textbox } from '../design/fab.js';
 import { current } from '../offres/status.js';
-import { FALLBACK, normPlan } from '../offres/catalog.js';
+import { FALLBACK, normPlan, money } from '../offres/catalog.js';
 
 export { api, esc, ico, toast, busy, sheet, closeSheet, sheetHtml, menu, prompt, state, settings, saveSettings, uid, pickFile, saveBytes, zip, dataUrlBytes, bytesB64, hexRgb, rgbHex, luminance, FabricObject, util, Group, Rect, Textbox };
 
@@ -20,19 +20,23 @@ export function has(perm) {
   if (s.perms && perm in s.perms) return !!s.perms[perm];
   return !!((FALLBACK[normPlan(s.plan)] || FALLBACK.free).perms[perm]);
 }
-export const gate = (perm, what) => (has(perm) ? '' : `<div class="dzp-gate">${ico(perm === PRO ? 'nxCrown' : 'bolt', 18)}<div><b>${esc(what)} fait partie de l’offre ${perm === PRO ? 'Pro' : 'Standard'}</b></div><button class="btn small primary" data-nxo-ask="${perm === PRO ? 'pro' : 'standard'}">Passer à ${perm === PRO ? 'Pro · 18 $' : 'Standard · 12 $'} / mois</button></div>`);
+export const gate = (perm, what) => (has(perm) ? '' : `<div class="dzp-gate">${ico(perm === PRO ? 'nxCrown' : 'bolt', 18)}<div><b>${esc(what)} fait partie de l’offre Pro</b></div><button class="btn small primary" data-nxo-ask="pro">Passer à Pro · ${money(FALLBACK.pro.price_month_cents)} / mois</button></div>`);
+// NEXORA #075 (A-042) : prix lus dans le catalogue des offres (nx/offres/catalog.js), plus jamais écrits en dur.
 export function allowed(perm, what) {
   if (has(perm)) return true;
-  toast(`${what} fait partie de l’offre ${perm === PRO ? 'Pro' : 'Standard'}.`, { action: 'Voir les offres', onAction: () => { const b = document.querySelector('[data-nxo-offers]'); if (b) b.click(); } });
+  toast(`${what} fait partie de l’offre Pro.`, { action: 'Voir les offres', onAction: () => { const b = document.querySelector('[data-nxo-offers]'); if (b) b.click(); } });
   return false;
 }
 
 // Briques du panneau de droite (même aspect que les sections de NEX-DESIGN).
-export const sec = (title, body, extra = '') => `<section class="dz-card nx-card dzx-card"><div class="dz-card-h"><span>${title}</span>${extra}</div>${body}</section>`;
+// NEXORA #075 (A-039) : data-free : ces cartes gèrent elles-mêmes leur offre (le verrou générique ne les voile pas).
+export const sec = (title, body, extra = '') => `<section class="dz-card nx-card dzx-card" data-free><div class="dz-card-h"><span>${title}</span>${extra}</div>${body}</section>`;
 export const btn = (a, icon, label, extra = '', cls = '') => `<button class="btn small ${cls}" data-dzx="${a}" ${extra}>${ico(icon, 13)}<span>${esc(label)}</span></button>`;
 export const num = (k, label, v, extra = '') => `<label class="dzx-num"><span>${esc(label)}</span><input class="input" type="number" data-dzxk="${k}" value="${v}" ${extra}></label>`;
 export const select = (k, label, opts, v) => `<label class="dzx-num"><span>${esc(label)}</span><select class="input" data-dzxk="${k}">${opts.map(([val, l]) => `<option value="${esc(val)}" ${String(val) === String(v) ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
 
+// NEXORA #075 (A-043) : pluriel écrit en entier (« 2 pages créées », jamais « page(s) »).
+export const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`;
 export const isText = (o) => o && ['textbox', 'i-text', 'text'].includes(o.type);
 export const objs = (D) => D.canvas.getObjects().filter((o) => o.id !== '__board');
 export function walk(list, fn) { for (const o of list) { fn(o); if (o.getObjects) walk(o.getObjects(), fn); } }

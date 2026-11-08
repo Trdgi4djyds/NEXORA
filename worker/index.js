@@ -6,6 +6,8 @@
 import setup from "../supabase/nexora.json"
 import { handleFiabilite, isFiabiliteRoute, probeRegion } from "./fiabilite.js"
 import { RELAY_PREFIX, relaySupabaseApi } from "./supabase-relay.js"
+// NEXORA #076 : contrôle de licence signé et abonnements (worker/licences.js).
+import { handleLicences, isLicenceRoute } from "./licences.js"
 
 export default {
   async fetch(request, env) {
@@ -16,6 +18,7 @@ export default {
         path: url.pathname.slice(RELAY_PREFIX.length),
       })
     if (isFiabiliteRoute(url.pathname)) return handleFiabilite(request)
+    if (isLicenceRoute(url.pathname)) return handleLicences(request, env)
     return env.ASSETS.fetch(request)
   },
   async scheduled(_event, env, ctx) {

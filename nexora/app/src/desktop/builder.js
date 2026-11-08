@@ -11,6 +11,7 @@
  * La construction se fait dans un dossier de travail local (pas dans Documents, souvent synchronisé par OneDrive) ;
  * seuls les fichiers finaux sont copiés. Un dossier de sortie déjà utilisé par un autre logiciel n'est jamais
  * réutilisé (fichier .nexora-desktop.json, comme pour l'App Builder). */
+const { LIB_MSG } = require('../plain');
 const fs = require('fs');
 const path = require('path');
 const EventEmitter = require('events');
@@ -302,7 +303,7 @@ class DesktopBuilder extends EventEmitter {
       const mark = `${dest}.sha256`;
       if (fs.existsSync(dest) && fs.existsSync(mark)) { this.log(`Electron ${version} (${archs[i]}) déjà téléchargé.`); continue; }
       const base = from + span * i;
-      this.step('electron', `Téléchargement d’Electron ${version} pour ${archs[i] === 'x64' ? 'Windows 64 bits' : 'Windows ARM'} (≈ 150 Mo, une seule fois)`, base);
+      this.step('electron', LIB_MSG, base);
       // eslint-disable-next-line no-await-in-loop
       const sha = await this.electronSha(version, file);
       const urls = [`https://github.com/electron/electron/releases/download/v${version}/${file}`, `https://npmmirror.com/mirrors/electron/${version}/${file}`];
@@ -319,7 +320,7 @@ class DesktopBuilder extends EventEmitter {
               if (Date.now() - last < 200 && p < 1) return;
               last = Date.now();
               const mb = (n) => Math.round(n / 1048576);
-              this.step('electron', `Téléchargement d’Electron ${version} (${archs[i]})`, base + span * p, total ? `${mb(got)} / ${mb(total)} Mo` : '');
+              this.step('electron', LIB_MSG, base + span * p, total ? `${mb(got)} / ${mb(total)} Mo` : '');
             },
           });
           done = true;
@@ -391,7 +392,7 @@ class DesktopBuilder extends EventEmitter {
     else if (/target=portable/.test(line)) at(0.75, 'Création de la version portable');
     else if (/target=zip/.test(line)) at(0.88, 'Création de l’archive ZIP');
     else if (/target=msi/.test(line)) at(0.5, 'Création du paquet MSI');
-    else if (/downloading|downloaded/.test(line) && /nsis|wix|winCodeSign|7zip/i.test(line)) at(0.4, 'Téléchargement des outils d’installation (une seule fois)');
+    else if (/downloading|downloaded/.test(line) && /nsis|wix|winCodeSign|7zip/i.test(line)) at(0.4, LIB_MSG);
   }
   async runBuilder(cli, args, { cwd, env, from, to, title }) {
     this.pkgAt = from;

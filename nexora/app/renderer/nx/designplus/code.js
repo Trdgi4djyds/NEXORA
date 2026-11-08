@@ -1,7 +1,7 @@
 // NEXORA #053 : du design au code : inspection (CSS de l'élément), export d'une page ou d'un groupe en HTML et
 // CSS, en React (Tailwind) ou en HTML Tailwind ; les mises en page automatiques deviennent des boîtes flex et
 // les variables des var(--nom). Envoi direct dans le projet ouvert du Dev Lab.
-import { esc, toast, state, api, sec, btn, hex, isText, objs, slug, pascal, textBytes, saveBytes } from './ui.js';
+import { esc, toast, state, api, sec, btn, hex, isText, objs, slug, pascal, textBytes, saveBytes, pl } from './ui.js';
 import { byId } from './variables.js';
 import { consCss } from './responsive.js';
 
@@ -134,7 +134,7 @@ export async function toDevLab(D, files) {
     }
   } catch (e) { toast(`Écriture impossible dans le projet : ${String(e.message || e).replace(/^Error invoking remote method '[^']+': (Error: )?/, '')}`, { kind: 'bad' }); return false; }
   if (dev.loadDir) dev.loadDir(root).then(() => dev.renderSide && dev.renderSide()).catch(() => {});
-  toast(`${written.length} fichier(s) ajouté(s) au projet du Dev Lab : ${written.join(', ')}.`, { action: 'Ouvrir le Dev Lab', onAction: () => { const b = document.querySelector('#modeSeg button[data-mode="dev"]'); if (b) b.click(); } });
+  toast(`${pl(written.length, 'fichier ajouté', 'fichiers ajoutés')} au projet du Dev Lab : ${written.join(', ')}.`, { action: 'Ouvrir le Dev Lab', onAction: () => { const b = document.querySelector('#modeSeg button[data-mode="dev"]'); if (b) b.click(); } });
   return true;
 }
 

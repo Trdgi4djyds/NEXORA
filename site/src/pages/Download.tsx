@@ -1,24 +1,24 @@
-import { WebButton } from "../components/Download"
 import { Faq } from "../components/Faq"
 import { SectionHead } from "../components/SectionHead"
 import { FAQ } from "../data/content"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
-import { APP_VERSION, WEB_URL } from "../lib/product"
+import { APP_VERSION } from "../lib/product"
 import { useRemote } from "../lib/remote"
 import { logo } from "../components/Brand"
 
 // #069 : étapes numérotées et configuration en fiche technique (plus de pastilles d'icône).
+// #076 : NEXORA Devs Toolbox s'installe par un lanceur léger qui télécharge, vérifie et met à jour l'application.
 const STEPS: [string, string][] = [
-  ["Télécharge NEXORA", "La version portable tient dans un seul fichier ZIP."],
-  ["Décompresse le dossier", "Où tu veux : Documents, Bureau ou une clé USB."],
-  ["Lance NEXORA.exe", "Aucune installation ni droits d’administrateur nécessaires."],
+  ["Télécharge le lanceur", "NEXORA Devs Toolbox : un petit programme de quelques mégaoctets."],
+  ["Lance-le", "Il télécharge NEXORA, vérifie sa signature et l’installe, sans droits d’administrateur."],
+  ["Connecte-toi", "Ta licence gratuite s’active : ton premier jour est un essai complet de Pro."],
 ]
 const REQUIREMENTS: [string, string][] = [
   ["Système", "Windows 10 ou Windows 11, 64 bits"],
   ["Mémoire", "8 Go conseillés pour le Studio 3D et les constructions"],
-  ["Espace disque", "Environ 450 Mo, plus tes projets et tes outils"],
-  ["Internet", "Pour ton compte, la synchronisation, l’IA et les mises à jour"],
+  ["Espace disque", "Environ 450 Mo, plus tes projets et ta bibliothèque"],
+  ["Internet", "Obligatoire au démarrage : ta licence est vérifiée par nos serveurs"],
 ]
 const WEB_FAQ = FAQ.filter((f) => /ordinateurs|mises à jour|sécurité/.test(f.q))
 
@@ -35,41 +35,47 @@ export function Download() {
             as="h1"
             align="left"
             eyebrow="Télécharger"
-            title={["NEXORA pour Windows,", downloadUrl || !ready ? "prêt en trois clics." : "bientôt disponible."]}
+            title={["NEXORA Devs Toolbox,", downloadUrl || !ready ? "prêt en trois clics." : "bientôt disponible."]}
             lead={
               downloadUrl || !ready
-                ? "Une version portable : décompresse, lance, c’est prêt. Tes réglages, tes projets et ton compte sont gardés d’une version à l’autre."
-                : "La version portable pour Windows n’est pas encore publiée. NEXORA web est ouvert dès maintenant : ton compte et tes projets te suivront dans l’application."
+                ? "Un lanceur léger installe NEXORA, vérifie chaque fichier et le tient à jour. Tes réglages, tes projets et ton compte sont gardés d’une version à l’autre."
+                : "Le lanceur pour Windows n’est pas encore publié. Crée dès maintenant ton compte et ta licence gratuite : ils t’attendront au premier démarrage."
             }
           />
           <Reveal className="dl-card glow" data-glow>
             <div className="dl-main">
               <img src={logo} alt="" width={84} height={84} />
               <div>
-                <b>NEXORA {APP_VERSION}</b>
-                <span>Windows 10 et 11 · 64 bits · version portable (.zip, environ 175 Mo)</span>
+                <b>NEXORA Devs Toolbox</b>
+                <span>Windows 10 et 11 · 64 bits · lanceur de 5 à 10 Mo · NEXORA {APP_VERSION} téléchargé et vérifié à l’installation</span>
               </div>
             </div>
             <div className="dl-actions">
               {downloadUrl ? (
                 <a className="btn btn-primary btn-lg" href={downloadUrl} rel="noopener">
-                  <Icon name="download" size={18} stroke={2} /> Télécharger NEXORA {APP_VERSION}
+                  <Icon name="download" size={18} stroke={2} /> Télécharger le lanceur
                 </a>
               ) : (
                 <>
-                  {/* #072 : sans version publiée, l'action possible (NEXORA web) passe avant le bouton inactif. */}
-                  <WebButton size="lg" variant="primary" label="Ouvrir NEXORA web" />
+                  {/* #076 : sans version publiée, l'action possible (créer sa licence) passe avant le bouton inactif. */}
+                  <a className="btn btn-primary btn-lg" href="#/licence">
+                    <Icon name="key" size={18} stroke={2} /> Créer ma licence gratuite
+                  </a>
                   <span className="btn btn-lg" aria-disabled="true">
                     <Icon name="clock" size={18} stroke={2} /> {ready ? "Téléchargement bientôt disponible" : "Recherche de la dernière version…"}
                   </span>
                 </>
               )}
-              {downloadUrl && <WebButton size="lg" label="Ouvrir NEXORA web" />}
+              {downloadUrl && (
+                <a className="btn btn-ghost btn-lg" href="#/licence">
+                  <Icon name="key" size={18} stroke={2} /> Ma licence
+                </a>
+              )}
             </div>
             {!downloadUrl && ready && (
               <p className="dl-wait">
-                <Icon name="info" size={15} /> La version Windows publique arrive très bientôt. En attendant, crée ton compte et découvre
-                NEXORA dans ton navigateur&nbsp;: tes projets t’attendront dans l’application.
+                <Icon name="info" size={15} /> Le lanceur public arrive très bientôt. En attendant, crée ton compte et ta licence
+                gratuite&nbsp;: ils seront reconnus au premier démarrage.
               </p>
             )}
           </Reveal>
@@ -113,14 +119,14 @@ export function Download() {
           </ul>
           <div className="dl-duo" data-glow>
             <Reveal className="duo-card glow" data-space="desktop">
-              <h3>Des mises à jour sans effort</h3>
-              <p>NEXORA te prévient quand une nouvelle version sort, la télécharge dans ton dossier Téléchargements et t’explique comment la remplacer.</p>
+              <h3>Des mises à jour vérifiées</h3>
+              <p>Le lanceur télécharge chaque nouvelle version depuis nos publications officielles, contrôle sa signature et l’empreinte de chaque fichier, puis l’installe. En cas de souci, il revient à la version précédente.</p>
             </Reveal>
             <Reveal className="duo-card glow" data-space="preview" delay={80}>
-              <h3>Pas sur Windows ?</h3>
-              <p>NEXORA web te permet de retrouver ton compte, tes projets synchronisés et une partie des espaces depuis n’importe quel navigateur.</p>
-              <a className="link-arrow" href={WEB_URL}>
-                Ouvrir NEXORA web <Icon name="nxArrowRight" size={15} stroke={2} />
+              <h3>Désinstallation propre</h3>
+              <p>Depuis les Paramètres de Windows : tu choisis de garder ou de supprimer tes documents, projets, réglages et la bibliothèque téléchargée.</p>
+              <a className="link-arrow" href="#/licence">
+                Gérer ma licence <Icon name="nxArrowRight" size={15} stroke={2} />
               </a>
             </Reveal>
           </div>

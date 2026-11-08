@@ -1,0 +1,45 @@
+/* NEXORA #076 : écran de verrouillage de la licence et pastille de l'essai. Interface plate (#045) : aucune
+ * ombre portée ni dégradé décoratif ; blocs pleins à contour net (#007) ; couleurs du thème (#004). Sous les
+ * fenêtres (connexion) et les notifications. */
+#nxLicence { position: fixed; inset: 0; z-index: 45; display: grid; place-items: center; padding: 24px; background: #e9ebf2; }
+#nxLicence[hidden] { display: none; }
+html[data-theme='dark'] #nxLicence { background: #0d0e11; }
+.nxl-card { width: min(520px, 100%); display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 28px 28px 20px; border-radius: 22px; border: 1px solid var(--sep-strong); background: var(--window); color: var(--text); text-align: center; }
+.nxl-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.nxl-brand img { width: 36px; height: 36px; }
+.nxl-brand span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
+.nxl-brand b { font-size: 15px; letter-spacing: .04em; }
+.nxl-brand small { font-size: 11.5px; color: var(--text-2); }
+.nxl-ico { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; background: var(--fill); color: var(--accent); }
+.nxl-card h2 { margin: 2px 0 0; font-size: 21px; font-weight: 700; }
+.nxl-card p { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--text-2); max-width: 420px; }
+.nxl-card .nxl-who { font-size: 12.5px; }
+.nxl-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px; min-height: 36px; align-items: center; }
+.nxl-key { width: 100%; margin-top: 4px; text-align: left; font-size: 12.5px; color: var(--text-2); }
+.nxl-key summary { cursor: pointer; text-align: center; color: var(--accent); }
+.nxl-row { display: flex; gap: 8px; margin: 10px 0 6px; }
+.nxl-row .input { flex: 1; font-family: ui-monospace, Consolas, monospace; letter-spacing: .05em; text-transform: uppercase; }
+.nxl-card .nxl-foot { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 11.5px; color: var(--text-3); }
+#nxTrialChip { position: fixed; right: 16px; bottom: 16px; z-index: 44; display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 6px 0 12px; border-radius: 17px; border: 1px solid var(--sep-strong); background: var(--window); color: var(--text); font-size: 12.5px; cursor: pointer; }
+#nxTrialChip[hidden] { display: none; }
+#nxTrialChip svg { color: #c98a00; }
+#nxTrialChip em { font-style: normal; font-weight: 600; padding: 4px 10px; border-radius: 12px; background: var(--accent); color: #fff; }
+/* NEXORA #077 : écran de sécurité. Marque sur une ligne (protégée des règles générales), gravité par couleur. */
+#nxLicence .nxl-brand { flex-direction: row; padding: 0; background: none; border: 0; }
+#nxLicence .nxl-brand span { padding: 0; background: none; border: 0; }
+#nxLicence .nxl-kick { margin-top: 2px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+#nxLicence[data-tone='danger'] .nxl-ico { background: #fdecec; color: #b91c1c; }
+#nxLicence[data-tone='danger'] .nxl-kick { color: #b91c1c; }
+#nxLicence[data-tone='warn'] .nxl-ico { background: #fdf3e3; color: #b45309; }
+#nxLicence[data-tone='warn'] .nxl-kick { color: #b45309; }
+html[data-theme='dark'] #nxLicence[data-tone='danger'] .nxl-ico { background: #3a1416; color: #f87171; }
+html[data-theme='dark'] #nxLicence[data-tone='danger'] .nxl-kick { color: #f87171; }
+html[data-theme='dark'] #nxLicence[data-tone='warn'] .nxl-ico { background: #3a2a10; color: #fbbf24; }
+html[data-theme='dark'] #nxLicence[data-tone='warn'] .nxl-kick { color: #fbbf24; }
+#nxLicence .nxl-card .nxl-foot { justify-content: center; text-align: center; max-width: 440px; }
+#nxLicence .nxl-card .nxl-foot svg { flex: none; }
+#nxLicence .nxl-brand span, #nxLicence .nxl-brand b, #nxLicence .nxl-brand small { background: transparent !important; box-shadow: none !important; }
+#nxLicence .nxl-card .nxl-foot { display: block; }
+#nxLicence .nxl-card .nxl-foot svg { vertical-align: -2px; margin-right: 5px; }
+#nxLicence .nxl-brand > span { all: unset; display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; text-align: left; }
+#nxLicence .nxl-card .nxl-foot > * { display: inline-flex !important; vertical-align: middle; margin-right: 5px; }

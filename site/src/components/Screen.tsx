@@ -1,12 +1,12 @@
 import { SPACE_BY_ID, type SpaceId } from "../data/spaces"
-import { KORA_PIXEL, PIXEL_10_PRO, SCREEN_H, SCREEN_W, SCREENS_DARK } from "../lib/screens"
+import { KORA_PIXEL, PIXEL_10_PRO, SCREEN_H, SCREEN_W, SCREENS } from "../lib/screens"
 
-/** Capture réelle d'un espace de NEXORA, dans son thème sombre (direction « Nocturne », #068). */
+/** Capture réelle d'un espace de NEXORA, dans son thème clair (direction « Prisme », #074). */
 export function Screen({ space, eager = false, className = "" }: { space: SpaceId; eager?: boolean; className?: string }) {
   return (
     <img
       className={`shot ${className}`}
-      src={SCREENS_DARK[space]}
+      src={SCREENS[space]}
       width={SCREEN_W}
       height={SCREEN_H}
       loading={eager ? "eager" : "lazy"}

@@ -57,28 +57,20 @@ export function WebButton({
 }
 
 /**
- * NEXORA #072 : le bouton principal suit la réalité. Tant qu'aucune version Windows n'est publiée (réglage
- * `desktop_download_url` vide sur le serveur), « Télécharger pour Windows » ne menait qu'à une page « bientôt
- * disponible » : le bouton principal ouvre alors NEXORA web, et la version Windows passe en second.
+ * NEXORA #076 : NEXORA Devs Toolbox est un logiciel Windows uniquement. Le bouton principal télécharge le lanceur
+ * (lien direct dès que `desktop_download_url` est renseigné, sinon page Télécharger) ; le second ouvre « Ma licence ».
+ * (#072 : le bouton principal ouvrait NEXORA web tant qu'aucune version Windows n'était publiée.)
  */
 export function MainButton({ size = "md", className = "" }: { size?: "sm" | "md" | "lg"; className?: string }) {
-  const { downloadUrl } = useRemote()
-  return downloadUrl ? (
-    <DownloadButton size={size} label={size === "sm" ? "Télécharger" : "Télécharger pour Windows"} className={className} />
-  ) : (
-    <WebButton size={size} variant="primary" label={size === "sm" ? "Ouvrir NEXORA web" : "Essayer NEXORA web"} className={className} />
-  )
+  return <DownloadButton size={size} label={size === "sm" ? "Télécharger" : "Télécharger pour Windows"} className={className} />
 }
 
-/** Second bouton : NEXORA web quand la version Windows est publiée, sinon la page Télécharger (« bientôt »). */
+/** Second bouton : la page « Ma licence » (compte, clé gratuite, abonnement). */
 export function SecondButton({ size = "md", className = "" }: { size?: "sm" | "md" | "lg"; className?: string }) {
-  const { downloadUrl } = useRemote()
-  if (downloadUrl) return <WebButton size={size} label={size === "sm" ? "Ouvrir NEXORA web" : "Essayer dans le navigateur"} className={className} />
   return (
-    <a className={`btn btn-ghost glow${size === "md" ? "" : ` btn-${size}`}${className ? ` ${className}` : ""}`} href="#/telecharger">
-      <Icon name="display" size={size === "sm" ? 15 : 17} />
-      <span>{size === "sm" ? "Windows" : "Version Windows"}</span>
-      <span className="btn-soon">bientôt</span>
+    <a className={`btn btn-ghost glow${size === "md" ? "" : ` btn-${size}`}${className ? ` ${className}` : ""}`} href="#/licence">
+      <Icon name="key" size={size === "sm" ? 15 : 17} />
+      <span>{size === "sm" ? "Ma licence" : "Obtenir ma licence gratuite"}</span>
     </a>
   )
 }

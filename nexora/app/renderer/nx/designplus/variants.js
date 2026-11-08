@@ -1,6 +1,6 @@
 // NEXORA #053 : composants à variantes (un jeu par composant : propriétés comme « État » ou « Taille ») et
 // propriétés modifiables de chaque copie (textes, éléments visibles ou non). S'appuie sur les composants du #011.
-import { esc, ico, uid, toast, prompt, sec, btn, util, FabricObject, isText, replaceObj, commit, walk } from './ui.js';
+import { esc, ico, uid, toast, prompt, sec, btn, util, FabricObject, isText, replaceObj, commit, walk, pl } from './ui.js';
 import { comps } from '../design/content.js';
 
 export const sets = (D) => (D.doc.nxSets = D.doc.nxSets || {});
@@ -85,7 +85,7 @@ export function props(D, o) {
   if (!o || !o.nxComp) return '';
   const found = setOfComp(D, o.nxComp.id);
   if (o.nxComp.master) {
-    return sec('Variantes', found ? `<p class="dzx-hint">Jeu « ${esc(found[1].name)} » : ${Object.keys(found[1].variants).length} variante(s), propriétés ${found[1].props.map((p) => esc(p.name)).join(', ')}.</p><div class="nx-btns">${btn('var-new', 'plus', 'Ajouter une variante')}${btn('var-prop', 'nxTag', 'Ajouter une propriété')}</div>`
+    return sec('Variantes', found ? `<p class="dzx-hint">Jeu « ${esc(found[1].name)} » : ${pl(Object.keys(found[1].variants).length, 'variante', 'variantes')}, propriétés ${found[1].props.map((p) => esc(p.name)).join(', ')}.</p><div class="nx-btns">${btn('var-new', 'plus', 'Ajouter une variante')}${btn('var-prop', 'nxTag', 'Ajouter une propriété')}</div>`
       : `<p class="dzx-hint">Regroupe les états de ce composant (normal, survol, désactivé…) et ses tailles dans un seul composant.</p><div class="nx-btns">${btn('var-set', 'nxComponent', 'Créer un jeu de variantes')}</div>`);
   }
   const cur = found ? ((o.nxVariant && o.nxVariant.values) || (Object.entries(found[1].variants).find(([, v]) => v === o.nxComp.id) || [''])[0].split('|')) : [];

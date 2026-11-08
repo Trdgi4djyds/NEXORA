@@ -1,9 +1,10 @@
 // NEXORA #011 : pages de NEX-DESIGN (redimensionnement automatique, exports ZIP, animations, présentation,
 // historique visible, commentaires, coédition, règles et repères, assistant IA).
-import { util, FabricObject, FabricImage, Textbox } from './fab.js';
+import { util, FabricObject, FabricImage, Textbox, ActiveSelection } from './fab.js';
 import { a as FORMATS } from '../../dist/chunks/chunk-SKL2UTC7.js';
 import { settings, saveSettings, toast, busy, esc, ico, uid, clamp, lerp, sleep, makeCanvas, canvasBytes, zip, encodeGif, saveBytes, safeName, sheet, closeSheet, sheetHtml, menu, prompt, dominantColors, $, el } from '../core.js';
 import { aiChat, aiJson, aiImage, needAi, getBrand, CollabRoom, collabSheet } from '../services.js';
+import { restorePatterns, fxActive } from './fx.js';
 import { applyTemplate, applyBrand } from './content.js';
 import { TEMPLATES } from '../library.js';
 
@@ -92,29 +93,101 @@ export async function exportLayers(D, { scale = 2 } = {}) {
   } catch (e) { toast(`L’export a échoué : ${e.message || e}`, { kind: 'bad' }); } finally { t.close(); }
 }
 // Ajoute trois exports à la fenêtre « Exporter la page » de NEX-DESIGN.
+// NEXORA #075 (A-041, A-044) : une seule fenêtre « Exporter » : image, PDF vectoriel, sélection seule, puis tous
+// les autres exports (pages, calques, vidéo, impression, code, prototype, icônes d'application, série CSV).
 export function patchExportSheet(D) {
   const proto = Object.getPrototypeOf(D);
   if (proto.nxExportSheet) return;
   proto.nxExportSheet = proto.exportSheet;
   proto.exportSheet = function () {
+    const active = this.canvas.getActiveObject();
+    const selN = active ? (active.type === 'activeselection' || active.type === 'activeSelection' ? active.getObjects().length : 1) : 0;
+    this.nxExportSel = null;
     this.nxExportSheet();
     const s = $('#sheet'); const body = s && s.querySelector('.sheet-body');
     if (!body || body.querySelector('.nx-exmore')) return;
-    body.insertAdjacentHTML('beforeend', `<div class="nx-exmore"><div class="field-label">Autres exports</div><div class="nx-row">
-      <button class="btn small" data-nx-ex="zip">${ico('nxZip', 13)}<span>Toutes les pages en ZIP</span></button>
-      <button class="btn small" data-nx-ex="layers">${ico('layers', 13)}<span>Chaque calque (PNG, ZIP)</span></button>
-      <button class="btn small" data-nx-ex="anim">${ico('nxAnimate', 13)}<span>Animation (MP4, WebM, GIF)</span></button></div>
+    const pdf = body.querySelector('[data-exf="pdf"]'); if (pdf) pdf.textContent = 'PDF (vectoriel)';
+    const std = window.__nxDesignPlus && window.__nxDesignPlus.has ? window.__nxDesignPlus.has('design_extended') : true;
+    const chip = std ? '' : ' <em class="dzp-pro">Pro</em>';
+    const b2 = (k, icon, label, perm) => `<button class="btn small" data-nx-ex="${k}">${ico(icon, 13)}<span>${label}</span>${perm ? chip : ''}</button>`;
+    body.insertAdjacentHTML('beforeend', `<div class="nx-exmore">
+      ${selN ? `<label class="check-row"><input type="checkbox" data-nx-exsel><span class="box"></span><span>Seulement la sélection (${selN} calque${selN > 1 ? 's' : ''}) · PNG, JPG, WebP ou SVG</span></label>
+      <div class="nx-row">${b2('copy', 'nxClipboard', 'Copier la sélection en PNG')}</div>` : ''}
+      <div class="field-label">Pages et calques</div><div class="nx-row">${b2('zip', 'nxZip', 'Toutes les pages en ZIP')}${b2('layers', 'layers', 'Chaque calque (PNG, ZIP)')}${b2('anim', 'nxAnimate', 'Vidéo ou GIF animé', true)}</div>
+      <div class="field-label">Impression, web et applications</div><div class="nx-row">${b2('print', 'pdf', 'PDF d’impression (fonds perdus)', true)}${b2('code', 'code', 'Code HTML et React', true)}${b2('proto', 'play', 'Prototype en page HTML', true)}${b2('spaces', 'android', 'Icônes d’application', true)}${b2('bulk', 'layers', 'Série depuis un tableur', true)}</div>
       <p class="sheet-note">SVG : les effets de calque et les masques peints sont rendus seulement dans les formats image et PDF.</p></div>`);
+    const exsel = body.querySelector('[data-nx-exsel]');
+    if (exsel) exsel.onchange = () => { this.nxExportSel = exsel.checked ? (selN > 1 ? active.getObjects().slice() : active) : null; };
     body.querySelector('.nx-exmore').onclick = async (e) => {
       const b = e.target.closest('[data-nx-ex]'); if (!b) return;
       e.stopPropagation();
+      const k = b.dataset.nxEx;
       const st = settings.designExport || { scale: '2', format: 'png', transparent: false };
+      if (k === 'copy') { await copySelectionPng(this, active); return; }
       closeSheet();
-      if (b.dataset.nxEx === 'zip') await exportZip(this, { scale: Number(st.scale) || 2, format: ['jpg', 'webp'].includes(st.format) ? st.format : 'png', transparent: !!st.transparent });
-      if (b.dataset.nxEx === 'layers') await exportLayers(this, { scale: Number(st.scale) || 2 });
-      if (b.dataset.nxEx === 'anim') animExportSheet(this);
+      if (k === 'zip') await exportZip(this, { scale: Number(st.scale) || 2, format: ['jpg', 'webp'].includes(st.format) ? st.format : 'png', transparent: !!st.transparent });
+      if (k === 'layers') await exportLayers(this, { scale: Number(st.scale) || 2 });
+      if (k === 'anim') { if (gateStd('L’export vidéo')) animExportSheet(this); }
+      const tabs = { print: 'print', code: 'code', proto: 'proto', spaces: 'spaces', bulk: 'bulk' };
+      if (tabs[k] && window.__nxDesignPlus) window.__nxDesignPlus.open(tabs[k]);
     };
   };
+  // Export : PDF vectoriel pour tous (NEXORA #075, A-041) ; sélection seule si la case est cochée.
+  if (!proto.nxExportPages) {
+    proto.nxExportPages = proto.exportPages;
+    proto.exportPages = async function (opts, all = false) {
+      if (this.nxExportSel && opts && opts.format !== 'pdf') { const o = this.nxExportSel; this.nxExportSel = null; return exportSelection(this, o, opts); }
+      this.nxExportSel = null;
+      if (opts && opts.format === 'pdf') {
+        const { exportScreenPdf } = await import('../designplus/print.js');
+        return exportScreenPdf(this, { all, scale: Number(opts.scale) || 2 });
+      }
+      return this.nxExportPages(opts, all);
+    };
+  }
+}
+const gateStd = (what) => (window.__nxDesignPlus && window.__nxDesignPlus.allowed ? window.__nxDesignPlus.allowed('design_extended', what) : true);
+
+// ---------- Sélection seule : image, SVG, presse-papiers (NEXORA #075) ----------
+function selectionCanvas(D, o, scale = 2, background = null) {
+  const c = o.toCanvasElement({ multiplier: scale, enableRetinaScaling: false });
+  if (!background) return c;
+  const out = makeCanvas(c.width, c.height); const x = out.getContext('2d');
+  x.fillStyle = background; x.fillRect(0, 0, out.width, out.height); x.drawImage(c, 0, 0);
+  return out;
+}
+function selectionSvg(o) {
+  const pts = o.getCoords();
+  const xs = pts.map((p) => p.x); const ys = pts.map((p) => p.y);
+  const l = Math.min(...xs); const t = Math.min(...ys); const w = Math.max(...xs) - l; const h = Math.max(...ys) - t;
+  const inner = o.type === 'activeselection' || o.type === 'activeSelection' ? o.getObjects().map((x) => x.toSVG()).join('\n') : o.toSVG();
+  // Les calques d'une sélection multiple sont dessinés dans le repère de la sélection : on la replace sur la page.
+  const m = o.type === 'activeselection' || o.type === 'activeSelection' ? o.calcTransformMatrix() : null;
+  const g = m ? `<g transform="matrix(${m.map((v) => +v.toFixed(5)).join(' ')})">${inner}</g>` : inner;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${l.toFixed(2)} ${t.toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}" width="${Math.round(w)}" height="${Math.round(h)}">\n${g}\n</svg>`;
+}
+export async function exportSelection(D, sel, { format = 'png', scale = 2, transparent = false } = {}) {
+  const name = `${D.doc.name || 'Design'} (sélection)`;
+  // Sélection multiple : refaite à l'identique (la fenêtre a pu la défaire), puis défaite après l'export.
+  let o = sel; let temp = false;
+  if (Array.isArray(sel)) { o = new ActiveSelection(sel.filter((x) => D.canvas.getObjects().includes(x)), { canvas: D.canvas }); D.canvas.setActiveObject(o); temp = true; }
+  try {
+    if (format === 'svg') { await saveBytes(new TextEncoder().encode(selectionSvg(o)), { name, ext: 'svg', kind: 'photo', project: D.doc.name || 'NEXORA' }); return; }
+    const bg = format === 'jpg' || !transparent ? (D.page.bg || '#ffffff') : null;
+    const c = selectionCanvas(D, o, Number(scale) || 2, format === 'jpg' ? (D.page.bg || '#ffffff') : bg);
+    const type = format === 'jpg' ? 'image/jpeg' : format === 'webp' ? 'image/webp' : 'image/png';
+    await saveBytes(await canvasBytes(c, type, 0.92), { name, ext: format === 'jpg' ? 'jpg' : format, kind: 'photo', project: D.doc.name || 'NEXORA' });
+  } catch (e) { console.error(e); toast(`L’export de la sélection a échoué : ${e.message || e}`, { kind: 'bad' }); } finally { if (temp) { D.canvas.discardActiveObject(); D.canvas.requestRenderAll(); } }
+}
+export async function copySelectionPng(D, o = D.canvas.getActiveObject()) {
+  if (!o) { toast('Sélectionne d’abord ce que tu veux copier.'); return false; }
+  try {
+    const c = selectionCanvas(D, o, 2);
+    const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    toast('Sélection copiée en PNG : colle-la dans un autre logiciel.');
+    return true;
+  } catch (e) { toast('La copie dans le presse-papiers a échoué ici : exporte la sélection depuis « Exporter ».', { kind: 'bad' }); return false; }
 }
 
 // ---------- Animations des pages ----------
@@ -334,26 +407,92 @@ export async function addComment(D, p) {
 }
 
 // ---------- Coédition ----------
+// NEXORA #075 : coédition élément par élément (seuls les calques modifiés partent, chacun garde ses autres
+// changements) et salle rattachée au document (même code pour toute l'équipe qui ouvre ce document).
+const liveObjs = (D) => D.canvas.getObjects().filter((o) => o.id !== '__board' && o.id !== '__nxcrop');
+function snapshot(D) {
+  const map = new Map();
+  for (const o of liveObjs(D)) { if (!o.id) o.id = uid(); map.set(o.id, JSON.stringify(o.toObject(FabricObject.customProperties))); }
+  D.nxSent = { page: D.pageIdx, map, order: liveObjs(D).map((o) => o.id).join('|') };
+}
+function diff(D) {
+  const prev = D.nxSent && D.nxSent.page === D.pageIdx ? D.nxSent : null;
+  if (!prev) { snapshot(D); return 'full'; }
+  const objs = liveObjs(D);
+  const map = new Map();
+  for (const o of objs) { if (!o.id) o.id = uid(); map.set(o.id, JSON.stringify(o.toObject(FabricObject.customProperties))); }
+  const upserts = []; for (const [id, j] of map) if (prev.map.get(id) !== j) upserts.push(JSON.parse(j));
+  const removes = [...prev.map.keys()].filter((id) => !map.has(id));
+  const order = objs.map((o) => o.id);
+  D.nxSent = { page: D.pageIdx, map, order: order.join('|') };
+  if (!upserts.length && !removes.length && order.join('|') === prev.order) return null;
+  return { page: D.pageIdx, w: D.page.w, h: D.page.h, bg: D.page.bg, upserts, removes, order };
+}
+async function applyPatch(D, p) {
+  const pg = D.doc.pages[p.page];
+  if (!pg) return;
+  if (p.page !== D.pageIdx) {
+    const list = (pg.json && pg.json.objects) || [];
+    const byId = new Map(list.map((j) => [j.id, j]));
+    for (const id of p.removes || []) byId.delete(id);
+    for (const u of p.upserts || []) byId.set(u.id, u);
+    pg.json = { ...(pg.json || {}), objects: (p.order || []).map((id) => byId.get(id)).filter(Boolean) };
+    return;
+  }
+  const c = D.canvas;
+  const active = c.getActiveObject();
+  D.nxRemote = true;
+  try {
+    const byId = () => new Map(c.getObjects().map((o) => [o.id, o]));
+    let map = byId();
+    for (const id of p.removes || []) { const o = map.get(id); if (o) c.remove(o); }
+    // Un texte en cours de saisie ici garde la main jusqu'à la fin de la saisie.
+    const ups = (p.upserts || []).filter((u) => !(active && active.id === u.id && active.isEditing));
+    const live = await util.enlivenObjects(ups);
+    map = byId();
+    for (const n of live) {
+      const old = map.get(n.id);
+      if (old) { const k = c.getObjects().indexOf(old); if (old === active) c.discardActiveObject(); c.remove(old); c.insertAt(k, n); } else c.add(n);
+    }
+    const base = c.getObjects().findIndex((o) => o.id === '__board') + 1;
+    (p.order || []).forEach((id, k) => { const o = c.getObjects().find((x) => x.id === id); if (o && c.moveObjectTo) c.moveObjectTo(o, base + k); });
+    restorePatterns(c);
+    for (const o of live) { if (o.type === 'image' && Array.isArray(o.nxAdj) && o.nxAdj.length) D.applyFx(o); if (fxActive(o)) o.objectCaching = false; }
+    if (p.bg && p.bg !== D.page.bg) { D.page.bg = p.bg; D.updateBoard && D.updateBoard(); }
+    c.requestRenderAll(); D.renderLayers && D.renderLayers();
+    snapshot(D);
+  } finally { D.nxRemote = false; }
+}
+export async function startRoom(D, code, created) {
+  const room = new CollabRoom({
+    kind: 'design', code,
+    getState: () => { snapshot(D); return { page: D.pageIdx, w: D.page.w, h: D.page.h, bg: D.page.bg, name: D.page.name, json: D.pageJson() }; },
+    getPatch: () => diff(D),
+    onPatch: (p) => applyPatch(D, p).catch((e) => console.warn('[NEXORA #075] coédition', e)),
+    onState: async (st) => {
+      const pg = st && D.doc.pages[st.page];
+      if (!pg) return;
+      Object.assign(pg, { w: st.w, h: st.h, bg: st.bg, json: st.json });
+      if (st.page === D.pageIdx) { D.nxRemote = true; await D.loadPage(D.page, st.json); D.updateBoard && D.updateBoard(); D.nxRemote = false; D.renderLayers(); snapshot(D); }
+    },
+    onCursor: (c) => { D.nxCursors = D.nxCursors || new Map(); D.nxCursors.set(c.by, { ...c, at: Date.now() }); D.nxRenderCursors && D.nxRenderCursors(); },
+    onPeers: (peers) => { D.nxPeers = peers; toast(peers.length ? `${peers.length} personne${peers.length > 1 ? 's' : ''} dans la salle ${code}.` : `Salle ${code} : tu es seul pour l’instant.`); }
+  });
+  const t = busy('Connexion à la salle…');
+  try { await room.join(); D.nxRoom = room; snapshot(D); toast(created === 'doc' ? `Coédition de ce document ouverte (salle ${code}) : tes coéquipiers qui ouvrent ce document et choisissent « Coéditer ce document » te rejoignent.` : created ? `Salle créée : ${code}. Donne ce code à tes coéquipiers.` : `Tu as rejoint la salle ${code}.`); } catch (e) { toast(e.message || String(e), { kind: 'bad' }); } finally { t.close(); }
+}
+// Code de salle tiré de l'identifiant du document : le même pour toute l'équipe.
+export function docRoomCode(D) {
+  let h = 2166136261;
+  for (const ch of String(D.doc.id)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  return h.toString(36).toUpperCase().padStart(6, '0').slice(-6);
+}
+export async function leaveRoom(D) { if (!D.nxRoom) return; await D.nxRoom.leave(); D.nxRoom = null; D.nxSent = null; D.nxCursors = new Map(); D.nxRenderCursors && D.nxRenderCursors(); toast('Tu as quitté la salle de coédition.'); }
 export function collab(D) {
   collabSheet({
     current: D.nxRoom ? { code: D.nxRoom.code, peers: D.nxRoom.peers } : null,
-    onStop: async () => { await D.nxRoom.leave(); D.nxRoom = null; D.nxCursors = new Map(); D.nxRenderCursors && D.nxRenderCursors(); toast('Tu as quitté la salle de coédition.'); },
-    onStart: async (code, created) => {
-      const room = new CollabRoom({
-        kind: 'design', code,
-        getState: () => ({ page: D.pageIdx, w: D.page.w, h: D.page.h, bg: D.page.bg, name: D.page.name, json: D.pageJson() }),
-        onState: async (st) => {
-          const pg = st && D.doc.pages[st.page];
-          if (!pg) return;
-          Object.assign(pg, { w: st.w, h: st.h, bg: st.bg, json: st.json });
-          if (st.page === D.pageIdx) { D.nxRemote = true; await D.loadPage(D.page, st.json); D.updateBoard && D.updateBoard(); D.nxRemote = false; D.renderLayers(); }
-        },
-        onCursor: (c) => { D.nxCursors = D.nxCursors || new Map(); D.nxCursors.set(c.by, { ...c, at: Date.now() }); D.nxRenderCursors && D.nxRenderCursors(); },
-        onPeers: (peers) => { D.nxPeers = peers; toast(peers.length ? `${peers.length} personne${peers.length > 1 ? 's' : ''} dans la salle ${code}.` : `Salle ${code} : tu es seul pour l’instant.`); }
-      });
-      const t = busy('Connexion à la salle…');
-      try { await room.join(); D.nxRoom = room; toast(created ? `Salle créée : ${code}. Donne ce code à tes coéquipiers.` : `Tu as rejoint la salle ${code}.`); } catch (e) { toast(e.message || String(e), { kind: 'bad' }); } finally { t.close(); }
-    }
+    onStop: () => leaveRoom(D),
+    onStart: (code, created) => startRoom(D, code, created)
   });
 }
 
@@ -397,15 +536,20 @@ export function gridLines(D) {
 
 // ---------- Assistant IA ----------
 const TEXT = ['textbox', 'i-text', 'text'];
+// NEXORA #075 : entrées réutilisées par le menu « IA de design » unique (nx/designplus/layout.js).
+export const AI_ITEMS = (D) => [
+  { id: 'write', icon: 'text', label: 'Rédiger les textes de la page…' },
+  { id: 'rewrite', icon: 'sync', label: 'Reformuler le texte sélectionné…', disabled: !D.sel().some((o) => TEXT.includes(o.type)) },
+  { id: 'layout', icon: 'grid', label: 'Choisir un modèle avec l’IA…', sub: 'Un modèle de NEX-DESIGN, titre et texte rédigés' },
+  { id: 'palette', icon: 'nxPalette', label: 'Créer une palette de couleurs…' },
+  { id: 'palimg', icon: 'image', label: 'Palette tirée de l’image sélectionnée', sub: 'Sans IA, directement sur ce PC', disabled: !D.sel().some((o) => o.type === 'image') },
+  { id: 'image', icon: 'sparkle', label: 'Générer une image…', sub: 'Avec ta clé OpenAI ou Google Gemini' }
+];
 export async function aiMenu(D, anchor) {
-  const a = await menu(anchor, 'Assistant IA', [
-    { id: 'write', icon: 'text', label: 'Rédiger les textes de la page…' },
-    { id: 'rewrite', icon: 'sync', label: 'Reformuler le texte sélectionné…', disabled: !D.sel().some((o) => TEXT.includes(o.type)) },
-    { id: 'layout', icon: 'grid', label: 'Proposer une mise en page…' },
-    { id: 'palette', icon: 'nxPalette', label: 'Créer une palette de couleurs…' },
-    { id: 'palimg', icon: 'image', label: 'Palette tirée de l’image sélectionnée', sub: 'Sans IA, directement sur ce PC', disabled: !D.sel().some((o) => o.type === 'image') },
-    { id: 'image', icon: 'sparkle', label: 'Générer une image…', sub: 'Avec OpenAI ou Google Gemini' }
-  ], { width: 300 });
+  const a = await menu(anchor, 'IA de design', AI_ITEMS(D), { width: 300 });
+  return aiRun(D, anchor, a);
+}
+export async function aiRun(D, anchor, a) {
   if (!a) return;
   if (a === 'palimg') { const img = D.sel().find((o) => o.type === 'image'); await paletteChoice(D, dominantColors(img.getElement(), 5)); return; }
   if (!(await needAi())) return;
@@ -474,3 +618,6 @@ async function paletteChoice(D, cols) {
   };
 }
 export { lerp, FabricImage };
+
+// Essais (scripts/test-design.mjs et aperçu) : calcul et application des changements de la coédition.
+export { diff as collabDiff, applyPatch as collabApply, snapshot as collabSnapshot };

@@ -47,7 +47,7 @@ export function Orgs({ param }: SectionProps) {
             <div className="kpis" style={{ marginBottom: 14 }}>
               <Kpi label="Équipes" object="team" value={fmtNum(teams.length)} hint={plural(teams.reduce((t, o) => t + o.members, 0), "membre")} onClick={() => setKind("teams")} />
               <Kpi label="Espaces personnels" object="folder" value={fmtNum(orgs.length - teams.length)} hint="un par compte" onClick={() => setKind("personal")} />
-              <Kpi label="Espaces payants" object="star" value={fmtNum(orgs.filter((o) => paid.has(o.plan_id)).length)} hint="Standard et Pro" onClick={() => setKind("paid")} />
+              <Kpi label="Espaces payants" object="star" value={fmtNum(orgs.filter((o) => paid.has(o.plan_id)).length)} hint="Offre Pro" onClick={() => setKind("paid")} />
               <Kpi label="Projets" object="folder" value={fmtNum(orgs.reduce((t, o) => t + o.projects, 0))} hint={plural(orgs.reduce((t, o) => t + o.designs, 0), "document NEX-DESIGN", "documents NEX-DESIGN")} />
             </div>
             <Table head={["Espace", "Propriétaire", "Offre", "Statut", "Membres", "Contenus", "Créé"]} count={rows.length} empty="Aucun espace.">

@@ -9,9 +9,11 @@ import { SpacesIndex } from "./pages/SpacesIndex"
 import { Pricing } from "./pages/Pricing"
 import { Download } from "./pages/Download"
 import { News } from "./pages/News"
+import { Licence } from "./pages/Licence"
 import { NotFound } from "./pages/NotFound"
 import { spaceBySlug } from "./data/spaces"
 import { installGlow } from "./lib/glow"
+import { installDepth } from "./lib/depth"
 import { scrollToId, useRoute, type Route } from "./router"
 
 function page(route: Route): { key: string; title: string; node: ReactNode } {
@@ -24,6 +26,8 @@ function page(route: Route): { key: string; title: string; node: ReactNode } {
   }
   if (a === "tarifs") return { key: "tarifs", title: "Tarifs — NEXORA", node: <Pricing /> }
   if (a === "telecharger") return { key: "telecharger", title: "Télécharger NEXORA pour Windows", node: <Download /> }
+  // NEXORA #076 : licence (compte, clé, appareils, abonnement) et vérification publique d'une clé.
+  if (a === "licence") return { key: "licence", title: "Ma licence — NEXORA Devs Toolbox", node: <Licence query={route.query} /> }
   if (a === "nouveautes") return { key: "nouveautes", title: "Nouveautés — NEXORA", node: <News /> }
   return { key: "introuvable", title: "Page introuvable — NEXORA", node: <NotFound /> }
 }
@@ -37,6 +41,8 @@ export function App() {
 
   // Lumière qui suit la souris sur les cartes, les grilles et les captures (#069).
   useEffect(() => installGlow(), [])
+  // Profondeur liée au défilement des scènes en 3D (#074).
+  useEffect(() => installDepth(), [])
 
   // Ctrl K (ou Cmd K) ouvre la recherche, comme dans NEXORA.
   useEffect(() => {
@@ -53,9 +59,15 @@ export function App() {
   useEffect(() => {
     document.title = current.title
     // Section demandée dans l'adresse (#/tarifs/comparatif) : on y va après l'affichage, sinon en haut de page.
-    const target = route.parts[0] === "tarifs" ? route.parts[1] : undefined
+    const target = route.parts[0] === "tarifs" || route.parts[0] === "licence" ? route.parts[1] : undefined
+    // #074 : sans section, retour en haut tout de suite, avant que la transition 3D ne saisisse la nouvelle page.
+    if (!target) {
+      window.scrollTo({ top: 0 })
+      first.current = false
+      return
+    }
     const t = window.setTimeout(() => {
-      if (!(target && scrollToId(target, !first.current))) window.scrollTo({ top: 0 })
+      if (!scrollToId(target, !first.current)) window.scrollTo({ top: 0 })
       first.current = false
     }, 30)
     return () => window.clearTimeout(t)

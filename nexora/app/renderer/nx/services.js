@@ -11,8 +11,43 @@ export function getBrand() {
 }
 export function setBrand(b) {
   settings.nxBrand = { ...getBrand(), ...b };
+  // NEXORA #075 : le kit actif est aussi rangé dans la liste des kits (un par client ou par projet).
+  if (Array.isArray(settings.nxBrands) && settings.nxBrandId) settings.nxBrands = settings.nxBrands.map((k) => (k.id === settings.nxBrandId ? { ...settings.nxBrand, id: k.id } : k));
   saveSettings();
   for (const fn of brandListeners) try { fn(settings.nxBrand); } catch (e) { console.warn('[marque]', e); }
+}
+// NEXORA #075 : plusieurs kits de marque. settings.nxBrand reste le kit actif (lu par NEX-DESIGN, le Studio et les
+// Maquettes) ; settings.nxBrands garde tous les kits, settings.nxBrandId celui qui est actif.
+export function brandList() {
+  if (!Array.isArray(settings.nxBrands) || !settings.nxBrands.length) {
+    const id = uid();
+    settings.nxBrands = [{ ...getBrand(), id }]; settings.nxBrandId = id; saveSettings();
+  }
+  if (!settings.nxBrands.some((k) => k.id === settings.nxBrandId)) { settings.nxBrandId = settings.nxBrands[0].id; saveSettings(); }
+  return settings.nxBrands;
+}
+export const activeBrandId = () => { brandList(); return settings.nxBrandId; };
+export function useBrand(id) {
+  const k = brandList().find((x) => x.id === id);
+  if (!k) return false;
+  settings.nxBrandId = id;
+  const { id: _id, ...b } = k; void _id;
+  setBrand(b);
+  return true;
+}
+export function newBrand(name) {
+  const id = uid();
+  brandList().push({ ...getBrand(), name: name || 'Nouvelle marque', logo: null, id });
+  saveSettings();
+  useBrand(id);
+  return id;
+}
+export function deleteBrand(id) {
+  const list = brandList();
+  if (list.length < 2) return false;
+  settings.nxBrands = list.filter((k) => k.id !== id);
+  if (settings.nxBrandId === id) useBrand(settings.nxBrands[0].id); else saveSettings();
+  return true;
 }
 const brandListeners = new Set();
 export const onBrand = (fn) => (brandListeners.add(fn), () => brandListeners.delete(fn));
@@ -20,13 +55,14 @@ export const hasBrand = () => !!(settings.nxBrand && (settings.nxBrand.name || s
 
 // Fenêtre d'édition du kit de marque (commune aux trois espaces).
 export function brandSheet({ onApply = null, applyLabel = '' } = {}) {
-  const b = getBrand();
+  let b = getBrand();
   const labels = ['Principale', 'Secondaire', 'Accent', 'Texte foncé', 'Fond clair'];
   const render = () => sheetHtml({
     icon: 'nxBrand',
     title: 'Kit de marque',
     sub: 'Logo, couleurs et polices de ta marque : NEX-DESIGN, le Studio et les Maquettes les appliquent en un clic.',
-    body: `<div class="field-label">Nom de la marque</div><input class="input" data-nxb="name" value="${esc(b.name)}" placeholder="Ma marque">
+    body: `<div class="field-label">Kit</div><div class="nx-row nx-brand-kits"><select class="input" data-nxb-kit>${brandList().map((k) => `<option value="${esc(k.id)}" ${k.id === settings.nxBrandId ? 'selected' : ''}>${esc(k.name || 'Sans nom')}</option>`).join('')}</select><button class="btn small" data-nxb-act="kit-new">${ico('plus', 13)}<span>Nouveau kit</span></button>${brandList().length > 1 ? `<button class="btn small" data-nxb-act="kit-del">${ico('trash', 13)}<span>Supprimer ce kit</span></button>` : ''}</div>
+      <div class="field-label">Nom de la marque</div><input class="input" data-nxb="name" value="${esc(b.name)}" placeholder="Ma marque">
       <div class="field-label">Couleurs</div>
       <div class="nx-brand-colors">${b.colors.map((c, i) => `<label class="nx-brand-color"><input type="color" data-nxb-color="${i}" value="${esc(c)}"><span>${labels[i]}</span><code>${esc(c)}</code></label>`).join('')}</div>
       <div class="nx-row"><button class="btn small" data-nxb-act="from-logo" ${b.logo ? '' : 'disabled'}>${ico('nxPalette', 13)}<span>Tirer les couleurs du logo</span></button></div>
@@ -52,6 +88,7 @@ export function brandSheet({ onApply = null, applyLabel = '' } = {}) {
   };
   s.onchange = (e) => {
     const t = e.target;
+    if (t.matches('[data-nxb-kit]')) { useBrand(t.value); b = getBrand(); refresh(); return; }
     if (t.dataset.nxb === 'title' || t.dataset.nxb === 'body') { b.fonts[t.dataset.nxb] = t.value; refresh(); }
   };
   s.onclick = async (e) => {
@@ -62,6 +99,8 @@ export function brandSheet({ onApply = null, applyLabel = '' } = {}) {
         if (f && f.dataUrl) { b.logo = f.dataUrl; refresh(); }
       }
       if (a.dataset.nxbAct === 'logo-del') { b.logo = null; refresh(); }
+      if (a.dataset.nxbAct === 'kit-new') { setBrand(b); newBrand('Nouvelle marque'); b = getBrand(); refresh(); toast('Nouveau kit créé : donne-lui un nom et ses couleurs.'); }
+      if (a.dataset.nxbAct === 'kit-del') { const name = b.name || 'Sans nom'; if (deleteBrand(settings.nxBrandId)) { b = getBrand(); refresh(); toast(`Kit « ${name} » supprimé.`); } }
       if (a.dataset.nxbAct === 'from-logo' && b.logo) {
         try { const img = await loadImage(b.logo); const cols = dominantColors(img, 5).filter((c) => { const [r, g, bb] = hexRgb(c); return !(r > 240 && g > 240 && bb > 240); }); cols.slice(0, 3).forEach((c, i) => { b.colors[i] = c; }); refresh(); toast('Couleurs tirées du logo.'); } catch { toast('Le logo n’a pas pu être lu.', { kind: 'bad' }); }
       }
@@ -117,8 +156,10 @@ export async function needAi() {
 // ---------- Coédition en direct ----------
 // Salle partagée : diffusion de l'état et des curseurs par Supabase Realtime (aucune écriture en base).
 export class CollabRoom {
-  constructor({ kind, code, onState, onCursor, onPeers, getState }) {
-    Object.assign(this, { kind, code, onState, onCursor, onPeers, getState });
+  // NEXORA #075 : getPatch / onPatch (facultatifs) : seuls les éléments modifiés partent ; chacun garde ses autres
+  // changements (fusion élément par élément au lieu de la page entière renvoyée, où le dernier l'emportait).
+  constructor({ kind, code, onState, onCursor, onPeers, getState, getPatch, onPatch }) {
+    Object.assign(this, { kind, code, onState, onCursor, onPeers, getState, getPatch, onPatch });
     this.me = { id: uid(), name: 'Invité', color: ['#ff2d78', '#0a84ff', '#34c759', '#ff9500', '#af52de'][Math.floor(Math.random() * 5)] };
     this.rev = 0;
     this.peers = [];
@@ -133,6 +174,11 @@ export class CollabRoom {
       if (!payload || payload.by === this.me.id) return;
       this.rev = Math.max(this.rev, payload.rev || 0);
       this.onState && this.onState(payload.state, payload);
+    });
+    this.channel.on('broadcast', { event: 'patch' }, ({ payload }) => {
+      if (!payload || payload.by === this.me.id) return;
+      this.rev = Math.max(this.rev, payload.rev || 0);
+      this.onPatch && this.onPatch(payload);
     });
     this.channel.on('broadcast', { event: 'cursor' }, ({ payload }) => { payload && payload.by !== this.me.id && this.onCursor && this.onCursor(payload); });
     this.channel.on('broadcast', { event: 'hello' }, () => { this.sendState(true); });
@@ -163,6 +209,18 @@ export class CollabRoom {
       this.channel.send({ type: 'broadcast', event: 'state', payload: { by: this.me.id, name: this.me.name, rev: ++this.rev, state } });
     };
     force ? go() : (this.t = setTimeout(go, 500));
+  }
+  sendPatch(force = false) {
+    if (!this.channel) return;
+    if (!this.getPatch) { this.sendState(force); return; }
+    clearTimeout(this.t);
+    const go = () => {
+      const p = this.getPatch();
+      if (p === 'full') { this.sendState(true); return; }
+      if (!p) return;
+      this.channel.send({ type: 'broadcast', event: 'patch', payload: { by: this.me.id, name: this.me.name, rev: ++this.rev, ...p } });
+    };
+    force ? go() : (this.t = setTimeout(go, 250));
   }
   sendCursor(x, y, extra = {}) {
     if (!this.channel) return;

@@ -25,7 +25,7 @@ const PERM_GROUPS: [string, [string, string][]][] = COMPARE.map(([group, rows]):
 const EXTRA_PERMS: [string, string][] = [["design_extended", "NEX-DESIGN étendu"], ["design_full", "NEX-DESIGN complet"], ["inapp", "Messages in-app"], ["notifications_advanced", "Notifications avancées"], ["projects_management", "Gestion de projets"], ["standard_support", "Assistance standard"], ["priority_support", "Support prioritaire"], ["multiscreen", "Prévisualisation multi-écrans"]]
 
 // Médaillon de chaque offre (comme dans l'application, NEXORA #038) : pas d'illustration d'objet sur les tarifs.
-const MEDAL: Record<string, string> = { free: "sparkle", standard: "bolt", pro: "star" }
+const MEDAL: Record<string, string> = { free: "sparkle", pro: "star" }
 // Montants : en dollars, « 10 $ » plutôt que « 10,00 $US » ; autres devises : format habituel.
 const amount = (cents: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format((Number(cents) || 0) / 100)
 const price = (cents: number, currency: string) => (currency === "USD" ? `${amount(cents)} $` : fmtMoney(cents, currency))
@@ -50,16 +50,16 @@ export function Plans() {
   return (
     <>
       <div className="toolbar">
-        <p className="muted grow" style={{ margin: 0 }}>Gratuit, Standard et Pro. Les limites (-1 : illimité) et les fonctions incluses sont vérifiées par les serveurs NEXORA à chaque création et à chaque fonction réservée.</p>
+        <p className="muted grow" style={{ margin: 0 }}>Gratuit et Pro (#076 : l’ancienne offre Standard est passée à Pro). Les limites (-1 : illimité) et les fonctions incluses sont vérifiées par les serveurs NEXORA à chaque création et à chaque fonction réservée.</p>
         <button className="btn" onClick={() => setAdding(true)}><Icon name="plus" size={14} /> Nouvelle offre</button>
       </div>
       <Loaded q={q}>
         {({ plans, subs, trials }) => {
-          const migrated = plans.some((p) => p.id === "standard") && plans.every((p) => p.perms !== undefined)
+          const migrated = plans.some((p) => p.id === "pro" && p.active) && plans.every((p) => p.perms !== undefined)
           const live = plans.filter((p) => p.active)
           const old = plans.filter((p) => !p.active)
           const active = subs.filter((s) => ["active", "trialing", "past_due"].includes(s.status))
-          const countOf = (id: string) => active.filter((s) => (s.plan_id === "team" || s.plan_id === "enterprise" ? "pro" : s.plan_id) === id).length
+          const countOf = (id: string) => active.filter((s) => (s.plan_id === "team" || s.plan_id === "enterprise" || s.plan_id === "standard" ? "pro" : s.plan_id) === id).length
           const orgs = new Set(subs.map((s) => s.org_id)).size
           const mrr = active.reduce((t, s) => t + (plans.find((p) => p.id === s.plan_id)?.price_month_cents || 0), 0)
           return (
@@ -67,22 +67,21 @@ export function Plans() {
               {!migrated && (
                 <div className="banner">
                   <Icon name="warn" size={16} />
-                  <span className="grow">Les offres du #037 ne sont pas encore sur Supabase : applique la migration <code>20261104000007_offres_limites.sql</code> (section Supabase → Tout appliquer). Les panneaux ci-dessous montrent les offres prévues.</span>
+                  <span className="grow">Les offres du #037 ne sont pas encore sur Supabase : applique les migrations <code>20261104000007_offres_limites.sql</code> à <code>20261108000002_licences_offres.sql</code> (section Supabase → Tout appliquer). Les panneaux ci-dessous montrent les offres prévues.</span>
                   <button className="btn sm" onClick={() => go("supabase")}>Ouvrir Supabase</button>
                 </div>
               )}
               <div className="kpis">
-                <Kpi label="Espaces Gratuit" object="team" value={fmtNum(Math.max(0, orgs - countOf("standard") - countOf("pro")))} hint="sans abonnement payant" />
-                <Kpi label="Espaces Standard" object="chart" value={fmtNum(countOf("standard"))} hint="12 $ par mois" />
-                <Kpi label="Espaces Pro" object="star" value={fmtNum(countOf("pro"))} hint="24 $ par mois" />
+                <Kpi label="Espaces Gratuit" object="team" value={fmtNum(Math.max(0, orgs - countOf("pro")))} hint="sans abonnement payant" />
+                <Kpi label="Espaces Pro" object="star" value={fmtNum(countOf("pro"))} hint={`${price((live.find((p) => p.id === "pro") || FALLBACK.pro).price_month_cents, "USD")} par mois`} />
                 <Kpi label="Revenu mensuel" object="coins" value={price(mrr, "USD")} hint="abonnements actifs" />
               </div>
               <div className="po-grid">
-                {(migrated ? live : (["free", "standard", "pro"] as const).map((id) => ({ ...FALLBACK[id], created_at: "", updated_at: "", active: true }) as unknown as Plan)).map((p) => (
+                {(migrated ? live : (["free", "pro"] as const).map((id) => ({ ...FALLBACK[id], created_at: "", updated_at: "", active: true }) as unknown as Plan)).map((p) => (
                   <PlanPanel key={`${p.id}-${p.updated_at}`} plan={p} subscribers={countOf(p.id)} editable={migrated} onSaved={reload} />
                 ))}
               </div>
-              <Compare plans={migrated ? live : (["free", "standard", "pro"] as const).map((id) => FALLBACK[id] as unknown as Plan)} />
+              <Compare plans={migrated ? live : (["free", "pro"] as const).map((id) => FALLBACK[id] as unknown as Plan)} />
               <Trials rows={trials} onChanged={reload} />
               {old.length > 0 && (
                 <section className="card">
@@ -224,11 +223,11 @@ function Compare({ plans }: { plans: Plan[] }) {
       <div className="card-head"><Icon name="layers" size={16} /><h3 className="grow">Comparer les offres</h3></div>
       <div className="po-table-wrap">
         <table className="po-table">
-          <thead><tr><th />{plans.map((p) => <th key={p.id} className={p.id === "standard" ? "hl" : ""}>{p.name}<small>{p.price_month_cents ? `${price(p.price_month_cents, p.currency)} / mois` : "Gratuit"}</small></th>)}</tr></thead>
+          <thead><tr><th />{plans.map((p) => <th key={p.id} className={p.id === "pro" ? "hl" : ""}>{p.name}<small>{p.price_month_cents ? `${price(p.price_month_cents, p.currency)} / mois` : "Gratuit"}</small></th>)}</tr></thead>
           <tbody>
             {COMPARE.map(([group, rows]) => [
               <tr key={group} className="po-grp"><th colSpan={plans.length + 1}>{group}</th></tr>,
-              ...rows.map((r) => <tr key={`${group}-${r.label}`}><th>{r.label}</th>{plans.map((p) => <td key={p.id} className={p.id === "standard" ? "hl" : ""}>{cell(r, p)}</td>)}</tr>),
+              ...rows.map((r) => <tr key={`${group}-${r.label}`}><th>{r.label}</th>{plans.map((p) => <td key={p.id} className={p.id === "pro" ? "hl" : ""}>{cell(r, p)}</td>)}</tr>),
             ])}
           </tbody>
         </table>
@@ -276,7 +275,7 @@ function NewPlan({ sort, onClose, onDone }: { sort: number; onClose: () => void;
     const f = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>
     const ok = await act.run(async () => must(await sb.from("plans").insert({
       id: f.id, name: f.name, description: f.description, price_month_cents: Number(f.price) || 0, price_year_cents: (Number(f.price) || 0) * 10,
-      currency: "USD", sort, active: false, limits: { ...FALLBACK.standard.limits }, perms: { ...FALLBACK.free.perms }, features: [],
+      currency: "USD", sort, active: false, limits: { ...FALLBACK.pro.limits }, perms: { ...FALLBACK.free.perms }, features: [],
     })), "Offre créée (pas encore proposée).")
     if (ok) onDone()
   }

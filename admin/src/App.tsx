@@ -9,6 +9,7 @@ import { Overview } from "./sections/Overview"
 import { Users } from "./sections/Users"
 import { Orgs } from "./sections/Orgs"
 import { Devices } from "./sections/Devices"
+import { Licences } from "./sections/Licences"
 import { Invitations } from "./sections/Invitations"
 import { Content } from "./sections/Content"
 import { Files } from "./sections/Files"
@@ -41,6 +42,7 @@ export const SECTIONS: Section[] = [
   { id: "orgs", label: "Équipes et offres", icon: "group", group: "Clients", view: Orgs, desc: "Espaces, membres et abonnements." },
   { id: "invoices", label: "Factures", icon: "pdf", group: "Clients", view: Invoices, desc: "Factures PDF aux couleurs de NEXORA, envoyées par e-mail avec Brevo." },
   { id: "devices", label: "Appareils", icon: "laptop", group: "Clients", view: Devices, desc: "Postes Windows et navigateurs connectés." },
+  { id: "licences", label: "Licences", icon: "key", group: "Clients", view: Licences, desc: "Licences de NEXORA Devs Toolbox, appareils, adresses IP, contrôles, sessions et journaux du logiciel." },
   { id: "invitations", label: "Invitations", icon: "mail", group: "Clients", view: Invitations, desc: "Invitations envoyées aux équipes." },
   { id: "content", label: "Contenus", icon: "layers", group: "Contenus", view: Content, desc: "Projets, designs, Studio, planches, partages et commentaires." },
   { id: "files", label: "Fichiers", icon: "folder", group: "Contenus", view: Files, desc: "Fichiers stockés par les espaces." },

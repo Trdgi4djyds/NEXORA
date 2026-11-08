@@ -23,6 +23,10 @@ load('projects', () => settings.uiV2 && document.body, './projects/index.js');
 load('android', () => document.body, './android/index.js');
 // NEXORA #030 : session du compte transmise au processus principal pour les alertes e-mail (Brevo).
 load('alerts', () => document.body, './alerts/index.js');
+// NEXORA #076 : licence obligatoire (écran de verrouillage, essai Pro du premier jour, journaux de session).
+load('licence', () => document.body, './licence/index.js');
+// NEXORA #076 : projets en fichiers .novx (export, import, double-clic, Google Drive).
+load('novx', () => settings.uiV2 && document.body, './novx/index.js');
 // NEXORA #033 : illustrations en fond des cartes (Accueil, Dev Lab, indicateurs).
 load('cards', () => document.body, './cards/index.js');
 // NEXORA #032 : pages Profil (Mon compte) et Réglages redessinées, posées avant leur première ouverture.

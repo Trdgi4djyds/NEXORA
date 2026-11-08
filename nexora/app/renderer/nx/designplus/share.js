@@ -34,6 +34,8 @@ async function openReview(token) {
         <label>Commentaire<textarea class="input" rows="4" data-rtext placeholder="Ce qui te plaît, ce qu’il faut changer…"></textarea></label>
         <div class="dzx-review-acts"><button class="btn primary" data-rsend="approve">Approuver</button><button class="btn" data-rsend="changes">Demander des changements</button><button class="btn" data-rsend="comment">Commenter</button></div>
         <h3>Avis (${(data.reviews || []).length})</h3>${(data.reviews || []).map((r) => `<div class="dzx-rv ${r.decision}"><b>${esc(r.author)}</b> <em>${esc(DECISIONS[r.decision] || '')}</em><p>${esc(r.comment)}</p><small>Page ${r.page + 1} · ${new Date(r.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</small></div>`).join('') || '<p class="dzx-hint">Aucun avis pour l’instant.</p>'}</aside></div></div>`;
+    // NEXORA #075 : lien en lecture seule : toutes les pages, sans formulaire d'avis ni épingles.
+    if (data.mode === 'view') { const sm = ov.querySelector('header small'); if (sm) sm.textContent = 'Design partagé · lecture seule'; const a = ov.querySelector('aside'); if (a) a.remove(); const bx = ov.querySelector('.dzx-review-box'); if (bx) bx.classList.add('dzx-view'); }
   };
   render();
   ov.addEventListener('click', async (e) => {
@@ -41,7 +43,7 @@ async function openReview(token) {
     const pg = e.target.closest('[data-rpage]');
     if (pg) { page = +pg.dataset.rpage; pins.length = 0; render(); return; }
     const im = e.target.closest('[data-rimg]');
-    if (im && e.target.tagName === 'IMG') { const r = e.target.getBoundingClientRect(); pins.length = 0; pins.push({ x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height }); render(); return; }
+    if (im && e.target.tagName === 'IMG' && data.mode !== 'view') { const r = e.target.getBoundingClientRect(); pins.length = 0; pins.push({ x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height }); render(); return; }
     const s = e.target.closest('[data-rsend]');
     if (s) {
       const author = ov.querySelector('[data-rname]').value.trim();
@@ -115,16 +117,19 @@ export async function install() {
 }
 
 // ---------- Côté propriétaire : liens de validation ----------
-export async function createLink(D, renderPages) {
-  if (!cloud.user || !cloud.orgId) throw new Error('Connecte-toi à ton compte NEXORA pour créer un lien de validation.');
+// NEXORA #075 : mode « view » : lien en lecture seule, toutes les pages, sans avis (migration 20261108000001).
+export async function createLink(D, renderPages, { mode = 'review' } = {}) {
+  if (!cloud.user || !cloud.orgId) throw new Error(mode === 'view' ? 'Connecte-toi à ton compte NEXORA pour créer un lien de partage.' : 'Connecte-toi à ton compte NEXORA pour créer un lien de validation.');
   const pages = await renderPages();
-  const { data, error } = await sb.from('design_review_links').insert({ org_id: cloud.orgId, doc_local_id: D.doc.id, name: D.doc.name || 'Design', pages, created_by: cloud.user.id }).select('token').single();
-  if (error) throw new Error('Le lien n’a pas pu être créé. Réessaie dans un instant.');
+  const row = { org_id: cloud.orgId, doc_local_id: D.doc.id, name: D.doc.name || 'Design', pages, created_by: cloud.user.id };
+  if (mode === 'view') row.mode = 'view';
+  const { data, error } = await sb.from('design_review_links').insert(row).select('token').single();
+  if (error) throw new Error(mode === 'view' && /mode/.test(error.message || '') ? 'Les liens en lecture seule demandent la dernière mise à jour du serveur NEXORA (migration 20261108000001).' : 'Le lien n’a pas pu être créé. Réessaie dans un instant.');
   return `${webUrl()}#/revue/${data.token}`;
 }
 export async function links(D) {
   if (!cloud.user || !cloud.orgId) return null;
-  const { data, error } = await sb.from('design_review_links').select('token, name, created_at, active, design_reviews(author, decision, comment, page, created_at)').eq('org_id', cloud.orgId).eq('doc_local_id', D.doc.id).order('created_at', { ascending: false });
+  const { data, error } = await sb.from('design_review_links').select('*, design_reviews(author, decision, comment, page, x, y, created_at)').eq('org_id', cloud.orgId).eq('doc_local_id', D.doc.id).order('created_at', { ascending: false });
   if (error) return [];
   return data || [];
 }

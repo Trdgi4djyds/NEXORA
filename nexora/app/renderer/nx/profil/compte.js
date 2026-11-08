@@ -9,7 +9,7 @@ import { b as sb, c as errText, e as cloud, u as avatar } from '../../dist/chunk
 import { ico, esc, toast } from '../core.js';
 
 // NEXORA #037 : offres Gratuit, Standard et Pro (Équipe et Entreprise : anciennes offres, passées à Pro).
-const PLANS = { free: 'Gratuit', standard: 'Standard', pro: 'Pro', team: 'Équipe', enterprise: 'Entreprise' };
+const PLANS = { free: 'Gratuit', standard: 'Pro', pro: 'Pro', team: 'Pro', enterprise: 'Pro' };
 const MEMBER = { owner: 'Propriétaire', admin: 'Administrateur', editor: 'Éditeur', viewer: 'Lecteur' };
 export const planName = (p) => PLANS[p] || p || PLANS.free;
 const platformRole = (r) => (r === 'superadmin' ? 'Super-administrateur' : r === 'admin' ? 'Administrateur' : 'Utilisateur');
@@ -240,7 +240,7 @@ export function sheet(tab, tabs) {
   const promo = free
     ? `<div class="nxc-promo">
         <span class="nxc-promo-ic">${ico('star', 18)}</span>
-        <b>Passe à Standard</b>
+        <b>Passe à Pro</b>
         <small>APK, import de code, Crawler, Desktop Builder et applications sans limite d’essai, dès 12 $ par mois.</small>
         <button type="button" class="nxc-promo-btn" data-tab-back="plan">Voir les offres</button>
       </div>`

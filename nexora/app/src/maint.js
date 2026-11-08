@@ -22,20 +22,25 @@ const cmp = (a, b) => {
 // Fichier à télécharger dans une version publiée : installateur d'abord, puis n'importe quel .exe, puis la version
 // portable (.zip, de préférence nommée « portable »).
 function pickAsset(assets) {
-  const list = Array.isArray(assets) ? assets : [];
+  // NEXORA #076 : le paquet signé et le manifeste ne sont jamais pris pour un installateur.
+  const list = (Array.isArray(assets) ? assets : []).filter((a) => !/\.(nxpack|sig)$|manifest/i.test(a.name || ''));
   const exe = list.find((a) => /\.exe$/i.test(a.name) && /install|setup/i.test(a.name)) || list.find((a) => /\.exe$/i.test(a.name));
   if (exe) return { ...exe, kind: 'exe' };
   const zip = list.find((a) => /\.zip$/i.test(a.name) && /portable/i.test(a.name)) || list.find((a) => /\.zip$/i.test(a.name));
   return zip ? { ...zip, kind: 'zip' } : null;
 }
 
+const DEFAULT_REPO = 'Trdgi4djyds/NEXORA-portable';
+
 function register({
   ipcMain, app, shell, net, send,
 }) {
   const fetchImpl = (u, o) => (net && net.fetch ? net.fetch(u, o) : fetch(u, o));
   let latest = null;
-  ipcMain.handle('update:check', async (_e, { repo } = {}) => {
+  ipcMain.handle('update:check', async (_e, { repo: asked } = {}) => {
     const current = app.getVersion();
+    // NEXORA #076 : dépôt public de distribution par défaut (lanceur et paquets signés).
+    const repo = asked || DEFAULT_REPO;
     if (!repo || !/^[\w.-]+\/[\w.-]+$/.test(repo)) return { current, configured: false };
     const r = await fetchImpl(`https://api.github.com/repos/${repo}/releases/latest`, { headers: { accept: 'application/vnd.github+json', 'user-agent': 'NEXORA' } });
     if (r.status === 404) throw new Error('Aucune version publiée sur ce dépôt (ou dépôt privé).');
@@ -51,6 +56,8 @@ function register({
     };
   });
   ipcMain.handle('update:install', async () => {
+    // NEXORA #076 : NEXORA Devs Toolbox télécharge, vérifie la signature et les empreintes, remplace puis relance.
+    if (require('./license').updateViaLauncher(app)) return { kind: 'launcher' };
     if (!latest) throw new Error('Vérifie d’abord les mises à jour.');
     if (latest.kind === 'zip') return installPortable(latest);
     const file = path.join(app.getPath('temp'), 'nexora-maj', latest.name);
@@ -94,4 +101,4 @@ function register({
   });
 }
 
-module.exports = { register, cmp, pickAsset };
+module.exports = { register, cmp, pickAsset, DEFAULT_REPO };

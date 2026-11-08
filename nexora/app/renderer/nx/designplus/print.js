@@ -2,7 +2,7 @@
 // réelle en millimètres, couleurs vives difficiles à reproduire en quadrichromie signalées.
 // NEXORA #054 : PDF vectoriel par défaut (formes en tracés, textes avec leur police, sélectionnables) ; le PDF
 // image (rendu identique à l'écran) reste au choix.
-import { esc, ico, busy, btn, hex, walk, objs, saveBytes, dataUrlBytes, toast } from './ui.js';
+import { esc, ico, busy, btn, hex, walk, objs, saveBytes, dataUrlBytes, toast, pl } from './ui.js';
 import { buildPdf } from './pure.js';
 import { buildVectorPdf } from './pdfvec.js';
 import { FontBook, pageVector, deflate } from './printvec.js';
@@ -43,14 +43,14 @@ function withBleed(src, b) {
   return c;
 }
 // PDF vectoriel : une police par famille et graisse, intégrée une seule fois pour toutes les pages.
-export async function renderVector(D, { all = false } = {}) {
+export async function renderVector(D, { all = false, cfgOf = defaults } = {}) {
   const cur = D.pageIdx;
   const fonts = new FontBook();
   const pages = []; const stats = { vector: 0, text: 0, image: 0 };
   const idx = all ? D.doc.pages.map((_, i) => i) : [D.pageIdx];
   for (const i of idx) {
     if (i !== D.pageIdx) await D.openPage(i, { save: false });
-    const r = await pageVector(D, defaults(D), fonts);
+    const r = await pageVector(D, cfgOf(D), fonts);
     pages.push(r.page);
     for (const k of Object.keys(stats)) stats[k] += r.stats[k];
   }
@@ -80,7 +80,18 @@ export async function exportPdf(D, opts) {
   let pdf; let stats = null;
   try { if (defaults(D).mode === 'image') pdf = await render(D, opts); else ({ pdf, stats } = await renderVector(D, opts)); } finally { done(t); }
   await saveBytes(pdf, { name: `${D.doc.name || 'impression'} (impression)`, ext: 'pdf', kind: 'document', project: D.doc.name || 'NEXORA' });
-  if (stats && stats.image) toast(`PDF vectoriel : ${stats.text} texte(s) et ${stats.vector} forme(s) vectoriels ; ${stats.image} élément(s) en image (photos, effets, dégradés ou police introuvable).`);
+  if (stats && stats.image) toast(`PDF vectoriel : ${pl(stats.text, 'texte', 'textes')} et ${pl(stats.vector, 'forme vectorielle', 'formes vectorielles')} ; ${pl(stats.image, 'élément', 'éléments')} en image (photos, effets, dégradés ou police introuvable).`);
+  return stats;
+}
+// NEXORA #075 (A-041) : PDF de la fenêtre « Exporter » : vectoriel, à la taille de la page (96 pixels par pouce),
+// sans fonds perdus ni traits de coupe ; les éléments placés en image le sont à la résolution choisie (×1 à ×4).
+const screenCfg = (scale) => (D) => ({ wmm: D.page.w * 25.4 / 96, hmm: D.page.h * 25.4 / 96, bleed: 0, marks: false, dpi: 96 * scale, mode: 'vector' });
+export async function exportScreenPdf(D, { all = false, scale = 2 } = {}) {
+  const t = busy('Préparation du PDF…');
+  let pdf; let stats;
+  try { ({ pdf, stats } = await renderVector(D, { all, cfgOf: screenCfg(Math.max(1, Math.min(4, scale))) })); } catch (e) { toast(`Le PDF n’a pas pu être créé : ${e.message || e}`, { kind: 'bad' }); return null; } finally { done(t); }
+  await saveBytes(pdf, { name: D.doc.name || 'Design', ext: 'pdf', kind: 'document', project: D.doc.name || 'NEXORA' });
+  if (stats && stats.image) toast(`PDF vectoriel : ${pl(stats.text, 'texte', 'textes')} et ${pl(stats.vector, 'forme vectorielle', 'formes vectorielles')} ; ${pl(stats.image, 'élément', 'éléments')} en image (photos, effets, dégradés ou police introuvable).`);
   return stats;
 }
 export function panel(D) {

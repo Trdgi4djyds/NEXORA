@@ -21,6 +21,7 @@ const LAYOUT: [SpaceId, string][] = [
 /**
  * Grille des espaces : vraie capture recadrée (Pixel pour l'App Builder) et un fait vérifié par carte.
  * #069 : bordure et reflet à la couleur de l'espace qui suivent la souris (`data-glow`, `lib/glow.ts`).
+ * #074 : chaque carte arrive en pivotant et s'incline en 3D vers le pointeur (`data-tilt`).
  */
 export function SpaceBento() {
   return (
@@ -29,13 +30,13 @@ export function SpaceBento() {
         const s = SPACES.find((x) => x.id === id)!
         const [value, caption] = SPACE_FACTS[id]
         return (
-          <Reveal as="a" key={id} href={spaceHref(s)} className={`card glow ${size} card-${id}`} data-space={id} delay={(i % 3) * 70}>
+          <Reveal as="a" key={id} href={spaceHref(s)} className={`card glow ${size} card-${id}`} data-space={id} data-tilt delay={(i % 3) * 90}>
             <span className="card-t">
               <span className="label">
                 {/* #072 : plus de numéro (02 · …) : il se mêlait à la numérotation des sections (01 à 09). */}
                 <Icon name={s.icon} size={14} /> {s.name}
-                {id === "dev" && <span className="tag free">Gratuit</span>}
-                {s.plan === "standard" && <span className="tag">Standard</span>}
+                {(id === "preview" || id === "browser") && <span className="tag free">Gratuit</span>}
+                {s.plan === "pro" && <span className="tag">Pro</span>}
               </span>
               <span className="card-h">{s.card}</span>
               <span className="card-p">{s.tagline}</span>

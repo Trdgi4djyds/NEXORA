@@ -3,7 +3,7 @@ import { SPACE_FACTS } from "../data/content"
 import { SPACES, SPACE_BY_ID } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { CountUp, useInView, usePageVisible, useReducedMotion } from "../lib/motion"
-import { APP_VERSION, DEVICE_COUNT } from "../lib/product"
+import { DEVICE_COUNT } from "../lib/product"
 import { MainButton, SecondButton } from "./Download"
 import { Screen, Screens } from "./Screen"
 
@@ -18,9 +18,12 @@ function Fact({ value, delay }: { value: string; delay: number }) {
 }
 
 /**
- * Hero « Nocturne » : trois vraies captures de NEXORA superposées en perspective, cartes de chiffres vérifiés,
- * onglets des espaces. #069 : grille éclairée par le pointeur, parallaxe des écrans et reflet qui suit la souris
+ * Hero : trois vraies captures de NEXORA superposées en perspective, cartes de chiffres vérifiés, onglets des
+ * espaces. #069 : grille éclairée par le pointeur, parallaxe des écrans et reflet qui suit la souris
  * (`lib/glow.ts`), barre de progression lumineuse sous l'onglet actif.
+ * #074 (« Prisme ») : sol en perspective qui défile et halos vert, rose et violet derrière la scène ; écrans qui
+ * se déplient à l'arrivée et se redressent au défilement (`data-depth`, `lib/depth.ts`), cartes qui pivotent puis
+ * flottent, capture de l'espace qui tourne en 3D au changement d'onglet.
  */
 export function Hero() {
   const order = SPACES.map((s) => s.id).filter((id) => id !== "home")
@@ -55,13 +58,21 @@ export function Hero() {
 
   return (
     <section className="hero" ref={ref} data-light>
+      <div className="hero-3d" aria-hidden="true">
+        <i className="orb o1" />
+        <i className="orb o2" />
+        <i className="orb o3" />
+        <div className="floor">
+          <i />
+        </div>
+      </div>
       <i className="grid-bg" aria-hidden="true" />
       <i className="grid-lit" aria-hidden="true" />
       <i className="torch" aria-hidden="true" />
       <div className="container hero-copy">
-        <a href="#/nouveautes" className="pill rise">
+        <a href="#/licence" className="pill rise">
           <i className="pill-dot" />
-          NEXORA {APP_VERSION} · Dev Lab gratuit, IA sans limite
+          NEXORA Devs Toolbox · Responsive Lab et Browser Lab gratuits
           <Icon name="nxArrowRight" size={13} stroke={2.2} />
         </a>
         <h1 className="display">
@@ -81,7 +92,7 @@ export function Hero() {
         </div>
       </div>
 
-      <div className="stage rise" style={{ animationDelay: "420ms" }} data-tilt data-capture="apercu" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      <div className="stage rise" style={{ animationDelay: "420ms" }} data-tilt data-depth data-capture="apercu" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
         <div className="scr s-back">
           <Screen space="security" eager />
         </div>
@@ -102,7 +113,7 @@ export function Hero() {
           </b>
           <small>modèles d’appareils à l’écran</small>
         </div>
-        <div className="kpi k2" key={space} data-space={space} aria-hidden="true">
+        <div className={`kpi k2${first.current ? "" : " swap"}`} key={space} data-space={space} aria-hidden="true">
           <span className="label">
             <Icon name={SPACE_BY_ID[space].icon} size={13} /> {SPACE_BY_ID[space].name}
           </span>

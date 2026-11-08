@@ -4,12 +4,13 @@
 // L'Accueil redessine son contenu : la carte est remise après chaque rendu.
 import { settings, saveSettings, esc, ico } from '../core.js';
 
+// NEXORA #076 : Responsive Lab et Browser Lab entièrement gratuits ; le Dev Lab est dans Pro.
 const GOALS = [
   { space: 'android', icon: 'android', title: 'Transformer mon site en app Android', text: 'APK, PWA, notifications et Play Store.' },
   { space: 'desktop', icon: 'display', title: 'Créer un logiciel Windows', text: 'Installateur, version portable et mises à jour.' },
-  { space: 'preview', icon: 'multi', title: 'Tester mon site sur tous les écrans', text: 'Téléphones, tablettes et ordinateurs réels.' },
-  { space: 'dev', icon: 'code', title: 'Coder mon projet', text: 'Éditeur, terminal, Git et aperçu.', tag: 'Gratuit' },
-  { space: 'browser', icon: 'audit', title: 'Inspecter et auditer un site', text: 'Réseau, console, performances et tests.' },
+  { space: 'preview', icon: 'multi', title: 'Tester mon site sur tous les écrans', text: 'Téléphones, tablettes et ordinateurs réels.', tag: 'Gratuit' },
+  { space: 'dev', icon: 'code', title: 'Coder mon projet', text: 'Éditeur, terminal, Git et aperçu.' },
+  { space: 'browser', icon: 'audit', title: 'Inspecter et auditer un site', text: 'Réseau, console, performances et tests.', tag: 'Gratuit' },
   { space: 'security', icon: 'shield', title: 'Sécuriser et surveiller', text: 'Audits, alertes et page de statut.' },
   { space: 'design', icon: 'palette', title: 'Créer des visuels', text: 'Maquettes, réseaux sociaux et impression.' },
   { space: 'studio', icon: 'film', title: 'Présenter en 3D et en vidéo', text: 'Mises en scène, animations et rendus.' },

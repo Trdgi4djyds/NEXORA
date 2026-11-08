@@ -7,7 +7,7 @@ import { FALLBACK, PLAN_ORDER, limitText, money } from "../../../nexora/app/rend
 
 export { limitText, money }
 
-export type PlanId = "free" | "standard" | "pro"
+export type PlanId = "free" | "pro"
 export type Plan = {
   id: PlanId
   name: string

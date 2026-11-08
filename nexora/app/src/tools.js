@@ -9,6 +9,7 @@
  * commande de version. Les dépendances passent d'abord (Git avant Flutter, PHP avant Composer…).
  *
  * La détection (detect) relie l'analyse d'un projet (frameworks.js) aux outils présents (sdk.js). */
+const { LIB_MSG } = require('./plain');
 const fs = require('fs');
 const path = require('path');
 const EventEmitter = require('events');
@@ -444,7 +445,7 @@ class Tools extends EventEmitter {
       version = rel.version || '';
       log(`${label} ${version} : ${rel.url}`);
       const file = path.join(downloads, rel.file);
-      step(`Téléchargement de ${label} ${version}`.trim(), 0.04);
+      step(LIB_MSG, 0.04);
       await ctx.download(rel.url, file, { sha256: rel.sha256 || undefined }, 0.04, recipe.kind === 'zip' ? 0.7 : 0.8);
       if (rel.sha256) log('Fichier vérifié.');
       if (recipe.kind === 'zip') {

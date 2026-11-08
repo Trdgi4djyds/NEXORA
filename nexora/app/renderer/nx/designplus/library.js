@@ -14,8 +14,10 @@ export function pending(D, libs) {
 }
 
 // Copies d'un composant remplacées par sa version à jour (même taille, angle et centre), sur toutes les pages.
-async function refreshCopies(D, ids) {
+// NEXORA #075 (A-040) : textes et images changés dans une copie gardés (ancienne version du composant : before).
+async function refreshCopies(D, ids, before = {}) {
   const comps = D.doc.nxComponents || {};
+  const { overridesOf, keepOverrides } = await import('../design/content.js');
   let count = 0;
   const fresh = async (old, id) => {
     const c = comps[id];
@@ -23,6 +25,7 @@ async function refreshCopies(D, ids) {
     n.nxComp = { id }; n.name = c.name;
     const k = old.getScaledWidth() / Math.max(1, n.getScaledWidth());
     n.set({ scaleX: n.scaleX * k, scaleY: n.scaleY * k, angle: old.angle });
+    if (before[id]) await keepOverrides(n, overridesOf(old, before[id].json));
     n.setPositionByOrigin(old.getCenterPoint(), 'center', 'center');
     return n;
   };
@@ -46,10 +49,12 @@ export async function apply(D, l) {
   let msg = '';
   if (l.kind === 'components') {
     const list = l.data.components || {};
+    const before = { ...(D.doc.nxComponents || {}) };
     D.doc.nxComponents = { ...(D.doc.nxComponents || {}), ...list };
     D.doc.nxSets = { ...(D.doc.nxSets || {}), ...(l.data.sets || {}) };
-    const n = await refreshCopies(D, Object.keys(list));
-    msg = `${Object.keys(list).length} composant(s) de « ${l.name} »${n ? `, ${n} copie(s) mise(s) à jour` : ' : onglet « Éléments »'}.`;
+    const n = await refreshCopies(D, Object.keys(list), before);
+    const k = Object.keys(list).length;
+    msg = `${k} composant${k > 1 ? 's' : ''} de « ${l.name} »${n ? `, ${n} copie${n > 1 ? 's' : ''} mise${n > 1 ? 's' : ''} à jour` : ' : onglet « Ressources »'}.`;
   }
   if (l.kind === 'variables') {
     const v = VAR.store(D);

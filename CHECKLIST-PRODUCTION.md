@@ -75,7 +75,12 @@ Légende de la colonne « Méthode » : **auto** (`pnpm valider`), **auto compte
 
 | Contrôle | Méthode | Comment |
 |---|---|---|
-| Offres et prix en ligne identiques au catalogue | auto | Gratuit 0 $, Standard 12 $, Pro 18 $ par mois (120 $ et 180 $ par an) (`nx/offres/catalog.js`). |
+| Offres et prix en ligne identiques au catalogue | auto | #076 : Gratuit 0 $ et Pro 18 $ par mois (180 $ par an) (`nx/offres/catalog.js`, migration `20261108000002`) ; Standard, Équipe et Entreprise retirées de la vente. |
+| Licences (#076) | essais, manuel | `pnpm test:licences` (48 vérifications) ; en ligne : site → `#/licence`, créer un compte, clé `NXDT-…` affichée, `#/licence/verifier` reconnaît la clé ; NEXORA empaqueté refuse de s'ouvrir sans compte ni Internet ; 4e compte gratuit sur un même PC refusé ; essai Pro de 24 h une seule fois par PC ; révocation depuis le back office → Licences verrouille le logiciel en moins de 10 minutes. |
+| Secrets du Worker (#076) | manuel | Cloudflare → Workers → nexora → Settings → Variables (chiffrées, jamais dans le dépôt) : `NX_LICENSE_SIGNING_KEY` (clé privée Ed25519 PKCS#8 en base64, sans laquelle `/license/check` répond 503 et le logiciel reste verrouillé), `NX_PROBE_SECRET` (déjà utilisé par la fiabilité, et secret `nx_probe_secret` de Supabase Vault). `GET /license/config` dit ce qui est configuré, sans rien révéler. |
+| Contrôle de sécurité au démarrage (#077) | essais, manuel | `pnpm test:securite`, `pnpm test:launcher` (séquence complète) ; en ligne : `GET /security/manifest` répond une déclaration signée (`status: ok`, publication déclarée, `expires_at` à +24 h) ; back office → Licences → Réglages et sécurité : « Opérationnel ». Sur Windows : fichier de l'installation modifié → écran « Échec du contrôle d'intégrité — Installation non authentifiée » puis Réparer ; réseau coupé → « Connexion perdue » ; version minimale relevée → « Version non autorisée » puis mise à jour ; refus visibles dans Licences → Contrôles (source « launcher » ou « app »). |
+| Licences données par l'administration (#077) | manuel | Back office → Licences : « Attribuer une licence » (compte d'essai, Pro 30 jours) → NEXORA passe en Pro au contrôle suivant ; « Gérer » : date de fin, essai, ordinateurs, nouvelle clé (l'ancienne refusée), ordinateur retiré ; Réglages : un changement (ex. comptes gratuits par ordinateur) s'applique au contrôle suivant. |
+| Lanceur et publication (#076) | essais, manuel | `pnpm test:launcher`, `pnpm toolbox` puis `pnpm toolbox --verifier` (signature et empreintes) ; dépôt **public** de distribution ; `pnpm release:windows --repo <dépôt> --toolbox --essai` puis sans `--essai` ; `app_config.desktop_download_url` = `…/releases/latest/download/NEXORA-Devs-Toolbox.exe`. Sur Windows : installation sans droits d'administrateur, raccourcis, « Applications installées », lien `nexora://`, double-clic sur un `.novx`, mise à jour, retour arrière, désinstallation avec les trois choix. |
 | Quotas, essais, restrictions, historique | essais, auto compte | Offre du compte lue sur le serveur. |
 | Changement d'offre par l'administrateur | manuel | Back office → Équipes et offres : nouvelle offre visible dans NEXORA (Mon compte → Offre et usage). |
 | Factures : numérotation, totaux, taxes, PDF, envoi | manuel | Back office → Factures : brouillon, émission (numéro suivant, plus modifiable), PDF, envoi à une adresse de test. |
@@ -91,7 +96,14 @@ Sans objet : pas de panier ni de commandes. Les factures émises par le back off
 
 ## 7. Paiements
 
-Sans objet : aucun paiement en ligne. L'offre est changée par un administrateur et la facture émise depuis le back office. À reprendre en entier (paiement réussi ou échoué, double paiement, remboursement, webhooks) si un prestataire de paiement est ajouté. Les achats intégrés (Google Play Billing) des applications créées avec l'App Builder relèvent de leurs éditeurs.
+#076 : paiement par Stripe **préparé mais inactif** tant que les variables ne sont pas posées (le site affiche « Le paiement en ligne arrive très bientôt »). Mobile Money pourra s'ajouter derrière le même point d'entrée (`nx_billing_apply`, champ `provider`). Les achats intégrés (Google Play Billing) des applications créées avec l'App Builder relèvent de leurs éditeurs.
+
+| Contrôle | Méthode | Comment |
+|---|---|---|
+| Configuration Stripe | manuel | Variables du Worker : `STRIPE_SECRET_KEY` (chiffrée), `STRIPE_WEBHOOK_SECRET` (chiffrée), `STRIPE_PRICE_MONTH` et `STRIPE_PRICE_YEAR` (identifiants de prix de l'abonnement Pro 18 $ / 180 $). Stripe → Webhooks → `https://nexora.abrahamtogbonon0.workers.dev/pay/webhook`, événements `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Essayer d'abord en mode test. |
+| Paiement réussi, échoué, résiliation | manuel (mode test) | Carte de test : `#/licence` → Passer à Pro → paiement → retour `?paiement=ok`, licence en Pro au contrôle suivant ; carte refusée : aucune offre ; portail → résilier : Pro jusqu'à la fin de période puis Gratuit. |
+| Webhook : signature, rejeu, doublon | essais | `pnpm test:licences` : signature HMAC vérifiée, fenêtre de 5 minutes, événement déjà reçu ignoré (`nx_payments.event_id`). |
+| Rappel avant renouvellement | auto (pg_cron) | `nx_billing_remind` envoie un e-mail Brevo 7 jours avant l'échéance (une seule fois par période). |
 
 ## 8. Notifications et e-mails
 

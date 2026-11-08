@@ -1,6 +1,6 @@
 // NEXORA #053 : import de fichiers : Photoshop (PSD, calques séparés) sur ce PC ; fichiers Figma par l'API
 // officielle avec le jeton de l'utilisateur (cadres importés en vecteurs modifiables).
-import { esc, ico, uid, toast, busy, api, btn, pickFile, util } from './ui.js';
+import { esc, ico, uid, toast, busy, api, btn, pickFile, util, pl } from './ui.js';
 import { parsePsd } from './pure.js';
 import { FabricImage, Group, loadSVGFromString } from '../design/fab.js';
 
@@ -34,7 +34,7 @@ export async function importPsd(D) {
     }
     D.canvas.requestRenderAll(); D.nxNextLabel = 'Import Photoshop'; D.changed(); D.save();
     if (D.renderLeft) D.renderLeft();
-    toast(`${list.length} calque(s) importé(s) de « ${name} » sur une nouvelle page.`);
+    toast(`${pl(list.length, 'calque importé', 'calques importés')} de « ${name} » sur une nouvelle page.`);
   } catch (e) { toast(clean(e), { kind: 'bad' }); } finally { done(t); }
 }
 export async function importFigma(D, st, rerender) {
@@ -47,7 +47,7 @@ export async function importFigma(D, st, rerender) {
 export async function importFigmaFrames(D, st) {
   const ids = [...(st.pick || [])];
   if (!ids.length) { toast('Choisis au moins un cadre.'); return; }
-  const t = busy(`Import de ${ids.length} cadre(s)…`);
+  const t = busy(`Import de ${pl(ids.length, 'cadre', 'cadres')}…`);
   try {
     const svgs = await api.invoke('dzx:figma-svg', { key: st.figma.key, ids });
     for (const id of ids) {
@@ -60,7 +60,7 @@ export async function importFigmaFrames(D, st) {
       D.canvas.requestRenderAll(); D.changed();
     }
     D.save(); if (D.renderLeft) D.renderLeft();
-    toast(`${ids.length} cadre(s) importé(s), chacun sur une nouvelle page, en vecteurs modifiables.`);
+    toast(`${pl(ids.length, 'cadre importé', 'cadres importés')}, chacun sur une nouvelle page, en vecteurs modifiables.`);
   } catch (e) { toast(clean(e), { kind: 'bad' }); } finally { done(t); }
 }
 export function panel(D, st, has) {
@@ -73,7 +73,7 @@ export function panel(D, st, has) {
     <label class="dzx-row"><span>Jeton</span><input class="input" type="password" data-figk="token" placeholder="${st.figmaToken ? 'Enregistré : laisse vide pour le garder' : 'figd_…'}" ${has.pro ? '' : 'disabled'}></label>
     <label class="dzx-row"><span>Fichier</span><input class="input" data-figk="url" value="${esc(st.figmaUrl || '')}" placeholder="https://www.figma.com/design/…" ${has.pro ? '' : 'disabled'}></label>
     <div class="nx-btns">${btn('imp-figma', 'search', 'Lire le fichier', has.pro ? '' : 'disabled')}</div>
-    ${f ? `<p class="dzx-hint"><b>${esc(f.name)}</b> · ${f.frames.length} cadre(s)</p><div class="dzp-list">${f.frames.slice(0, 60).map((fr) => `<label class="dzp-item"><input type="checkbox" data-figpick="${esc(fr.id)}" ${st.pick && st.pick.has(fr.id) ? 'checked' : ''}><span><b>${esc(fr.name)}</b><small>${esc(fr.page)} · ${Math.round(fr.w)} × ${Math.round(fr.h)}</small></span></label>`).join('')}</div><div class="nx-btns">${btn('imp-figma-go', 'download', 'Importer les cadres choisis', '', 'primary')}</div>` : ''}
+    ${f ? `<p class="dzx-hint"><b>${esc(f.name)}</b> · ${pl(f.frames.length, 'cadre', 'cadres')}</p><div class="dzp-list">${f.frames.slice(0, 60).map((fr) => `<label class="dzp-item"><input type="checkbox" data-figpick="${esc(fr.id)}" ${st.pick && st.pick.has(fr.id) ? 'checked' : ''}><span><b>${esc(fr.name)}</b><small>${esc(fr.page)} · ${Math.round(fr.w)} × ${Math.round(fr.h)}</small></span></label>`).join('')}</div><div class="nx-btns">${btn('imp-figma-go', 'download', 'Importer les cadres choisis', '', 'primary')}</div>` : ''}
     <div class="dzp-sub">PDF</div>
     <p class="dzx-hint">${ico('info', 12)} L’import de PDF modifiable n’est pas encore disponible : exporte la page en SVG depuis ton logiciel, puis dépose le fichier sur la page.</p>`;
 }

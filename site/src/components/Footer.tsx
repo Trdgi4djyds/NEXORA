@@ -53,8 +53,9 @@ export function Footer() {
         </nav>
         <nav className="ftr-col" aria-label="Commencer">
           <h2>Commencer</h2>
-          <a href={WEB_URL}>Ouvrir NEXORA web</a>
-          <a href="#/telecharger">Version Windows et configuration</a>
+          <a href="#/telecharger">Télécharger pour Windows</a>
+          <a href="#/licence">Ma licence</a>
+          <a href="#/licence/verifier">Vérifier une clé</a>
         </nav>
         <div className="ftr-col">
           <h2>Aide</h2>

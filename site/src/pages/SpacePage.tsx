@@ -53,44 +53,26 @@ function DeviceCatalog() {
   )
 }
 
-function inPlan(f: Feature, plan: PlanId) {
-  if (!f.plan) return true
-  return plan === "pro" || (plan === "standard" && f.plan === "standard")
-}
-
-/** Ce que chaque offre apporte dans cet espace. */
+/** Ce que chaque offre apporte dans cet espace (#076 : Gratuit et Pro). */
 function PlanSplit({ space }: { space: Space }) {
   const cols: { id: PlanId; title: string; lead: string; items: Feature[] }[] = [
     {
       id: "free",
       title: "Gratuit",
-      lead: space.plan === "free" ? (space.trial?.lead ?? "Pour découvrir et créer") : "Non inclus dans l’offre Gratuite",
+      lead: space.plan === "free" ? "Pour découvrir et créer" : "Ouvert pendant ton essai de 24 h, puis réservé à Pro",
       items: space.plan === "free" ? space.features.filter((f) => !f.plan) : [],
-    },
-    {
-      id: "standard",
-      title: "Standard",
-      lead:
-        space.plan !== "free"
-          ? "Tout l’espace, avec :"
-          : space.trial
-            ? "Tout le Gratuit, sans limite d’essai, plus :"
-            : space.features.some((f) => f.plan === "standard")
-              ? "Tout le Gratuit, plus :"
-              : "Le même espace :",
-      items: space.features.filter((f) => (space.plan === "free" ? f.plan === "standard" : inPlan(f, "standard"))),
     },
     {
       id: "pro",
       title: "Pro",
-      lead: "Tout Standard, plus :",
-      items: space.features.filter((f) => f.plan === "pro"),
+      lead: space.plan !== "free" ? "Tout l’espace :" : space.features.some((f) => f.plan === "pro") ? "Tout le Gratuit, plus :" : "Le même espace, avec des limites plus larges :",
+      items: space.plan === "free" ? space.features.filter((f) => f.plan === "pro") : space.features,
     },
   ]
   return (
     <div className="split" data-glow>
       {cols.map((c, i) => (
-        <Reveal className={`split-col glow${c.id === "standard" ? " featured" : ""}`} key={c.id} delay={i * 80}>
+        <Reveal className={`split-col glow${c.id === "pro" ? " featured" : ""}`} key={c.id} delay={i * 80}>
           <span className={`plan-tag ${c.id}`}>{c.title}</span>
           <p className="split-lead">{c.lead}</p>
           <ul>
@@ -103,12 +85,12 @@ function PlanSplit({ space }: { space: Space }) {
               ))
             ) : (
               <li className="muted">
-                {/* #072 : un espace gratuit sans fonction Standard n'est pas « à ouvrir » : il est déjà inclus. */}
+                {/* #072 : un espace gratuit sans fonction Pro n'est pas « à ouvrir » : il est déjà inclus. */}
                 {c.id === "pro"
                   ? "Des limites plus larges : projets, membres et constructions."
                   : space.plan === "free"
-                    ? "Cet espace est déjà complet avec l’offre Gratuite ; Standard élargit les limites de ton compte (projets, documents, membres)."
-                    : "Passe à Standard pour ouvrir cet espace."}
+                    ? "Cet espace est déjà complet avec l’offre Gratuite."
+                    : "Passe à Pro pour garder cet espace après ton essai."}
               </li>
             )}
           </ul>
@@ -157,7 +139,7 @@ export function SpacePage({ space }: { space: Space }) {
           </div>
         </div>
         <div className="container wide rise" style={{ animationDelay: "260ms" }}>
-          <div className="sp-show" data-capture="apercu" data-tilt>
+          <div className="sp-show" data-capture="apercu" data-tilt data-depth>
             <div className="frame">
               <Screen space={space.id} eager />
               <i className="glare" aria-hidden="true" />

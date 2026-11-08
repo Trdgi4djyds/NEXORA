@@ -997,3 +997,6 @@ html[data-theme="dark"] .tabs button.on { background: color-mix(in srgb, #fff 12
 html[data-theme="dark"] .po-plan.po-pro { background: #16161b; }
 .po-plan.po-pro .po-top { background: #1c1c25; }
 .po-plan.po-pro .po-ribbon { background: #e8b52a; }
+
+/* NEXORA #077 : sous-titres des sections (licences : ordinateurs, journaux). */
+.section-title { margin: 18px 0 8px; font-size: 14px; font-weight: 650; color: var(--text); }

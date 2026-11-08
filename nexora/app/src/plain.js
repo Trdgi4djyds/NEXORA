@@ -50,4 +50,23 @@ function techLog(kind, text) {
   } catch { return ''; }
 }
 
-module.exports = { plain, techLog, logDir };
+/* NEXORA #076 : les bibliothèques téléchargées en coulisse (outils de développement, moteurs de construction,
+ * kits Android…) ne sont jamais nommées dans l'interface : tout message de chargement devient un libellé
+ * unique ; le détail reste dans le journal technique local (« bibliotheque-AAAA-MM-JJ.txt »). */
+const LIB_MSG = 'Bibliothèque en cours de chargement, veuillez patienter quelques minutes';
+const LIB_LOADING = /t[ée]l[ée]charg|download|d[ée]compress|extract|installation d|installer |ajout au path|derni[eè]re version|empreinte|sha-?256|miroir|mirror|d[ée]j[aà] pr[ée]sent|r[ée]utilis/i;
+const LIB_NAMES = /\b(node(?:\.js)?|npm|pnpm|yarn|bun|deno|python|pip|php|composer|ruby|gems?|bundler|golang|dotnet|\.net|hugo|flutter|dart|jdk|java|temurin|gradle|electron(?:-builder)?|nsis|wix|7-?zip|wincodesign|rcedit|firebase|androidx|kotlin|maven|msys2|postgres(?:ql)?|playwright|chromium|cloudflared|code-server|openvscode|visual studio code)\b/i;
+let libLast = '';
+function library(text) {
+  const raw = String(text == null ? '' : text);
+  const s = plain(raw);
+  if (!s) return s;
+  if (LIB_LOADING.test(s) || (LIB_NAMES.test(s) && /\d+\.\d+/.test(s))) {
+    const key = raw.replace(/[\d.,]+\s*(?:Mo|Ko|%|MB|KB)/g, '');
+    if (key !== libLast) { libLast = key; techLog('bibliotheque', raw); }
+    return LIB_MSG;
+  }
+  return s;
+}
+
+module.exports = { plain, library, LIB_MSG, techLog, logDir };

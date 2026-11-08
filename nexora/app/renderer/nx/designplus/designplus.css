@@ -128,3 +128,49 @@ html body .dzx-player .dzx-player-bar .seg button.on { background: #fff; color: 
 .dzx-rv-mark.approve { background: #1f9d55; }
 .dzx-rv-mark.changes { background: #d93a3a; }
 .dzx-rv-t { border: 0; background: none; padding: 0; color: var(--accent, #6a4cff); font: inherit; font-weight: 600; cursor: pointer; }
+
+/* ------------------------------------------------------------------ NEXORA #075 : NEX-DESIGN rangé */
+/* Barre d'outils : les outils défilent (flèche visible), le groupe de droite reste toujours visible (A-038). */
+.dz-toolbar.nx-tb2 { overflow: visible; display: flex; align-items: center; gap: 2px; }
+.nx-tb-scroll { display: flex; align-items: center; gap: 2px; min-width: 0; flex: 0 1 auto; overflow-x: auto; scrollbar-width: none; scroll-behavior: smooth; }
+.nx-tb-scroll::-webkit-scrollbar { display: none; }
+.nx-tb-end { display: flex; align-items: center; gap: 2px; flex: none; }
+.nx-tb-more { flex: none; color: var(--text-2); border: 1px dashed var(--sep-strong); }
+.nx-tb-more[hidden] { display: none; }
+/* Panneau de droite : onglets Design, Prototype, Code ; sections repliables. */
+.nx-ptabs { margin: 2px 0 10px; }
+.nx-ptabs[hidden], .nx-ptabs button[hidden] { display: none; }
+#dzProps[data-ptab='design'] > .dz-card:not([data-ptab='design']),
+#dzProps[data-ptab='proto'] > .dz-card:not([data-ptab='proto']),
+#dzProps[data-ptab='code'] > .dz-card:not([data-ptab='code']) { display: none; }
+#dzProps > .dz-card > .dz-card-h { cursor: pointer; user-select: none; }
+#dzProps > .dz-card > .dz-card-h:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.nx-fold { margin-left: auto; display: inline-flex; color: var(--text-3); transition: transform .15s; }
+.dz-card[data-fold] > .dz-card-h .nx-fold { transform: rotate(-90deg); }
+.dz-card[data-fold] > :not(.dz-card-h) { display: none !important; }
+.dz-card[data-fold] { padding-bottom: 10px; }
+.nx-fx-presets { margin-bottom: 6px; }
+/* Ressources : bibliothèque unique. */
+.nx-lib-top { margin-bottom: 4px; }
+.nx-lib-links { flex-wrap: wrap; }
+/* Commentaires : avis des clients. */
+.nx-pin.client { background: var(--accent, #6a4cff); color: #fff; border-radius: 12px 12px 2px 12px; }
+.nx-pin.client.approve { background: #1f9d55; }
+.nx-pin.client.changes { background: #d64545; }
+.nx-crow.client { border-left: 3px solid var(--accent, #6a4cff); }
+.nx-crow.client.approve { border-left-color: #1f9d55; }
+.nx-crow.client.changes { border-left-color: #d64545; }
+/* Tous les documents et corbeille. */
+.nx-docs-sheet { width: min(860px, calc(100vw - 48px)); max-width: none; }
+.nx-docs-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.nx-docs-bar .input { flex: 1 1 200px; min-width: 0; }
+.nx-docs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; max-height: min(56vh, 520px); overflow: auto; padding: 2px; }
+.nx-doc-card { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 12px; border: 1px solid var(--sep); background: var(--window); }
+.nx-doc-card.on { border-color: var(--accent); }
+.nx-doc-th { display: flex; align-items: center; justify-content: center; aspect-ratio: 4 / 3; border-radius: 8px; background: var(--fill-2); overflow: hidden; color: var(--text-3); }
+.nx-doc-th img { width: 100%; height: 100%; object-fit: contain; }
+.nx-doc-meta { display: flex; flex-direction: column; min-width: 0; }
+.nx-doc-meta b { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.nx-doc-meta small { font-size: 11px; color: var(--text-3); }
+.nx-doc-acts { display: flex; gap: 4px; justify-content: flex-end; }
+.dzx-review-box.dzx-view .dzx-review-main { grid-template-columns: 1fr; }

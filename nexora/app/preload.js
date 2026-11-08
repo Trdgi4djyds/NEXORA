@@ -16,7 +16,8 @@ const INVOKE = new Set([
 // NEXORA #016 : 'tools:' (détection et installation des outils de développement).
 // NEXORA #023 : 'desktop:' (Desktop Builder : construction des logiciels de bureau, progression et journal).
 // NEXORA #037 : 'plan:' (offre du compte : plan:status, plan:refresh ; événement plan:blocked).
-const PREFIXES = ['android:', 'lab:', 'dev:', 'git:', 'gh:', 'tunnel:', 'skins:', 'ai:', 'media:', 'backup:', 'update:', 'support:', 'mon:', 'project:', 'tts:', 'sec:', 'tools:', 'tel:', 'desktop:', 'plan:', 'devx:', 'dzx:'];
+// NEXORA #076 : 'license:' (licence obligatoire, journaux de session) et 'novx:' (projets en fichiers .novx).
+const PREFIXES = ['android:', 'lab:', 'dev:', 'git:', 'gh:', 'tunnel:', 'skins:', 'ai:', 'media:', 'backup:', 'update:', 'support:', 'mon:', 'project:', 'tts:', 'sec:', 'tools:', 'tel:', 'desktop:', 'plan:', 'devx:', 'dzx:', 'license:', 'novx:'];
 const allowed = (set, channel) => set.has(channel) || PREFIXES.some((p) => channel.startsWith(p));
 const EVENTS = new Set([
   'runner:log', 'runner:status', 'runner:hot-reload', 'static:change', 'shortcut',

@@ -1,5 +1,9 @@
 'use strict';
-/* NEXORA #037 : offres Gratuit, Standard et Pro.
+/* NEXORA #076 : deux offres seulement, Gratuit (0 $) et Pro (18 $ par mois), essai Pro le premier jour (serveur).
+ * Le Responsive Lab et le Browser Lab sont entièrement gratuits (leurs canaux ne sont plus contrôlés) ; le Dev Lab
+ * (canaux dev:, git:, gh:) et tous les autres espaces sont dans Pro. Chaque canal passe aussi par le verrou de
+ * licence (src/license.js) : sans licence validée, les canaux des espaces sont refusés.
+ * NEXORA #037 : offres Gratuit, Standard et Pro.
  * Les canaux réservés à une offre ou soumis à un quota demandent l'accord des serveurs NEXORA avant de
  * s'exécuter : fonction nx_use_feature de Supabase (migration 20261104000007), qui vérifie l'offre du compte et
  * consomme le quota de façon atomique. La session du compte est celle que l'interface transmet au processus
@@ -31,9 +35,7 @@ const GATES = {
   'android:billing-install': ['integrations', 0],
   'android:billing-products': ['integrations', 0],
   'android:billing-verify': ['integrations', 0],
-  // Browser Lab et Sécurité
-  'lab:scrape-start': ['crawler', 1],
-  'lab:test-start': ['audit_advanced', 0],
+  // Sécurité (NEXORA #076 : le Browser Lab est gratuit, ses canaux lab:* ne sont plus contrôlés)
   'sec:scan': ['scan', 1],
   // NEXORA #048 : audits avancés (plusieurs pages, code, applications, correctifs écrits, crochet Git, audits
   // programmés), intégration continue et SARIF (API et SDK), parcours rejoués de la supervision (Pro).
@@ -47,12 +49,7 @@ const GATES = {
   'sec:sarif-save': ['ci_export', 0],
   'mon:journey-record': ['synthetic', 0],
   'mon:journey-run': ['synthetic', 0],
-  // Responsive Lab : projets locaux (dossier de site ou code source) ; Responsive avancé (enregistrement
-  // vidéo des appareils, outils de développement de l'appareil)
-  'project:pick': ['source_import', 0],
-  'project:start': ['source_import', 0],
-  'screencast:start': ['responsive_advanced', 0],
-  'device:devtools': ['responsive_advanced', 0],
+  // NEXORA #076 : Responsive Lab entièrement gratuit (projets locaux, vidéo et outils de développement des appareils).
   // Desktop Builder
   'desktop:pick-source': ['desktop_builder', 0],
   'desktop:build': ['desktop_builder', 1],
@@ -61,6 +58,7 @@ const GATES = {
   'desktop:publish': ['desktop_builder', 0],
   // Dev Lab. NEXORA #059 : dossiers, éditeur, terminal, Git, GitHub, VS Code et aperçu sont gratuits (canaux
   // dev:* et git:* libres) ; le partage en ligne (tunnel public) reste réservé à Standard.
+  // NEXORA #076 : tout le Dev Lab passe dans Pro (PREFIX_GATES ci-dessous).
   'tunnel:start': ['devlab', 0],
   // NEXORA #052 : outils du Dev Lab. Standard : Problèmes, scripts, variables protégées, Git avancé, demandes de
   // fusion, client d'API, tests, dépendances. Pro : assistant IA du projet, débogueur, mise en ligne, contrôles
@@ -112,7 +110,7 @@ const LABEL = {
   apk: 'La génération d’APK', pwa: 'Le paquet PWA', source_import: 'L’import de dossiers et de code source',
   play_publish: 'La publication sur le Play Store', push: 'Les notifications push', automation: 'Les notifications programmées',
   integrations: 'Les achats intégrés et les outils d’intégration', crawler: 'Le Crawler (aspirateur de site)',
-  audit_advanced: 'Les tests et audits avancés', desktop_builder: 'Le Desktop Builder', devlab: 'Le Dev Lab avancé (partage en ligne, Problèmes, scripts, tests, API, Git avancé)',
+  audit_advanced: 'Les tests et audits avancés', desktop_builder: 'Le Desktop Builder', devlab: 'Le Dev Lab (dossiers, éditeur, terminal, Git, partage en ligne et outils)',
   scan: 'L’audit de sécurité', ai: 'L’assistant IA',
   responsive_advanced: 'Le Responsive avancé (enregistrement vidéo et outils de développement des appareils)',
   ci_export: 'L’intégration continue et l’export SARIF', rum: 'La mesure des visiteurs réels', synthetic: 'Les parcours rejoués',
@@ -122,19 +120,23 @@ const LABEL = {
   messaging_events: 'La messagerie des applications (style conversation, réponse depuis la notification, appels entrants)',
   custom_notifications: 'Les notifications personnalisées (modèles)',
 };
-const NAME = { free: 'Gratuit', standard: 'Standard', pro: 'Pro' };
+// NEXORA #076 : l'ancienne offre Standard est devenue Pro.
+const NAME = { free: 'Gratuit', standard: 'Pro', pro: 'Pro' };
 
 // Permissions par défaut (copie de la migration), pour un invité ou des serveurs sans la migration.
-const STANDARD_PERMS = ['apk', 'pwa', 'source_import', 'play_publish', 'push', 'crawler', 'audits_advanced', 'desktop_builder', 'devlab', 'inapp', 'alerts', 'responsive_advanced', 'status_page', 'design_extended'];
-const PRO_ONLY = ['automation', 'integrations', 'api_sdk', 'studio_advanced', 'synthetic', 'multi_region', 'devlab_pro', 'design_full', 'messaging_events', 'custom_notifications'];
+const PRO_PERMS = ['apk', 'pwa', 'source_import', 'play_publish', 'push', 'audits_advanced', 'desktop_builder', 'devlab', 'inapp', 'alerts', 'status_page', 'design_extended',
+  'automation', 'integrations', 'api_sdk', 'studio_advanced', 'synthetic', 'multi_region', 'devlab_pro', 'design_full', 'messaging_events', 'custom_notifications'];
+// Produits d'appel gratuits : Responsive Lab et Browser Lab complets.
+const FREE_PERMS = ['responsive', 'browser', 'multiscreen', 'dashboard', 'responsive_advanced', 'crawler'];
 function defaultPerms(plan) {
   const p = {};
-  for (const k of [...STANDARD_PERMS, ...PRO_ONLY]) p[k] = false;
-  if (plan === 'standard' || plan === 'pro' || plan === 'team' || plan === 'enterprise') for (const k of STANDARD_PERMS) p[k] = true;
-  if (plan === 'pro' || plan === 'team' || plan === 'enterprise') for (const k of PRO_ONLY) p[k] = true;
+  for (const k of [...PRO_PERMS, ...FREE_PERMS]) p[k] = FREE_PERMS.includes(k);
+  if (plan === 'standard' || plan === 'pro' || plan === 'team' || plan === 'enterprise') for (const k of PRO_PERMS) p[k] = true;
   return p;
 }
-const neededFor = (perm) => (PRO_ONLY.includes(perm) ? 'pro' : 'standard');
+const neededFor = () => 'pro';
+// NEXORA #076 : Dev Lab dans Pro (tous ses canaux) ; refus silencieux (pas de fenêtre à chaque appel de fond).
+const PREFIX_GATES = [['dev:', 'devlab'], ['git:', 'devlab'], ['gh:', 'devlab']];
 
 let cloud = null; // { url, key, token, email }
 let status = null; // dernière réponse de nx_plan_status (ou repli), avec at
@@ -193,6 +195,7 @@ async function fromSubscriptions() {
       if (['active', 'trialing', 'past_due'].includes(s.status) && (rank[s.plan_id] || 0) > (rank[plan] || 0)) plan = s.plan_id;
     }
   }
+  if (plan !== 'free') plan = 'pro'; // NEXORA #076 : Standard, Team et Enterprise sont devenues Pro.
   return { plan, plan_name: NAME[plan] || plan, admin, perms: defaultPerms(plan), limits: {}, usage: {}, source: 'abonnement' };
 }
 
@@ -262,11 +265,26 @@ async function check(feature, amount) {
 function guardIpc(ipcMain, opts = {}) {
   if (opts.fetchImpl) fetchImpl = opts.fetchImpl;
   const handle = ipcMain.handle.bind(ipcMain);
+  const license = opts.license || require('./license');
   ipcMain.handle = (channel, fn) => {
-    if (channel === 'mon:cloud-session') return handle(channel, (e, c, ...rest) => { setCloud(c); return fn(e, c, ...rest); });
+    if (channel === 'mon:cloud-session') return handle(channel, (e, c, ...rest) => { setCloud(c); license.setSession(c); return fn(e, c, ...rest); });
     const gate = GATES[channel];
-    if (!gate) return handle(channel, fn);
+    const prefix = !gate && PREFIX_GATES.find(([p]) => channel.startsWith(p));
+    if (!gate && !prefix) {
+      return handle(channel, (e, ...args) => {
+        if (!license.allowed(channel)) throw license.lockedError();
+        return fn(e, ...args);
+      });
+    }
+    if (prefix) {
+      return handle(channel, async (e, ...args) => {
+        if (!license.allowed(channel)) throw license.lockedError();
+        await check(prefix[1], 0);
+        return fn(e, ...args);
+      });
+    }
     return handle(channel, async (e, ...args) => {
+      if (!license.allowed(channel)) throw license.lockedError();
       try {
         await check(gate[0], gate[1]);
       } catch (err) {
@@ -285,4 +303,4 @@ function guardIpc(ipcMain, opts = {}) {
   handle('plan:refresh', async () => { status = null; return refresh(true); });
 }
 
-module.exports = { guardIpc, check, refresh, setCloud, GATES, defaultPerms };
+module.exports = { guardIpc, check, refresh, setCloud, GATES, PREFIX_GATES, defaultPerms };

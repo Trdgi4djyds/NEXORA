@@ -6,7 +6,7 @@
 import { ico, esc, settings } from '../core.js';
 import { cloud, current, can, appTrials, trialsCached, claimApp, releaseApp, status } from './status.js';
 import { openUpsell } from './upsell.js';
-import { FALLBACK } from './catalog.js';
+import { FALLBACK, money } from './catalog.js';
 
 // Action de l'App Builder (data-act) → fonction de l'offre.
 const ACT_FEATURES = {
@@ -52,7 +52,7 @@ export function appState(cfg) {
 function banner(inst) {
   const st = appState(inst.cfg), s = current();
   if (st.lock || st.loading) return '';
-  if (st.paid) return s.admin ? '' : `<div class="nxo-ab-banner paid">${ico('check', 13)}<span>Offre <b>${esc(s.plan_name || 'Standard')}</b> : application sans limite d’essai.</span></div>`;
+  if (st.paid) return s.admin ? '' : `<div class="nxo-ab-banner paid">${ico('check', 13)}<span>Offre <b>${esc(s.plan_name || 'Pro')}</b> : application sans limite d’essai.</span></div>`;
   if (st.unavailable) return `<div class="nxo-ab-banner">${ico('clock', 13)}<span>Offre Gratuite : jusqu’à 2 applications créées depuis l’adresse d’un site, 7 jours d’essai chacune.</span></div>`;
   const days = Number(current().limits.app_trial_days) || 7;
   if (st.trial) {
@@ -60,7 +60,7 @@ function banner(inst) {
     return `<div class="nxo-ab-banner trial">
       <span class="nxo-ab-ic">${ico('clock', 15)}</span>
       <div><b>Essai gratuit · encore ${left} jour${left > 1 ? 's' : ''}</b><small>Fin de l’essai le ${esc(longDate(st.trial.trial_ends_at))}. Ensuite, l’application sera verrouillée dans l’App Builder.</small><i class="nxo-bar"><em style="width:${((used / days) * 100).toFixed(0)}%"></em></i></div>
-      <button type="button" class="nxo-btn primary small" data-nxo-ask="standard">Garder mon app · 12 $ / mois</button>
+      <button type="button" class="nxo-btn primary small" data-nxo-ask="pro">Garder mon app · ${esc(money(FALLBACK.pro.price_month_cents))} / mois</button>
     </div>`;
   }
   const t = st.t || {};
@@ -72,9 +72,9 @@ function banner(inst) {
 }
 
 const LOCK = {
-  expired: (r) => [`L’essai de « ${r.name || 'ton application'} » est terminé`, `Les 7 jours d’essai de l’offre Gratuite se sont terminés le ${longDate(r.trial_ends_at)}. L’application est verrouillée dans l’App Builder : aperçu, construction et export sont bloqués. Passe à Standard pour la débloquer tout de suite, sans limite de durée.`],
-  plan: (r) => [`« ${r.name || 'Cette application'} » demande une offre payante`, 'Elle a été créée avec une offre Standard ou Pro, qui n’est plus active sur ton compte. Reprends une offre Standard ou Pro pour la débloquer.'],
-  quota: () => ['Tes applications d’essai sont utilisées', `L’offre Gratuite comprend ${FALLBACK.free.limits.apps} applications d’essai de 7 jours, applications supprimées comprises. Passe à Standard pour créer d’autres applications, sans limite de durée.`],
+  expired: (r) => [`L’essai de « ${r.name || 'ton application'} » est terminé`, `Les 7 jours d’essai de l’offre Gratuite se sont terminés le ${longDate(r.trial_ends_at)}. L’application est verrouillée dans l’App Builder : aperçu, construction et export sont bloqués. Passe à Pro pour la débloquer tout de suite, sans limite de durée.`],
+  plan: (r) => [`« ${r.name || 'Cette application'} » demande une offre payante`, 'Elle a été créée avec l’offre Pro, qui n’est plus active sur ton compte. Reprends l’offre Pro pour la débloquer.'],
+  quota: () => ['Tes applications d’essai sont utilisées', `L’offre Gratuite comprend ${FALLBACK.free.limits.apps} applications d’essai de 7 jours, applications supprimées comprises. Passe à Pro pour créer d’autres applications, sans limite de durée.`],
   auth: () => ['Connecte-toi pour utiliser l’App Builder', 'L’essai gratuit de 7 jours de tes applications est suivi par ton compte NEXORA. Crée un compte gratuit ou connecte-toi pour continuer.'],
 };
 function lockCard(inst, st) {
@@ -89,7 +89,7 @@ function lockCard(inst, st) {
       <p>${esc(text)}</p>
       <div class="nxo-ab-lock-acts">
         ${st.reason === 'auth' ? '<button type="button" class="nxo-btn primary" data-nxo-login>Se connecter</button>'
-          : '<button type="button" class="nxo-btn primary" data-nxo-ask="standard">Passer à Standard · 12 $ / mois</button><button type="button" class="nxo-btn ghost" data-nxo-offers>Voir les offres</button>'}
+          : `<button type="button" class="nxo-btn primary" data-nxo-ask="pro">Passer à Pro · ${esc(money(FALLBACK.pro.price_month_cents))} / mois</button><button type="button" class="nxo-btn ghost" data-nxo-offers>Voir les offres</button>`}
       </div>
       ${others ? '<small class="nx-muted">Tu peux choisir une autre application dans la liste à gauche.</small>' : ''}
     </div>
@@ -128,7 +128,7 @@ export function decorate(inst) {
       if (now.lock && !(act && ALWAYS.has(act))) {
         e.stopPropagation(); e.preventDefault();
         if (now.reason === 'auth') openUpsell({ reason: 'auth', need: 'free', title: 'Connecte-toi pour utiliser l’App Builder', message: LOCK.auth()[1] });
-        else openUpsell({ feature: 'apk', reason: now.reason, need: 'standard', title: (LOCK[now.reason] || LOCK.expired)(now.row || {})[0], message: 'Passe à Standard pour débloquer ton application, sans limite de durée.' });
+        else openUpsell({ feature: 'apk', reason: now.reason, need: 'pro', title: (LOCK[now.reason] || LOCK.expired)(now.row || {})[0], message: 'Passe à Pro pour débloquer ton application, sans limite de durée.' });
         return;
       }
       const feat = act && ACT_FEATURES[act];
@@ -154,7 +154,7 @@ function claimSoon(inst) {
       const r = await claimApp(cfg);
       if (r && !r.ok) {
         await appTrials(true, localIds(cfg));
-        if (r.reason === 'quota' || r.reason === 'source') openUpsell({ feature: r.reason === 'source' ? 'source_import' : 'apk', reason: r.reason, need: r.need || 'standard', message: r.message });
+        if (r.reason === 'quota' || r.reason === 'source') openUpsell({ feature: r.reason === 'source' ? 'source_import' : 'apk', reason: r.reason, need: 'pro', message: r.message });
       } else await appTrials(true, localIds(cfg));
     } catch (e) { console.warn('[NEXORA #037] essai', e); }
     if (inst.el && inst.el.isConnected) decorate(inst);
@@ -188,7 +188,7 @@ export function install(proto) {
   proto.set = function (path, value, opts) {
     // Offre Gratuite : source « adresse web » seulement.
     if (path === 'source.kind' && value !== 'url' && !can('source_import')) {
-      openUpsell({ feature: 'source_import', reason: 'source', message: 'Avec l’offre Gratuite, une application se crée uniquement à partir de l’adresse d’un site accessible (https://…). Passe à Standard pour partir d’un projet ou d’un dossier construit.' });
+      openUpsell({ feature: 'source_import', reason: 'source', message: 'Avec l’offre Gratuite, une application se crée uniquement à partir de l’adresse d’un site accessible (https://…). Passe à Pro pour partir d’un projet ou d’un dossier construit.' });
       if (typeof this.renderForm === 'function') this.renderForm();
       return undefined;
     }

@@ -12,6 +12,7 @@
  * NEXORA #073 : messagerie. Le service du kit ne fait plus que transmettre chaque message au code de l'application
  * (Push.java : catégories, conversations, appels, réponses, file d'attente) ; récepteur des actions des
  * notifications (PushAction) ; messages de test « conversation », « appel » et « retrait » (buildMessage). */
+const { LIB_MSG } = require('../plain');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -421,7 +422,7 @@ class PushKit {
     let i = 0;
     for (const art of arts) {
       i += 1;
-      onStep({ label: `Téléchargement : ${art.a} ${art.v} (${i}/${arts.length})`, progress: 0.25 + 0.4 * (i / arts.length) });
+      onStep({ label: LIB_MSG, progress: 0.25 + 0.4 * (i / arts.length) });
       // eslint-disable-next-line no-await-in-loop
       const got = await this.downloadArtifact(art, libs);
       if (!got) continue;
