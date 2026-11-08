@@ -9,6 +9,11 @@
   "name": "nexora",
   "main": "worker/index.js",
   "compatibility_date": "2026-10-01",
+  // NEXORA #079 : garder les variables réglées dans le tableau de bord Cloudflare. Sans cette ligne, chaque
+  // `wrangler deploy` (donc chaque envoi sur GitHub) remplace les variables en clair par celles de ce fichier
+  // (aucune) : NX_LICENSE_SIGNING_KEY et NX_PROBE_SECRET disparaissaient. Les variables de type « Secret »
+  // (chiffrées), recommandées pour ces clés, sont gardées dans tous les cas.
+  "keep_vars": true,
   // Lancée par `wrangler deploy` avant l'envoi, même si aucune commande de build n'est réglée dans
   // Cloudflare : dist/ est toujours reconstruit à partir des sources du commit.
   "build": {
