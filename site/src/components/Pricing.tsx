@@ -104,7 +104,8 @@ export function PricingCards() {
         </button>
         </div>
       </Reveal>
-      <div className="plans" data-glow>
+      {/* #084 : nombre d'offres donné à la grille (deux offres centrées au lieu d'un tiers vide à droite). */}
+      <div className="plans" data-glow data-count={plans.length}>
         {plans.map((p, i) => (
           <Reveal key={p.id} delay={i * 90} className="plan-wrap">
             <PlanCard plan={p} annual={annual} ready={ready} start={downloadUrl || "#/telecharger"} />

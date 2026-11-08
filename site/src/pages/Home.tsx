@@ -15,10 +15,12 @@ import { Trust } from "../components/Trust"
 import { FAQ } from "../data/content"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
-import { RELEASES } from "../lib/product"
+import { RELEASES, WEB_URL } from "../lib/product"
+import { useRemote } from "../lib/remote"
 
 export function Home() {
   const latest = RELEASES[0]
+  const { supportEmail } = useRemote()
   return (
     <>
       <Hero />
@@ -44,6 +46,7 @@ export function Home() {
         <div className="container">
           <SectionHead
             index="07"
+            align="center"
             eyebrow="Tarifs"
             title={["Gratuit pour commencer,", "sans limite de durée."]}
             lead="Responsive Lab et Browser Lab restent gratuits. Pro ouvre tout NEXORA : Dev Lab, applications Android et logiciels Windows. Ton premier jour, tout est ouvert."
@@ -71,7 +74,17 @@ export function Home() {
       )}
       <section className="section alt" id="faq" data-capture="faq">
         <div className="container faq-wrap">
-          <SectionHead index="09" align="left" eyebrow="Questions fréquentes" title={["Ce qu’on nous", "demande le plus."]} />
+          {/* #084 : un moyen de joindre l'équipe sous le titre (mêmes adresses que le pied de page). */}
+          <div className="faq-side">
+            <SectionHead index="09" align="left" eyebrow="Questions fréquentes" title={["Ce qu’on nous", "demande le plus."]} />
+            <Reveal className="faq-help" delay={120}>
+              <b>Une autre question ?</b>
+              <p>Écris-nous depuis NEXORA (Mon compte → Support) ou par ce lien.</p>
+              <a className="link-arrow" href={supportEmail ? `mailto:${supportEmail}` : WEB_URL}>
+                Écrire à l’équipe <Icon name="nxArrowRight" size={15} stroke={2} />
+              </a>
+            </Reveal>
+          </div>
           <Faq items={FAQ} />
         </div>
       </section>

@@ -74,6 +74,10 @@ export function Footer() {
         <span>© {new Date().getFullYear()} NEXORA. Tous droits réservés.</span>
         <span className="muted">Interface en français · Photos : Unsplash</span>
       </div>
+      {/* #084 : logotype en très grand, coupé par le bas de la page (décoratif). */}
+      <div className="ftr-word" aria-hidden="true">
+        NEXORA
+      </div>
     </footer>
   )
 }

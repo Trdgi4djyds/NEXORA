@@ -200,6 +200,17 @@ ok((await check9(21, D5)).plan === "free", "Compte simple : offre inchangée par
 let leak = false
 try { await as(21, `select nx_is_admin_uid('${id(20)}')`) } catch { leak = true }
 ok(leak, "Administrateurs : un compte ne peut pas savoir qui est administrateur")
+// NEXORA #084 : dernière publication connue (repli du service de sécurité), rejouable.
+const M5 = mig("20261108000005_publication_connue.sql")
+await db.exec(M5)
+await db.exec(M5)
+const pub = (n) => JSON.stringify({ version: "1.2.0", manifest_version: n, manifest_sha256: "a".repeat(64), tag: "v1.2.0-r2" })
+let refusedSeen = false
+try { await q("select nx_release_seen('faux', $1::jsonb)", [pub(10)]) } catch { refusedSeen = true }
+const s1 = (await q("select nx_release_seen('secret-du-worker', $1::jsonb) as r", [pub(10)]))[0].r
+const s0 = (await q("select nx_release_seen('secret-du-worker', $1::jsonb) as r", [pub(9)]))[0].r
+const rp = (await q("select nx_release_policy() as r"))[0].r
+ok(refusedSeen && s1 === true && s0 === false && rp.latest_seen && rp.latest_seen.manifest_version === 10 && rp.min_version, "Publication connue : écrite par le Worker seulement, numéro croissant, relue avec la politique des versions", rp)
 await asAdmin("select nx_admin_license_grant('eleve@ecole.ci', 'pro', null, '', null)")
 ok((await check9(21, D5)).plan === "pro", "Licence attribuée sans date de fin")
 await asAdmin("select nx_admin_license_grant('pro@exemple.ci', 'free', 7, 'Suspendu 7 jours', null)")
@@ -249,7 +260,7 @@ ok((await check9(21, D6, "1.10.2-beta", { ok: true, manifest_version: 2026110900
 await asAdmin("select nx_admin_policy_set('release_policy', $1::jsonb)", [JSON.stringify({ min_version: "1.10.0", block_outdated: false })])
 ok((await check9(21, D6, "1.0.0")).ok, "Refus des versions obsolètes désactivé : ancienne version acceptée")
 await asAdmin("select nx_admin_policy_set('release_policy', $1::jsonb)", [JSON.stringify({ min_version: "1.2.0", min_manifest_version: 0, block_outdated: true })])
-ok(JSON.stringify((await q("select nx_release_policy() as r"))[0].r) === JSON.stringify({ channel: "stable", min_version: "1.2.0", block_outdated: true, min_manifest_version: 0 }), "Versions autorisées lisibles par le service de sécurité")
+{ const rp0 = (await q("select nx_release_policy() as r"))[0].r; ok(rp0.channel === "stable" && rp0.min_version === "1.2.0" && rp0.block_outdated === true && rp0.min_manifest_version === 0, "Versions autorisées lisibles par le service de sécurité", rp0) }
 denied = false
 try { await q("select nx_security_report('faux', $1, 'signature')", [D6]) } catch { denied = true }
 const rep2 = (await q("select nx_security_report('secret-du-worker', $1, 'modified', '{\"file\": \"NEXORA.exe\"}'::jsonb, '1.2.0', '41.2.2.2', 'launcher') as r", [D6]))[0].r
@@ -303,16 +314,20 @@ ok(denied && rep2.ok && lrow.reason === "modified" && lrow.detail.file === "NEXO
     const manRaw = Buffer.from(JSON.stringify({ format: 1, version: "1.3.0", manifest_version: 202611090000, issued_at: "2026-11-09T00:00:00Z" }))
     let manSig = crypto.sign(null, manRaw, relKeys.privateKey).toString("base64")
     let ghRelease = true
+    let ghDown = false // #084 : GitHub qui répond 504 (erreur mise en cache)
+    let seen = null // #084 : dernière publication gardée dans la base (nx_release_seen)
     const ghFetch = async (u, o = {}) => {
       u = String(u)
       calls.push({ u, o })
       // #079 : liens directs de github.com (redirection de latest vers le tag), plus jamais api.github.com.
       if (u.includes("api.github.com")) return new Response("{}", { status: 403 })
+      if (ghDown && u.startsWith("https://github.com/")) return new Response("Gateway Timeout", { status: 504 })
       if (u === "https://github.com/Trdgi4djyds/NEXORA-portable/releases/latest/download/nexora.manifest.json")
         return ghRelease && o.redirect === "manual" ? new Response(null, { status: 302, headers: { location: "https://github.com/Trdgi4djyds/NEXORA-portable/releases/download/v1.3.0/nexora.manifest.json" } }) : new Response("Not Found", { status: 404 })
       if (u === "https://github.com/Trdgi4djyds/NEXORA-portable/releases/download/v1.3.0/nexora.manifest.json") return new Response(manRaw, { status: 200 })
       if (u === "https://github.com/Trdgi4djyds/NEXORA-portable/releases/download/v1.3.0/nexora.manifest.sig") return new Response(manSig, { status: 200 })
-      if (u.endsWith("/rpc/nx_release_policy")) return new Response(JSON.stringify({ min_version: "1.2.0", min_manifest_version: 7, block_outdated: true }), { status: 200 })
+      if (u.endsWith("/rpc/nx_release_policy")) return new Response(JSON.stringify({ min_version: "1.2.0", min_manifest_version: 7, block_outdated: true, latest_seen: seen }), { status: 200 })
+      if (u.endsWith("/rpc/nx_release_seen")) { const b = JSON.parse(o.body); if (b.p_secret === "secret-du-worker") seen = { ...b.p_publication, seen_at: "2026-11-08T10:00:00Z" }; return new Response("true", { status: 200 }) }
       if (u.endsWith("/rpc/nx_security_report")) return new Response(JSON.stringify({ ok: true }), { status: 200 })
       return new Response("{}", { status: 404 })
     }
@@ -326,6 +341,27 @@ ok(denied && rep2.ok && lrow.reason === "modified" && lrow.detail.file === "NEXO
     ok(okSig && decl.status === "ok" && decl.latest.version === "1.3.0" && decl.latest.tag === "v1.3.0" && decl.latest.manifest_sha256 === crypto.createHash("sha256").update(manRaw).digest("hex") && decl.min_manifest_version === 7 && ttl === 86400000,
       "Service de sécurité : déclaration signée, dernière publication vérifiée (empreinte du manifeste), versions autorisées, valable 24 h", decl)
     ok(!calls.some((c) => String(c.u).includes("api.github.com")), "Service de sécurité : liens directs de téléchargement, aucun appel à l’API GitHub (quota)")
+    ok(seen && seen.manifest_version === 202611090000 && seen.manifest_sha256 === decl.latest.manifest_sha256, "Service de sécurité : publication vérifiée gardée dans la base (secret du Worker)", seen)
+    ghDown = true
+    await W2.latestPublication(true)
+    const declDown = JSON.parse((await (await W2.handleLicences(new Request("https://x/security/manifest"), env)).json()).payload)
+    ok(declDown.status === "ok" && declDown.latest && declDown.latest.stale && declDown.latest.manifest_sha256 === decl.latest.manifest_sha256 && !("seen_at" in declDown.latest),
+      "Service de sécurité : GitHub en panne (504) : dernière publication vérifiée déclarée (repli)", declDown)
+    const tries = calls.filter((c) => String(c.u).endsWith("/releases/latest/download/nexora.manifest.json")).length
+    seen = null
+    await W2.latestPublication(true)
+    const declNone = JSON.parse((await (await W2.handleLicences(new Request("https://x/security/manifest"), env)).json()).payload)
+    ok(declNone.status === "repository_unreachable" && declNone.latest === null && calls.filter((c) => String(c.u).endsWith("/releases/latest/download/nexora.manifest.json")).length - tries >= 2,
+      "Service de sécurité : sans publication connue, « injoignable » après une nouvelle tentative", declNone)
+    // #084 : publication envoyée par l'Action (manifeste signé) : gardée sans passer par GitHub ; falsification refusée.
+    const pubRes = await W2.handleLicences(new Request("https://x/security/publication", { method: "POST", body: JSON.stringify({ manifest_b64: manRaw.toString("base64"), sig: manSig, tag: "v1.3.0" }) }), env)
+    const pubBody = await pubRes.json()
+    ok(pubRes.status === 200 && seen && seen.manifest_version === 202611090000 && seen.tag === "v1.3.0", "Service de sécurité : publication envoyée par l’Action (manifeste signé) gardée dans la base", pubBody)
+    const declPushed = JSON.parse((await (await W2.handleLicences(new Request("https://x/security/manifest"), env)).json()).payload)
+    ok(declPushed.status === "ok" && declPushed.latest && declPushed.latest.manifest_version === 202611090000, "Service de sécurité : déclaration servie sans GitHub après l’envoi de l’Action", declPushed)
+    const forgedPub = await W2.handleLicences(new Request("https://x/security/publication", { method: "POST", body: JSON.stringify({ manifest_b64: Buffer.from('{"manifest_version":999999999999}').toString("base64"), sig: manSig }) }), env)
+    ok(forgedPub.status === 403, "Service de sécurité : manifeste non signé refusé par la route de publication")
+    ghDown = false
     ghRelease = false
     await W2.latestPublication(true)
     const decl0 = JSON.parse((await (await W2.handleLicences(new Request("https://x/security/manifest"), env)).json()).payload)

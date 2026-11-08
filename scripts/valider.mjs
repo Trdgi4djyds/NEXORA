@@ -784,6 +784,7 @@ async function supabaseChecks() {
         "nx_security_report",
         "nx_release_policy",
         "nx_license_verify",
+        "nx_release_seen", // #084 : secret partagé avec le Worker
       ])
       const anon = lints.filter(
         (l) =>

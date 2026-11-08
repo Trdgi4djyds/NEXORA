@@ -4965,3 +4965,246 @@ html[data-vt="back"]::view-transition-new(root) {
   margin-top: 4px;
   font-size: 13px;
 }
+
+/* ==========================================================================
+   NEXORA #084 — mise au point du design de « Prisme » : rythme des sections, tarifs centrés, panneau de l'IA,
+   chiffres en cartes, confiance en fiche à deux colonnes, aide sous la FAQ, grand logotype du pied de page.
+   Même direction (blanc, vert tech, rose, violet), mêmes jetons ; rien n'est chargé en plus.
+   ========================================================================== */
+
+/* Rythme : sections moins hautes (environ 200 px de vide avant chaque titre à 1440 px). */
+.section {
+  padding: clamp(72px, 8.5vw, 120px) 0;
+}
+.section-head {
+  margin-bottom: clamp(40px, 5vw, 64px);
+}
+
+/* Tarifs : les offres occupent la largeur qu'il leur faut, centrées (deux offres sur une grille à trois
+   colonnes laissaient un tiers vide à droite). */
+.plans[data-count="1"],
+.plans[data-count="2"] {
+  width: 100%;
+  margin-inline: auto;
+}
+.plans[data-count="1"] {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 460px;
+}
+.plans[data-count="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 900px;
+  gap: 18px;
+}
+@media (max-width: 959px) {
+  .plans[data-count] {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 520px;
+  }
+}
+
+/* Assistant IA : un panneau teinté dans la page blanche, pour casser la suite de sections identiques. */
+.ai-sec > .container {
+  position: relative;
+  width: min(1320px, 100% - 48px);
+  padding: clamp(36px, 5vw, 72px);
+  border: 1px solid var(--line);
+  border-radius: 32px;
+  background:
+    radial-gradient(55% 75% at 100% 0%, rgba(124, 58, 237, 0.09), transparent 62%),
+    radial-gradient(45% 65% at 0% 100%, rgba(0, 209, 143, 0.08), transparent 62%),
+    radial-gradient(40% 55% at 62% 100%, rgba(255, 61, 154, 0.07), transparent 62%),
+    var(--s1);
+  isolation: isolate;
+}
+.ai-sec .ai-uses li {
+  border-color: color-mix(in srgb, var(--line-2) 70%, transparent);
+}
+.ai-sec .ai-providers span {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #ffffff;
+}
+.ai-sec .ai-providers span + span::before {
+  display: none;
+}
+.ai-sec .ai-providers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Chiffres : quatre cartes, filet et chiffre à la couleur de l'espace. */
+.stats {
+  border-block: 0;
+  padding-block: clamp(8px, 2vw, 24px);
+}
+.stats-grid {
+  gap: 14px;
+}
+.stats-grid > .stat {
+  padding: 30px 28px 28px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background:
+    linear-gradient(90deg, var(--u), color-mix(in srgb, var(--u) 30%, var(--violet))) 0 0 / 100% 3px no-repeat,
+    #ffffff;
+  box-shadow: var(--sh-1);
+}
+.stats-grid > .stat b {
+  background: linear-gradient(120deg, var(--u) 10%, color-mix(in srgb, var(--u) 45%, var(--violet)) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+@media (hover: hover), (pointer: none) {
+  .stats-grid > .stat:hover b {
+    text-shadow: none;
+  }
+}
+@media (max-width: 720px) {
+  .stats-grid {
+    gap: 10px;
+  }
+  .stats-grid > .stat {
+    padding: 24px 18px 20px;
+  }
+}
+
+/* Confiance : en-tête au-dessus, fiche technique en deux colonnes dans un cadre. */
+.trust-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(40px, 5vw, 64px);
+}
+.trust .section-head {
+  position: static;
+  margin-bottom: 0;
+}
+.trust .spec {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: #ffffff;
+  box-shadow: var(--sh-1);
+  overflow: hidden;
+}
+.trust .spec-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "k s"
+    "v v";
+  row-gap: 16px;
+  align-items: center;
+  padding: 28px 30px 30px;
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+.trust .spec-row:nth-child(2n) {
+  border-right: 0;
+}
+/* dernière rangée (une ou deux cases) sans filet du bas */
+.trust .spec-row:nth-child(odd):nth-last-child(-n + 2),
+.trust .spec-row:nth-child(odd):nth-last-child(-n + 2) ~ .spec-row {
+  border-bottom: 0;
+}
+.trust .spec-k {
+  grid-area: k;
+}
+.trust .spec-v {
+  grid-area: v;
+}
+.trust .spec-s {
+  grid-area: s;
+}
+.trust .spec-v b {
+  font-size: 19px;
+}
+@media (max-width: 720px) {
+  .trust .spec {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .trust .spec-row {
+    padding: 22px 20px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .trust .spec-row:last-child {
+    border-bottom: 0;
+  }
+}
+
+/* Questions : un moyen de joindre l'équipe sous le titre (la colonne restait vide). */
+.faq-side {
+  position: sticky;
+  top: 110px;
+  display: grid;
+  gap: 32px;
+  align-content: start;
+}
+.faq-wrap .faq-side .section-head {
+  position: static;
+}
+.faq-help {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  max-width: 380px;
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(80% 120% at 100% 0%, rgba(255, 61, 154, 0.07), transparent 60%),
+    #ffffff;
+  box-shadow: var(--sh-1);
+}
+.faq-help b {
+  font-size: 16.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.faq-help p {
+  color: var(--muted);
+  font-size: 14.5px;
+}
+.faq-help .link-arrow {
+  margin-top: 8px;
+}
+@media (max-width: 959px) {
+  .faq-side {
+    position: static;
+  }
+}
+
+/* Pied de page : le logotype en très grand, dégradé de la marque estompé, coupé par le bas. */
+.ftr {
+  overflow: hidden;
+}
+.ftr-word {
+  margin: 8px 0 -0.2em;
+  text-align: center;
+  font-size: clamp(84px, 20.5vw, 300px);
+  font-weight: 700;
+  line-height: 0.82;
+  letter-spacing: -0.065em;
+  white-space: nowrap;
+  background: linear-gradient(100deg, #0aa673 5%, #5b4ff0 45%, #8b2fe6 62%, #e61e8c 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  opacity: 0.16;
+  -webkit-mask-image: linear-gradient(180deg, #000 25%, transparent 92%);
+  mask-image: linear-gradient(180deg, #000 25%, transparent 92%);
+  user-select: none;
+  pointer-events: none;
+}
+@media (max-width: 720px) {
+  .ai-sec > .container {
+    width: calc(100% - 24px);
+    padding: 32px 20px;
+    border-radius: 24px;
+  }
+}

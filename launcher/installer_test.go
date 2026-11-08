@@ -128,3 +128,23 @@ func TestUninstallerWizard(t *testing.T) {
 		t.Fatalf("pages : %v", wz.seen)
 	}
 }
+
+// NEXORA #084 : fin de la désinstallation par une copie temporaire : seul le dossier de NEXORA Devs Toolbox est effacé.
+func TestCleanupAfterGuard(t *testing.T) {
+	base := t.TempDir()
+	root := filepath.Join(base, productName)
+	other := filepath.Join(base, "Documents")
+	for _, d := range []string{root, other} {
+		os.MkdirAll(d, 0o755)
+		os.WriteFile(filepath.Join(d, "f.txt"), []byte("x"), 0o644)
+	}
+	t.Setenv("NEXORA_TOOLBOX_ROOT", root)
+	cleanupAfter(other, "0")
+	if _, err := os.Stat(other); err != nil {
+		t.Fatal("un autre dossier que celui du lanceur a été effacé")
+	}
+	cleanupAfter(root, "0")
+	if _, err := os.Stat(root); !os.IsNotExist(err) {
+		t.Fatal("dossier du lanceur non supprimé")
+	}
+}

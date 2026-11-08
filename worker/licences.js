@@ -12,6 +12,9 @@
 //                         autorisées (politique du back office). Le lanceur refuse un manifeste GitHub qui ne
 //                         correspond pas à cette déclaration, une déclaration expirée ou non signée.
 //   POST /security/report    anomalies relevées par le lanceur (fichier modifié, signature invalide…) → journal.
+//   POST /security/publication  NEXORA #084 : manifeste signé envoyé par l'Action de publication ; vérifié avec la clé
+//                         de publication puis gardé dans la base (nx_release_seen) : la déclaration ne dépend plus
+//                         de la disponibilité de GitHub pour les adresses de Cloudflare.
 // Variables du Worker (Cloudflare → Workers & Pages → nexora → Settings → Variables and Secrets), jamais dans
 // le dépôt : NX_LICENSE_SIGNING_KEY (clé privée Ed25519, PKCS8 en base64), NX_PROBE_SECRET (secret partagé avec la
 // base, déjà utilisé par la deuxième région), STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_MONTH,
@@ -76,9 +79,17 @@ async function releaseKey() {
 // sans jeton venus des adresses partagées de Cloudflare : quota de 60 par heure dépassé, « repository_unreachable »).
 // …/releases/latest/download/<fichier> redirige vers …/releases/download/<tag>/<fichier> : le tag est lu dans la
 // redirection, puis la signature est prise dans la même publication (pas de mélange si une publication arrive entre-temps).
+// NEXORA #084 : une nouvelle tentative si GitHub ne répond pas ; échec gardé une minute seulement (reprise rapide) ;
+// repli sur la dernière publication vérifiée gardée dans la base (securityManifest).
 const GH_HEADERS = { "user-agent": "NEXORA-Security-Service" }
 export async function latestPublication(force = false) {
-  if (!force && statementCache && Date.now() - statementCache.at < 5 * 60 * 1000) return statementCache.value
+  if (!force && statementCache && Date.now() - statementCache.at < (statementCache.value.publication ? 5 * 60 * 1000 : 60 * 1000)) return statementCache.value
+  let value = await fetchPublication()
+  if (value.error === "repository_unreachable") value = await fetchPublication()
+  statementCache = { at: Date.now(), value }
+  return value
+}
+async function fetchPublication() {
   let value
   try {
     const latest = `https://github.com/${RELEASE_REPO}/releases/latest/download/nexora.manifest.json`
@@ -116,13 +127,23 @@ export async function latestPublication(force = false) {
   } catch {
     value = { publication: null, error: "repository_unreachable" }
   }
-  statementCache = { at: Date.now(), value }
   return value
 }
 async function securityManifest(env) {
   if (!env.NX_LICENSE_SIGNING_KEY) return json(503, { error: "not_configured", message: "Le service de sécurité de NEXORA n’est pas encore configuré." })
-  const [{ publication, error }, pol] = await Promise.all([latestPublication(), rpc("nx_release_policy", {}).catch(() => ({ ok: false, body: null }))])
+  const [found, pol] = await Promise.all([latestPublication(), rpc("nx_release_policy", {}).catch(() => ({ ok: false, body: null }))])
   const policy = pol && pol.ok && pol.body && typeof pol.body === "object" ? pol.body : {}
+  let { publication, error } = found
+  const seen = policy.latest_seen && typeof policy.latest_seen === "object" ? policy.latest_seen : null
+  if (publication && env.NX_PROBE_SECRET && publication.manifest_version > Number((seen && seen.manifest_version) || 0)) {
+    // Nouvelle publication vérifiée : gardée dans la base pour les moments où GitHub ne répond pas.
+    await rpc("nx_release_seen", { p_secret: env.NX_PROBE_SECRET, p_publication: publication }).catch(() => null)
+  } else if (!publication && error === "repository_unreachable" && seen && /^[0-9a-f]{64}$/.test(String(seen.manifest_sha256 || ""))) {
+    const { seen_at: _s, ...last } = seen
+    void _s
+    publication = { ...last, manifest_version: Number(last.manifest_version) || 0, stale: true }
+    error = ""
+  }
   const now = Date.now()
   const statement = {
     application: "NEXORA", kind: "release_statement", repository: RELEASE_REPO, status: publication ? "ok" : error,
@@ -131,6 +152,25 @@ async function securityManifest(env) {
     block_outdated: policy.block_outdated !== false, channel: policy.channel || "stable",
   }
   return json(200, await signPayload(env, statement))
+}
+async function securityPublication(req, env) {
+  let a
+  try { a = await req.json() } catch { return json(400, { error: "bad_request" }) }
+  let raw
+  try { raw = unb64(String(a.manifest_b64 || "")) } catch { return json(400, { error: "bad_request" }) }
+  const good = raw.length > 0 && raw.length < 2 << 20 && await crypto.subtle.verify({ name: "Ed25519" }, await releaseKey(), unb64(String(a.sig || "").trim()), raw).catch(() => false)
+  if (!good) return json(403, { error: "signature" })
+  let m
+  try { m = JSON.parse(new TextDecoder().decode(raw)) } catch { return json(400, { error: "bad_request" }) }
+  if (m.expires_at && Date.parse(m.expires_at) < Date.now()) return json(400, { error: "expired" })
+  if (!env.NX_PROBE_SECRET) return json(503, { error: "not_configured" })
+  const publication = {
+    version: m.version, manifest_version: Number(m.manifest_version) || 0, manifest_sha256: hex(await crypto.subtle.digest("SHA-256", raw)),
+    issued_at: m.issued_at || m.published_at || null, expires_at: m.expires_at || null, release: m.release || m.channel || "stable", tag: String(a.tag || "").slice(0, 60),
+  }
+  const r = await rpc("nx_release_seen", { p_secret: env.NX_PROBE_SECRET, p_publication: publication })
+  statementCache = null
+  return json(r.ok ? 200 : 502, { ok: r.ok, stored: r.body === true, manifest_version: publication.manifest_version })
 }
 async function securityReport(req, env) {
   let a
@@ -287,6 +327,7 @@ export async function handleLicences(req, env) {
     if (p === "/security/manifest") return await securityManifest(env)
     if (req.method !== "POST") return json(405, { error: "method" })
     if (p === "/security/report") return await securityReport(req, env)
+    if (p === "/security/publication" && req.method === "POST") return await securityPublication(req, env)
     if (p === "/license/check") return await licenseCheck(req, env)
     if (p === "/pay/checkout") return await checkout(req, env)
     if (p === "/pay/portal") return await portal(req, env)

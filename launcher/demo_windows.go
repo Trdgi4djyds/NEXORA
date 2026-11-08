@@ -41,7 +41,7 @@ func init() {
 	case "chargement":
 		progress(-1, "Chargement de votre espace…")
 	case "telechargement":
-		progress(0.02+0.68*0.45, "Téléchargement de NEXORA 1.2.0 : 78 / 174 Mo")
+		progress(0.02+0.68*0.45, "Téléchargement : 78 / 174 Mo")
 	case "installation":
 		progress(0.85, "Installation de NEXORA…")
 	case "assistant-bienvenue":
@@ -49,7 +49,7 @@ func init() {
 	case "assistant-installation":
 		wz := newWizard()
 		p := wz.Progress(installProgressPage(false))
-		p.Set(0.02+0.68*0.62, "Téléchargement de NEXORA 1.2.0 : 108 / 174 Mo")
+		p.Set(0.02+0.68*0.62, "Téléchargement : 108 / 174 Mo")
 		time.Sleep(time.Hour)
 	case "assistant-termine":
 		page(installDonePage(false))

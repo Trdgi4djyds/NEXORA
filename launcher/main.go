@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -22,6 +23,11 @@ var version = "1.0.3" // remplacé à la construction : -ldflags "-X main.versio
 
 func main() {
 	args := os.Args[1:]
+	// NEXORA #084 : fin de la désinstallation, par une copie temporaire du lanceur (voir scheduleRemoval).
+	if len(args) == 3 && args[0] == "--cleanup" {
+		cleanupAfter(args[1], args[2])
+		return
+	}
 	mode := "run"
 	var pass []string
 	for _, a := range args {
@@ -256,4 +262,25 @@ func uninstall() error {
 		scheduleRemoval(l.Root)
 	}
 	return err
+}
+
+// cleanupAfter : attend la fin du lanceur (pid) puis supprime le dossier d'installation. Refuse tout autre dossier
+// que celui de NEXORA Devs Toolbox (un lien ou un argument détourné ne peut rien effacer d'autre).
+func cleanupAfter(root, pid string) {
+	if !strings.EqualFold(filepath.Clean(root), filepath.Clean(installRoot())) || filepath.Base(root) != productName {
+		return
+	}
+	_ = os.Chdir(os.TempDir()) // hors du dossier à supprimer
+	if n, err := strconv.Atoi(pid); err == nil {
+		waitProcess(n, 30*time.Second)
+	}
+	for i := 0; i < 20; i++ {
+		if os.RemoveAll(root) == nil {
+			if _, err := os.Stat(root); os.IsNotExist(err) {
+				break
+			}
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	selfDelete()
 }

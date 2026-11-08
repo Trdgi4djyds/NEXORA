@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 func installRoot() string {
@@ -44,6 +45,8 @@ func (c *consoleProgress) Close()          {}
 func register(Layout, *State, *Manifest) error      { return nil }
 func unregister(Layout)                             {}
 func scheduleRemoval(root string)                   { os.RemoveAll(root) }
+func waitProcess(int, time.Duration)                {}
+func selfDelete()                                   {}
 func detach(*exec.Cmd)                              {}
 func commandFor(p string, args ...string) *exec.Cmd { return exec.Command(p, args...) }
 

@@ -7,8 +7,10 @@
 #   notes.md      notes de la version (releaseNotes, texte d'installation du lanceur).
 # Branche publication-v<version> envoyée par git push (jeton avec le droit workflow) → l'action recolle le paquet,
 # contrôle SHA256SUMS.txt, crée la version sur main ; supprimer ensuite la branche.
-# NEXORA #082 : version déjà publiée (même version de NEXORA, nouveau lanceur ou nouveau manifeste) : fichiers
-# remplacés, manifeste et signature envoyés en dernier (le numéro de manifeste, croissant, empêche tout retour arrière).
+# NEXORA #082 : version déjà publiée : fichiers remplacés, manifeste et signature envoyés en dernier.
+# NEXORA #084 : à éviter : GitHub peut garder en cache une erreur (504) pour un fichier remplacé sous le même tag.
+# Utiliser un nouveau tag à chaque publication (branche publication-v1.2.0-r2 → tag v1.2.0-r2, marqué « Latest ») ;
+# le titre reprend la version du manifeste (« NEXORA 1.2.0 »).
 name: Publication NEXORA Devs Toolbox
 on:
   push:
@@ -29,11 +31,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${GITHUB_REF_NAME#publication-}"
+          TITLE="NEXORA $(jq -r .version publication/nexora.manifest.json)"
           cd publication
           FILES="$(ls | grep -v '^nexora\.manifest\.' | tr '\n' ' ') nexora.manifest.json nexora.manifest.sig"
           if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
             gh release upload "$VERSION" $FILES --repo "$GITHUB_REPOSITORY" --clobber
             gh release edit "$VERSION" --repo "$GITHUB_REPOSITORY" --notes-file ../notes.md
           else
-            gh release create "$VERSION" $FILES --repo "$GITHUB_REPOSITORY" --target main --title "NEXORA ${VERSION#v}" --notes-file ../notes.md
+            gh release create "$VERSION" $FILES --repo "$GITHUB_REPOSITORY" --target main --title "$TITLE" --latest --notes-file ../notes.md
           fi
+      # NEXORA #084 : le service de sécurité reçoit le manifeste signé (il le vérifie lui-même) et le garde : la
+      # déclaration ne dépend plus de la disponibilité de GitHub pour les adresses de Cloudflare.
+      - name: Prévenir le service de sécurité
+        continue-on-error: true
+        run: |
+          TAG="${GITHUB_REF_NAME#publication-}"
+          jq -n --arg m "$(base64 -w0 publication/nexora.manifest.json)" --arg s "$(tr -d '\n' < publication/nexora.manifest.sig)" --arg t "$TAG" '{manifest_b64: $m, sig: $s, tag: $t}' > corps.json
+          curl -sS --max-time 60 -X POST -H 'content-type: application/json' --data @corps.json https://nexora.abrahamtogbonon0.workers.dev/security/publication

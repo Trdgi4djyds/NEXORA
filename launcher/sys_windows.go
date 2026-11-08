@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 	"unicode/utf16"
 	"unsafe"
 )
@@ -367,10 +368,51 @@ func unregister(l Layout) {
 	pSHChangeNotify.Call(0x08000000, 0, 0, 0)
 }
 
+// scheduleRemoval : le lanceur ne peut pas se supprimer lui-même pendant qu'il tourne. NEXORA #084 : comme les
+// désinstallateurs Windows, une copie temporaire du lanceur attend sa fin puis supprime le dossier (--cleanup) ;
+// repli sur cmd.exe si la copie est impossible.
 func scheduleRemoval(root string) {
+	self, err := os.Executable()
+	tmp := filepath.Join(os.TempDir(), fmt.Sprintf("nexora-desinstallation-%d.exe", os.Getpid()))
+	if err == nil {
+		if b, rerr := os.ReadFile(self); rerr == nil && os.WriteFile(tmp, b, 0o755) == nil {
+			cmd := exec.Command(tmp, "--cleanup", root, fmt.Sprint(os.Getpid()))
+			cmd.Dir = os.TempDir() // jamais le dossier à supprimer (un dossier courant ne peut pas être effacé)
+			cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: detachedProc | newProcGroup}
+			if cmd.Start() == nil {
+				return
+			}
+		}
+	}
 	cmd := exec.Command("cmd.exe", "/c", "ping -n 4 127.0.0.1 >nul & rd /s /q \""+root+"\"")
+	cmd.Dir = os.TempDir()
 	cmd.SysProcAttr = &syscall.SysProcAttr{CreationFlags: createNoWin | detachedProc, HideWindow: true}
 	_ = cmd.Start()
+}
+
+var (
+	pOpenProcess         = kernel32.NewProc("OpenProcess")
+	pWaitForSingleObject = kernel32.NewProc("WaitForSingleObject")
+	pMoveFileEx          = kernel32.NewProc("MoveFileExW")
+)
+
+func waitProcess(pid int, max time.Duration) {
+	h, _, _ := pOpenProcess.Call(0x00100000, 0, uintptr(pid)) // SYNCHRONIZE
+	if h == 0 {
+		return // déjà terminé
+	}
+	defer pCloseHandle.Call(h)
+	pWaitForSingleObject.Call(h, uintptr(max/time.Millisecond))
+}
+
+// selfDelete : la copie temporaire est retirée par Windows au prochain redémarrage si elle ne peut pas l'être avant.
+func selfDelete() {
+	self, err := os.Executable()
+	if err != nil {
+		return
+	}
+	p, _ := syscall.UTF16PtrFromString(self)
+	pMoveFileEx.Call(uintptr(unsafe.Pointer(p)), 0, 4) // MOVEFILE_DELAY_UNTIL_REBOOT (ignoré sans droits)
 }
 
 func userDataDirs() DataDirs {
