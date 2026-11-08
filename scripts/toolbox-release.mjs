@@ -154,9 +154,9 @@ const manifest = {
   expires_at: new Date(issued.getTime() + days * 86400000).toISOString(),
   published_at: issued.toISOString(),
   exe: "NEXORA.exe",
-  // NEXORA #083 : lanceur 1.0.2 (fenêtres natives, icône) ; à partir de 1.0.2, un lanceur plus ancien que
-  // min_launcher se met à jour seul (les versions 1.0.0 et 1.0.1 n'appliquaient pas ce champ : à retélécharger).
-  min_launcher: "1.0.2",
+  // NEXORA #083 : à partir de 1.0.2, un lanceur plus ancien que min_launcher se met à jour seul (1.0.0 et 1.0.1
+  // n'appliquaient pas ce champ : à retélécharger). #084 : 1.0.3 (assistants, NEXORA reconstruit réinstallé).
+  min_launcher: "1.0.3",
   package: pkg,
   ...(launcher ? { launcher } : {}),
   files,

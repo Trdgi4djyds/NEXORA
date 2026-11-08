@@ -198,7 +198,9 @@ func StartupCheck(ctx context.Context, c *http.Client, l Layout, st *State, relK
 	if cerr != nil && st.Current != "" && !repair && !errors.Is(cerr, errExpired) {
 		return nil, &SecFail{Kind: "integrity", Message: "Échec du contrôle d’intégrité — Installation non authentifiée : " + cerr.Error() + ". NEXORA ne sera pas ouvert ; NEXORA Devs Toolbox peut réinstaller les fichiers officiels.", Detail: cerr.Error()}
 	}
-	if cerr != nil || CompareVersions(m.Version, st.Current) > 0 || (cur != nil && cur.ManifestVersion < stmt.MinManifestVersion) {
+	// NEXORA #084 : même numéro de version mais publication plus récente (NEXORA reconstruit) : réinstallée aussi.
+	newer := cur != nil && m.Version == cur.Version && m.ManifestVersion > cur.ManifestVersion
+	if cerr != nil || newer || CompareVersions(m.Version, st.Current) > 0 || (cur != nil && cur.ManifestVersion < stmt.MinManifestVersion) {
 		p := prog()
 		err := InstallRelease(ctx, c, l, st, rel, p)
 		p.Close()

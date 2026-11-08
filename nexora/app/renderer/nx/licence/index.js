@@ -14,24 +14,27 @@ let chip = null;
 let askedLogin = false;
 let wasTrial = false;
 
+// NEXORA #084 : textes réduits à l'essentiel (« Vérification de la licence », « Chargement de votre espace ») ; aucun
+// détail technique (fichiers, signatures, serveurs de sécurité) n'est montré : il reste dans le journal local.
 const TEXT = {
-  checking: ['Vérification de ta licence', 'NEXORA vérifie ta licence auprès de ses serveurs. Un instant…', 'shield'],
+  checking: ['Vérification de la licence', 'Chargement de votre espace…', 'shield'],
   auth: ['Connecte-toi pour ouvrir NEXORA', 'NEXORA Devs Toolbox s’utilise avec un compte NEXORA (gratuit). Ta licence est liée à ton compte : connecte-toi ou crée ton compte.', 'user'],
-  // NEXORA #077 : « Connexion perdue » réservé au réseau ; une installation modifiée est signalée comme telle.
-  offline: ['Connexion perdue', 'NEXORA vérifie sa licence et l’intégrité de ses fichiers auprès de ses serveurs à chaque ouverture. Vérifie ta connexion à Internet : NEXORA se rouvre dès que le contrôle est validé.', 'globe'],
-  server: ['Serveur de sécurité indisponible', '', 'cloud'],
-  integrity: ['Échec du contrôle d’intégrité — Installation non authentifiée', '', 'shield'],
-  manifest: ['Manifeste de sécurité expiré ou incohérent', '', 'shield'],
-  outdated: ['Version non autorisée', 'Cette version de NEXORA n’est plus autorisée. NEXORA Devs Toolbox installe la version à jour, vérifiée par signature.', 'download'],
-  rollback: ['Version non autorisée', '', 'download'],
+  offline: ['Connexion perdue', 'Impossible de joindre NEXORA. Vérifie ta connexion à Internet, puis réessaie.', 'globe'],
+  server: ['NEXORA est momentanément indisponible', 'Réessaie dans quelques minutes.', 'cloud'],
+  integrity: ['Échec du contrôle d’intégrité — Installation non authentifiée', 'NEXORA ne peut pas s’ouvrir : répare l’installation pour continuer.', 'shield'],
+  manifest: ['Vérification de la licence impossible', 'Vérifie la date et l’heure de Windows, puis réessaie.', 'shield'],
+  outdated: ['Version non autorisée', 'Mets NEXORA à jour pour continuer.', 'download'],
+  rollback: ['Version non autorisée', 'Mets NEXORA à jour pour continuer.', 'download'],
   device_limit: ['Trop d’ordinateurs pour cette licence', '', 'laptop'],
   device_accounts: ['Limite de comptes gratuits atteinte', '', 'group'],
   device_gmail: ['Limite d’adresses Gmail atteinte', '', 'group'],
   key_mismatch: ['Clé d’un autre compte', '', 'key'],
   revoked: ['Licence désactivée', '', 'lock'],
   device_blocked: ['Ordinateur non autorisé', '', 'lock'],
-  signature: ['Réponse non authentique', '', 'shield'],
+  signature: ['Vérification de la licence impossible', 'Réessaie dans un instant.', 'shield'],
 };
+// États techniques : texte fixe ci-dessus, jamais le message détaillé du serveur.
+const FIXED = new Set(['checking', 'offline', 'server', 'integrity', 'manifest', 'outdated', 'rollback', 'signature']);
 
 function remaining(t) {
   const ms = new Date(t).getTime() - Date.now();
@@ -46,7 +49,7 @@ function actions(s) {
   if (s.status === 'checking') return '<span class="spinner"></span>';
   if (s.status === 'auth') return button('login', 'Se connecter', 'user', true) + button('site', 'Créer mon compte et ma licence', 'globe');
   if (s.status === 'offline' || s.status === 'server') return button('retry', 'Réessayer', 'refreshCw', true) + button('quit', 'Quitter NEXORA', 'close');
-  if (s.status === 'integrity' || s.status === 'manifest') return button('repair', 'Réparer avec NEXORA Devs Toolbox', 'download', true) + button('quit', 'Quitter NEXORA', 'close');
+  if (s.status === 'integrity' || s.status === 'manifest') return button('repair', 'Réparer', 'download', true) + button('quit', 'Quitter NEXORA', 'close');
   if (s.status === 'outdated') return button('repair', 'Mettre à jour NEXORA', 'download', true) + button('quit', 'Quitter NEXORA', 'close');
   if (s.reason === 'device_limit') return button('site', 'Gérer mes ordinateurs', 'globe', true) + button('retry', 'Réessayer', 'refreshCw');
   const pro = ['device_accounts', 'device_gmail'].includes(s.reason) ? button('pro', 'Passer à Pro', 'nxCrown', true) : '';
@@ -64,7 +67,7 @@ function render() {
     box.addEventListener('click', onClick);
     box.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('[data-lic-key]')) { e.preventDefault(); saveKey(); } });
   }
-  const t = (['integrity', 'manifest', 'outdated', 'offline'].includes(st.status) ? TEXT[st.status] : null) || TEXT[st.reason] || TEXT[st.status] || ['NEXORA est verrouillé', '', 'lock'];
+  const t = (['integrity', 'manifest', 'outdated', 'offline', 'checking'].includes(st.status) ? TEXT[st.status] : null) || TEXT[st.reason] || TEXT[st.status] || ['NEXORA est verrouillé', '', 'lock'];
   const keyBox = ['blocked', 'auth'].includes(st.status)
     ? '<details class="nxl-key"><summary>J’ai une clé de licence</summary><div class="nxl-row"><input class="input" data-lic-key placeholder="NXDT-XXXX-XXXX-XXXX-XXXX" maxlength="24" spellcheck="false"><button type="button" class="btn" data-lic="key">Valider</button></div><small>Ta clé est sur le site de NEXORA, page « Ma licence ». Elle doit appartenir au compte connecté.</small></details>'
     : '';
@@ -74,19 +77,17 @@ function render() {
   const danger = ['integrity', 'manifest'].includes(st.status) || ['signature', 'revoked', 'device_blocked', 'key_mismatch'].includes(st.reason);
   const warn = ['offline', 'server', 'outdated'].includes(st.status);
   box.dataset.tone = danger ? 'danger' : warn ? 'warn' : '';
-  const text = String(st.message || t[1]).replace(/^Connexion perdue\s*:\s*/, '');
+  const fixed = FIXED.has(st.status) || FIXED.has(st.reason);
+  const text = fixed ? t[1] : String(st.message || t[1]);
   const shown = text.charAt(0).toUpperCase() + text.slice(1);
-  const kicker = danger || warn || st.status === 'checking' ? '<small class="nxl-kick">Contrôle de sécurité</small>' : '';
   box.innerHTML = `<div class="nxl-card">
-    <div class="nxl-brand"><img src="logo.svg" alt=""><span><b>NEXORA</b><small>Devs Toolbox</small></span></div>
+    <div class="nxl-brand"><img src="logo.png" alt=""><span><b>NEXORA</b><small>Devs Toolbox</small></span></div>
     <span class="nxl-ico">${ico(t[2], 26)}</span>
-    ${kicker}<h2>${esc(t[0])}</h2>
-    <p>${esc(shown)}</p>
+    <h2>${esc(t[0])}</h2>
+    ${shown ? `<p>${esc(shown)}</p>` : ''}
     ${who}
     <div class="nxl-acts">${actions(st)}</div>
     ${keyBox}
-    ${st.file ? `<p class="nxl-who">Fichier concerné : <b>${esc(st.file)}</b></p>` : ''}
-    <p class="nxl-foot">${ico('shield', 12)} Licence et fichiers vérifiés par signature à chaque ouverture · Internet obligatoire</p>
   </div>`;
   if (st.status === 'auth' && !askedLogin) { askedLogin = true; setTimeout(login, 400); }
 }

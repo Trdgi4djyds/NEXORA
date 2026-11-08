@@ -1904,7 +1904,8 @@ function demoPlanStatus(args = {}) {
   return {
     plan: id,
     plan_name: p.name,
-    admin: false,
+    // NEXORA #084 : NX_DEMO_OFFRE=admin : administrateur de NEXORA en offre Gratuite (accès total attendu).
+    admin: demoOffer() === "admin",
     org_id: organizations[0].id,
     view_org: organizations[0].id,
     org_plan: id,

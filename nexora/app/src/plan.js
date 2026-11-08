@@ -195,7 +195,7 @@ async function fromSubscriptions() {
       if (['active', 'trialing', 'past_due'].includes(s.status) && (rank[s.plan_id] || 0) > (rank[plan] || 0)) plan = s.plan_id;
     }
   }
-  if (plan !== 'free') plan = 'pro'; // NEXORA #076 : Standard, Team et Enterprise sont devenues Pro.
+  if (plan !== 'free' || admin) plan = 'pro'; // NEXORA #076 : Standard, Team et Enterprise sont devenues Pro ; #084 : administrateurs.
   return { plan, plan_name: NAME[plan] || plan, admin, perms: defaultPerms(plan), limits: {}, usage: {}, source: 'abonnement' };
 }
 
@@ -208,6 +208,8 @@ async function refresh(force = false) {
   try {
     const s = await call('POST', '/rest/v1/rpc/nx_plan_status', {});
     status = { ...s, source: 'serveur', at: Date.now() };
+    // NEXORA #084 : un administrateur de NEXORA a un accès total (toutes les fonctions, aucune limite).
+    if (status.admin) status = { ...status, plan: 'pro', plan_name: NAME.pro || 'Pro', perms: defaultPerms('pro') };
   } catch (e) {
     if (!(e instanceof Missing)) throw e;
     status = { ...(await fromSubscriptions()), at: Date.now() };

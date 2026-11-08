@@ -2,7 +2,7 @@
 // (écran virtuel Xvfb) : version de démonstration compilée avec l'étiquette nxdemo (launcher/demo_windows.go,
 // jamais publiée), un écran par lancement, image recadrée sur la fenêtre.
 //   node scripts/captures-lanceur.mjs [écrans…] [--label NNN-sujet] [--upload] [--dpi 144]
-// Écrans : demarrage telechargement installation integrite connexion version manifeste desinstallation erreur termine.
+// Écrans : voir ALL (assistants d’installation et de désinstallation, démarrage, écrans de sécurité, messages).
 // Environnement HORS du dépôt (aucun droit d'administrateur), décrit par un fichier shell (NX_WINE_ENV, défaut
 // /tmp/wenv.sh) qui exporte PATH, LD_LIBRARY_PATH, WINEPREFIX et DISPLAY :
 //   - Wine 11 « wow64 » portable (github.com/Kron4ek/Wine-Builds), Xvfb, xwd, ImageMagick et xdotool extraits des
@@ -15,7 +15,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { ROOT } from "../preview/server.mjs"
 
-const ALL = ["demarrage", "telechargement", "installation", "integrite", "connexion", "version", "manifeste", "desinstallation", "erreur", "termine"]
+const ALL = ["assistant-bienvenue", "assistant-installation", "assistant-termine", "assistant-erreur", "demarrage", "chargement", "telechargement", "integrite", "connexion", "version", "desinstallation", "desinstallation-progression", "desinstallation-ouvert", "desinstallation-terminee", "erreur"]
 const args = process.argv.slice(2)
 const opt = (n) => (args.includes(n) ? args[args.indexOf(n) + 1] : "")
 const label = opt("--label") || "lanceur"
@@ -49,7 +49,7 @@ for (const s of screens.length ? screens : ALL) {
     continue
   }
   const file = path.join(dir, `${s}${dpi !== 96 ? `-${dpi}dpi` : ""}.png`)
-  sh(`wineserver -k 2>/dev/null; sleep 1; (wine '${exe}' --demo=${s} >/dev/null 2>&1 &); sleep ${s === "demarrage" ? 7.7 : 7}; xwd -root -silent | convert-im7.q16 xwd:- -fuzz 1% -trim +repage -bordercolor '#e2e4e9' -border 40 '${file}'; wineserver -k 2>/dev/null`)
+  sh(`wineserver -k 2>/dev/null; sleep 1; (wine '${exe}' --demo=${s} >/dev/null 2>&1 &); sleep ${["demarrage", "chargement"].includes(s) ? 7.7 : 7}; xwd -root -silent | convert-im7.q16 xwd:- -fuzz 1% -trim +repage -bordercolor '#e2e4e9' -border 40 '${file}'; wineserver -k 2>/dev/null`)
   if (fs.existsSync(file) && fs.statSync(file).size > 1000) {
     out.push(file)
     console.log(`Capture : ${path.relative(ROOT, file)}`)

@@ -188,6 +188,18 @@ const minev = (await as(21, "select nx_license_mine() as r"))[0].r
 ok(minev.granted && minev.granted_until && minev.max_devices === 5, "Site : licence attribuée et limite d’ordinateurs affichées", minev)
 await db.exec(`update nx_licenses set override_until = now() - interval '1 minute' where user_id = '${id(21)}'`)
 ok((await check9(21, D5)).plan === "free", "Licence attribuée expirée : retour à l’offre Gratuite")
+// NEXORA #084 : accès total des administrateurs (offre effective Pro, quelle que soit leur licence), rejouable.
+const M4 = mig("20261108000004_acces_administrateurs.sql")
+await db.exec(M4)
+await db.exec(M4)
+await check9(20, "8".repeat(64))
+await db.exec(`update nx_licenses set trial_ends_at = now() - interval '1 minute' where user_id = '${id(20)}'`)
+const adm = await check9(20, "8".repeat(64))
+ok(adm.ok && adm.plan === "pro" && adm.admin && !adm.trial && Object.values(adm.perms).every(Boolean), "Administrateur : accès total (offre Pro, toutes les fonctions) sans essai ni abonnement", adm)
+ok((await check9(21, D5)).plan === "free", "Compte simple : offre inchangée par l’accès des administrateurs")
+let leak = false
+try { await as(21, `select nx_is_admin_uid('${id(20)}')`) } catch { leak = true }
+ok(leak, "Administrateurs : un compte ne peut pas savoir qui est administrateur")
 await asAdmin("select nx_admin_license_grant('eleve@ecole.ci', 'pro', null, '', null)")
 ok((await check9(21, D5)).plan === "pro", "Licence attribuée sans date de fin")
 await asAdmin("select nx_admin_license_grant('pro@exemple.ci', 'free', 7, 'Suspendu 7 jours', null)")

@@ -41,7 +41,7 @@ fs.writeFileSync(path.join(L, "assets", "logo.png"), png)
 const NAMES = {
   shieldCheck: "shield-check", shieldAlert: "shield-alert", wifiOff: "wifi-off", serverOff: "server-off",
   fileWarning: "file-warning", arrowUpCircle: "circle-arrow-up", trash: "trash-2", x: "x", check: "check",
-  info: "info", alert: "triangle-alert", circleX: "circle-x", download: "download", refresh: "refresh-cw",
+  info: "info", alert: "triangle-alert", circleX: "circle-x", circleCheck: "circle-check", download: "download", refresh: "refresh-cw",
 }
 const require = createRequire(import.meta.url)
 let SET

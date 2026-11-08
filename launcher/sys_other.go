@@ -41,7 +41,6 @@ func (c *consoleProgress) Set(f float64, msg string) {
 func (c *consoleProgress) Cancelled() bool { return false }
 func (c *consoleProgress) Close()          {}
 
-func askUninstall() (UninstallChoice, bool)         { return UninstallChoice{}, true }
 func register(Layout, *State, *Manifest) error      { return nil }
 func unregister(Layout)                             {}
 func scheduleRemoval(root string)                   { os.RemoveAll(root) }
@@ -68,3 +67,24 @@ func securityScreen(kind, title, msg string, actions []string) string {
 	fmt.Fprintf(os.Stderr, "[%s] %s\n%s\n", kind, title, msg)
 	return securityChoice
 }
+
+// Hors Windows (essais) : assistant automatique (bouton principal, cases par défaut), écrit dans la console.
+type autoWizard struct{}
+
+func newWizard() Wizard { return autoWizard{} }
+
+func (autoWizard) Page(p wizPage) (string, []bool) {
+	fmt.Println(p.title)
+	opts := make([]bool, len(p.options))
+	for i, o := range p.options {
+		opts[i] = o.checked
+	}
+	for _, b := range p.buttons {
+		if b.style == "primary" || b.style == "danger" {
+			return b.id, opts
+		}
+	}
+	return p.cancel, opts
+}
+func (autoWizard) Progress(p wizPage) Progress { fmt.Println(p.title); return &consoleProgress{} }
+func (autoWizard) Close()                      {}

@@ -112,6 +112,10 @@ func fetchSmall(ctx context.Context, c *http.Client, raw string, max int64, hdr 
 		return nil, err
 	}
 	defer res.Body.Close()
+	if res.StatusCode >= 500 || res.StatusCode == http.StatusTooManyRequests {
+		// NEXORA #084 : serveur indisponible ou saturé : problème de connexion, pas une publication incohérente.
+		return nil, fmt.Errorf("%w : réponse %d de %s", errOffline, res.StatusCode, hostOf(raw))
+	}
 	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("réponse %d de %s", res.StatusCode, hostOf(raw))
 	}
@@ -163,6 +167,9 @@ func latestDirect(ctx context.Context, c *http.Client, repo string, key ed25519.
 	io.Copy(io.Discard, io.LimitReader(res.Body, 64<<10))
 	res.Body.Close()
 	loc := res.Header.Get("Location")
+	if res.StatusCode >= 500 || res.StatusCode == http.StatusTooManyRequests {
+		return nil, fmt.Errorf("%w : réponse %d de %s", errOffline, res.StatusCode, hostOf(first))
+	}
 	if res.StatusCode < 300 || res.StatusCode > 399 || loc == "" {
 		return nil, fmt.Errorf("réponse %d de %s", res.StatusCode, hostOf(first)) // 404 : aucune publication
 	}

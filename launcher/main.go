@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-var version = "1.0.2" // remplacé à la construction : -ldflags "-X main.version=…" (1.0.2 : fenêtres natives et icône, #083)
+var version = "1.0.3" // remplacé à la construction : -ldflags "-X main.version=…" (1.0.3 : assistants d’installation et de désinstallation, #084)
 
 func main() {
 	args := os.Args[1:]
@@ -81,6 +81,22 @@ func run(update, repair bool, pass []string) error {
 	if err != nil {
 		return err
 	}
+	// NEXORA #084 : exécutable téléchargé (hors de son dossier d'installation) : assistant d'installation.
+	if !update && !repair && !runningInstalled(l) {
+		return runInstaller(installEnv{
+			layout: l, client: httpClient(), relKey: relKey, licKey: licKey, repo: repo(), wizard: newWizard(),
+			selfInstall: selfInstall, register: register,
+			launch: func(l Layout, st State, m *Manifest) error { return launch(l, st, m, pass) },
+			updateLauncher: func(rel *Release) error {
+				if err := updateSelf(l, rel); err != nil {
+					return fmt.Errorf("mise à jour du lanceur impossible : %v", err)
+				}
+				releaseInstance()
+				releaseInstance = func() {}
+				return relaunchSelf(l, os.Args[1:])
+			},
+		})
+	}
 	if err := selfInstall(l); err != nil {
 		return fmt.Errorf("installation du lanceur impossible : %v", err)
 	}
@@ -93,7 +109,7 @@ func run(update, repair bool, pass []string) error {
 		// NEXORA #083 : fenêtre ouverte dès le double-clic (aucun temps mort), gardée pendant le téléchargement et
 		// l'installation, fermée quand NEXORA démarre ; la fermer annule.
 		win := newProgress(productName)
-		win.Set(-1, "Contrôle de sécurité de NEXORA…")
+		win.Set(-1, "Vérification de la licence…")
 		cur, err := StartupCheck(context.Background(), c, l, &st, relKey, licKey, repo(), repair, func() Progress {
 			return keepOpen{win}
 		})
@@ -106,7 +122,7 @@ func run(update, repair bool, pass []string) error {
 				win.Close()
 				showWarning("Les raccourcis ou l’entrée de désinstallation n’ont pas pu être créés : " + rerr.Error())
 			} else {
-				win.Set(-1, "Ouverture de NEXORA…")
+				win.Set(-1, "Chargement de votre espace…")
 			}
 			lerr := launch(l, st, cur, pass)
 			win.Close()
@@ -234,28 +250,10 @@ func relaunchSelf(l Layout, args []string) error {
 
 func uninstall() error {
 	l := layout()
-	ch, ok := askUninstall()
-	if !ok {
-		return errCancelled
+	err := runUninstaller(uninstallEnv{layout: l, wizard: newWizard(), dataDirs: userDataDirs(), unregister: unregister})
+	if err == nil {
+		// Après la fermeture de l'assistant (le lanceur ne peut pas se supprimer lui-même pendant qu'il tourne).
+		scheduleRemoval(l.Root)
 	}
-	// NEXORA encore ouvert : ses fichiers sont verrouillés par Windows.
-	if err := os.Rename(l.AppDir, l.AppDir+".removing"); err != nil && !os.IsNotExist(err) {
-		return errors.New("NEXORA est encore ouvert : ferme-le, puis relance la désinstallation")
-	}
-	unregister(l)
-	failed := RemoveData(userDataDirs(), ch)
-	os.RemoveAll(l.AppDir + ".removing")
-	os.RemoveAll(l.Downloads)
-	os.Remove(l.StateFile)
-	msg := "NEXORA Devs Toolbox a été désinstallé."
-	if !ch.Documents || !ch.Settings || !ch.Library {
-		msg += " Ce que tu as choisi de garder est resté en place ; une réinstallation le retrouvera."
-	}
-	if len(failed) > 0 {
-		msg += "\n\nCertains dossiers n’ont pas pu être supprimés :\n" + strings.Join(failed, "\n")
-	}
-	showDone("Désinstallation terminée", msg)
-	// NEXORA #083 : après la fermeture du message (le lanceur ne peut pas se supprimer lui-même pendant qu'il tourne).
-	scheduleRemoval(l.Root)
-	return nil
+	return err
 }

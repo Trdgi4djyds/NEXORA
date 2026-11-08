@@ -180,10 +180,11 @@ async function runCheck(reason) {
   const first = state.status !== 'ok';
   const latest = p.publication && p.publication.version;
   set({
-    status: 'ok', reason: '', message: '', plan: p.plan, plan_name: p.plan_name, paid_plan: p.paid_plan, trial: Boolean(p.trial),
+    // NEXORA #084 : un administrateur de NEXORA a un accès total (toutes les fonctions, quelle que soit son offre).
+    status: 'ok', reason: '', message: '', plan: p.admin ? 'pro' : p.plan, plan_name: p.admin ? 'Pro' : p.plan_name, paid_plan: p.paid_plan, trial: Boolean(p.trial) && !p.admin,
     trial_ends_at: p.trial_ends_at, trial_refused: Boolean(p.trial_refused), license_key: p.license_key, email: p.email, admin: Boolean(p.admin),
     granted: Boolean(p.granted), granted_until: p.granted_until || null,
-    session_id: p.session_id, perms: p.perms, ip: p.ip, checked: reason,
+    session_id: p.session_id, perms: p.admin ? Object.fromEntries(Object.keys(p.perms || {}).map((k) => [k, true])) : p.perms, ip: p.ip, checked: reason,
     update_available: latest && newer(latest, opts.app.getVersion()) ? latest : '',
   });
   if (first) log('info', 'licence_ok', { plan: p.plan, trial: Boolean(p.trial), version: opts.app.getVersion(), files: integ.files || 0 });

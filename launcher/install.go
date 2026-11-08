@@ -54,6 +54,9 @@ type State struct {
 	Registered    string `json:"registered,omitempty"`    // version du lanceur qui a posé raccourcis et registre
 	LastManifest  int64  `json:"last_manifest,omitempty"` // NEXORA #077 : dernier numéro de manifeste accepté (retours en arrière refusés)
 	RegisteredFor string `json:"registered_for,omitempty"`
+	// NEXORA #084 : choix de l'assistant d'installation (raccourcis du Bureau et du menu Démarrer).
+	NoDesktop   bool `json:"no_desktop,omitempty"`
+	NoStartMenu bool `json:"no_start_menu,omitempty"`
 }
 
 func loadState(l Layout) State {
@@ -119,16 +122,16 @@ func InstallRelease(ctx context.Context, c *http.Client, l Layout, st *State, re
 	zipPath := filepath.Join(l.Downloads, m.Package.Name)
 	p.Set(0.02, fmt.Sprintf("Téléchargement de NEXORA %s…", m.Version))
 	err := Download(ctx, c, a.URL, zipPath, m.Package, func(got, total int64) {
-		p.Set(0.02+0.68*float64(got)/float64(max64(total, 1)), fmt.Sprintf("Téléchargement de NEXORA %s : %d / %d Mo", m.Version, got>>20, total>>20))
+		p.Set(0.02+0.68*float64(got)/float64(max64(total, 1)), fmt.Sprintf("Téléchargement : %d / %d Mo", got>>20, total>>20))
 	}, p.Cancelled)
 	if err != nil {
 		return err
 	}
-	p.Set(0.71, "Vérification de la signature et des empreintes…")
+	p.Set(0.71, "Vérification…")
 	staging := l.versionDir(m.Version) + ".staging"
 	os.RemoveAll(staging)
 	if err := ExtractZip(zipPath, staging, m.Files, func(done, total int64) {
-		p.Set(0.72+0.24*float64(done)/float64(max64(total, 1)), "Installation et vérification de chaque fichier…")
+		p.Set(0.72+0.24*float64(done)/float64(max64(total, 1)), "Installation de NEXORA…")
 	}, p.Cancelled); err != nil {
 		os.RemoveAll(staging)
 		if errors.Is(err, errCancelled) {

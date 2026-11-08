@@ -128,18 +128,6 @@ func securityScreen(kind, title, msg string, actions []string) string {
 	return "quit"
 }
 
-// askUninstall : ce que l'utilisateur veut aussi supprimer ; faux s'il annule.
-func askUninstall() (UninstallChoice, bool) {
-	a, opts, ok := runDialog(uninstallSpec())
-	if !ok {
-		return UninstallChoice{}, true // aucune fenêtre possible : on garde toutes les données
-	}
-	if a != "ok" || len(opts) != 3 {
-		return UninstallChoice{}, false
-	}
-	return UninstallChoice{Documents: opts[0], Settings: opts[1], Library: opts[2]}, true
-}
-
 // ---------------------------------------------------------------- registre (HKCU, sans reg.exe)
 func utf16z(s string) []uint16 { return utf16.Encode([]rune(s + "\x00")) }
 
@@ -280,12 +268,26 @@ func startMenuDir() string {
 	return filepath.Join(os.Getenv("APPDATA"), "Microsoft", "Windows", "Start Menu", "Programs")
 }
 
+// shortcuts : raccourcis du Bureau et du menu Démarrer (tous les deux, pour les retirer).
 func shortcuts() []string {
 	home, _ := os.UserHomeDir()
 	return []string{
 		filepath.Join(shellFolder("Desktop", filepath.Join(home, "Desktop")), productName+".lnk"),
 		filepath.Join(startMenuDir(), productName+".lnk"),
 	}
+}
+
+// wantedShortcuts : raccourcis choisis dans l'assistant d'installation (#084).
+func wantedShortcuts(st *State) (want, drop []string) {
+	all := shortcuts()
+	for i, lnk := range all {
+		if (i == 0 && st.NoDesktop) || (i == 1 && st.NoStartMenu) {
+			drop = append(drop, lnk)
+		} else {
+			want = append(want, lnk)
+		}
+	}
+	return want, drop
 }
 
 func dirSizeKB(root string) int64 {
@@ -306,7 +308,11 @@ func register(l Layout, st *State, m *Manifest) error {
 	}
 	icon := filepath.Join(l.versionDir(m.Version), filepath.FromSlash(m.Exe))
 	var errs []string
-	for _, lnk := range shortcuts() {
+	want, drop := wantedShortcuts(st)
+	for _, lnk := range drop {
+		os.Remove(lnk)
+	}
+	for _, lnk := range want {
 		_ = os.MkdirAll(filepath.Dir(lnk), 0o755)
 		if err := createShortcut(lnk, l.Launcher, l.Root, icon, "Ouvre NEXORA après vérification"); err != nil {
 			errs = append(errs, err.Error())

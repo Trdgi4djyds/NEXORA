@@ -135,7 +135,7 @@ import{b as Y}from"./chunk-QDKEB2AU.js";import{a as D}from"./chunk-W2YYTHPL.js";
           <button class="dk-proj" data-act="recent" title="Projets r\xE9cents">${h("folder",15)}<b class="dk-proj-name">Aucun projet</b>${h("chevronDown",12)}</button>
           <button class="btn small" data-act="open">${h("folderOpen",14)}<span>Ouvrir</span></button>
           <button class="btn small" data-act="new">${h("plus",14)}<span>Nouveau</span></button>
-          <button class="btn small" data-act="clone">${h("download",14)}<span>Depuis un dépôt</span></button>           <button class="btn small" data-nx-tools title="Outils de d\xE9veloppement : d\xE9tection et installation automatiques">${h("wrench",14)}<span>Outils</span></button>
+          <button class="btn small" data-act="clone">${h("download",14)}<span>Depuis un dépôt</span></button>           <button class="btn small" data-nx-tools title="Mettre \xE0 jour les biblioth\xE8ques">${h("wrench",14)}<span>Biblioth\xE8ques</span></button>
           <span class="dk-sp"></span>
           <div class="seg dk-mode" role="radiogroup" title="\xC9diteur">
             <button data-mode="vitrine" class="${this.st.mode!=="vscode"?"on":""}">${h("code",13)}<span>\xC9diteur</span></button>

@@ -55,7 +55,7 @@ function quick() {
   const items = [
     ['compte', user ? avatar(p.id ? p : { email: user.email, id: user.id }, 36) : `<span class="nxr-q-ic">${ico('cloud', 18)}</span>`, user ? 'Mon compte' : 'Connexion', user ? 'Profil, sécurité, équipe et offre' : 'Retrouve tes projets sur le web et sur Windows'],
     ['ia', `<span class="nxr-q-ic">${ico('sparkle', 18)}</span>`, 'Assistant IA', 'Connecte ta clé API et choisis l’IA active'],
-    ['outils', `<span class="nxr-q-ic">${ico('download', 18)}</span>`, 'NEX-OUTILS', 'Préparer ou mettre à jour les outils'],
+    ['outils', `<span class="nxr-q-ic">${ico('download', 18)}</span>`, 'NEX-OUTILS', 'Mettre à jour les bibliothèques'],
     ['maint', `<span class="nxr-q-ic">${ico('shield', 18)}</span>`, 'Maintenance', 'Sauvegarde, mises à jour, mode léger'],
   ];
   return `<div class="nxr-quick">${items.map(([go, media, title, sub]) => `<button type="button" class="nxc-card nxr-q" data-go="${go}">${media}<span class="nxr-q-txt"><b>${title}</b><small>${sub}</small></span>${ico('chevronRight', 14)}</button>`).join('')}</div>`;

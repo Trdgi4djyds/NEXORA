@@ -20,6 +20,16 @@ function guest() {
 }
 
 export const current = () => last || guest();
+
+// NEXORA #084 : un administrateur de NEXORA a un accès total, quelle que soit son offre : toutes les fonctions et
+// aucune limite (le serveur ne le limite déjà pas : nx_use_feature, déclencheurs des limites).
+export function adminAccess(s) {
+  if (!s || !s.admin) return s;
+  const all = (o) => Object.fromEntries(Object.keys(o || {}).map((k) => [k, true]));
+  const free = (o) => Object.fromEntries(Object.keys(o || {}).map((k) => [k, -1]));
+  const pro = FALLBACK.pro;
+  return { ...s, plan: 'pro', plan_name: pro.name, perms: all({ ...pro.perms, ...(s.perms || {}) }), limits: free({ ...pro.limits, ...(s.limits || {}) }), org_limits: free({ ...pro.limits, ...(s.org_limits || {}) }) };
+}
 export function can(perm) {
   const s = current();
   return !perm || s.admin || !!(s.perms && s.perms[perm]);
@@ -42,6 +52,7 @@ export async function status(force = false) {
       s = { plan: def.id, plan_name: def.name, admin: cloud.isAdmin, perms: def.perms, limits: def.limits, org_limits: def.limits, usage, source: error && !missing(error) ? 'hors-ligne' : 'abonnement' };
     }
     s.plan = normPlan(s.plan);
+    s = adminAccess(s);
     s.uid = cloud.user.id;
     s.view = cloud.orgId;
     last = s;

@@ -114,6 +114,9 @@ const (
 	ctlClose        = 3
 	animInterval    = 33
 	progressLogical = 520
+	wizardW         = 640
+	wizardH         = 480
+	dtPathEllipsis  = 0x4000
 )
 
 type wPoint struct{ X, Y int32 }
@@ -192,6 +195,11 @@ type uiCtrl struct {
 	label      string
 }
 
+type wizChoice struct {
+	id   string
+	opts []bool
+}
+
 type uiText struct {
 	px, weight int
 	col        rgb
@@ -205,6 +213,9 @@ type uiWin struct {
 	hwnd     uintptr
 	mu       sync.Mutex
 	progress bool
+	wizard   bool           // #084 : assistant d'installation ou de désinstallation
+	page     wizPage        // page affichée par l'assistant
+	choice   chan wizChoice // choix de l'utilisateur sur une page de l'assistant
 	spec     uiSpec
 	opts     []bool
 	result   string
@@ -296,7 +307,9 @@ func (w *uiWin) setDPI(dpi int) {
 }
 
 func (w *uiWin) layout() {
-	if w.progress {
+	if w.wizard {
+		w.layoutWizard()
+	} else if w.progress {
 		w.layoutProgress()
 	} else {
 		w.layoutDialog()
@@ -365,7 +378,7 @@ func (w *uiWin) open() bool {
 	pShowWindow.Call(hwnd, 5)
 	pSetForegroundWindow.Call(hwnd)
 	pUpdateWindow.Call(hwnd)
-	if w.progress {
+	if w.progress || w.wizard {
 		pSetTimer.Call(hwnd, 1, animInterval, 0)
 	}
 	return true
@@ -575,6 +588,10 @@ func (w *uiWin) setHover(i int) {
 }
 
 func (w *uiWin) cancel() {
+	if w.wizard {
+		w.wizardChoose(w.page.cancel)
+		return
+	}
 	if w.progress {
 		w.cancelled.Store(true)
 	}
@@ -591,12 +608,34 @@ func (w *uiWin) activate(i int) {
 	case ctlClose:
 		w.cancel()
 	case ctlButton:
+		if w.wizard {
+			w.wizardChoose(c.id)
+			return
+		}
 		if w.progress { // seul bouton : Annuler
 			w.cancel()
 			return
 		}
 		w.result = c.id
 		pDestroyWindow.Call(w.hwnd)
+	}
+}
+
+// wizardChoose : sur une page de progression, demande l'annulation ; sinon transmet le choix à l'assistant.
+func (w *uiWin) wizardChoose(id string) {
+	if w.page.progress {
+		if !w.cancelled.Load() && len(w.page.buttons) > 0 {
+			w.cancelled.Store(true)
+			w.mu.Lock()
+			w.msg = "Annulation…"
+			w.mu.Unlock()
+			pInvalidateRect.Call(w.hwnd, 0, 0)
+		}
+		return
+	}
+	select {
+	case w.choice <- wizChoice{id, append([]bool(nil), w.opts...)}:
+	default:
 	}
 }
 
@@ -752,9 +791,9 @@ func (w *uiWin) layoutProgress() {
 	w.ctrls, w.texts, w.g = nil, nil, map[string]float64{}
 	w.ctrls = append(w.ctrls, uiCtrl{kind: ctlClose, id: "cancel", x: W - w.px(44), y: w.px(8), w: w.px(36), h: w.px(36)})
 	w.text(20, 600, colInk, w.px(104), w.px(34), W-w.px(150), w.px(30), dtSingleLine|dtEndEllipsis, productName)
-	sub := "Démarrage sécurisé"
+	sub := "Démarrage"
 	if w.target >= 0 {
-		sub = "Installation sécurisée de NEXORA"
+		sub = "Mise à jour de NEXORA"
 	}
 	w.text(13.5, 400, colMuted, w.px(104), w.px(64), W-w.px(150), w.px(22), dtSingleLine|dtEndEllipsis, sub)
 	w.text(14, 400, colInk, pad, w.px(116), W-2*pad-w.px(64), w.px(22), dtSingleLine|dtEndEllipsis, w.msg)
@@ -770,12 +809,9 @@ func (w *uiWin) layoutProgress() {
 			}
 			w.text(12.5, map[bool]int{true: 600, false: 400}[i == stage], col, pad+float64(i)*sw+w.px(24), w.px(168), sw-w.px(26), w.px(20), dtSingleLine|dtVCenter|dtEndEllipsis, name)
 		}
-	} else {
-		w.text(12.5, 400, colMuted, pad, w.px(168), W-2*pad, w.px(20), dtSingleLine|dtVCenter|dtEndEllipsis, "Licence, signature de la publication et intégrité de chaque fichier")
 	}
 	foot := w.px(214)
 	w.g["footY"] = foot
-	w.text(12.5, 400, colMuted, pad+w.px(26), foot, W-2*pad-w.px(26)-w.px(130), w.px(64), dtSingleLine|dtVCenter|dtEndEllipsis, "Signature et empreintes de chaque fichier vérifiées")
 	lw, _ := w.measure(14, 600, "Annuler", 0)
 	bw := math.Max(w.px(104), lw+w.px(40))
 	w.ctrls = append(w.ctrls, uiCtrl{kind: ctlButton, id: "cancel", style: "secondary", label: "Annuler", x: W - pad - bw, y: foot + w.px(14), w: bw, h: w.px(36)})
@@ -799,7 +835,9 @@ func (w *uiWin) paint(hdc uintptr) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	pGdiFlush.Call()
-	if w.progress {
+	if w.wizard {
+		w.layoutWizard()
+	} else if w.progress {
 		w.layoutProgress()
 	}
 	if w.bw != w.W || w.bh != w.H || w.bmp == 0 {
@@ -818,15 +856,18 @@ func (w *uiWin) paint(hdc uintptr) {
 	}
 	c := &canvas{w.W, w.H, unsafe.Slice((*byte)(w.bits), w.W*w.H*4)}
 	c.fill(colBg)
-	foot := int(w.g["footY"])
-	c.fillRect(0, foot, w.W, w.H, colFooter)
-	c.fillRect(0, foot, w.W, foot+int(math.Max(1, math.Round(w.s))), colLine)
-	// Filet de la marque en haut de la fenêtre.
-	accent := int(math.Max(2, w.px(3)))
-	for x := 0; x < w.W; x++ {
-		c.fillRect(x, 0, x+1, accent, gradBrand(float64(x)/float64(max(w.W-1, 1))))
+	foot, fx := int(w.g["footY"]), int(w.g["footX"])
+	c.fillRect(fx, foot, w.W, w.H, colFooter)
+	c.fillRect(fx, foot, w.W, foot+int(math.Max(1, math.Round(w.s))), colLine)
+	if !w.wizard { // filet de la marque en haut de la fenêtre (l'assistant a sa colonne)
+		accent := int(math.Max(2, w.px(3)))
+		for x := 0; x < w.W; x++ {
+			c.fillRect(x, 0, x+1, accent, gradBrand(float64(x)/float64(max(w.W-1, 1))))
+		}
 	}
-	if w.progress {
+	if w.wizard {
+		w.paintWizard(c)
+	} else if w.progress {
 		w.paintProgress(c)
 	} else {
 		w.paintDialog(c)
@@ -898,8 +939,6 @@ func (w *uiWin) paintProgress(c *canvas) {
 			}
 		}
 	}
-	s := int(w.px(16))
-	c.icon("shieldCheck", int(pad), int(w.g["footY"]+w.px(32))-s/2, s, 2, colGreen)
 }
 
 // paintControls dessine boutons, cases et croix ; renvoie les libellés des boutons, écrits ensuite par GDI.
@@ -972,4 +1011,280 @@ func (w *uiWin) paintControls(c *canvas) []uiText {
 		}
 	}
 	return texts
+}
+
+// ---------------------------------------------------------------- assistant (#084)
+type winWizard struct {
+	w    *uiWin
+	done chan struct{}
+}
+
+type wizProgress struct{ z *winWizard }
+
+// fallbackWizard : aucune fenêtre possible (session sans bureau) : choix par défaut, sans affichage.
+type fallbackWizard struct{}
+
+func (fallbackWizard) Page(p wizPage) (string, []bool) {
+	opts := make([]bool, len(p.options))
+	for i, o := range p.options {
+		opts[i] = o.checked
+	}
+	for _, b := range p.buttons {
+		if b.style == "primary" || b.style == "danger" {
+			return b.id, opts
+		}
+	}
+	return p.cancel, opts
+}
+func (fallbackWizard) Progress(wizPage) Progress { return nopProgress{} }
+func (fallbackWizard) Close()                    {}
+
+func newWizard() Wizard {
+	z := &winWizard{done: make(chan struct{})}
+	ready := make(chan bool, 1)
+	go func() {
+		runtime.LockOSThread()
+		defer close(z.done)
+		w := &uiWin{wizard: true, choice: make(chan wizChoice, 1), target: -1}
+		if !w.open() {
+			ready <- false
+			return
+		}
+		z.w = w
+		ready <- true
+		uiLoop()
+	}()
+	select {
+	case ok := <-ready:
+		if !ok {
+			return fallbackWizard{}
+		}
+	case <-time.After(5 * time.Second):
+		return fallbackWizard{}
+	}
+	return z
+}
+
+func (z *winWizard) show(p wizPage) {
+	w := z.w
+	w.mu.Lock()
+	w.page = p
+	w.opts = make([]bool, len(p.options))
+	for i, o := range p.options {
+		w.opts[i] = o.checked
+	}
+	w.target, w.shown, w.msg = -1, 0, ""
+	w.focus, w.press, w.kbd = -1, -1, false
+	w.cancelled.Store(false)
+	w.started = time.Now()
+	select {
+	case <-w.choice:
+	default:
+	}
+	w.mu.Unlock()
+	pPostMessage.Call(w.hwnd, wmAppUpdate, 0, 0)
+}
+
+func (z *winWizard) Page(p wizPage) (string, []bool) {
+	z.show(p)
+	select {
+	case c := <-z.w.choice:
+		return c.id, c.opts
+	case <-z.done:
+		return p.cancel, nil
+	}
+}
+
+func (z *winWizard) Progress(p wizPage) Progress {
+	p.progress = true
+	z.show(p)
+	return wizProgress{z}
+}
+
+func (z *winWizard) Close() {
+	pPostMessage.Call(z.w.hwnd, wmAppClose, 0, 0)
+	select {
+	case <-z.done:
+	case <-time.After(3 * time.Second):
+	}
+}
+
+func (p wizProgress) Set(f float64, msg string) {
+	w := p.z.w
+	w.mu.Lock()
+	if f >= 0 && w.target < 0 {
+		w.shown = 0
+	}
+	w.target = f
+	if !w.cancelled.Load() {
+		w.msg = msg
+	}
+	w.mu.Unlock()
+	pPostMessage.Call(w.hwnd, wmAppUpdate, 0, 0)
+}
+func (p wizProgress) Cancelled() bool { return p.z.w.cancelled.Load() }
+func (p wizProgress) Close()          {}
+
+func (w *uiWin) layoutWizard() {
+	p := w.page
+	W, H := w.px(wizardW), w.px(wizardH)
+	side := w.px(212)
+	w.ctrls, w.texts, w.g = nil, nil, map[string]float64{"footX": side}
+	soft := hexc("#f1e6ff")
+	// Colonne : marque, étapes, version.
+	w.text(18, 700, colBg, w.px(28), w.px(102), side-w.px(40), w.px(26), dtSingleLine, "NEXORA")
+	w.text(13, 400, soft, w.px(28), w.px(128), side-w.px(40), w.px(20), dtSingleLine, "Devs Toolbox")
+	for i, name := range p.steps {
+		col, wt := soft, 400
+		if i == p.step {
+			col, wt = colBg, 600
+		}
+		w.text(13.5, wt, col, w.px(60), w.px(188)+float64(i)*w.px(44), side-w.px(70), w.px(22), dtSingleLine|dtVCenter, name)
+	}
+	w.text(11.5, 400, soft, w.px(28), H-w.px(42), side-w.px(40), w.px(18), dtSingleLine, "Version "+version)
+	// Contenu.
+	x0 := side + w.px(36)
+	cw := W - x0 - w.px(36)
+	if p.cancel != "" && !(p.progress && len(p.buttons) == 0) {
+		w.ctrls = append(w.ctrls, uiCtrl{kind: ctlClose, id: p.cancel, x: W - w.px(44), y: w.px(8), w: w.px(36), h: w.px(36)})
+	}
+	y := w.px(44)
+	if p.icon != "" {
+		w.g["badgeX"], w.g["badgeY"] = x0, y
+		y += w.px(48 + 18)
+	}
+	if p.kicker != "" {
+		_, kh := w.measure(11.5, 700, p.kicker, 0)
+		w.text(11.5, 700, colViolet, x0, y, cw, kh, dtSingleLine, p.kicker)
+		y += kh + w.px(4)
+	}
+	_, th := w.measure(21, 600, p.title, cw)
+	w.text(21, 600, colInk, x0, y, cw, th, dtWordBreak, p.title)
+	y += th + w.px(10)
+	if p.body != "" {
+		_, bh := w.measure(13.5, 400, p.body, cw)
+		w.text(13.5, 400, colBody, x0, y, cw, bh, dtWordBreak, p.body)
+		y += bh + w.px(16)
+	}
+	if len(p.rows) > 0 {
+		rowH := w.px(42)
+		for i, r := range p.rows {
+			ry := y + w.px(11) + float64(i)*rowH
+			w.text(12, 400, colMuted, x0+w.px(14), ry, cw-w.px(28), w.px(16), dtSingleLine, r[0])
+			w.text(13, 600, colInk, x0+w.px(14), ry+w.px(17), cw-w.px(28), w.px(20), dtSingleLine|dtPathEllipsis, r[1])
+		}
+		h := w.px(22) + float64(len(p.rows))*rowH - w.px(6)
+		w.g["rowsY"], w.g["rowsH"] = y, h
+		y += h + w.px(14)
+	}
+	for i, o := range p.options {
+		iw := cw - w.px(14+20+12+14)
+		_, oth := w.measure(13.5, 600, o.title, iw)
+		odh := 0.0
+		if o.desc != "" {
+			_, odh = w.measure(12, 400, o.desc, iw)
+			odh += w.px(2)
+		}
+		ch := math.Max(w.px(48), w.px(13)+oth+odh+w.px(13))
+		w.ctrls = append(w.ctrls, uiCtrl{kind: ctlOption, idx: i, x: x0, y: y, w: cw, h: ch})
+		ty := y + (ch-oth-odh)/2
+		w.text(13.5, 600, colInk, x0+w.px(46), ty, iw, oth, dtWordBreak, o.title)
+		if o.desc != "" {
+			w.text(12, 400, colMuted, x0+w.px(46), ty+oth+w.px(2), iw, odh, dtWordBreak, o.desc)
+		}
+		y += ch + w.px(8)
+	}
+	if p.progress {
+		w.text(13.5, 400, colInk, x0, y, cw-w.px(60), w.px(22), dtSingleLine|dtEndEllipsis, w.msg)
+		if w.target >= 0 {
+			pct := int(math.Round(math.Min(1, math.Max(0, w.shown)) * 100))
+			w.text(13.5, 600, colViolet, x0+cw-w.px(60), y, w.px(60), w.px(22), dtSingleLine|dtRight, itoa(pct)+" %")
+		}
+		w.g["barY"] = y + w.px(30)
+	}
+	// Pied : boutons alignés à droite.
+	foot := H - w.px(68)
+	w.g["footY"] = foot
+	widths := make([]float64, len(p.buttons))
+	total := 0.0
+	for i, b := range p.buttons {
+		lw, _ := w.measure(14, 600, b.label, 0)
+		widths[i] = math.Max(w.px(104), lw+w.px(40))
+		total += widths[i] + w.px(10)
+	}
+	bx := W - w.px(28) - total + w.px(10)
+	for i, b := range p.buttons {
+		label := b.label
+		if p.progress && w.cancelled.Load() {
+			label = "Annulation…"
+		}
+		w.ctrls = append(w.ctrls, uiCtrl{kind: ctlButton, id: b.id, style: b.style, label: label, x: bx, y: foot + w.px(14), w: widths[i], h: w.px(40)})
+		bx += widths[i] + w.px(10)
+	}
+	w.W, w.H = int(W), int(H)
+}
+
+func (w *uiWin) paintWizard(c *canvas) {
+	p := w.page
+	side := int(w.g["footX"])
+	H := float64(w.H)
+	// Colonne au dégradé de la marque (violet en haut, rose en bas).
+	for y := 0; y < w.H; y++ {
+		c.fillRect(0, y, side, y+1, gradBrand(float64(y)/math.Max(1, H-1)))
+	}
+	c.image(logoImage(int(w.px(56))), int(w.px(28)), int(w.px(32)))
+	white := rgb{255, 255, 255}
+	for i := range p.steps {
+		cx, cy, r := w.px(28)+w.px(10), w.px(188)+float64(i)*w.px(44)+w.px(11), w.px(10)
+		if i < len(p.steps)-1 { // trait vers l'étape suivante
+			lx := int(cx)
+			for y := int(cy + r + w.px(4)); y < int(cy+w.px(44)-r-w.px(4)); y++ {
+				c.blend(lx, y, white, 0.45)
+				if w.s > 1.25 {
+					c.blend(lx+1, y, white, 0.45)
+				}
+			}
+		}
+		bg := gradBrand(cy / math.Max(1, H-1))
+		switch {
+		case i < p.step:
+			c.circle(cx, cy, r, white, 1)
+			s := int(w.px(12))
+			c.icon("check", int(cx)-s/2, int(cy)-s/2, s, 3, colViolet)
+		case i == p.step:
+			c.circle(cx, cy, r, white, 1)
+			c.circle(cx, cy, r*0.42, colViolet, 1)
+		default:
+			c.circle(cx, cy, r, white, 0.5)
+			c.circle(cx, cy, r-math.Max(1.5, w.px(1.5)), bg, 1)
+		}
+	}
+	if bx, ok := w.g["badgeX"]; ok {
+		tone := uiTones[p.tone]
+		by := w.g["badgeY"]
+		c.circle(bx+w.px(24), by+w.px(24), w.px(24), hexc(tone[1]), 1)
+		isz := int(w.px(26))
+		c.icon(p.icon, int(bx+w.px(24))-isz/2, int(by+w.px(24))-isz/2, isz, 2, hexc(tone[0]))
+	}
+	x0 := float64(side) + w.px(36)
+	cw := float64(w.W) - x0 - w.px(36)
+	if ry, ok := w.g["rowsY"]; ok {
+		c.roundRect(x0, ry, cw, w.g["rowsH"], w.px(12), solid(hexc("#f7f5fa")), 1)
+	}
+	if by, ok := w.g["barY"]; ok {
+		bh := w.px(8)
+		c.roundRect(x0, by, cw, bh, bh/2, solid(colTrack), 1)
+		brand := func(x, _ float64) rgb { return gradBrand((x - x0) / cw) }
+		if w.target < 0 {
+			t := math.Mod(time.Since(w.started).Seconds(), 1.6) / 1.6
+			e := t * t * (3 - 2*t)
+			a := math.Max(x0+(e*1.35-0.35)*cw, x0)
+			b := math.Min(a+0.35*cw, x0+cw)
+			if b-a > bh {
+				c.roundRect(a, by, b-a, bh, bh/2, brand, 1)
+			}
+		} else if f := math.Min(1, math.Max(0, w.shown)); f > 0 {
+			c.roundRect(x0, by, math.Max(bh, f*cw), bh, bh/2, brand, 1)
+		}
+	}
 }
