@@ -31,7 +31,7 @@ export function Story() {
 
   const step = STORY[active]
   return (
-    <section className="section" id="parcours" data-capture="parcours">
+    <section className="section light" id="parcours" data-capture="parcours">
       <div className="wrap">
         <SectionHead
           index="03"
@@ -60,18 +60,21 @@ export function Story() {
                   data-i={i}
                   className={cn("relative grid grid-cols-[40px_1fr] gap-5 py-10 transition-opacity duration-500 lg:min-h-[52vh] lg:py-14", on ? "opacity-100" : "opacity-35")}
                 >
-                  <span className={cn("relative z-[1] grid size-10 place-items-center rounded-full border text-[13px] font-semibold tabular-nums transition-all duration-500", on ? "border-primary bg-primary text-primary-foreground shadow-[0_0_24px_rgb(var(--neon)/0.5)]" : "border-white/15 bg-background text-muted-foreground")}>
+                  <span className={cn("relative z-[1] grid size-10 place-items-center rounded-full border text-[13px] font-semibold tabular-nums transition-all duration-500", on ? "border-primary bg-primary text-primary-foreground" : "border-foreground/15 bg-background text-muted-foreground")}>
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <div>
-                    <span className="eyebrow">
-                      <Icon name={sp.icon} size={14} /> {s.verb} · {sp.name}
+                    <span className="eyebrow bare" data-space={s.space}>
+                      <span className="sp-ic sm solid">
+                        <Icon name={sp.icon} size={14} />
+                      </span>
+                      {s.verb} · {sp.name}
                     </span>
-                    <h3 className="title-3 mt-3">{s.title}</h3>
+                    <h3 className="display mt-4 text-[clamp(28px,2.6vw,40px)] leading-[0.98] font-bold tracking-[-0.035em]">{s.title}</h3>
                     <p className="mt-3 max-w-[48ch] text-[15.5px] leading-relaxed text-muted-foreground">{s.text}</p>
                     <ul className="mt-5 flex flex-wrap gap-2">
                       {s.points.map((p) => (
-                        <li key={p} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1 text-[13px] text-[#d2cdd8]">
+                        <li key={p} className="inline-flex items-center gap-1.5 rounded-full border border-foreground/10 px-3 py-1 text-[13px] text-foreground/85">
                           <Icon name="check" size={13} stroke={2.6} className="text-primary" />
                           {p}
                         </li>
@@ -100,7 +103,7 @@ export function Story() {
                 </Window>
                 <div className="mt-6 flex justify-center gap-2" aria-hidden="true">
                   {STORY.map((s, i) => (
-                    <i key={s.space} className={cn("h-1.5 rounded-full transition-all duration-500", i === active ? "w-8 bg-primary shadow-[0_0_10px_rgb(var(--neon)/0.7)]" : "w-1.5 bg-white/20")} />
+                    <i key={s.space} className={cn("h-1.5 rounded-full transition-all duration-500", i === active ? "w-8 bg-primary" : "w-1.5 bg-foreground/20")} />
                   ))}
                 </div>
               </div>

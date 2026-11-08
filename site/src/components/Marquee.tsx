@@ -4,7 +4,7 @@ import { TechChip } from "./Logo"
 /** Bandeau des frameworks et outils reconnus, avec leurs logos officiels (deux rangées en sens contraire, pause au survol). */
 export function Marquee() {
   return (
-    <section className="relative border-y border-white/[0.06] bg-[#07060a] py-16" aria-labelledby="tech-title">
+    <section className="relative border-t border-foreground/[0.08] py-16" aria-labelledby="tech-title">
       <div className="wrap mb-10 flex flex-col items-center gap-3 text-center">
         <p className="eyebrow" id="tech-title">
           Ton stack, reconnu

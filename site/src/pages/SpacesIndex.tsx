@@ -15,7 +15,7 @@ export function SpacesIndex() {
           className="mb-0 md:mb-0"
         />
       </PageHero>
-      <section className="pb-24">
+      <section className="section light">
         <div className="wrap">
           <SpaceBento />
         </div>

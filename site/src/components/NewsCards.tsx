@@ -14,7 +14,7 @@ export function NewsCards({ items, limit }: { items: NoteItem[]; limit?: number 
           <>
             <span className="flex items-center justify-between gap-3">
               <span className="inline-flex items-center gap-2.5 text-[12.5px] font-medium text-muted-foreground">
-                <span className="sp-ic sm">
+                <span className="sp-ic sm" data-space={space?.id}>
                   <Icon name={space?.icon ?? "sparkle"} size={14} />
                 </span>
                 {space ? space.name : "NEXORA"}
@@ -25,11 +25,11 @@ export function NewsCards({ items, limit }: { items: NoteItem[]; limit?: number 
                 </span>
               )}
             </span>
-            <b className="mt-5 block text-[16.5px] font-semibold leading-snug">{it.title}</b>
+            <b className="display mt-5 block text-[21px] leading-tight font-bold tracking-[-0.025em]">{it.title}</b>
             <span className="mt-2 block text-[14px] leading-relaxed text-muted-foreground">{it.text}</span>
           </>
         )
-        const cls = "glow lift flex h-full flex-col rounded-[22px] border border-white/[0.08] bg-card p-6"
+        const cls = "glow lift flex h-full flex-col surface p-6"
         return (
           <Reveal as="li" key={it.title} delay={(i % 3) * 70}>
             {space ? (

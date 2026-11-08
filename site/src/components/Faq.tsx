@@ -4,7 +4,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./
 /** Questions fréquentes : accordéon de shadcn/ui (Radix), une réponse ouverte à la fois. */
 export function Faq({ items, idPrefix = "faq" }: { items: { q: string; a: string }[]; idPrefix?: string }) {
   return (
-    <Reveal className="rounded-[22px] border border-white/[0.08] bg-card px-6 md:px-8">
+    <Reveal className="surface px-6 md:px-8">
       <Accordion type="single" collapsible defaultValue={`${idPrefix}-0`}>
         {items.map((it, i) => (
           <AccordionItem key={it.q} value={`${idPrefix}-${i}`}>

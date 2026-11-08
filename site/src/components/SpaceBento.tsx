@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 import { SPACE_FACTS } from "../data/content"
 import { SPACES, spaceHref, type SpaceId } from "../data/spaces"
 import { Icon } from "../lib/icons"
@@ -8,17 +8,20 @@ import { CITIES, Globe, type GlobeArc, type GlobeMarker } from "./Globe"
 import { Device, Screen } from "./Screen"
 import { Badge } from "./ui/badge"
 
-// Ordre et taille des cartes (grille de 3 colonnes, 12 cases pleines) : les espaces phares en grand.
-const LAYOUT: [SpaceId, string][] = [
-  ["preview", "lg:col-span-2"],
+// Ordre et forme des cartes (grille de 3 colonnes, 4 rangées pleines). #093 : plus aucune carte sur deux rangées
+// (l'App Builder, haut de deux rangées, restait vide au milieu sur ordinateur) ; les cartes larges « row » posent le
+// texte à gauche et l'image à droite.
+type Shape = "wide" | "row" | ""
+const LAYOUT: [SpaceId, Shape][] = [
+  ["preview", "wide"],
   ["dev", ""],
-  ["android", "lg:row-span-2"],
+  ["android", "row"],
   ["desktop", ""],
   ["browser", ""],
   ["studio", ""],
   ["design", ""],
   ["security", ""],
-  ["home", "lg:col-span-2"],
+  ["home", "row"],
 ]
 
 // Supervision : un serveur surveille des sites partout (décoratif).
@@ -30,46 +33,79 @@ const SEC_ARCS: GlobeArc[] = [
   { from: CITIES.francfort, to: CITIES.saopaulo },
 ]
 
-function Visual({ id }: { id: SpaceId }): ReactNode {
-  if (id === "android")
-    return (
-      <span className="flex h-full items-end justify-center gap-[8%] px-8 pt-2 pb-8">
-        <span className="shot-crop block w-[44%] max-w-[170px]">
-          <Device kind="galaxy" />
+/** App Builder (#093) : trois téléphones qui flottent, une notification push qui arrive et repart, les formats qui s'allument. */
+function AppScene() {
+  return (
+    <span className="app-scene absolute inset-0 block">
+      <span className="float f2 absolute bottom-[-7%] left-[2%] block w-[33%]">
+        <Device kind="pixel" />
+      </span>
+      <span className="float absolute bottom-[-3%] left-[30%] z-[2] block w-[38%]">
+        <Device kind="iphone" />
+      </span>
+      <span className="float f3 absolute bottom-[-9%] left-[64%] block w-[33%]">
+        <Device kind="galaxy" />
+      </span>
+      {/* Notification de démonstration (site fictif « Kora », comme dans les écrans des appareils). */}
+      <span className="push-toast absolute top-[7%] left-1/2 z-[3] flex w-[min(320px,78%)] items-center gap-3 rounded-2xl bg-white/95 p-3 text-left text-[#111] shadow-[0_20px_40px_-18px_rgb(0_0_0/0.55)]">
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#1f8f52] text-white">
+          <Icon name="bell" size={16} />
         </span>
-        <span className="shot-crop block w-[42%] max-w-[162px]">
-          <Device kind="iphone" />
+        <span className="min-w-0 leading-tight">
+          <b className="block text-[13px] font-semibold">Kora · maintenant</b>
+          <span className="block truncate text-[12.5px] text-[#444]">Ta commande est prête à retirer.</span>
         </span>
       </span>
-    )
+      <span className="absolute top-[26%] right-[5%] z-[3] hidden flex-col items-end gap-2 xl:flex">
+        {["APK signé", "AAB", "PWA"].map((t, i) => (
+          <span key={t} className="fmt-chip pill" style={{ "--fi": i } as CSSProperties}>
+            <Icon name="check" size={13} stroke={2.6} /> {t}
+          </span>
+        ))}
+      </span>
+    </span>
+  )
+}
+
+function Visual({ id }: { id: SpaceId }): ReactNode {
+  if (id === "android") return <AppScene />
   if (id === "preview")
     return (
       <span className="flex items-end justify-center gap-[3.5%] px-7 pt-4 pb-8">
-        <span className="w-[50%] max-w-[380px]">
+        <span className="tile-par w-[50%] max-w-[380px]" style={{ "--k": "6px" } as CSSProperties}>
           <Device kind="macbook" />
         </span>
-        <span className="w-[16%] max-w-[122px]">
+        <span className="tile-par w-[16%] max-w-[122px]" style={{ "--k": "10px" } as CSSProperties}>
           <Device kind="ipad" />
         </span>
-        <span className="w-[8%] max-w-[60px]">
+        <span className="tile-par w-[8%] max-w-[60px]" style={{ "--k": "14px" } as CSSProperties}>
           <Device kind="galaxy" />
         </span>
-        <span className="w-[7.8%] max-w-[58px]">
+        <span className="tile-par w-[7.8%] max-w-[58px]" style={{ "--k": "18px" } as CSSProperties}>
           <Device kind="iphone" />
         </span>
       </span>
     )
   if (id === "security")
     return (
-      <span className="flex h-full items-center justify-center pb-8">
-        <span className="block aspect-square w-[74%] max-w-[260px]">
+      <span className="flex h-[260px] items-center justify-center pb-6">
+        <span className="block aspect-square h-full">
           <Globe markers={SEC_MARKERS} arcs={SEC_ARCS} density={9000} start={-0.2} />
         </span>
       </span>
     )
+  if (id === "home")
+    return (
+      <span className="block h-[260px] overflow-hidden pl-7 lg:absolute lg:inset-0 lg:h-auto lg:pl-0">
+        <span className="shot-crop block overflow-hidden rounded-tl-2xl shadow-[0_-24px_60px_-24px_rgb(0_0_0/0.55)] ring-1 ring-black/20 lg:absolute lg:bottom-0 lg:left-0 lg:w-[150%]">
+          <Screen space={id} />
+        </span>
+      </span>
+    )
+  // Capture recadrée à hauteur fixe : les cartes d'une même rangée gardent la même hauteur.
   return (
-    <span className="block pl-7">
-      <span className="shot-crop block overflow-hidden rounded-tl-xl border-t border-l border-white/10 shadow-[0_-20px_60px_-20px_rgb(0_0_0/0.8)]">
+    <span className="block h-[250px] overflow-hidden pl-7">
+      <span className="shot-crop block overflow-hidden rounded-tl-2xl shadow-[0_-24px_60px_-24px_rgb(0_0_0/0.55)] ring-1 ring-black/20">
         <Screen space={id} />
       </span>
     </span>
@@ -77,41 +113,50 @@ function Visual({ id }: { id: SpaceId }): ReactNode {
 }
 
 /**
- * Grille des espaces : vraie capture recadrée, ou vrais appareils (Responsive Lab, App Builder) entièrement dans leur
- * carte, ou globe animé (Sécurité) ; un fait vérifié par carte. Bordure lumineuse rose qui suit le pointeur.
+ * Grille des espaces. #092 (« Signal ») : chaque carte est un aplat à la couleur de son espace (data-space), titre en
+ * grotesque serrée, fait vérifié dans une pastille à l'encre de la carte ; vraie capture recadrée, vrais appareils
+ * (Responsive Lab, App Builder) ou globe animé (Sécurité, dessiné à l'encre de la carte).
  */
 export function SpaceBento() {
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-glow>
-      {LAYOUT.map(([id, size], i) => {
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5" data-glow>
+      {LAYOUT.map(([id, shape], i) => {
         const s = SPACES.find((x) => x.id === id)!
         const [value, caption] = SPACE_FACTS[id]
         return (
-          <Reveal as="a" key={id} href={spaceHref(s)} className={cn("glow lift surface group flex min-h-[420px] flex-col overflow-hidden", size)} delay={(i % 3) * 90}>
-            <span className="flex flex-col gap-3 p-8 pb-6">
+          <Reveal
+            as="a"
+            key={id}
+            href={spaceHref(s)}
+            data-space={id}
+            data-tilt
+            className={cn("glow lift tile group flex flex-col", shape && "lg:col-span-2", shape === "row" && "lg:min-h-[400px] lg:flex-row")}
+            delay={(i % 3) * 90}
+          >
+            <span className={cn("relative z-[1] flex flex-col gap-3 p-7 pb-6 md:p-8", shape === "row" && "lg:w-[46%] lg:shrink-0 lg:pr-4")}>
               <span className="flex items-center justify-between gap-3">
-                {/* #089 : sur téléphone, le nom reste d'un seul tenant (« App / Builder » se cassait) et la pastille passe à la ligne. */}
+                {/* #089 : sur téléphone, le nom reste d'un seul tenant et la pastille passe à la ligne. */}
                 <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                   <span className="sp-ic sm">
                     <Icon name={s.icon} size={15} />
                   </span>
-                  <span className="text-[13px] font-medium whitespace-nowrap text-muted-foreground">{s.name}</span>
+                  <span className="font-mono text-[12px] font-medium tracking-[0.06em] whitespace-nowrap uppercase">{s.name}</span>
                   {(id === "preview" || id === "browser") && <Badge>Gratuit</Badge>}
                   {/* #087 : 2 applications gratuites, App Builder et Desktop Builder confondus. */}
                   {(id === "android" || id === "desktop") && <Badge>2 apps gratuites</Badge>}
-                  {s.plan === "pro" && <Badge variant="outline">Pro</Badge>}
+                  {s.plan === "pro" && <Badge>Pro</Badge>}
                 </span>
                 <span className="go-ring" aria-hidden="true">
                   <Icon name="nxArrowUpRight" size={15} stroke={2} />
                 </span>
               </span>
-              <span className="title-3 mt-2 text-foreground">{s.card}</span>
-              <span className="max-w-[46ch] text-[14.5px] leading-relaxed text-muted-foreground">{s.tagline}</span>
-              <span className="mt-1 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-[12.5px] text-muted-foreground">
-                <b className="font-semibold whitespace-nowrap text-primary">{value}</b> {caption}
+              <span className={cn("display mt-4 text-[clamp(30px,2.9vw,42px)] leading-[0.95] font-bold tracking-[-0.035em]", shape === "row" && "lg:mt-auto")}>{s.card}</span>
+              <span className="max-w-[44ch] text-[15px] leading-relaxed text-muted-foreground">{s.tagline}</span>
+              <span className="pill mt-2">
+                <b className="whitespace-nowrap">{value}</b> {caption}
               </span>
             </span>
-            <span className="relative mt-auto flex-1" aria-hidden="true">
+            <span className={cn("tile-visual relative mt-auto flex-1", id === "android" && "min-h-[300px] overflow-hidden lg:mt-0", id === "home" && "lg:mt-0")} aria-hidden="true">
               <Visual id={id} />
             </span>
           </Reveal>

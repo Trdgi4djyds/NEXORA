@@ -782,7 +782,13 @@ async function supabaseChecks() {
       // limité : signal de vie et repère de déploiement (jeton), seconde région (secret partagé avec Cloudflare),
       // visiteurs réels (clé du site), page de statut et abonnés (jetons de confirmation), liens de validation.
       // nx_monitor_hook_token, nx_org_perm et rum_summary n'en font pas partie (réservées aux comptes, migration 06).
+      // NEXORA #093 : parrainage (migration 07, « Lectures publiques ») : code d'un parrain lu par le site vitrine
+      // (valide ou non, prénom, prix avec la remise), lien d'invitation (adresse masquée), parrainage du compte
+      // (réponse neutre sans compte). Aucune donnée privée.
       const anonOk = new Set([
+        "nx_referral_resolve",
+        "nx_partner_invite_info",
+        "nx_referral_mine",
         "app_track",
         "get_shared",
         "nx_can_read_org",

@@ -24,7 +24,7 @@ import {
 const date = (iso?: string | null, time = false) =>
   iso ? new Date(iso).toLocaleString("fr-FR", time ? { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" } : { day: "numeric", month: "long", year: "numeric" }) : ""
 
-const card = "rounded-[22px] border border-white/[0.08] bg-card p-6 md:p-7"
+const card = "surface p-6 md:p-7"
 
 function Msg({ kind, children }: { kind: "ok" | "bad"; children: ReactNode }) {
   return (
@@ -146,8 +146,8 @@ function KeyCard({ lic }: { lic: Lic }) {
           </span>
         )}
       </div>
-      <small className="relative mt-6 block text-[12px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Ta clé de licence</small>
-      <code className="hud relative mt-3 block rounded-[4px] px-5 py-4 text-[clamp(16px,2.2vw,24px)] font-semibold tracking-[0.08em] break-all text-primary" aria-label="Clé de licence">
+      <small className="relative mt-6 block font-mono text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Ta clé de licence</small>
+      <code className="hud relative mt-3 block px-5 py-4 text-[clamp(16px,2.2vw,24px)] font-semibold tracking-[0.08em] break-all text-primary" aria-label="Clé de licence">
         {lic.key}
       </code>
       <div className="relative mt-5 flex flex-wrap gap-3">
@@ -364,10 +364,10 @@ function Devices({ lic, s, onChange }: { lic: Lic; s: Session; onChange: () => v
     <Reveal className={cn(card, "flex flex-col gap-4")} delay={140}>
       <h3 className="flex items-center gap-2.5 text-[18px] font-semibold">
         <Icon name="laptop" size={18} className="text-primary" /> Ordinateurs
-        {lic.max_devices ? <small className="ml-auto rounded-full border border-white/10 px-2.5 py-0.5 text-[12px] font-medium text-muted-foreground">{active} / {lic.max_devices}</small> : null}
+        {lic.max_devices ? <small className="ml-auto rounded-full border border-foreground/10 px-2.5 py-0.5 text-[12px] font-medium text-muted-foreground">{active} / {lic.max_devices}</small> : null}
       </h3>
       {lic.devices.length ? (
-        <ul className="flex flex-col divide-y divide-white/[0.08]">
+        <ul className="flex flex-col divide-y divide-foreground/[0.08]">
           {lic.devices.map((d, i) => (
             <li key={`${d.id || d.name}-${i}`} className={cn("flex flex-col gap-0.5 py-3", d.released && "opacity-50")}>
               <b className="text-[14.5px] font-medium">
@@ -420,7 +420,7 @@ function Verifier() {
     }
   }
   return (
-    <form className="hud flex flex-col gap-4 rounded-[4px] p-6 md:p-8" onSubmit={submit} id="verifier">
+    <form className="hud flex flex-col gap-4 p-6 md:p-8" onSubmit={submit} id="verifier">
       <h3 className="flex items-center gap-2.5 text-[18px] font-semibold">
         <Icon name="shield" size={18} className="text-primary" /> Vérifier une clé
       </h3>
@@ -503,7 +503,7 @@ export function Licence({ query }: { query: string }) {
           </p>
         )}
         {paiement === "annule" && (
-          <p className="mb-6 flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[14px] text-muted-foreground">
+          <p className="mb-6 flex items-center gap-2.5 rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-4 py-3 text-[14px] text-muted-foreground">
             <Icon name="info" size={16} /> Paiement annulé : rien n’a été débité.
           </p>
         )}
@@ -517,7 +517,7 @@ export function Licence({ query }: { query: string }) {
               <AuthCard onSession={load} />
               <ul className="flex flex-col gap-3" data-glow>
                 {POINTS.map(([icon, title, text]) => (
-                  <li key={title} className="glow flex items-start gap-4 rounded-2xl border border-white/[0.08] bg-card p-5">
+                  <li key={title} className="glow surface flex items-start gap-4 p-5">
                     <span className="sp-ic">
                       <Icon name={icon} size={18} />
                     </span>
@@ -556,7 +556,7 @@ export function Licence({ query }: { query: string }) {
           ) : null}
         </div>
       </PageHero>
-      <section className="section-tight pt-0">
+      <section className="section-tight light">
         <div className="wrap max-w-[860px]">
           <Verifier />
         </div>

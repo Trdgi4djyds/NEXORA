@@ -41,20 +41,19 @@ function PlanCard({ plan, annual, ready, start, parrain, referralPct }: { plan: 
   const shown = useTween(perMonth)
   return (
     <article className={cn("glow relative flex h-full flex-col overflow-hidden p-6 sm:p-8", featured ? "panel-hi" : "panel")} data-plan={plan.id}>
-      {featured && <i className="halo top-[-160px] right-[-80px] h-[260px] w-[300px] opacity-[0.16]" aria-hidden="true" />}
       {/* #089 : passe à la ligne sur téléphone (nom et ruban « Toutes les options » ne tenaient pas sur 360 px). */}
       <div className="relative flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
         <span className="flex items-center gap-3">
           <span className={cn("sp-ic", featured && "solid")}>
             <Icon name={LOOK[plan.id] ?? "nxCrown"} size={19} />
           </span>
-          <h3 className="text-[22px] font-semibold">{plan.name}</h3>
+          <h3 className="display text-[30px] leading-none font-bold tracking-[-0.04em]">{plan.name}</h3>
         </span>
         {plan.badge && <Badge variant={featured ? "solid" : "default"}>{honestBadge(plan.badge)}</Badge>}
       </div>
       <p className="relative mt-4 min-h-[48px] text-[14.5px] text-muted-foreground">{plan.description}</p>
       <div className={cn("relative mt-6 flex items-baseline gap-2 transition-opacity", !ready && "opacity-40")} aria-live="polite">
-        <b className={cn("text-[54px] leading-none font-semibold tracking-[-0.04em] tabular-nums", featured && "text-primary [text-shadow:0_0_30px_rgb(var(--neon)/0.4)]")}>{money(Math.round(shown))}</b>
+        <b className={cn("display text-[clamp(60px,6vw,84px)] leading-[0.85] font-bold tracking-[-0.05em] tabular-nums", featured && "text-primary")}>{money(Math.round(shown))}</b>
         <span className="text-muted-foreground">/ mois</span>
         {refOn && <s className="ml-1 text-[17px] text-muted-foreground/80 tabular-nums">{money(listPerMonth)}</s>}
       </div>
@@ -78,10 +77,10 @@ function PlanCard({ plan, annual, ready, start, parrain, referralPct }: { plan: 
           <Icon name="nxArrowRight" size={16} stroke={2} />
         </a>
       </Button>
-      <ul className="relative mt-8 flex flex-col gap-3 border-t border-white/[0.08] pt-7">
+      <ul className="relative mt-8 flex flex-col gap-3 border-t border-foreground/[0.1] pt-7">
         {plan.features.map(honestFeature).filter(Boolean).map((f) => (
-          <li key={f} className="flex items-start gap-3 text-[14.5px] text-[#d9d5de]">
-            <span className={cn("mt-0.5 grid size-5 shrink-0 place-items-center rounded-full", featured ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")}>
+          <li key={f} className="flex items-start gap-3 text-[14.5px] text-foreground/85">
+            <span className={cn("mt-0.5 grid size-5 shrink-0 place-items-center rounded-full", featured ? "bg-primary text-primary-foreground" : "bg-foreground text-background")}>
               <Icon name="check" size={12} stroke={3} />
             </span>
             {f}
@@ -126,7 +125,7 @@ export function PricingCards() {
         ) : (
           <span>
             Pour passer à Pro, écris à{" "}
-            <a className="text-foreground underline decoration-white/25 underline-offset-4 hover:text-primary" href={`mailto:${supportEmail}?subject=${encodeURIComponent("Passage à l’offre Pro")}`}>
+            <a className="text-foreground underline decoration-foreground/25 underline-offset-4 hover:text-primary" href={`mailto:${supportEmail}?subject=${encodeURIComponent("Passage à l’offre Pro")}`}>
               {supportEmail}
             </a>{" "}
             ou depuis NEXORA (Mon compte → Support) : l’équipe NEXORA active ton offre, en général sous 24 h. Prix en dollars américains.
@@ -182,7 +181,7 @@ export function CompareTable() {
               </th>
               {plans.map((p) => (
                 <th scope="col" key={p.id} className={p.id === "pro" ? "featured" : ""}>
-                  <b className={cn("block text-[17px] font-semibold", p.id === "pro" && "text-primary")}>{p.name}</b>
+                  <b className="display block text-[22px] font-bold tracking-[-0.03em]">{p.name}</b>
                   <span className="block text-[12.5px] font-normal text-muted-foreground">{p.price_month_cents ? `${money(p.price_month_cents)} / mois` : "0 $, sans limite de durée"}</span>
                 </th>
               ))}
@@ -219,7 +218,7 @@ function CompareList({ plans }: { plans: Plan[] }) {
     <div className="flex flex-col gap-4 md:hidden">
       <div className="grid grid-cols-2 gap-2">
         {plans.map((p) => (
-          <div key={p.id} className={cn("rounded-xl border px-4 py-3", p.id === "pro" ? "border-primary/40 bg-primary/[0.06]" : "border-white/[0.08] bg-white/[0.02]")}>
+          <div key={p.id} className={cn("rounded-xl border px-4 py-3", p.id === "pro" ? "border-primary/40 bg-primary/[0.06]" : "border-foreground/[0.08] bg-foreground/[0.02]")}>
             <b className={cn("block text-[16px] font-semibold", p.id === "pro" && "text-primary")}>{p.name}</b>
             <span className="block text-[12px] text-muted-foreground">{p.price_month_cents ? `${money(p.price_month_cents)} / mois` : "0 $, sans limite de durée"}</span>
           </div>
@@ -227,14 +226,14 @@ function CompareList({ plans }: { plans: Plan[] }) {
       </div>
       {GROUPS.map(([group, rows]) => (
         <section key={group} className="panel overflow-hidden" aria-label={group}>
-          <h3 className="px-5 pt-5 pb-3 text-[12px] font-semibold tracking-[0.14em] text-primary uppercase">{group}</h3>
+          <h3 className="px-5 pt-5 pb-3 font-mono text-[12px] font-medium tracking-[0.08em] uppercase">{group}</h3>
           <ul>
             {rows.map((row) => (
-              <li key={row.label} className="border-t border-white/[0.06] px-5 py-3.5">
+              <li key={row.label} className="border-t border-foreground/[0.06] px-5 py-3.5">
                 <p className="cmp-label text-[14px] leading-snug">{row.label}</p>
                 <div className="mt-2.5 grid grid-cols-2 gap-2">
                   {plans.map((p) => (
-                    <div key={p.id} className={cn("flex min-h-10 items-center justify-between gap-2 rounded-lg px-3 py-2 text-[13px]", p.id === "pro" ? "bg-primary/[0.07]" : "bg-white/[0.03]")}>
+                    <div key={p.id} className={cn("flex min-h-10 items-center justify-between gap-2 rounded-lg px-3 py-2 text-[13px]", p.id === "pro" ? "bg-primary/[0.07]" : "bg-foreground/[0.03]")}>
                       <span className="text-[11.5px] text-muted-foreground">{p.name}</span>
                       <span className="text-right leading-tight">{cell(row, p)}</span>
                     </div>

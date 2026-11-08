@@ -12,9 +12,9 @@ import { SectionHead } from "./SectionHead"
 /** Assistant IA (#086) : panneau à liseré rose, logos officiels des fournisseurs, usages par espace, vraie capture du Dev Lab. */
 export function AiSection() {
   return (
-    <section className="section" data-capture="ia">
+    <section className="section light" data-capture="ia">
       <div className="wrap">
-        <div className="panel-hi relative overflow-hidden px-6 py-12 md:px-14 md:py-16">
+        <div className="panel-hi relative overflow-hidden rounded-[36px] px-6 py-12 md:px-14 md:py-16">
           <Circuit seed={31} count={12} className="opacity-70" />
           <i className="halo top-[-200px] right-[-120px] h-[420px] w-[520px] opacity-[0.12]" aria-hidden="true" />
           <div className="relative">
@@ -29,7 +29,7 @@ export function AiSection() {
               <div>
                 <Reveal className="grid grid-cols-3 gap-3 sm:grid-cols-5">
                   {AI.map((p) => (
-                    <span key={p.name} className="surface flex flex-col items-center gap-2.5 px-2 py-4 text-[12.5px] font-medium text-[#e3dfe9]">
+                    <span key={p.name} className="surface flex flex-col items-center gap-2.5 px-2 py-4 text-[12.5px] font-medium text-foreground/85">
                       <Logo name={p.logo} size={30} />
                       {p.name}
                     </span>

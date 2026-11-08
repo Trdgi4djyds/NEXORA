@@ -129,14 +129,14 @@ export function Platforms() {
                     role="tab"
                     aria-selected={on}
                     aria-controls="pf-stage"
-                    className={cn("glow surface relative w-full overflow-hidden p-5 text-left transition-colors duration-300", on ? "border-primary/40 bg-[#11080e]" : "hover:border-white/15")}
+                    className={cn("glow surface relative w-full overflow-hidden p-5 text-left transition-colors duration-300", on ? "border-primary/60 bg-foreground/[0.04]" : "hover:border-foreground/20")}
                     onClick={() => pick(i)}
                   >
                     <span className="flex items-center gap-4">
                       <span className={cn("sp-ic", on && "solid")}>
                         <Icon name={p.icon} size={19} />
                       </span>
-                      <b className="flex-1 text-[17px] font-semibold">{p.title}</b>
+                      <b className="display flex-1 text-[22px] font-bold tracking-[-0.03em]">{p.title}</b>
                       <span className="flex items-center gap-2" aria-hidden="true">
                         {p.logos.map((l) => (
                           <Logo key={l} name={l} size={18} className={cn("transition-opacity", on ? "opacity-100" : "opacity-50")} />
@@ -148,7 +148,7 @@ export function Platforms() {
                         <span className="block pt-4 text-[14.5px] leading-relaxed text-muted-foreground">{p.text}</span>
                         <span className="mt-4 flex flex-col gap-2">
                           {p.points.map((t) => (
-                            <span key={t} className="inline-flex items-center gap-2 text-[13.5px] text-[#d2cdd8]">
+                            <span key={t} className="inline-flex items-center gap-2 text-[13.5px] text-foreground/85">
                               <Icon name="check" size={13} stroke={2.6} className="text-primary" />
                               {t}
                             </span>
@@ -156,7 +156,7 @@ export function Platforms() {
                         </span>
                       </span>
                     </span>
-                    <i className="absolute right-0 bottom-0 left-0 h-[2px] bg-white/[0.04]">
+                    <i className="absolute right-0 bottom-0 left-0 h-[2px] bg-foreground/[0.04]">
                       <i key={`${active}-${round}`} className={cn("pbar", on && playing ? "run" : on ? "full" : "")} style={{ "--t": `${PERIOD}ms` } as CSSProperties} />
                     </i>
                   </button>
@@ -177,7 +177,7 @@ export function Platforms() {
                   </Browser>
                 </div>
                 <span className="chip-glass absolute top-[8%] left-[2%] flex-col items-start gap-2">
-                  <small className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Mise en ligne</small>
+                  <small className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Mise en ligne</small>
                   <span className="flex items-center gap-3">
                     {HOSTS.map((h) => (
                       <Logo key={h.name} name={h.logo} label={h.name} size={20} />

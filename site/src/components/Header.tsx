@@ -109,7 +109,7 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
         <div className="ml-auto flex items-center gap-2.5">
           <button
             type="button"
-            className="hidden h-9 items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.03] pr-1.5 pl-3.5 text-[13px] text-muted-foreground transition hover:border-primary/50 hover:text-foreground md:inline-flex"
+            className="hidden h-9 items-center gap-2.5 rounded-full border border-foreground/10 bg-foreground/[0.03] pr-1.5 pl-3.5 text-[13px] text-muted-foreground transition hover:border-primary/50 hover:text-foreground md:inline-flex"
             onClick={onSearch}
             aria-label="Rechercher dans le site (Ctrl K)"
           >
@@ -121,7 +121,7 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
           <MainButton size="sm" className="hidden sm:inline-flex" />
           <button
             type="button"
-            className="grid size-10 place-items-center rounded-full border border-white/10 text-foreground lg:hidden"
+            className="grid size-10 place-items-center rounded-full border border-foreground/10 text-foreground lg:hidden"
             aria-expanded={mobile}
             aria-controls="menu-mobile"
             aria-label={mobile ? "Fermer le menu" : "Ouvrir le menu"}
@@ -138,8 +138,8 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
           <div className="wrap-wide py-7">
             <div className="grid grid-cols-3 gap-2">
               {SPACES.map((s, i) => (
-                <a key={s.id} href={spaceHref(s)} className="mega-item group flex items-center gap-4 rounded-2xl border border-transparent p-3.5 transition hover:border-primary/30 hover:bg-primary/[0.04]" style={{ animationDelay: `${i * 25}ms` }}>
-                  <span className="sp-ic transition group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-[0_0_24px_rgb(var(--neon)/0.45)]">
+                <a key={s.id} href={spaceHref(s)} data-space={s.id} className="mega-item group flex items-center gap-4 rounded-2xl border border-transparent p-3.5 transition hover:border-foreground/10 hover:bg-foreground/[0.04]" style={{ animationDelay: `${i * 25}ms` }}>
+                  <span className="sp-ic transition group-hover:bg-u group-hover:text-u-ink">
                     <Icon name={s.icon} size={19} />
                   </span>
                   <span className="flex min-w-0 flex-col">
@@ -149,7 +149,7 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
                 </a>
               ))}
             </div>
-            <div className="mt-5 flex items-center justify-between border-t border-white/[0.06] pt-5">
+            <div className="mt-5 flex items-center justify-between border-t border-foreground/[0.06] pt-5">
               <a href="#/espaces" className="link-arrow">
                 Voir les 9 espaces <Icon name="nxArrowRight" size={15} stroke={2} />
               </a>
@@ -167,7 +167,7 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
             <p className="eyebrow mb-3">Espaces</p>
             <div className="grid gap-1.5 sm:grid-cols-2">
               {SPACES.map((s) => (
-                <a key={s.id} href={spaceHref(s)} className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-card px-3 py-2.5 text-[15px] font-medium">
+                <a key={s.id} href={spaceHref(s)} data-space={s.id} className="flex items-center gap-3 rounded-xl border border-foreground/[0.06] bg-card px-3 py-2.5 text-[15px] font-medium">
                   <span className="sp-ic sm">
                     <Icon name={s.icon} size={16} />
                   </span>

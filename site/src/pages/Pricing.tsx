@@ -20,7 +20,7 @@ export function Pricing() {
         />
         <PricingCards />
       </PageHero>
-      <section className="section border-t border-white/[0.06] bg-[#08070b]" id="comparatif" data-capture="comparatif">
+      <section className="section light" id="comparatif" data-capture="comparatif">
         <div className="wrap">
           <SectionHead eyebrow="Comparatif" title={["Toutes les fonctions,", "offre par offre."]} lead="Chaque limite et chaque fonction, telles que l’application les applique." />
           <CompareTable />

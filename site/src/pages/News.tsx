@@ -19,7 +19,7 @@ export function News() {
         />
       </PageHero>
       {RELEASES.map(([version, note], i) => (
-        <section className="section-tight border-t border-white/[0.06]" key={version}>
+        <section className={i % 2 === 0 ? "section-tight light" : "section-tight"} key={version}>
           <div className="wrap">
             <Reveal className="mb-10 grid gap-4 md:grid-cols-[200px_1fr]">
               <div>

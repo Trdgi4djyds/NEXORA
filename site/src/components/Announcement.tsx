@@ -34,17 +34,17 @@ export function Announcement({ home = false }: { home?: boolean }) {
     setHidden(true)
   }
   return (
-    <div className="relative border-b border-white/[0.06] bg-[#0f070c]">
+    <div className="relative border-b border-foreground/[0.08] bg-lime text-ink">
       <div className="wrap-wide flex items-center gap-3 py-2">
-        <a className="group flex min-w-0 flex-1 items-center justify-center gap-3 text-[13px] text-muted-foreground" href="#/licence">
-          <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground">Nouveau</span>
+        <a className="group flex min-w-0 flex-1 items-center justify-center gap-3 text-[13px] text-ink/80" href="#/licence">
+          <span className="shrink-0 rounded-full bg-ink px-2 py-0.5 font-mono text-[11px] font-medium tracking-wider text-lime uppercase">Nouveau</span>
           {/* #089 : deux lignes sur téléphone (le texte était coupé après « licence gra… »). */}
           <span className="line-clamp-2 leading-snug sm:line-clamp-none sm:truncate">NEXORA Devs Toolbox : licence gratuite, 2 applications Android ou Windows offertes, 24 h d’essai Pro complet</span>
-          <span className="hidden items-center gap-1.5 font-medium text-primary transition-[gap] group-hover:gap-2.5 sm:inline-flex">
+          <span className="hidden items-center gap-1.5 font-semibold text-ink transition-[gap] group-hover:gap-2.5 sm:inline-flex">
             Obtenir ma licence <Icon name="nxArrowRight" size={14} stroke={2} />
           </span>
         </a>
-        <button type="button" className="grid size-7 place-items-center rounded-full text-muted-foreground transition hover:bg-white/5 hover:text-foreground" onClick={hide} aria-label="Masquer l’annonce">
+        <button type="button" className="grid size-7 place-items-center rounded-full text-ink/70 transition hover:bg-ink/10 hover:text-ink" onClick={hide} aria-label="Masquer l’annonce">
           <Icon name="close" size={14} />
         </button>
       </div>

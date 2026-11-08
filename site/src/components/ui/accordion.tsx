@@ -8,7 +8,7 @@ function Accordion(props: React.ComponentProps<typeof AccordionPrimitive.Root>) 
 }
 
 function AccordionItem({ className, ...props }: React.ComponentProps<typeof AccordionPrimitive.Item>) {
-  return <AccordionPrimitive.Item data-slot="accordion-item" className={cn("border-b border-white/[0.08] last:border-b-0", className)} {...props} />
+  return <AccordionPrimitive.Item data-slot="accordion-item" className={cn("border-b border-foreground/[0.08] last:border-b-0", className)} {...props} />
 }
 
 function AccordionTrigger({ className, children, ...props }: React.ComponentProps<typeof AccordionPrimitive.Trigger>) {
@@ -23,7 +23,7 @@ function AccordionTrigger({ className, children, ...props }: React.ComponentProp
         {...props}
       >
         {children}
-        <span className="grid size-8 shrink-0 place-items-center rounded-full border border-white/10 text-muted-foreground transition-all duration-300 group-hover:border-primary/50 group-hover:text-primary group-data-[state=open]:rotate-45 group-data-[state=open]:border-primary group-data-[state=open]:bg-primary group-data-[state=open]:text-primary-foreground">
+        <span className="grid size-8 shrink-0 place-items-center rounded-full border border-foreground/10 text-muted-foreground transition-all duration-300 group-hover:border-primary/50 group-hover:text-primary group-data-[state=open]:rotate-45 group-data-[state=open]:border-primary group-data-[state=open]:bg-primary group-data-[state=open]:text-primary-foreground">
           <Icon name="plus" size={16} stroke={2.2} />
         </span>
       </AccordionPrimitive.Trigger>

@@ -70,7 +70,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         <DialogDescription id="cmdk-desc" className="sr-only">
           Tape pour filtrer les pages, les espaces et les actions, puis Entrée pour ouvrir.
         </DialogDescription>
-        <div className="flex items-center gap-3 border-b border-white/[0.08] px-5">
+        <div className="flex items-center gap-3 border-b border-foreground/[0.08] px-5">
           <Icon name="search" size={18} className="text-primary" />
           <input
             autoFocus
@@ -128,7 +128,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             )
           })}
         </ul>
-        <div className="flex gap-5 border-t border-white/[0.08] px-5 py-3 text-[12px] text-muted-foreground">
+        <div className="flex gap-5 border-t border-foreground/[0.08] px-5 py-3 text-[12px] text-muted-foreground">
           <span>
             <kbd className="kbd">↑</kbd> <kbd className="kbd">↓</kbd> pour choisir
           </span>

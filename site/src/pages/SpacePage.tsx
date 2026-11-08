@@ -37,7 +37,7 @@ function DeviceCatalog() {
           <div className={`marquee slow${r ? " rev" : ""}`} key={r}>
             <ul className="marquee-track">
               {[...row, ...row].map((n, i) => (
-                <li key={i} className="rounded-full border border-white/[0.08] px-3.5 py-1.5 text-[13px] whitespace-nowrap text-muted-foreground">
+                <li key={i} className="rounded-full border border-foreground/[0.08] px-3.5 py-1.5 text-[13px] whitespace-nowrap text-muted-foreground">
                   {n}
                 </li>
               ))}
@@ -107,14 +107,14 @@ export function SpacePage({ space }: { space: Space }) {
   const prev = SPACES[(idx + SPACES.length - 1) % SPACES.length]
   const next = SPACES[(idx + 1) % SPACES.length]
   return (
-    <div>
-      <section className="relative overflow-hidden pt-14 pb-10 md:pt-20" data-capture="haut" data-light>
+    <div data-space={space.id}>
+      <section className="relative overflow-hidden pt-14 pb-16 md:pt-20 md:pb-24" data-capture="haut" data-light>
         <Backdrop variant="page" />
         <div className="wrap relative">
           <a href="#/espaces" className="rise inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground transition hover:text-primary">
             <Icon name="chevronLeft" size={15} stroke={2} /> Tous les espaces
           </a>
-          <div className="mt-8 grid items-end gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <div className="mt-8 grid items-end gap-10 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
             <div className="rise" style={{ animationDelay: "80ms" }}>
               <span className="flex items-center gap-4">
                 <span className="sp-ic lg solid">
@@ -142,14 +142,16 @@ export function SpacePage({ space }: { space: Space }) {
         </div>
         <div className="wrap-wide relative mt-14 md:mt-20">
           {/* #086 : scène de face (aucune rotation), parallaxe légère ; vrais appareils pour l'App Builder. */}
-          <div className="hero-visual mx-auto max-w-[1180px]" data-capture="apercu" data-tilt data-depth>
-            <div className="par" style={{ "--k": "4px", "--ky": "-12px" } as CSSProperties}>
+          {/* #092 : fenêtre posée sur un bandeau à la couleur de l'espace, comme dans le hero de l'accueil. */}
+          <div className="hero-visual stage relative mx-auto max-w-[1360px]" data-capture="apercu" data-tilt data-depth>
+            <i className="stage-band !top-[18%]" aria-hidden="true" />
+            <div className="par relative mx-auto w-[92%] max-w-[1180px]" style={{ "--k": "4px", "--ky": "-12px" } as CSSProperties}>
               <Window title={`NEXORA — ${space.name}`}>
                 <Screen space={space.id} eager />
               </Window>
             </div>
             {space.id === "android" && (
-              <div className="par absolute right-0 bottom-[-8%] flex w-[30%] items-end gap-[6%]" style={{ "--k": "12px", "--ky": "-40px" } as CSSProperties}>
+              <div className="par absolute right-[1%] bottom-[-8%] flex w-[30%] items-end gap-[6%]" style={{ "--k": "12px", "--ky": "-40px" } as CSSProperties}>
                 <div className="w-[47%]">
                   <Device kind="galaxy" eager />
                 </div>
@@ -159,7 +161,7 @@ export function SpacePage({ space }: { space: Space }) {
               </div>
             )}
             {space.id === "preview" && (
-              <div className="par absolute right-0 bottom-[-8%] w-[15%]" style={{ "--k": "12px", "--ky": "-40px" } as CSSProperties}>
+              <div className="par absolute right-[1%] bottom-[-8%] w-[15%]" style={{ "--k": "12px", "--ky": "-40px" } as CSSProperties}>
                 <Device kind="iphone" eager />
               </div>
             )}
@@ -167,19 +169,19 @@ export function SpacePage({ space }: { space: Space }) {
         </div>
       </section>
 
-      <section className="section" data-capture="fonctions">
+      <section className="section light" data-capture="fonctions">
         <div className="wrap">
           <SectionHead eyebrow="Ce que tu peux faire" title={[space.name, "en détail."]} lead={`${space.features.length} fonctions livrées dans NEXORA ${APP_VERSION}, avec l’offre qui les ouvre.`} />
           <ol className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" data-glow>
             {space.features.map((f, i) => (
-              <Reveal as="li" className="glow flex flex-col rounded-[22px] border border-white/[0.08] bg-card p-6" key={f.title} delay={(i % 3) * 70}>
+              <Reveal as="li" className="glow surface flex flex-col p-7" key={f.title} delay={(i % 3) * 70}>
                 <span className="flex items-center justify-between gap-3">
-                  <span className="sp-ic">
+                  <span className="sp-ic solid">
                     <Icon name={f.icon} size={18} />
                   </span>
                   {f.plan ? <Badge variant="outline">{PLAN_LABEL[f.plan]}</Badge> : space.trial ? <Badge variant="outline">{space.trial.tag}</Badge> : <span className="text-[12px] font-semibold tabular-nums text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>}
                 </span>
-                <h3 className="mt-5 text-[17px] font-semibold">{f.title}</h3>
+                <h3 className="display mt-6 text-[23px] leading-tight font-bold tracking-[-0.03em]">{f.title}</h3>
                 <p className="mt-2 text-[14.5px] leading-relaxed text-muted-foreground">{f.text}</p>
               </Reveal>
             ))}
@@ -192,11 +194,11 @@ export function SpacePage({ space }: { space: Space }) {
       {space.details && (
         <section className="section-tight">
           <div className="wrap">
-            <Reveal className="hud rounded-[4px] p-8 md:p-10">
+            <Reveal className="hud p-8 md:p-10">
               <h2 className="title-3">{space.details.title}</h2>
               <ul className="mt-6 flex flex-wrap gap-2.5">
                 {space.details.items.map((d) => (
-                  <li className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] px-3.5 py-1.5 text-[14px]" key={d}>
+                  <li className="inline-flex items-center gap-2 rounded-full border border-foreground/10 bg-foreground/[0.02] px-3.5 py-1.5 text-[14px]" key={d}>
                     <i className="dot" />
                     {d}
                   </li>
@@ -207,7 +209,7 @@ export function SpacePage({ space }: { space: Space }) {
         </section>
       )}
 
-      <section className="section-tight" data-capture="offres">
+      <section className="section-tight light" data-capture="offres">
         <div className="wrap">
           <SectionHead eyebrow="Dans tes offres" title={["Ce qui est inclus,", "offre par offre."]}>
             <a className="link-arrow" href="#/tarifs/comparatif">
@@ -218,16 +220,16 @@ export function SpacePage({ space }: { space: Space }) {
         </div>
       </section>
 
-      <section className="section-tight">
+      <section className="section-tight light pt-0">
         <div className="wrap grid gap-6 md:grid-cols-2" data-glow>
           {[prev, next].map((s, i) => (
-            <a key={s.id} href={spaceHref(s)} className={cn("glow lift flex flex-col gap-3 rounded-[22px] border border-white/[0.08] bg-card p-6", i && "md:items-end md:text-right")}>
-              <small className="text-[12px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{i ? "Espace suivant" : "Espace précédent"}</small>
+            <a key={s.id} href={spaceHref(s)} data-space={s.id} className={cn("glow lift tile flex flex-col gap-3 p-7", i && "md:items-end md:text-right")}>
+              <small className="font-mono text-[12px] font-medium tracking-[0.06em] text-muted-foreground uppercase">{i ? "Espace suivant" : "Espace précédent"}</small>
               <span className={cn("flex items-center gap-3", i && "md:flex-row-reverse")}>
                 <span className="sp-ic">
                   <Icon name={s.icon} size={19} />
                 </span>
-                <b className="text-[19px] font-semibold">{s.name}</b>
+                <b className="display text-[28px] font-bold tracking-[-0.035em]">{s.name}</b>
                 <span className="go-ring">
                   <Icon name={i ? "nxArrowRight" : "back"} size={16} stroke={2} />
                 </span>

@@ -4,6 +4,7 @@ import { CtaBand } from "../components/CtaBand"
 import { DeviceGallery, DeviceWall } from "../components/DeviceWall"
 import { Faq } from "../components/Faq"
 import { Hero } from "../components/Hero"
+import { KineticBand } from "../components/Kinetic"
 import { Marquee } from "../components/Marquee"
 import { NewsCards } from "../components/NewsCards"
 import { Personas } from "../components/Personas"
@@ -27,7 +28,7 @@ export function Home() {
     <>
       <Hero />
       <Marquee />
-      <section className="section" id="espaces" data-capture="espaces">
+      <section className="section light" id="espaces" data-capture="espaces">
         <div className="wrap">
           <SectionHead
             index="01"
@@ -38,6 +39,8 @@ export function Home() {
           <SpaceBento />
         </div>
       </section>
+      {/* #093 : mots géants qui glissent avec le défilement, entre la grille des espaces et la vitrine des appareils. */}
+      <KineticBand />
       {/* #086 : vitrine du Responsive Lab, vrais cadres d'appareils qui affichent ce site. */}
       <section className="section relative overflow-hidden" id="appareils" data-capture="appareils" data-light>
         <Backdrop variant="soft" />
@@ -64,8 +67,7 @@ export function Home() {
       <Stats />
       <Personas />
       <Trust />
-      <section className="section border-y border-white/[0.06] bg-[#08070b]" id="tarifs" data-capture="tarifs">
-        <i className="grid-bg opacity-70" aria-hidden="true" />
+      <section className="section light" id="tarifs" data-capture="tarifs">
         <div className="wrap relative">
           <SectionHead
             index="08"
@@ -100,7 +102,7 @@ export function Home() {
           {/* Un moyen de joindre l'équipe sous le titre (mêmes adresses que le pied de page). */}
           <div className="lg:sticky lg:top-24 lg:self-start">
             <SectionHead index="10" align="left" eyebrow="Questions fréquentes" title={["Ce qu’on nous", "demande le plus."]} className="mb-8 md:mb-8" />
-            <Reveal className="hud rounded-[4px] p-6" delay={120}>
+            <Reveal className="hud p-6" delay={120}>
               <b className="text-[16px] font-semibold">Une autre question ?</b>
               <p className="mt-2 text-[14px] text-muted-foreground">Écris-nous depuis NEXORA (Mon compte → Support) ou à {supportEmail}.</p>
               <a className="link-arrow mt-4" href={supportEmail ? `mailto:${supportEmail}` : WEB_URL}>
