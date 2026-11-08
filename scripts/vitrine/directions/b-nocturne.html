@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Direction B — Nocturne</title>
+<style>
+@font-face{font-family:Geist;src:url(../polices/geist-normal.woff2) format("woff2");font-weight:300 800}
+@font-face{font-family:"JetBrains Mono";src:url(../polices/jetbrains-mono-normal.woff2) format("woff2");font-weight:400 600}
+:root{--bg:#09090b;--s1:#111114;--s2:#18181c;--line:#232328;--ink:#f4f4f1;--muted:#8e8e96;--peach:#ff9a62}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;background:var(--bg);color:var(--ink);font:16px/1.55 Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.mono{font:500 11.5px/1.3 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.wrap{padding:0 64px}
+nav{display:flex;align-items:center;height:72px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:17px;letter-spacing:-.02em}.logo img{width:26px;height:26px;border-radius:7px}
+nav .links{display:flex;gap:30px;margin:0 auto;padding-right:120px}nav .links span{font-size:14px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 20px;border-radius:12px;background:var(--ink);color:#09090b;font-weight:600;font-size:14.5px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.hero{position:relative;text-align:center;padding:96px 0 0}
+.grid-bg{position:absolute;inset:0 -64px auto;height:900px;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:72px 72px;opacity:.35;-webkit-mask-image:radial-gradient(ellipse 60% 55% at 50% 30%,#000 30%,transparent 75%);mask-image:radial-gradient(ellipse 60% 55% at 50% 30%,#000 30%,transparent 75%);pointer-events:none}
+.chip{position:relative;display:inline-flex;align-items:center;gap:10px;height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--s1);font-size:13.5px;color:#d8d8dc}
+.chip i{width:7px;height:7px;border-radius:50%;background:var(--peach)}
+h1{position:relative;font-size:96px;line-height:.98;font-weight:600;letter-spacing:-.05em;margin:28px auto 0;max-width:1100px}
+h1 span{color:#6f6f78}
+.lead{position:relative;font-size:19px;color:var(--muted);max-width:620px;margin:26px auto 0}
+.ctas{position:relative;display:flex;justify-content:center;gap:12px;margin-top:34px}
+.stage{position:relative;height:660px;margin-top:70px;perspective:2200px}
+.scr{position:absolute;width:820px;border-radius:14px;overflow:hidden;border:1px solid #2a2a30;box-shadow:0 60px 120px -30px #000,0 30px 60px -20px rgba(0,0,0,.8)}
+.scr img{display:block;width:100%}
+.s-back{left:20px;top:40px;transform:rotateX(28deg) rotateY(18deg) rotateZ(-10deg);opacity:.85}
+.s-front{left:300px;top:110px;width:860px;transform:rotateX(26deg) rotateY(14deg) rotateZ(-9deg);z-index:2}
+.s-right{left:640px;top:10px;transform:rotateX(30deg) rotateY(16deg) rotateZ(-10deg);opacity:.9}
+.kpi{position:absolute;z-index:4;background:var(--s2);border:1px solid #2c2c33;border-radius:16px;padding:16px 18px;box-shadow:0 30px 60px -20px #000;text-align:left}
+.kpi b{display:block;font-size:34px;font-weight:600;letter-spacing:-.04em}.kpi b em{font-style:normal;color:var(--peach)}
+.kpi small{color:var(--muted);font-size:13px}
+.k1{left:40px;top:330px}.k2{right:60px;top:120px}.k3{right:140px;top:470px}
+.s2{padding:120px 0 80px}
+.s2 h2{font-size:56px;font-weight:600;letter-spacing:-.04em;line-height:1.02;max-width:760px}.s2 h2 span{color:#6f6f78}
+.bento{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px;margin-top:48px}
+.card{background:var(--s1);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.card .t{padding:24px 24px 18px}.card h3{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-top:10px}.card p{color:var(--muted);font-size:14.5px;margin-top:6px}
+.card .img{margin:0 0 0 24px;border-top-left-radius:10px;overflow:hidden;border:1px solid #26262c;border-right:0;border-bottom:0;height:260px;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
+.card .img img{display:block;width:150%;}
+.spec{display:grid;grid-template-columns:1.3fr 1fr 1fr;border-top:1px solid var(--line);padding:28px 0 64px}
+.big{font-size:88px;font-weight:600;letter-spacing:-.05em;line-height:1}
+.chips{display:flex;gap:10px;margin-top:14px}.c{width:62px;height:62px;border-radius:50%;border:1px solid #2c2c33}
+</style></head><body>
+<div class="wrap">
+  <nav><span class="logo"><img src="../../../nexora/app/renderer/logo.png" alt="">NEXORA</span>
+    <span class="links"><span>Espaces</span><span>Tarifs</span><span>Nouveautés</span><span>Télécharger</span></span><span class="btn">Télécharger</span></nav>
+  <section class="hero"><div class="grid-bg"></div>
+    <span class="chip"><i></i>NEXORA 1.2.0 · Dev Lab gratuit, IA sans limite</span>
+    <h1>L’atelier complet du web,<br><span>installé sur ton PC.</span></h1>
+    <p class="lead">Design, code, tests sur 181 appareils, sécurité et publication sur le web, Android et Windows, dans une seule application.</p>
+    <div class="ctas"><span class="btn">Télécharger pour Windows</span><span class="btn ghost">Essayer dans le navigateur</span></div>
+    <div class="stage">
+      <div class="scr s-back"><img src="../../../site/src/assets/ecrans/securite-sombre.webp" alt=""></div>
+      <div class="scr s-right"><img src="../../../site/src/assets/ecrans/responsive-sombre.webp" alt=""></div>
+      <div class="scr s-front"><img src="../../../site/src/assets/ecrans/dev-sombre.webp" alt=""></div>
+      <div class="kpi k1"><span class="mono">Responsive Lab</span><b>181 <em>·</em></b><small>appareils réels à l’écran</small></div>
+      <div class="kpi k2"><span class="mono">Dev Lab</span><b>15</b><small>modèles de projet prêts à lancer</small></div>
+      <div class="kpi k3"><span class="mono">Sécurité</span><b>24 h/24</b><small>7 types de vérification</small></div>
+    </div>
+  </section>
+  <section class="s2"><span class="mono">Neuf espaces</span><h2 style="margin-top:16px">Chaque métier a son espace. <span>Tous partagent ton projet.</span></h2>
+    <div class="bento">
+      <div class="card"><div class="t"><span class="mono">02 · Dev Lab</span><h3>Code, terminal et Git</h3><p>Éditeur Monaco, terminaux, dépôt distant et aperçu en direct.</p></div><div class="img"><img src="../../../site/src/assets/ecrans/dev-sombre.webp" alt=""></div></div>
+      <div class="card"><div class="t"><span class="mono">07 · NEX-DESIGN</span><h3>Tes visuels</h3><p>Maquettes, prototype et export de code.</p></div><div class="img"><img src="../../../site/src/assets/ecrans/design-sombre.webp" alt=""></div></div>
+      <div class="card"><div class="t"><span class="mono">06 · Studio 3D</span><h3>Mises en scène</h3><p>Appareils 3D, caméra et vidéo.</p></div><div class="img"><img src="../../../site/src/assets/ecrans/studio-sombre.webp" alt=""></div></div>
+    </div></section>
+  <div class="spec"><div><span class="mono">Titrage et texte — Geist</span><div class="big" style="margin-top:12px">Aa <span style="color:#6f6f78">Aa</span></div></div>
+    <div><span class="mono">Étiquettes — JetBrains Mono</span><p class="mono" style="margin-top:16px;color:#d8d8dc">02 · Dev Lab — 15 modèles</p></div>
+    <div><span class="mono">Palette</span><div class="chips"><span class="c" style="background:#09090b"></span><span class="c" style="background:#18181c"></span><span class="c" style="background:#f4f4f1"></span><span class="c" style="background:#ff9a62"></span></div></div></div>
+</div></body></html>

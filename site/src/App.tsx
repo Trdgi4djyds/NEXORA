@@ -11,6 +11,7 @@ import { Download } from "./pages/Download"
 import { News } from "./pages/News"
 import { NotFound } from "./pages/NotFound"
 import { spaceBySlug } from "./data/spaces"
+import { installGlow } from "./lib/glow"
 import { scrollToId, useRoute, type Route } from "./router"
 
 function page(route: Route): { key: string; title: string; node: ReactNode } {
@@ -33,6 +34,9 @@ export function App() {
   const main = useRef<HTMLElement>(null)
   const first = useRef(true)
   const [palette, setPalette] = useState(false)
+
+  // Lumière qui suit la souris sur les cartes, les grilles et les captures (#069).
+  useEffect(() => installGlow(), [])
 
   // Ctrl K (ou Cmd K) ouvre la recherche, comme dans NEXORA.
   useEffect(() => {

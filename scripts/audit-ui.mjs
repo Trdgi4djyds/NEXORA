@@ -18,7 +18,8 @@ import fs from "node:fs"
 import puppeteer from "puppeteer-core"
 
 const CHROMIUM = process.env.CHROME_PATH || "/usr/bin/chromium"
-const URL = process.env.NX_URL || "http://localhost:3000/"
+// « ?app » : dans l'aperçu, la racine sans paramètre ouvre le site vitrine (#062).
+const URL = process.env.NX_URL || "http://localhost:3000/?app"
 const SPACES = {
   accueil: "home",
   responsive: "preview",

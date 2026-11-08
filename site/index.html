@@ -8,7 +8,7 @@
       name="description"
       content="NEXORA réunit en une application pour Windows tout ce qu’il faut pour concevoir, coder, tester, sécuriser et publier : sur le web, sur Android et sur Windows."
     />
-    <meta name="theme-color" content="#6450f0" />
+    <meta name="theme-color" content="#09090b" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="fr_FR" />
     <meta property="og:title" content="NEXORA — Conçois, code et publie depuis une seule application" />
@@ -17,15 +17,6 @@
       content="Responsive Lab, Browser Lab, Dev Lab, App Builder, Desktop Builder, Studio 3D & Motion, NEX-DESIGN et Sécurité réunis dans une seule application pour Windows."
     />
     <link rel="icon" href="../nexora/app/renderer/logo.png" />
-    <script>
-      try {
-        var t = localStorage.getItem("nexora-site-theme")
-        if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-        document.documentElement.dataset.theme = t
-      } catch (e) {
-        document.documentElement.dataset.theme = "light"
-      }
-    </script>
   </head>
   <body>
     <div id="root"></div>

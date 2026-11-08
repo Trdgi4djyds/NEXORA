@@ -318,6 +318,27 @@ export function nexoraPreview() {
         }
         if (req.method !== "GET" && req.method !== "HEAD") return next()
 
+        // NEXORA #062-#063 : le site vitrine est l'entrée de l'aperçu Figma Make : « / » sans paramètre sert
+        // directement sa page (sans redirection, que l'aperçu de Make ne suit pas toujours) ; l'application
+        // NEXORA reste servie à « /?app » (lien « Ouvrir NEXORA web » du site, captures). La version publiée
+        // n'est pas concernée : NEXORA web y reste à la racine (liens des e-mails, partages).
+        if (rel === "" && !(req.url ?? "").includes("?")) {
+          const html = fs
+            .readFileSync(path.join(ROOT, "site", "index.html"), "utf8")
+            .replace('src="./src/main.tsx"', `src="${base}site/src/main.tsx"`)
+            .replace('href="../nexora/app/renderer/logo.png"', `href="${base}logo.png"`)
+          server
+            .transformIndexHtml(req.url ?? "/", html)
+            .then((body) => {
+              res.writeHead(200, {
+                "Content-Type": MIME[".html"],
+                "Cache-Control": "no-store",
+              })
+              res.end(req.method === "HEAD" ? undefined : body)
+            })
+            .catch(next)
+          return
+        }
         if (rel === "" || rel === "index.html") {
           const body = renderPage({
             head: [`<script type="module" src="${base}@vite/client"></script>`],

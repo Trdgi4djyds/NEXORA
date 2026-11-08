@@ -1,7 +1,7 @@
+import { WEB_URL } from "../lib/product"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { SPACES, spaceHref } from "../data/spaces"
 import { Icon } from "../lib/icons"
-import { useTheme } from "../lib/theme"
 
 type Item = { id: string; group: string; label: string; hint?: string; icon: string; space?: string; href?: string; run?: () => void; words?: string }
 
@@ -16,7 +16,6 @@ const norm = (s: string) =>
  * 9 espaces et quelques actions. Clavier : flèches, Entrée, Échap.
  */
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [theme, toggleTheme] = useTheme()
   const [query, setQuery] = useState("")
   const [active, setActive] = useState(0)
   const input = useRef<HTMLInputElement>(null)
@@ -31,10 +30,9 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       { id: "telecharger", group: "Pages", label: "Télécharger NEXORA", hint: "Windows 10 et 11", icon: "download", href: "#/telecharger", words: "installer zip portable" },
       { id: "nouveautes", group: "Pages", label: "Nouveautés", icon: "sparkle", href: "#/nouveautes", words: "version" },
       ...SPACES.map((s) => ({ id: s.id, group: "Espaces", label: s.name, hint: s.subtitle, icon: s.icon, space: s.id, href: spaceHref(s), words: s.tagline })),
-      { id: "web", group: "Actions", label: "Ouvrir NEXORA web", icon: "external", href: "../", words: "navigateur compte connexion" },
-      { id: "theme", group: "Actions", label: theme === "dark" ? "Passer au thème clair" : "Passer au thème sombre", icon: theme === "dark" ? "sun" : "moon", run: toggleTheme, words: "apparence couleur" },
+      { id: "web", group: "Actions", label: "Ouvrir NEXORA web", icon: "external", href: WEB_URL, words: "navigateur compte connexion" },
     ],
-    [theme, toggleTheme],
+    [],
   )
 
   const results = useMemo(() => {

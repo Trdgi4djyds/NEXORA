@@ -99,7 +99,11 @@ function parseArgs(argv) {
     screens: [],
     label: "apercu",
     clicks: [],
+    // #066 : clics et saisies dans l'ordre de la ligne de commande.
+    actions: [],
     routes: [],
+    quiet: false,
+    wait: 0,
     theme: "clair",
     size: [1440, 900],
     upload: false,
@@ -117,7 +121,18 @@ function parseArgs(argv) {
     }
     if (arg === "--") continue
     else if (arg === "--label") opts.label = value()
-    else if (arg === "--click") opts.clicks.push(value())
+    else if (arg === "--click") {
+      const text = value()
+      opts.clicks.push(text)
+      opts.actions.push({ kind: "click", text })
+    } else if (arg === "--saisir") {
+      // « <début du texte indicatif du champ>=<texte> » : tape le texte puis appuie sur Entrée (#066).
+      const raw = value()
+      const at = raw.indexOf("=")
+      if (at < 1) throw new Error("--saisir attend « texte indicatif=valeur ».")
+      opts.actions.push({ kind: "type", field: raw.slice(0, at), text: raw.slice(at + 1) })
+    } else if (arg === "--sans-notifications") opts.quiet = true
+    else if (arg === "--attendre") opts.wait = Number(value()) || 0
     else if (arg === "--route") opts.routes.push(value())
     else if (arg === "--scroll") opts.scroll = value()
     else if (arg === "--theme") opts.theme = value()
@@ -155,8 +170,8 @@ function parseArgs(argv) {
     everything || opts.screens.length === 0
       ? SPACES
       : SPACES.filter((space) => opts.screens.includes(space.slug))
-  if (opts.clicks.length && opts.spaces.length !== 1)
-    throw new Error("--click demande un seul espace.")
+  if (opts.actions.length && opts.spaces.length !== 1)
+    throw new Error("--click et --saisir demandent un seul espace.")
   return opts
 }
 
@@ -192,10 +207,24 @@ function upload(file) {
   )
 }
 
+// #066 : champ visible dont le texte indicatif commence par `field` ; texte tapé comme au clavier, puis Entrée.
+async function typeInto(page, field, text) {
+  const handle = await page.evaluateHandle((wanted) => {
+    const shown = [...document.querySelectorAll("input, textarea")].filter((el) => el.offsetParent !== null)
+    return shown.find((el) => (el.getAttribute("placeholder") || "").startsWith(wanted)) ?? null
+  }, field)
+  const element = handle.asElement()
+  if (!element) return false
+  await element.click({ clickCount: 3 })
+  await element.type(text, { delay: 8 })
+  await page.keyboard.press("Enter")
+  return true
+}
+
 async function clickByText(page, text) {
   const handle = await page.evaluateHandle((wanted) => {
     const shown = [
-      ...document.querySelectorAll('button, [role="button"], .btn, a'),
+      ...document.querySelectorAll('button, [role="button"], [role="treeitem"], .btn, a'),
     ].filter((el) => el.offsetParent !== null)
     // Texte visible d'abord, puis infobulle ou libellé accessible (boutons à icône seule).
     return (
@@ -204,6 +233,10 @@ async function clickByText(page, text) {
         (el) =>
           el.getAttribute("title") === wanted ||
           el.getAttribute("aria-label") === wanted,
+      ) ??
+      // #066 : sinon, texte visible sans élément enfant (ligne d'une arborescence de fichiers, par exemple).
+      [...document.querySelectorAll("body *")].find(
+        (el) => el.offsetParent !== null && el.children.length === 0 && el.textContent.trim() === wanted,
       ) ??
       null
     )
@@ -218,7 +251,7 @@ async function clickByText(page, text) {
 // Compte NEXORA fictif (#022) : session gardée sous la clé du client Supabase de NEXORA (« nexora-auth »),
 // appels Supabase servis par les données de démonstration du back office. Le site « Boutique » de la
 // supervision de démonstration y est surveillé par les serveurs NEXORA.
-async function useDemoAccount(page) {
+async function useDemoAccount(page, quiet = false) {
   const { demoResponse, demoSession, monitors } = await import(
     "./admin-demo.mjs"
   )
@@ -264,6 +297,8 @@ async function useDemoAccount(page) {
         headers: { ...cors, "content-type": "application/json" },
         body: JSON.stringify(body),
       })
+    // #066 : --sans-notifications, aucune annonce du compte de démonstration (bandeau de maintenance).
+    if (quiet && url.pathname === "/rest/v1/announcements") return send([])
     if (url.pathname === "/rest/v1/monitors" && req.method() === "GET") {
       const site = url.searchParams.get("app_site_id") || ""
       if (site.startsWith("not.is")) return send([...linked.values()])
@@ -347,7 +382,7 @@ async function main() {
       opts.demoDev ? "devlab" : opts.demo ? "supervision" : "",
     )
     // Requêtes HEAD servies par l'interception : abouties, mais signalées « annulées » par Puppeteer.
-    const servedHead = opts.account ? await useDemoAccount(page) : new Set()
+    const servedHead = opts.account ? await useDemoAccount(page, opts.quiet) : new Set()
     let where = "démarrage"
     page.on("pageerror", (err) =>
       issues.push({ where, kind: "exception", text: err.message }),
@@ -377,7 +412,10 @@ async function main() {
     const dir = outputDir(opts.label)
     // L'interface de NEXORA n'est chargée que si un de ses écrans est demandé (pas pour le site seul).
     if (opts.firstRun || opts.spaces.length) {
-      await page.goto(url, { waitUntil: "load", timeout: 30000 })
+      // « ?app » : dans l'aperçu, la racine sans paramètre ouvre le site vitrine (#062).
+      const app = new URL(url)
+      app.searchParams.set("app", "")
+      await page.goto(app.href, { waitUntil: "load", timeout: 30000 })
       await settle(page, 2500)
     }
 
@@ -411,11 +449,17 @@ async function main() {
         )
       await button.click()
       await settle(page, space.wait ?? 1500)
-      for (const text of opts.clicks) {
-        if (!(await clickByText(page, text)))
-          throw new Error(`Bouton « ${text} » introuvable dans ${space.label}.`)
+      for (const action of opts.actions) {
+        if (action.kind === "type") {
+          if (!(await typeInto(page, action.field, action.text)))
+            throw new Error(`Champ « ${action.field}… » introuvable dans ${space.label}.`)
+        } else if (!(await clickByText(page, action.text)))
+          throw new Error(`Bouton « ${action.text} » introuvable dans ${space.label}.`)
         await settle(page, 1200)
       }
+      if (opts.wait) await sleep(opts.wait)
+      if (opts.quiet)
+        await page.addStyleTag({ content: "#toasts, .toast, .toasts { display: none !important; }" })
       if (opts.scroll) {
         const found = await page.evaluate((sel) => {
           const el = document.querySelector(sel)

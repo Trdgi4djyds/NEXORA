@@ -3,12 +3,7 @@
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { App } from "./App"
-import "./styles/base.css"
-import "./styles/sections.css"
-import "./styles/window.css"
-import "./styles/scenes.css"
-import "./styles/minis.css"
-import "./styles/motion.css"
+import "./styles/nocturne.css"
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

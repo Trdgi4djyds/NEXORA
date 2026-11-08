@@ -2,11 +2,13 @@ import { useEffect, useRef, useState, type CSSProperties } from "react"
 import type { SpaceId } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { Reveal, useInView, usePageVisible, useReducedMotion } from "../lib/motion"
-import { KoraApp, KoraSite } from "../scenes/common"
+import { CLIPS, LOOP } from "../lib/videos"
+import { ClipVideo, useAutoVideo, VideoToggle } from "./ClipVideo"
+import { Pixel } from "./Screen"
 import { SectionHead } from "./SectionHead"
-import { Stage } from "./Stage"
 
-const PERIOD = 5200
+// #070 : une boucle complète par plateforme (accueil, fiche produit, commande, retour à l'accueil).
+const PERIOD = LOOP * 1000
 
 const PLATFORMS: { id: string; space: SpaceId; icon: string; title: string; text: string; points: string[] }[] = [
   {
@@ -35,72 +37,33 @@ const PLATFORMS: { id: string; space: SpaceId; icon: string; title: string; text
   },
 ]
 
-const STAGE_W = 760
-const STAGE_H = 500
-
-function Frame({ id }: { id: string }) {
-  if (id === "android") {
-    return (
-      <div className="pf-phone">
-        <div className="pf-phone-screen">
-          <KoraApp />
-        </div>
-      </div>
-    )
-  }
-  const win = id === "windows"
-  return (
-    <div className={win ? "pf-win" : "pf-browser"}>
-      <div className="pf-bar">
-        {win ? (
-          <>
-            <span className="pf-app">
-              <i>k</i>Kora
-            </span>
-            <span className="pf-ctl">
-              <Icon name="minus" size={13} />
-              <i className="pf-max" />
-              <Icon name="close" size={13} />
-            </span>
-          </>
-        ) : (
-          <>
-            <span className="pf-dots">
-              <i />
-              <i />
-              <i />
-            </span>
-            <span className="pf-url">
-              <Icon name="lock" size={11} /> kora-boutique.fr
-            </span>
-          </>
-        )}
-      </div>
-      <div className="pf-view">
-        <KoraSite layout="desktop" scroll={false} />
-      </div>
-      {win && (
-        <div className="pf-task">
-          <i className="pf-start" />
-          <i className="pf-kora">k</i>
-          <i />
-          <i />
-        </div>
-      )}
-    </div>
-  )
-}
-
-/** « Un projet, trois plateformes » : le projet Kora publié sur le web, sur Android et sur Windows, en carrousel. */
+/**
+ * « Un projet, trois plateformes » : le projet Kora publié sur le web, sur Android et sur Windows, en carrousel.
+ * #069 : onglets à bordure lumineuse et scène éclairée par le pointeur (`lib/glow.ts`), appareils qui flottent.
+ * #070 : chaque plateforme montre la maquette animée de Kora (navigateur, Pixel 10 Pro, Surface Laptop sous
+ * Windows 11) avec ses transitions de page ; seule la vidéo de l'onglet ouvert est chargée et lue. Le bouton
+ * pause arrête aussi le carrousel.
+ */
 export function Platforms() {
   const [active, setActive] = useState(0)
   const [hover, setHover] = useState(false)
   const [round, setRound] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
+  const web = useRef<HTMLVideoElement>(null)
+  const android = useRef<HTMLVideoElement>(null)
+  const windows = useRef<HTMLVideoElement>(null)
+  const videos = [web, android, windows]
+  const clip = useAutoVideo(videos[active])
   const visible = useInView(ref, { margin: "-60px 0px" })
   const page = usePageVisible()
   const reduced = useReducedMotion()
-  const playing = !reduced && visible && page && !hover
+  const playing = !reduced && visible && page && !hover && clip.wanted
+
+  // L'onglet ouvert reprend sa boucle au début, calée sur la barre de progression de l'onglet.
+  useEffect(() => {
+    const v = videos[active].current
+    if (v && v.currentTime > 0) v.currentTime = 0
+  }, [active, round])
 
   useEffect(() => {
     if (!playing) return
@@ -112,17 +75,19 @@ export function Platforms() {
     setActive(i)
     setRound((r) => r + 1)
   }
-  const n = PLATFORMS.length
   return (
-    <section className="section alt platforms" id="plateformes" data-capture="plateformes">
-      <div className="container wide">
+    <section className="section platforms" id="plateformes" data-capture="plateformes">
+      <div className="container">
         <SectionHead
+          index="04"
           eyebrow="Un projet, trois plateformes"
           title={["Publie partout,", "sans tout refaire."]}
           lead="Ton site reste la source. NEXORA en tire une adresse web, une application Android et un logiciel Windows, chacun prêt à distribuer."
         />
+      </div>
+      <div className="container wide">
         <div className="pf-grid" ref={ref} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
-          <div className="pf-tabs" role="tablist" aria-label="Plateformes">
+          <div className="pf-tabs" role="tablist" aria-label="Plateformes" data-glow>
             {PLATFORMS.map((p, i) => {
               const on = i === active
               return (
@@ -132,7 +97,7 @@ export function Platforms() {
                     role="tab"
                     aria-selected={on}
                     aria-controls="pf-stage"
-                    className={`pf-tab${on ? " on" : ""}`}
+                    className={`pf-tab glow${on ? " on" : ""}`}
                     data-space={p.space}
                     onClick={() => pick(i)}
                   >
@@ -164,30 +129,42 @@ export function Platforms() {
             })}
           </div>
           <Reveal className="pf-visual" delay={120}>
-            <div className="pf-plate" id="pf-stage" data-space={PLATFORMS[active].space} role="tabpanel" aria-label={`Kora ${PLATFORMS[active].title.toLowerCase()}`}>
-              <Stage width={STAGE_W} height={STAGE_H} className="pf-stage" label="Le projet Kora sur le web, sur Android et sur Windows">
-                {() => (
-                  <div className="pf-scene">
-                    {PLATFORMS.map((p, i) => {
-                      const pos = (i - active + n) % n
-                      const cls = pos === 0 ? "is-active" : pos === 1 ? "is-next" : "is-prev"
-                      return (
-                        <div key={p.id} className={`pf-frame pf-${p.id} ${cls}`} aria-hidden={pos !== 0}>
-                          <Frame id={p.id} />
-                        </div>
-                      )
-                    })}
-                    <span className="pf-source" key={active}>
-                      <span className="pf-source-ic">
-                        <Icon name="folder" size={14} />
-                      </span>
-                      kora-boutique
-                      <Icon name="nxArrowRight" size={13} stroke={2.2} />
-                      <b data-space={PLATFORMS[active].space}>{PLATFORMS[active].title.replace("Sur ", "").replace("le web", "Web")}</b>
-                    </span>
+            <div className="pf-stage" id="pf-stage" role="tabpanel" aria-label={PLATFORMS[active].title} data-light>
+              <div className={`pf-v pf-web${active === 0 ? " on" : ""}`}>
+                <div className="browser">
+                  <div className="browser-bar">
+                    <i />
+                    <i />
+                    <i />
+                    <span>kora-boutique.fr</span>
                   </div>
-                )}
-              </Stage>
+                  <ClipVideo
+                    clip={CLIPS.koraWeb}
+                    videoRef={web}
+                    label="Le site de démonstration Kora dans un navigateur : accueil, fiche produit puis commande, avec leurs transitions de page."
+                  />
+                </div>
+              </div>
+              <div className={`pf-v pf-android${active === 1 ? " on" : ""}`}>
+                <Pixel
+                  screen={
+                    <ClipVideo
+                      clip={CLIPS.koraMobile}
+                      videoRef={android}
+                      label="Le site de démonstration Kora sur un Pixel 10 Pro : accueil, fiche produit puis commande, avec leurs transitions de page."
+                    />
+                  }
+                />
+              </div>
+              <div className={`pf-v pf-windows${active === 2 ? " on" : ""}`}>
+                <ClipVideo
+                  clip={CLIPS.windows}
+                  videoRef={windows}
+                  className="clip-device"
+                  label="Kora installé comme logiciel sur un Surface Laptop 15 sous Windows 11 : accueil, fiche produit puis commande, dans sa fenêtre."
+                />
+              </div>
+              <VideoToggle playing={clip.wanted} onToggle={clip.toggle} className="pf-toggle" />
             </div>
           </Reveal>
         </div>

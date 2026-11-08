@@ -8,6 +8,7 @@ import { Personas } from "../components/Personas"
 import { Platforms } from "../components/Platforms"
 import { PricingCards } from "../components/Pricing"
 import { SectionHead } from "../components/SectionHead"
+import { Showcase } from "../components/Showcase"
 import { SpaceBento } from "../components/SpaceBento"
 import { Stats } from "../components/Stats"
 import { Story } from "../components/Story"
@@ -23,12 +24,14 @@ export function Home() {
     <>
       <Hero />
       <Marquee />
+      <Showcase />
       <section className="section" id="espaces" data-capture="espaces">
         <div className="container">
           <SectionHead
+            index="02"
             eyebrow="9 espaces, 1 application"
-            title={["Tout pour aller de l’idée", "à la mise en ligne."]}
-            lead="Chaque espace fait un métier. Ensemble, ils partagent tes projets : ouvre un projet, et tous les espaces s’alignent dessus."
+            title={["Neuf espaces,", "un seul projet ouvert."]}
+            lead="Un projet réunit ton site ou ton code, ses applications, ses visuels et sa surveillance. Ouvre-le : tous les espaces s’alignent dessus."
           />
           <SpaceBento />
         </div>
@@ -42,9 +45,10 @@ export function Home() {
       <section className="section alt" id="tarifs" data-capture="tarifs">
         <div className="container">
           <SectionHead
+            index="08"
             eyebrow="Tarifs"
-            title={["Commence gratuitement,", "accélère quand tu veux."]}
-            lead="L’offre Gratuite n’a pas de limite de durée. Standard débloque la publication, Pro donne toute la puissance de NEXORA."
+            title={["Gratuit pour commencer,", "sans limite de durée."]}
+            lead="Standard débloque la publication sur Android et Windows, Pro donne toute la puissance de NEXORA. Tu changes d’offre quand tu veux."
           />
           <PricingCards />
           <Reveal className="center-row">
@@ -57,7 +61,7 @@ export function Home() {
       {latest && (
         <section className="section" data-capture="nouveautes">
           <div className="container">
-            <SectionHead eyebrow={`Nouveautés ${latest[0]}`} title={[`${latest[1].title} :`, "ce qui change."]} lead={latest[1].intro} />
+            <SectionHead index="09" eyebrow={`Nouveautés ${latest[0]}`} title={[`${latest[1].title} :`, "ce qui change."]} lead={latest[1].intro} />
             <NewsCards items={latest[1].items} limit={6} />
             <Reveal className="center-row">
               <a className="link-arrow" href="#/nouveautes">
@@ -68,8 +72,8 @@ export function Home() {
         </section>
       )}
       <section className="section alt" id="faq" data-capture="faq">
-        <div className="container narrow">
-          <SectionHead eyebrow="Questions fréquentes" title={["Tu te poses", "des questions ?"]} />
+        <div className="container faq-wrap">
+          <SectionHead index="10" align="left" eyebrow="Questions fréquentes" title={["Ce qu’on nous", "demande le plus."]} />
           <Faq items={FAQ} />
         </div>
       </section>

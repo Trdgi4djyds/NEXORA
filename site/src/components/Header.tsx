@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type MouseEvent } from "react"
 import { SPACES, spaceHref } from "../data/spaces"
 import { Icon } from "../lib/icons"
-import { APP_VERSION } from "../lib/product"
-import { useTheme } from "../lib/theme"
+import { APP_VERSION, WEB_URL } from "../lib/product"
 import type { Route } from "../router"
 import { Brand } from "./Brand"
 import { DownloadButton } from "./Download"
@@ -12,8 +11,13 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
   const [mobile, setMobile] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [menuTop, setMenuTop] = useState(70)
-  const [theme, toggleTheme] = useTheme()
+  // Surbrillance qui glisse jusqu'au lien survolé (#069).
+  const [hl, setHl] = useState({ x: 0, w: 0, on: false })
   const ref = useRef<HTMLElement>(null)
+  const track = (e: MouseEvent<HTMLElement>) => {
+    const el = e.currentTarget
+    setHl({ x: el.offsetLeft, w: el.offsetWidth, on: true })
+  }
 
   useEffect(() => {
     setMega(false)
@@ -86,24 +90,26 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
         <a href="#/" className="hdr-brand" aria-label="NEXORA, accueil du site">
           <Brand />
         </a>
-        <nav className="hdr-nav" aria-label="Navigation principale">
+        <nav className="hdr-nav" aria-label="Navigation principale" onMouseLeave={() => setHl((h) => ({ ...h, on: false }))}>
+          <i className={`nav-hl${hl.on ? " on" : ""}`} style={{ transform: `translateX(${hl.x}px)`, width: hl.w }} aria-hidden="true" />
           <button
             type="button"
             className={`nav-link${mega || at === "espaces" ? " on" : ""}`}
             aria-expanded={mega}
             aria-controls="mega-espaces"
             onClick={() => setMega((v) => !v)}
+            onMouseEnter={track}
           >
             Espaces
             <Icon name="chevronDown" size={15} stroke={2} className={`nav-chev${mega ? " up" : ""}`} />
           </button>
-          <a className={`nav-link${at === "tarifs" ? " on" : ""}`} href="#/tarifs" aria-current={current("tarifs")}>
+          <a className={`nav-link${at === "tarifs" ? " on" : ""}`} href="#/tarifs" aria-current={current("tarifs")} onMouseEnter={track}>
             Tarifs
           </a>
-          <a className={`nav-link${at === "nouveautes" ? " on" : ""}`} href="#/nouveautes" aria-current={current("nouveautes")}>
+          <a className={`nav-link${at === "nouveautes" ? " on" : ""}`} href="#/nouveautes" aria-current={current("nouveautes")} onMouseEnter={track}>
             Nouveautés
           </a>
-          <a className={`nav-link${at === "telecharger" ? " on" : ""}`} href="#/telecharger" aria-current={current("telecharger")}>
+          <a className={`nav-link${at === "telecharger" ? " on" : ""}`} href="#/telecharger" aria-current={current("telecharger")} onMouseEnter={track}>
             Télécharger
           </a>
         </nav>
@@ -113,16 +119,7 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
             <span>Rechercher</span>
             <kbd className="kbd">Ctrl K</kbd>
           </button>
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={toggleTheme}
-            aria-label={theme === "dark" ? "Passer au thème clair" : "Passer au thème sombre"}
-            title={theme === "dark" ? "Thème clair" : "Thème sombre"}
-          >
-            <Icon name={theme === "dark" ? "sun" : "moon"} size={18} />
-          </button>
-          <a className="btn btn-ghost btn-sm hdr-web" href="../">
+          <a className="btn btn-ghost btn-sm hdr-web" href={WEB_URL}>
             Ouvrir NEXORA web
           </a>
           <DownloadButton size="sm" label="Télécharger" className="hdr-dl" />
@@ -186,7 +183,7 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
               <a href="#/tarifs">Tarifs</a>
               <a href="#/nouveautes">Nouveautés</a>
               <a href="#/telecharger">Télécharger</a>
-              <a href="../">Ouvrir NEXORA web</a>
+              <a href={WEB_URL}>Ouvrir NEXORA web</a>
             </div>
             <DownloadButton size="lg" className="mobile-cta" />
           </div>

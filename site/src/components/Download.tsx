@@ -1,3 +1,4 @@
+import { WEB_URL } from "../lib/product"
 import { Icon } from "../lib/icons"
 import { useRemote } from "../lib/remote"
 
@@ -38,7 +39,7 @@ export function DownloadButton({
 /** Lien vers NEXORA web (même adresse que le site, à la racine). */
 export function WebButton({ size = "md", variant = "ghost", label = "Essayer dans le navigateur" }: { size?: "sm" | "md" | "lg"; variant?: "ghost" | "outline-white"; label?: string }) {
   return (
-    <a className={`btn btn-${variant}${size === "md" ? "" : ` btn-${size}`}`} href="../">
+    <a className={`btn btn-${variant} glow${size === "md" ? "" : ` btn-${size}`}`} href={WEB_URL}>
       <span>{label}</span>
       <Icon name="nxArrowRight" size={size === "sm" ? 15 : 17} stroke={2} className="ico-go" />
     </a>

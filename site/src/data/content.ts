@@ -12,6 +12,20 @@ export const TECH_ROWS: string[][] = [
   ["Node.js", "pnpm", "Yarn", "Bun", "Deno", "Python", "PHP", "Composer", "Ruby", "Go", "Git", "TypeScript", "PWA", "HTML et CSS"],
 ]
 
+// Un fait vérifié par espace (catalogue, modèles, mises en scène… relevés dans NEXORA), repris par le hero et la
+// grille des espaces (#069).
+export const SPACE_FACTS: Record<SpaceId, [string, string]> = {
+  home: ["8", "objectifs pour bien commencer"],
+  preview: [String(DEVICE_COUNT), "appareils réels à l’écran"],
+  browser: ["6", "catégories d’audit, avec rapport"],
+  dev: ["15", "modèles de projet prêts à lancer"],
+  android: ["APK · AAB", "signés, prêts pour le Play Store"],
+  studio: ["6", "mises en scène toutes prêtes"],
+  design: ["13", "fonctions de design"],
+  security: ["7", "types de vérification, 24 h/24"],
+  desktop: ["4", "formats d’installation"],
+}
+
 export type StoryStep = { space: SpaceId; verb: string; title: string; text: string; points: string[] }
 export const STORY: StoryStep[] = [
   {
@@ -66,18 +80,19 @@ export const STORY: StoryStep[] = [
 ]
 
 export const AI_PROVIDERS = ["Claude", "GPT", "Gemini", "Mistral", "Ollama"]
-export const AI_USES: { space: SpaceId; icon: string; title: string; text: string }[] = [
-  { space: "dev", icon: "code", title: "Dev Lab", text: "Propose des changements sur tout le projet, que tu acceptes fichier par fichier." },
-  { space: "design", icon: "palette", title: "NEX-DESIGN", text: "Crée une maquette à partir d’une simple description." },
-  { space: "studio", icon: "cube", title: "Studio 3D & Motion", text: "Compose une mise en scène et un mouvement de caméra." },
-  { space: "android", icon: "android", title: "App Builder", text: "Rédige ta fiche Play Store et explique les plantages." },
+export const AI_USES: { space: SpaceId; title: string; text: string }[] = [
+  { space: "dev", title: "Dev Lab", text: "Propose des changements sur tout le projet, que tu acceptes fichier par fichier." },
+  { space: "design", title: "NEX-DESIGN", text: "Crée une maquette à partir d’une simple description." },
+  { space: "studio", title: "Studio 3D & Motion", text: "Compose une mise en scène et un mouvement de caméra." },
+  { space: "android", title: "App Builder", text: "Rédige ta fiche Play Store et explique les plantages." },
 ]
 
-export const TRUST: { icon: string; title: string; text: string }[] = [
-  { icon: "laptop", title: "Tes fichiers restent sur ton PC", text: "Tes dossiers de projet ne quittent pas ton ordinateur. Avec un compte, tes réglages et tes projets se synchronisent entre tes appareils." },
-  { icon: "key", title: "Clés et jetons chiffrés", text: "Jetons, mots de passe et variables protégées sont chiffrés par Windows et ne sont jamais renvoyés à l’interface." },
-  { icon: "layers", title: "Chaque projet isolé", text: "Chaque projet a sa propre session : cookies, stockage et cache ne se mélangent jamais d’un site à l’autre." },
-  { icon: "shield", title: "Outils vérifiés", text: "Les outils de développement viennent de leurs sources officielles, avec contrôle de l’empreinte quand elle est publiée." },
+// Fiche « Confiance » (#069 : libellés de fiche technique au lieu d'icônes).
+export const TRUST: { label: string; title: string; text: string }[] = [
+  { label: "Fichiers", title: "Tes fichiers restent sur ton PC", text: "Tes dossiers de projet ne quittent pas ton ordinateur. Avec un compte, tes réglages et tes projets se synchronisent entre tes appareils." },
+  { label: "Secrets", title: "Clés et jetons chiffrés", text: "Jetons, mots de passe et variables protégées sont chiffrés par Windows et ne sont jamais renvoyés à l’interface." },
+  { label: "Sessions", title: "Chaque projet isolé", text: "Chaque projet a sa propre session : cookies, stockage et cache ne se mélangent jamais d’un site à l’autre." },
+  { label: "Outils", title: "Outils vérifiés", text: "Les outils de développement viennent de leurs sources officielles, avec contrôle de l’empreinte quand elle est publiée." },
 ]
 
 export type Persona = { photo: string; alt: string; title: string; text: string; space: SpaceId; link: string }

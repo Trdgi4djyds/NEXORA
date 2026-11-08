@@ -1,3 +1,4 @@
+import { WEB_URL } from "../lib/product"
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { COMPARE } from "../../../nexora/app/renderer/nx/offres/catalog.js"
 import { Icon } from "../lib/icons"
@@ -21,7 +22,7 @@ function PlanCard({ plan, annual, ready, start }: { plan: Plan; annual: boolean;
   const look = LOOK[plan.id] ?? LOOK.pro
   const shown = useTween(perMonth)
   return (
-    <article className={`plan${featured ? " featured" : ""}`} data-plan={plan.id}>
+    <article className={`plan glow${featured ? " featured" : ""}`} data-plan={plan.id}>
       {plan.badge && <span className="plan-badge">{plan.badge}</span>}
       <div className="plan-top">
         <span className="sp-ic" data-space={look.space}>
@@ -41,7 +42,7 @@ function PlanCard({ plan, annual, ready, start }: { plan: Plan; annual: boolean;
             ? `${money(plan.price_year_cents)} facturés une fois par an`
             : `ou ${money(plan.price_year_cents)} par an${offered ? `, soit ${offered} mois offerts` : ""}`}
       </p>
-      <a className={`btn ${featured ? "btn-primary" : "btn-ghost"} plan-cta`} href={free ? start : "../"}>
+      <a className={`btn ${featured ? "btn-primary" : "btn-ghost"} plan-cta`} href={free ? start : WEB_URL}>
         {free ? "Commencer gratuitement" : `Choisir ${plan.name}`}
         <Icon name="nxArrowRight" size={16} stroke={2} className="ico-go" />
       </a>
@@ -90,7 +91,7 @@ export function PricingCards() {
         </button>
         </div>
       </Reveal>
-      <div className="plans">
+      <div className="plans" data-glow>
         {plans.map((p, i) => (
           <Reveal key={p.id} delay={i * 90} className="plan-wrap">
             <PlanCard plan={p} annual={annual} ready={ready} start={downloadUrl || "#/telecharger"} />

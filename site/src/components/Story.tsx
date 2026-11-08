@@ -3,12 +3,13 @@ import { STORY } from "../data/content"
 import { SPACE_BY_ID, spaceHref } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { useMedia } from "../lib/motion"
-import { LiveWindow } from "./AppWindow"
+import { Screen, Screens } from "./Screen"
 import { SectionHead } from "./SectionHead"
 
 /**
  * Récit « De l'idée à la publication » : les étapes défilent à gauche, la fenêtre de NEXORA reste à l'écran à
  * droite et passe à l'espace de l'étape lue. Sur petit écran, chaque étape a sa propre fenêtre.
+ * #069 : tête lumineuse sur la frise, halo de la couleur de l'étape et reflet qui suit la souris.
  */
 export function Story() {
   const [active, setActive] = useState(0)
@@ -30,17 +31,21 @@ export function Story() {
   const step = STORY[active]
   return (
     <section className="section story" id="parcours" data-capture="parcours">
-      <div className="container wide">
+      <div className="container">
         <SectionHead
+          index="03"
           eyebrow="De l’idée à la publication"
-          title={["Un seul fil,", "du croquis à l’installation."]}
+          title={["Du premier écran", "au logiciel installé."]}
           lead="Conçois, code, teste, sécurise, publie et présente sans changer d’outil : chaque espace reprend là où le précédent s’est arrêté."
         />
+      </div>
+      <div className="container wide">
         <div className="story-grid">
           <ol className="story-steps">
             {!narrow && (
               <li className="story-rail" aria-hidden="true" data-space={step.space}>
                 <i style={{ transform: `scaleY(${(active + 1) / STORY.length})` }} />
+                <b className="story-head" style={{ top: `${((active + 1) / STORY.length) * 100}%` }} />
               </li>
             )}
             {STORY.map((s, i) => {
@@ -78,7 +83,9 @@ export function Story() {
                     </a>
                     {narrow && (
                       <div className="story-mobile">
-                        <LiveWindow space={s.space} />
+                        <div className="frame">
+                          <Screen space={s.space} />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -89,8 +96,11 @@ export function Story() {
           {!narrow && (
             <div className="story-visual">
               <div className="story-sticky" data-space={step.space}>
-                <div className="story-plate">
-                  <LiveWindow space={step.space} />
+                <div className="story-plate" data-light>
+                  <div className="frame">
+                    <Screens spaces={STORY.map((s) => s.space)} current={step.space} />
+                    <i className="glare-spot" aria-hidden="true" />
+                  </div>
                 </div>
                 <div className="story-dots" aria-hidden="true">
                   {STORY.map((s, i) => (

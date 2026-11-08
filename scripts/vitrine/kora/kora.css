@@ -1,0 +1,124 @@
+@font-face { font-family:"Playfair Display"; src:url(fonts/playfair-display-latin-700-normal.woff) format("woff"); font-weight:700 }
+@font-face { font-family:"Inter"; src:url(fonts/inter-latin-opsz-normal.woff2) format("woff2"); font-weight:100 900 }
+:root { --ink:#1f1a16; --soft:#6b6058; --bg:#f7f3ee; --card:#fffdfa; --line:#e6ddd3; --accent:#b4572a; }
+* { box-sizing:border-box; margin:0; padding:0 }
+body { font: 16px/1.6 "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); -webkit-font-smoothing:antialiased; min-height:100vh; display:flex; flex-direction:column }
+main { flex:1 }
+img { display:block; width:100%; height:100%; object-fit:cover }
+a { color:inherit; text-decoration:none }
+.serif { font-family: "Playfair Display", Georgia, serif; font-weight:700; letter-spacing:-0.015em }
+.wrap { max-width:1240px; margin:0 auto; padding:0 40px }
+header { position:sticky; top:0; z-index:5; background:rgba(247,243,238,.94); border-bottom:1px solid var(--line) }
+.nav { display:flex; align-items:center; height:72px; gap:36px }
+.logo { font-size:26px; font-family:"Playfair Display",Georgia,serif; font-weight:700; letter-spacing:.01em }
+.links { display:flex; gap:28px; font-size:14.5px; color:var(--soft) }
+.nav .cta { margin-left:auto; display:flex; gap:12px; align-items:center }
+.btn { display:inline-flex; align-items:center; gap:8px; height:44px; padding:0 22px; border-radius:999px; font-size:14.5px; font-weight:600; background:var(--ink); color:#fff }
+.btn.line { background:transparent; color:var(--ink); border:1px solid var(--ink) }
+.burger { display:none; margin-left:auto; width:40px; height:40px; border:1px solid var(--line); border-radius:50%; place-items:center }
+.burger i { display:block; width:16px; height:1.5px; background:var(--ink); box-shadow:0 5px 0 var(--ink), 0 -5px 0 var(--ink) }
+.hero { display:grid; grid-template-columns: 1.02fr 1fr; gap:56px; align-items:center; padding-block:64px 72px }
+.kicker { font-size:12.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); font-weight:600 }
+.hero h1 { font-size:58px; line-height:1.04; margin:18px 0 22px }
+.hero p { font-size:18px; color:var(--soft); max-width:460px }
+.hero .row { display:flex; gap:12px; margin-top:32px }
+.hero .pic { position:relative; height:560px; border-radius:6px; overflow:hidden }
+.badge { position:absolute; left:20px; bottom:20px; background:var(--card); padding:14px 18px; border-radius:6px; font-size:13.5px }
+.badge b { display:block; font-size:15px }
+.facts { display:flex; gap:44px; margin-top:44px; padding-top:28px; border-top:1px solid var(--line) }
+.facts b { display:block; font-family:"Playfair Display",Georgia,serif; font-size:30px; font-weight:700 }
+.facts span { font-size:13.5px; color:var(--soft) }
+section.products { padding:72px 0; background:var(--card); border-top:1px solid var(--line); border-bottom:1px solid var(--line) }
+.head { display:flex; align-items:end; justify-content:space-between; margin-bottom:32px }
+.head h2 { font-size:40px; line-height:1.1 }
+.grid { display:grid; grid-template-columns:repeat(4,1fr); gap:24px }
+.p .img { height:260px; border-radius:4px; overflow:hidden; margin-bottom:14px }
+.p h3 { font-size:16px; font-weight:600 }
+.p .meta { display:flex; justify-content:space-between; font-size:14px; color:var(--soft) }
+.p .meta b { color:var(--ink) }
+.story { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center; padding-block:88px }
+.story .img { height:440px; border-radius:6px; overflow:hidden }
+.story h2 { font-size:42px; line-height:1.1; margin:14px 0 18px }
+.story p { color:var(--soft); margin-bottom:14px }
+footer { background:var(--ink); color:#d8cfc6; padding:44px 0; font-size:14px }
+footer .wrap { display:flex; justify-content:space-between; gap:24px; flex-wrap:wrap }
+footer .logo { color:#fff }
+@media (max-width: 760px) {
+  .wrap { padding:0 20px }
+  .links, .nav .cta { display:none }
+  .burger { display:grid }
+  .nav { height:60px }
+  .logo { font-size:22px }
+  .hero { grid-template-columns:1fr; gap:24px; padding-block:24px 40px }
+  .hero .pic { order:-1; height:300px }
+  .hero h1 { font-size:38px; margin:12px 0 14px }
+  .hero p { font-size:16px }
+  .hero .row .line { display:none }
+  .facts { gap:22px; margin-top:28px }
+  .facts b { font-size:24px }
+  section.products { padding:40px 0 }
+  .head h2 { font-size:28px }
+  .head .btn { display:none }
+  .grid { grid-template-columns:1fr 1fr; gap:14px }
+  .p .img { height:150px }
+  .story { grid-template-columns:1fr; padding-block:44px; gap:24px }
+  .story .img { height:240px }
+  .story h2 { font-size:28px }
+}
+
+/* Pages produit et commande (#070), transitions de page entre documents (Chrome 126 et plus). */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: kora-out .38s cubic-bezier(.3,.7,.2,1) both; }
+::view-transition-new(root) { animation: kora-in .38s cubic-bezier(.3,.7,.2,1) both; }
+@keyframes kora-out { to { transform: translateX(-28%); opacity: .55; } }
+@keyframes kora-in { from { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { ::view-transition-old(root), ::view-transition-new(root) { animation: none; } }
+.back { display:inline-flex; align-items:center; gap:8px; margin:28px 0 20px; font-size:14px; color:var(--soft) }
+.back::before { content:"←"; }
+.item { display:grid; grid-template-columns: 1.05fr 1fr; gap:56px; padding-bottom:72px }
+.item .pic { height:560px; border-radius:6px; overflow:hidden }
+.item h1 { font-size:52px; line-height:1.05; margin:14px 0 10px }
+.item .sub { color:var(--soft) }
+.price { font-family:"Playfair Display",Georgia,serif; font-size:34px; font-weight:700; margin:22px 0 18px }
+.item p.desc { color:var(--soft); margin-bottom:22px; max-width:480px }
+.spec { border-top:1px solid var(--line); margin-bottom:26px }
+.spec div { display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--line); font-size:14.5px }
+.spec span { color:var(--soft) }
+.buy { display:flex; gap:12px; align-items:center }
+.qty { display:inline-flex; align-items:center; gap:18px; height:44px; padding:0 18px; border:1px solid var(--line); border-radius:999px; background:var(--card); font-weight:600 }
+.qty i { font-style:normal; color:var(--soft) }
+.note { margin-top:16px; font-size:13.5px; color:var(--soft) }
+.also { padding:56px 0 72px; background:var(--card); border-top:1px solid var(--line) }
+.also h2 { font-size:28px; margin-bottom:22px }
+.also .grid { grid-template-columns:repeat(3,1fr) }
+.order { display:grid; grid-template-columns: 1.3fr 1fr; gap:48px; align-items:start; padding-bottom:80px }
+.order h1 { font-size:46px; line-height:1.05; margin:10px 0 26px }
+.line-item { display:grid; grid-template-columns:76px 1fr auto; gap:16px; align-items:center; padding:16px 0; border-bottom:1px solid var(--line) }
+.line-item .img { width:76px; height:76px; border-radius:4px; overflow:hidden }
+.line-item b { display:block; font-size:15.5px }
+.line-item span { font-size:13.5px; color:var(--soft) }
+.box { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:24px }
+.box h2 { font-size:22px; margin-bottom:16px }
+.choice { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border:1px solid var(--line); border-radius:6px; margin-bottom:10px; font-size:14.5px }
+.choice.on { border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink) }
+.choice span { color:var(--soft); font-size:13px }
+.slots { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 18px }
+.slots span { padding:8px 12px; border:1px solid var(--line); border-radius:999px; font-size:13.5px }
+.slots .on { background:var(--ink); color:#fff; border-color:var(--ink) }
+.total { display:flex; justify-content:space-between; align-items:baseline; padding:16px 0; border-top:1px solid var(--line); margin-top:8px }
+.total b { font-family:"Playfair Display",Georgia,serif; font-size:30px }
+.box .btn { width:100%; justify-content:center }
+@media (max-width: 760px) {
+  .back { margin:16px 0 14px }
+  .item { grid-template-columns:1fr; gap:22px; padding-bottom:40px }
+  .item .pic { height:320px }
+  .item h1 { font-size:34px; margin:10px 0 6px }
+  .price { font-size:28px; margin:16px 0 12px }
+  .buy .btn { flex:1; justify-content:center }
+  .also { padding:36px 0 44px }
+  .also h2 { font-size:22px }
+  .also .grid { grid-template-columns:1fr 1fr }
+  .also .grid .p:last-child { display:none }
+  .order { grid-template-columns:1fr; gap:24px; padding-bottom:44px }
+  .order h1 { font-size:32px; margin:6px 0 14px }
+}

@@ -1,29 +1,33 @@
 import { TRUST } from "../data/content"
-import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
 import { SectionHead } from "./SectionHead"
 
+/** Confiance (#069) : fiche technique (libellé, garantie, état) au lieu de cartes à icône ; lignes éclairées au survol. */
 export function Trust() {
   return (
     <section className="section trust" data-space="security" data-capture="confiance">
       <div className="container trust-grid">
         <SectionHead
+          index="07"
           align="left"
           eyebrow="Confiance"
           title={["Tes projets restent", "chez toi."]}
           lead="NEXORA travaille sur ton ordinateur : ce qui est sensible est chiffré et chaque projet reste cloisonné."
         />
-        <div className="trust-cards">
+        <ul className="spec" data-glow>
           {TRUST.map((t, i) => (
-            <Reveal className="trust-card" key={t.title} delay={i * 80}>
-              <span className="sp-ic">
-                <Icon name={t.icon} size={19} />
+            <Reveal as="li" className="spec-row glow" key={t.title} delay={i * 70}>
+              <span className="spec-k">{t.label}</span>
+              <span className="spec-v">
+                <b>{t.title}</b>
+                <span>{t.text}</span>
               </span>
-              <h3>{t.title}</h3>
-              <p>{t.text}</p>
+              <span className="spec-s">
+                <i /> Par défaut
+              </span>
             </Reveal>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   )

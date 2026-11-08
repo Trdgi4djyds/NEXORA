@@ -1,8 +1,6 @@
-import type { CSSProperties } from "react"
 import { SPACES, spaceHref } from "../data/spaces"
 import { Icon } from "../lib/icons"
-import { Reveal } from "../lib/motion"
-import { APP_VERSION } from "../lib/product"
+import { APP_VERSION, WEB_URL } from "../lib/product"
 import { useRemote } from "../lib/remote"
 import { Brand } from "./Brand"
 
@@ -43,25 +41,11 @@ export function Footer() {
         </nav>
         <nav className="ftr-col" aria-label="NEXORA web">
           <h2>NEXORA web</h2>
-          <a href="../">Ouvrir NEXORA web</a>
+          <a href={WEB_URL}>Ouvrir NEXORA web</a>
           <a href="#/telecharger">Configuration requise</a>
           {supportEmail && <a href={`mailto:${supportEmail}`}>Contacter l’équipe</a>}
         </nav>
       </div>
-      <Reveal className="container wide ftr-word" aria-hidden="true">
-        <span className="ftr-spectrum">
-          {SPACES.map((s, i) => (
-            <i key={s.id} data-space={s.id} style={{ "--i": i } as CSSProperties} />
-          ))}
-        </span>
-        <span className="ftr-letters">
-          {"NEXORA".split("").map((c, i) => (
-            <span key={i} style={{ "--i": i } as CSSProperties}>
-              {c}
-            </span>
-          ))}
-        </span>
-      </Reveal>
       <div className="container wide ftr-bottom">
         <span>© {new Date().getFullYear()} NEXORA. Tous droits réservés.</span>
         <span className="muted">Interface en français · Photos : Unsplash</span>

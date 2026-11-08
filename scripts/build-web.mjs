@@ -4,7 +4,9 @@
 // Le back office web (admin/, React) est assemblé par Vite dans dist/admin/, avec des chemins
 // relatifs : il fonctionne quelle que soit l'adresse de publication (Figma Make, GitHub Pages…).
 // Le site vitrine (site/, React, NEXORA #060) est assemblé de la même façon dans dist/site/.
-// Les arguments passés par Figma Make (par exemple `--mode development`) n'ont pas d'effet ici.
+// `--mode development` (passé seulement par .figma/make/deploy-preview, l'aperçu déployé de Figma Make,
+// NEXORA #063) : le site vitrine devient la page d'entrée (dist/index.html) et NEXORA web passe à
+// dist/app.html. La publication (Cloudflare : `pnpm run build`, sans argument) garde NEXORA web à la racine.
 import crypto from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
@@ -36,6 +38,10 @@ function readSiteSettings() {
 }
 
 const noIndex = readSiteSettings().robots?.index === false
+const argv = process.argv.slice(2)
+const previewEntry =
+  argv.includes("--mode=development") ||
+  argv.some((a, i) => a === "--mode" && argv[i + 1] === "development")
 
 fs.rmSync(OUT_DIR, { recursive: true, force: true })
 fs.cpSync(RENDERER_DIR, OUT_DIR, { recursive: true })
@@ -140,6 +146,10 @@ await build({
   publicDir: false,
   logLevel: "warn",
   plugins: [react()],
+  // Aperçu déployé (#063) : « Ouvrir NEXORA web » mène à app.html, le site occupant la racine.
+  define: previewEntry
+    ? { "import.meta.env.VITE_NEXORA_WEB": JSON.stringify("../app.html") }
+    : {},
   build: {
     outDir: path.join(OUT_DIR, "site"),
     emptyOutDir: true,
@@ -147,8 +157,9 @@ await build({
   },
 })
 // Politique de sécurité du site vitrine, posée dans la page publiée seulement (Vite en a besoin d'une plus
-// large pendant le développement) : fichiers du site, script de thème autorisé par son empreinte, lectures
-// publiques sur le serveur de NEXORA (offres, lien de téléchargement), aucune ressource tierce.
+// large pendant le développement) : fichiers du site, scripts en ligne éventuels autorisés par leur empreinte
+// (aucun depuis #068 : le site est sombre seulement, sans script de thème), lectures publiques sur le serveur
+// de NEXORA (offres, lien de téléchargement), aucune ressource tierce.
 const sitePage = path.join(OUT_DIR, "site", "index.html")
 let siteHtml = fs.readFileSync(sitePage, "utf8")
 const inline = [...siteHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(
@@ -177,6 +188,16 @@ siteHtml = siteHtml.replace(
   ].join("\n"),
 )
 fs.writeFileSync(sitePage, siteHtml)
+
+// Aperçu déployé de Figma Make (#063) : le site vitrine à la racine (mêmes fichiers que dist/site/, chemins
+// préfixés), NEXORA web dans app.html (ses chemins relatifs restent valables à la racine).
+if (previewEntry) {
+  fs.renameSync(path.join(OUT_DIR, "index.html"), path.join(OUT_DIR, "app.html"))
+  const rootHtml = siteHtml.replaceAll('"./assets/', '"./site/assets/')
+  if (!rootHtml.includes('"./site/assets/'))
+    throw new Error("site/index.html : chemins des fichiers du site introuvables.")
+  fs.writeFileSync(path.join(OUT_DIR, "index.html"), rootHtml)
+}
 
 let files = 0
 let bytes = 0

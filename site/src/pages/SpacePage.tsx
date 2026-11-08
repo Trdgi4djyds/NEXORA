@@ -1,11 +1,13 @@
-import { LiveWindow } from "../components/AppWindow"
+import { useState } from "react"
+import { Screen } from "../components/Screen"
 import { CtaBand } from "../components/CtaBand"
 import { DownloadButton } from "../components/Download"
 import { SectionHead } from "../components/SectionHead"
 import { PLAN_LABEL, SPACES, spaceHref, type Feature, type Space } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
-import { DEVICE_CATEGORIES, DEVICE_LIST } from "../lib/product"
+import { APP_VERSION, DEVICE_CATEGORIES, DEVICE_LIST } from "../lib/product"
+import { cameFromCard } from "../lib/transitions"
 import type { PlanId } from "../lib/remote"
 
 const GLYPH: Record<string, string> = { phone: "phone", fold: "fold", tablet: "tablet", laptop: "laptop", display: "display", watch: "watch", tv: "tv", xr: "xr", gamepad: "gamepad", car: "car", kiosk: "kiosk" }
@@ -22,9 +24,9 @@ function DeviceCatalog() {
           title={[`${DEVICE_LIST.length} appareils,`, `${DEVICE_CATEGORIES.length} familles.`]}
           lead="Des téléphones les plus vendus aux écrans de voiture : chaque modèle avec sa taille d’écran et sa densité réelles."
         />
-        <div className="dev-cats">
+        <div className="dev-cats" data-glow>
           {DEVICE_CATEGORIES.map((c, i) => (
-            <Reveal className="dev-cat" key={c.id} delay={(i % 5) * 50}>
+            <Reveal className="dev-cat glow" key={c.id} delay={(i % 5) * 50}>
               <span className="dev-cat-ic" style={{ color: c.color }}>
                 <Icon name={GLYPH[c.glyph] ?? "phone"} size={20} />
               </span>
@@ -81,9 +83,9 @@ function PlanSplit({ space }: { space: Space }) {
     },
   ]
   return (
-    <div className="split">
+    <div className="split" data-glow>
       {cols.map((c, i) => (
-        <Reveal className={`split-col${c.id === "standard" ? " featured" : ""}`} key={c.id} delay={i * 80}>
+        <Reveal className={`split-col glow${c.id === "standard" ? " featured" : ""}`} key={c.id} delay={i * 80}>
           <span className={`plan-tag ${c.id}`}>{c.title}</span>
           <p className="split-lead">{c.lead}</p>
           <ul>
@@ -107,13 +109,17 @@ function PlanSplit({ space }: { space: Space }) {
 }
 
 export function SpacePage({ space }: { space: Space }) {
+  // #070 : venue d'une carte d'espace, la capture de la carte se transforme en celle-ci (sans apparition retardée).
+  const [shared] = useState(cameFromCard)
   const idx = SPACES.indexOf(space)
   const prev = SPACES[(idx + SPACES.length - 1) % SPACES.length]
   const next = SPACES[(idx + 1) % SPACES.length]
   return (
     <div className="space-page" data-space={space.id}>
-      <section className="sp-hero" data-capture="haut">
-        <div className="hero-bg dots" aria-hidden="true" />
+      <section className="sp-hero" data-capture="haut" data-light>
+        <i className="grid-bg" aria-hidden="true" />
+        <i className="grid-lit" aria-hidden="true" />
+        <i className="torch" aria-hidden="true" />
         <div className="container">
           <a href="#/espaces" className="crumb rise">
             <Icon name="chevronLeft" size={15} stroke={2} /> Tous les espaces
@@ -138,32 +144,35 @@ export function SpacePage({ space }: { space: Space }) {
                   Voir les tarifs
                 </a>
               </div>
-              <span className={`plan-tag ${space.plan}`}>{space.planNote}</span>
+              <span className={`plan-note ${space.plan}`}>{space.planNote}</span>
             </div>
           </div>
         </div>
-        <div className="container wide rise" style={{ animationDelay: "260ms" }}>
-          <div className="sp-show" data-capture="apercu">
-            <LiveWindow space={space.id} />
+        <div className={`container wide${shared ? "" : " rise"}`} style={{ animationDelay: "260ms" }}>
+          <div className="sp-show" data-capture="apercu" data-tilt>
+            <div className={`frame${shared ? " vt-shot" : ""}`}>
+              <Screen space={space.id} eager />
+              <i className="glare" aria-hidden="true" />
+            </div>
           </div>
         </div>
       </section>
 
       <section className="section tight" data-capture="fonctions">
         <div className="container">
-          <SectionHead align="left" eyebrow="Ce que tu peux faire" title={[space.name, "en détail."]} />
-          <div className="feat-grid">
+          <SectionHead eyebrow="Ce que tu peux faire" title={[space.name, "en détail."]} lead={`${space.features.length} fonctions livrées dans NEXORA ${APP_VERSION}, avec l’offre qui les ouvre.`} />
+          <ol className="feat-list" data-glow>
             {space.features.map((f, i) => (
-              <Reveal className="feat" key={f.title} delay={(i % 3) * 70}>
-                <span className="sp-ic">
-                  <Icon name={f.icon} size={19} />
+              <Reveal as="li" className="feat glow" key={f.title} delay={(i % 2) * 70}>
+                <span className="feat-n">{String(i + 1).padStart(2, "0")}</span>
+                <span className="feat-b">
+                  <h3>{f.title}</h3>
+                  <p>{f.text}</p>
                 </span>
-                <h3>{f.title}</h3>
-                <p>{f.text}</p>
                 {f.plan && <span className={`plan-tag ${f.plan}`}>{PLAN_LABEL[f.plan]}</span>}
               </Reveal>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
@@ -189,7 +198,7 @@ export function SpacePage({ space }: { space: Space }) {
 
       <section className="section tight" data-capture="offres">
         <div className="container">
-          <SectionHead align="left" eyebrow="Dans tes offres" title={["Ce qui est inclus,", "offre par offre."]}>
+          <SectionHead eyebrow="Dans tes offres" title={["Ce qui est inclus,", "offre par offre."]}>
             <a className="link-arrow" href="#/tarifs/comparatif">
               Voir le comparatif complet <Icon name="nxArrowRight" size={15} stroke={2} />
             </a>
@@ -199,9 +208,9 @@ export function SpacePage({ space }: { space: Space }) {
       </section>
 
       <section className="section tight">
-        <div className="container sp-nav">
+        <div className="container sp-nav" data-glow>
           {[prev, next].map((s, i) => (
-            <a key={s.id} href={spaceHref(s)} className={`sp-nav-card${i ? " next" : ""}`} data-space={s.id}>
+            <a key={s.id} href={spaceHref(s)} className={`sp-nav-card glow${i ? " next" : ""}`} data-space={s.id}>
               <small>{i ? "Espace suivant" : "Espace précédent"}</small>
               <span className="sp-nav-row">
                 <span className="sp-ic">

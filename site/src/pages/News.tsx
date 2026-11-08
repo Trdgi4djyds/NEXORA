@@ -7,11 +7,14 @@ import { RELEASES } from "../lib/product"
 export function News() {
   return (
     <>
-      <section className="page-hero" data-capture="haut">
-        <div className="hero-bg dots" aria-hidden="true" />
+      <section className="page-hero" data-capture="haut" data-light>
+        <i className="grid-bg" aria-hidden="true" />
+        <i className="grid-lit" aria-hidden="true" />
+        <i className="torch" aria-hidden="true" />
         <div className="container">
           <SectionHead
             as="h1"
+            align="left"
             eyebrow="Nouveautés"
             title={["Ce qui arrive", "dans NEXORA."]}
             lead="Chaque version apporte de nouvelles fonctions. NEXORA te les présente une fois après la mise à jour ; les voici toutes."

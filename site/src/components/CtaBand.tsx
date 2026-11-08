@@ -1,32 +1,29 @@
-import { SPACES } from "../data/spaces"
-import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
 import { DownloadButton, WebButton } from "./Download"
+import { Words } from "./SectionHead"
 
-/** Bandeau final aux couleurs de NEXORA : pictogrammes des espaces au trait, qui s'effacent en transparence. */
+/** Appel final (#069) : grille qui s'éclaire autour du pointeur (`data-light`), titre mot à mot. */
 export function CtaBand({
-  title = "Prêt à créer ton prochain projet ?",
-  text = "Télécharge NEXORA et ouvre ton premier projet. C’est gratuit, et tu passes à Standard ou à Pro le jour où tu en as besoin.",
+  title = "Ouvre ton premier projet aujourd’hui.",
+  text = "NEXORA est gratuit, sans limite de durée. Tu passes à Standard ou à Pro le jour où tu publies.",
 }: {
   title?: string
   text?: string
 }) {
   return (
-    <section className="section tight cta-sec" data-capture="appel">
+    <section className="section cta-sec" data-capture="appel" data-light>
+      <i className="grid-bg" aria-hidden="true" />
+      <i className="grid-lit" aria-hidden="true" />
+      <i className="torch" aria-hidden="true" />
       <div className="container">
         <Reveal className="cta">
-          <div className="cta-art" aria-hidden="true">
-            {SPACES.map((s, i) => (
-              <span key={s.id} style={{ animationDelay: `${i * -1.1}s` }}>
-                <Icon name={s.icon} size={44} stroke={1.4} />
-              </span>
-            ))}
-          </div>
-          <h2 className="h-2">{title}</h2>
+          <h2 className="h-2 words">
+            <Words text={title} />
+          </h2>
           <p>{text}</p>
-          <div className="btn-stack center">
-            <DownloadButton size="lg" variant="white" />
-            <WebButton size="lg" variant="outline-white" />
+          <div className="btn-stack center" data-glow>
+            <DownloadButton size="lg" />
+            <WebButton size="lg" />
           </div>
         </Reveal>
       </div>

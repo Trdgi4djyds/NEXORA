@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
   type CSSProperties,
-  type PointerEvent as RPointerEvent,
   type ReactNode,
   type RefObject,
 } from "react"
@@ -84,10 +83,21 @@ export function Reveal({
   )
 }
 
-/** Nombre qui défile de 0 à sa valeur quand il apparaît. */
-export function CountUp({ value, duration = 1400, format }: { value: number; duration?: number; format?: (n: number) => string }) {
+/**
+ * Nombre qui défile de 0 à sa valeur quand il apparaît. `delay` (ms) : démarrage au montage, sans attendre
+ * l'observateur de visibilité (#069 : cartes du hero, toujours à l'écran, prises dans la perspective de la scène,
+ * dont l'observateur ne se déclenchait pas toujours au premier chargement).
+ */
+export function CountUp({ value, duration = 1400, delay, format }: { value: number; duration?: number; delay?: number; format?: (n: number) => string }) {
   const ref = useRef<HTMLSpanElement>(null)
-  const seen = useInView(ref, { once: true })
+  const inView = useInView(ref, { once: true })
+  const [timed, setTimed] = useState(false)
+  useEffect(() => {
+    if (delay === undefined) return
+    const id = window.setTimeout(() => setTimed(true), delay)
+    return () => window.clearTimeout(id)
+  }, [delay])
+  const seen = delay === undefined ? inView : timed
   const reduced = useReducedMotion()
   const [n, setN] = useState(0)
   useEffect(() => {
@@ -107,31 +117,6 @@ export function CountUp({ value, duration = 1400, format }: { value: number; dur
     return () => cancelAnimationFrame(raf)
   }, [seen, reduced, value, duration])
   return <span ref={ref}>{format ? format(n) : n}</span>
-}
-
-/**
- * Compteur de cycles : renvoie un numéro qui augmente toutes les `period` ms tant que `active` est vrai.
- * Sert à rejouer une démonstration (la clé React change, l'animation repart du début).
- */
-export function useCycle(period: number, active: boolean) {
-  const [cycle, setCycle] = useState(0)
-  useEffect(() => {
-    if (!active) return
-    const id = window.setInterval(() => setCycle((c) => c + 1), period)
-    return () => window.clearInterval(id)
-  }, [period, active])
-  return cycle
-}
-
-/** Étape d'une petite séquence (0, 1, 2… puis retour à 0), cadencée tant que `active` est vrai. */
-export function useSteps(durations: number[], active: boolean) {
-  const [step, setStep] = useState(0)
-  useEffect(() => {
-    if (!active) return
-    const id = window.setTimeout(() => setStep((s) => (s + 1) % durations.length), durations[step] ?? 1000)
-    return () => window.clearTimeout(id)
-  }, [step, active, durations])
-  return step
 }
 
 /** Vrai si l'onglet du navigateur est affiché (les démonstrations se mettent en pause sinon). */
@@ -156,33 +141,6 @@ export function useMedia(query: string) {
     return () => q.removeEventListener("change", on)
   }, [query])
   return match
-}
-
-/**
- * Inclinaison 3D légère qui suit la souris (variables --rx, --ry, --ty lues par le CSS de la carte). Rien au
- * toucher ni avec « Réduire les animations ».
- */
-export function useTilt(max = 5) {
-  const reduced = useReducedMotion()
-  if (reduced) return {}
-  return {
-    onPointerMove: (e: RPointerEvent<HTMLElement>) => {
-      if (e.pointerType !== "mouse") return
-      const el = e.currentTarget
-      const r = el.getBoundingClientRect()
-      const x = (e.clientX - r.left) / r.width - 0.5
-      const y = (e.clientY - r.top) / r.height - 0.5
-      el.style.setProperty("--ry", `${(x * max * 2).toFixed(2)}deg`)
-      el.style.setProperty("--rx", `${(-y * max * 2).toFixed(2)}deg`)
-      el.style.setProperty("--ty", "-4px")
-    },
-    onPointerLeave: (e: RPointerEvent<HTMLElement>) => {
-      const el = e.currentTarget
-      el.style.removeProperty("--ry")
-      el.style.removeProperty("--rx")
-      el.style.removeProperty("--ty")
-    },
-  }
 }
 
 /** Valeur qui glisse de l'ancienne à la nouvelle en `duration` ms (prix mensuel / annuel). */

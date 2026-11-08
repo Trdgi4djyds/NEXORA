@@ -1,45 +1,61 @@
+import type { MouseEvent } from "react"
+import { SPACE_FACTS } from "../data/content"
 import { SPACES, spaceHref, type SpaceId } from "../data/spaces"
 import { Icon } from "../lib/icons"
-import { Reveal, useTilt } from "../lib/motion"
-import { Mini } from "./Minis"
+import { Reveal } from "../lib/motion"
+import { shareShot } from "../lib/transitions"
+import { Pixel, Screen } from "./Screen"
 
-// Ordre et taille des cartes (grille de 12 colonnes) : les espaces phares en grand, l'Accueil en bandeau.
+// #070 : au clic simple, la capture de la carte devient celle de la page de l'espace (transition de page).
+const share = (e: MouseEvent<HTMLAnchorElement>) => {
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+  shareShot(e.currentTarget.querySelector<HTMLElement>(".card-img"))
+}
+
+// Ordre et taille des cartes (grille de 3 colonnes) : les espaces phares en grand, l'Accueil en bandeau.
 const LAYOUT: [SpaceId, string][] = [
-  ["preview", "b-7"],
-  ["dev", "b-5"],
-  ["android", "b-4"],
-  ["desktop", "b-4"],
-  ["browser", "b-4"],
-  ["studio", "b-4"],
-  ["design", "b-4"],
-  ["security", "b-4"],
-  ["home", "b-12"],
+  ["preview", "w2"],
+  ["dev", ""],
+  ["android", "tall"],
+  ["desktop", ""],
+  ["browser", ""],
+  ["studio", ""],
+  ["design", ""],
+  ["security", ""],
+  ["home", "w3"],
 ]
 
+/**
+ * Grille des espaces : vraie capture recadrée (Pixel pour l'App Builder) et un fait vérifié par carte.
+ * #069 : bordure et reflet à la couleur de l'espace qui suivent la souris (`data-glow`, `lib/glow.ts`).
+ */
 export function SpaceBento() {
-  const tilt = useTilt()
   return (
-    <div className="bento">
+    <div className="bento" data-glow>
       {LAYOUT.map(([id, size], i) => {
         const s = SPACES.find((x) => x.id === id)!
+        const n = String(SPACES.indexOf(s) + 1).padStart(2, "0")
+        const [value, caption] = SPACE_FACTS[id]
         return (
-          <Reveal as="a" key={id} href={spaceHref(s)} className={`bento-card ${size} bc-${id}`} data-space={id} delay={(i % 3) * 80} {...tilt}>
-            <span className="bento-text">
-              <span className="bento-head">
-                <span className="sp-ic">
-                  <Icon name={s.icon} size={19} />
-                </span>
-                <span className="bento-kicker">{s.name}</span>
-                {id === "dev" && <span className="plan-tag free">Gratuit</span>}
-                {s.plan === "standard" && <span className="plan-tag standard">Standard</span>}
+          <Reveal as="a" key={id} href={spaceHref(s)} className={`card glow ${size} card-${id}`} data-space={id} delay={(i % 3) * 70} onClick={share}>
+            <span className="card-t">
+              <span className="label">
+                <Icon name={s.icon} size={14} /> {n} · {s.name}
+                {id === "dev" && <span className="tag free">Gratuit</span>}
+                {s.plan === "standard" && <span className="tag">Standard</span>}
               </span>
-              <span className="bento-title">{s.card}</span>
-              <span className="bento-desc">{s.tagline}</span>
-              <span className="link-arrow bento-more">
-                Découvrir <Icon name="nxArrowRight" size={15} stroke={2} />
-              </span>
+              <span className="card-h">{s.card}</span>
+              <span className="card-p">{s.tagline}</span>
             </span>
-            <Mini id={id} />
+            <span className="card-img" aria-hidden="true">
+              {id === "android" ? <Pixel /> : <Screen space={id} />}
+            </span>
+            <span className="card-fact">
+              <b>{value}</b> {caption}
+            </span>
+            <span className="card-go" aria-hidden="true">
+              <Icon name="nxArrowUpRight" size={16} stroke={2} />
+            </span>
           </Reveal>
         )
       })}

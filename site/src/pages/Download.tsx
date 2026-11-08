@@ -4,20 +4,21 @@ import { SectionHead } from "../components/SectionHead"
 import { FAQ } from "../data/content"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
-import { APP_VERSION } from "../lib/product"
+import { APP_VERSION, WEB_URL } from "../lib/product"
 import { useRemote } from "../lib/remote"
 import { logo } from "../components/Brand"
 
-const STEPS: [string, string, string][] = [
-  ["download", "Télécharge NEXORA", "La version portable tient dans un seul fichier ZIP."],
-  ["folderOpen", "Décompresse le dossier", "Où tu veux : Documents, Bureau ou une clé USB."],
-  ["play", "Lance NEXORA.exe", "Aucune installation ni droits d’administrateur nécessaires."],
+// #069 : étapes numérotées et configuration en fiche technique (plus de pastilles d'icône).
+const STEPS: [string, string][] = [
+  ["Télécharge NEXORA", "La version portable tient dans un seul fichier ZIP."],
+  ["Décompresse le dossier", "Où tu veux : Documents, Bureau ou une clé USB."],
+  ["Lance NEXORA.exe", "Aucune installation ni droits d’administrateur nécessaires."],
 ]
-const REQUIREMENTS: [string, string, string][] = [
-  ["display", "Système", "Windows 10 ou Windows 11, 64 bits"],
-  ["layers", "Mémoire", "8 Go conseillés pour le Studio 3D et les constructions"],
-  ["folder", "Espace disque", "Environ 450 Mo, plus tes projets et tes outils"],
-  ["globe", "Internet", "Pour ton compte, la synchronisation, l’IA et les mises à jour"],
+const REQUIREMENTS: [string, string][] = [
+  ["Système", "Windows 10 ou Windows 11, 64 bits"],
+  ["Mémoire", "8 Go conseillés pour le Studio 3D et les constructions"],
+  ["Espace disque", "Environ 450 Mo, plus tes projets et tes outils"],
+  ["Internet", "Pour ton compte, la synchronisation, l’IA et les mises à jour"],
 ]
 const WEB_FAQ = FAQ.filter((f) => /ordinateurs|mises à jour|sécurité/.test(f.q))
 
@@ -25,16 +26,19 @@ export function Download() {
   const { downloadUrl, ready } = useRemote()
   return (
     <>
-      <section className="page-hero dl-hero" data-capture="haut">
-        <div className="hero-bg dots" aria-hidden="true" />
+      <section className="page-hero dl-hero" data-capture="haut" data-light>
+        <i className="grid-bg" aria-hidden="true" />
+        <i className="grid-lit" aria-hidden="true" />
+        <i className="torch" aria-hidden="true" />
         <div className="container">
           <SectionHead
             as="h1"
+            align="left"
             eyebrow="Télécharger"
             title={["NEXORA pour Windows,", "prêt en trois clics."]}
             lead="Une version portable : décompresse, lance, c’est prêt. Tes réglages, tes projets et ton compte sont gardés d’une version à l’autre."
           />
-          <Reveal className="dl-card">
+          <Reveal className="dl-card glow" data-glow>
             <div className="dl-main">
               <img src={logo} alt="" width={84} height={84} />
               <div>
@@ -57,7 +61,7 @@ export function Download() {
             {!downloadUrl && ready && (
               <p className="dl-wait">
                 <Icon name="info" size={15} /> La version Windows publique arrive très bientôt. En attendant, crée ton compte et découvre
-                NEXORA dans ton navigateur : tes projets t’attendront dans l’application.
+                NEXORA dans ton navigateur&nbsp;: tes projets t’attendront dans l’application.
               </p>
             )}
           </Reveal>
@@ -66,18 +70,15 @@ export function Download() {
 
       <section className="section tight" data-capture="etapes">
         <div className="container">
-          <div className="dl-steps">
-            {STEPS.map(([icon, title, text], i) => (
-              <Reveal className="dl-step" key={title} delay={i * 90}>
-                <span className="dl-num">{i + 1}</span>
-                <span className="sp-ic" data-space="home">
-                  <Icon name={icon} size={19} />
-                </span>
+          <ol className="steps" data-glow>
+            {STEPS.map(([title, text], i) => (
+              <Reveal as="li" className="step glow" key={title} delay={i * 110}>
+                <span className="step-n">{String(i + 1).padStart(2, "0")}</span>
                 <h3>{title}</h3>
                 <p>{text}</p>
               </Reveal>
             ))}
-          </div>
+          </ol>
           <Reveal className="dl-note">
             <Icon name="shield" size={18} />
             <p>
@@ -91,30 +92,25 @@ export function Download() {
       <section className="section alt">
         <div className="container">
           <SectionHead eyebrow="Configuration" title={["Ce qu’il te faut", "pour bien démarrer."]} />
-          <div className="req-grid">
-            {REQUIREMENTS.map(([icon, title, text], i) => (
-              <Reveal className="req" key={title} delay={i * 70}>
-                <Icon name={icon} size={20} />
-                <b>{title}</b>
-                <span>{text}</span>
+          <ul className="spec" data-glow>
+            {REQUIREMENTS.map(([title, text], i) => (
+              <Reveal as="li" className="spec-row glow" key={title} delay={i * 70}>
+                <span className="spec-k">{title}</span>
+                <span className="spec-v">
+                  <b>{text}</b>
+                </span>
               </Reveal>
             ))}
-          </div>
-          <div className="dl-duo">
-            <Reveal className="duo-card" data-space="desktop">
-              <span className="sp-ic">
-                <Icon name="sync" size={19} />
-              </span>
+          </ul>
+          <div className="dl-duo" data-glow>
+            <Reveal className="duo-card glow" data-space="desktop">
               <h3>Des mises à jour sans effort</h3>
               <p>NEXORA te prévient quand une nouvelle version sort, la télécharge dans ton dossier Téléchargements et t’explique comment la remplacer.</p>
             </Reveal>
-            <Reveal className="duo-card" data-space="preview" delay={80}>
-              <span className="sp-ic">
-                <Icon name="globe" size={19} />
-              </span>
+            <Reveal className="duo-card glow" data-space="preview" delay={80}>
               <h3>Pas sur Windows ?</h3>
               <p>NEXORA web te permet de retrouver ton compte, tes projets synchronisés et une partie des espaces depuis n’importe quel navigateur.</p>
-              <a className="link-arrow" href="../">
+              <a className="link-arrow" href={WEB_URL}>
                 Ouvrir NEXORA web <Icon name="nxArrowRight" size={15} stroke={2} />
               </a>
             </Reveal>
@@ -123,8 +119,8 @@ export function Download() {
       </section>
 
       <section className="section">
-        <div className="container narrow">
-          <SectionHead eyebrow="Questions fréquentes" title={["Avant de", "télécharger."]} />
+        <div className="container faq-wrap">
+          <SectionHead align="left" eyebrow="Questions fréquentes" title={["Avant de", "télécharger."]} />
           <Faq items={WEB_FAQ} idPrefix="faq-dl" />
         </div>
       </section>
