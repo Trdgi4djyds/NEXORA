@@ -16,8 +16,8 @@ export function News() {
             as="h1"
             align="left"
             eyebrow="Nouveautés"
-            title={["Ce qui arrive", "dans NEXORA."]}
-            lead="Chaque version apporte de nouvelles fonctions. NEXORA te les présente une fois après la mise à jour ; les voici toutes."
+            title={["Ce qui a changé", "dans NEXORA."]}
+            lead="Chaque version apporte de nouvelles fonctions. NEXORA te les présente une fois après la mise à jour ; les voici toutes, de la plus récente à la plus ancienne."
           />
         </div>
       </section>

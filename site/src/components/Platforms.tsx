@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react"
 import type { SpaceId } from "../data/spaces"
 import { Icon } from "../lib/icons"
-import { Reveal, useInView, usePageVisible, useReducedMotion } from "../lib/motion"
+import { Reveal, useInView, useMedia, usePageVisible, useReducedMotion } from "../lib/motion"
 import { KORA_DESKTOP } from "../lib/screens"
-import { Pixel, Screen } from "./Screen"
+import { Pixel } from "./Screen"
 import { SectionHead } from "./SectionHead"
 
 const PERIOD = 5200
@@ -47,7 +47,10 @@ export function Platforms() {
   const visible = useInView(ref, { margin: "-60px 0px" })
   const page = usePageVisible()
   const reduced = useReducedMotion()
-  const playing = !reduced && visible && page && !hover
+  // #072 : sous 960 px, les onglets s'ouvrent en accordéon au-dessus de la scène : l'avance automatique changeait
+  // leur hauteur toutes les 5 s et faisait sauter la page. On n'y avance qu'au toucher.
+  const narrow = useMedia("(max-width: 959px)")
+  const playing = !reduced && !narrow && visible && page && !hover
 
   useEffect(() => {
     if (!playing) return
@@ -120,20 +123,52 @@ export function Platforms() {
                     <i />
                     <i />
                     <i />
-                    <span>kora-boutique.fr</span>
+                    {/* #072 : domaine réservé aux exemples (RFC 2606) : Kora est fictive, aucune vraie boutique visée. */}
+                    <span>kora.example</span>
                   </div>
-                  <img src={KORA_DESKTOP} alt="Le site de démonstration Kora dans un navigateur" width={1440} height={900} loading="lazy" />
+                  <img src={KORA_DESKTOP} alt="Kora, boulangerie fictive : site de démonstration dans un navigateur" width={1440} height={900} loading="lazy" />
                 </div>
               </div>
               <div className={`pf-v pf-android${active === 1 ? " on" : ""}`}>
                 <Pixel />
               </div>
+              {/* #072 : Kora en logiciel Windows (fenêtre Windows 11), comme le web et Android montrent Kora, au lieu de
+                  l'écran du Desktop Builder qui ne montrait pas le résultat. */}
               <div className={`pf-v pf-windows${active === 2 ? " on" : ""}`}>
-                <div className="frame">
-                  <Screen space="desktop" />
+                <div className="win-desk">
+                <div className="win11">
+                  <div className="win11-bar">
+                    <span className="win11-app">
+                      <i className="win11-ico">k</i>
+                      Kora
+                    </span>
+                    <span className="win11-ctl" aria-hidden="true">
+                      <svg viewBox="0 0 10 10" width="10" height="10">
+                        <path d="M0 5h10" />
+                      </svg>
+                      <svg viewBox="0 0 10 10" width="10" height="10">
+                        <rect x="0.5" y="0.5" width="9" height="9" rx="1.5" />
+                      </svg>
+                      <svg viewBox="0 0 10 10" width="10" height="10">
+                        <path d="M0.5 0.5l9 9M9.5 0.5l-9 9" />
+                      </svg>
+                    </span>
+                  </div>
+                  <img src={KORA_DESKTOP} alt="Kora, boulangerie fictive, en logiciel Windows" width={1440} height={900} loading="lazy" />
+                </div>
+                <div className="win-task" aria-hidden="true">
+                  <i className="win-start">
+                    <b />
+                    <b />
+                    <b />
+                    <b />
+                  </i>
+                  <i className="win-app on">k</i>
+                </div>
                 </div>
               </div>
             </div>
+            <p className="ai-caption pf-caption">Kora est une boulangerie fictive : un site de démonstration, publié ici sur trois plateformes.</p>
           </Reveal>
         </div>
       </div>

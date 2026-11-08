@@ -66,7 +66,7 @@ export function App() {
       <button type="button" className="skip" onClick={() => main.current?.focus()}>
         Aller au contenu
       </button>
-      <Announcement />
+      <Announcement home={route.parts.length === 0} />
       <Header route={route} onSearch={() => setPalette(true)} />
       <main ref={main} id="contenu" className="page-in" tabIndex={-1} key={current.key}>
         {current.node}

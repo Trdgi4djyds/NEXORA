@@ -35,8 +35,12 @@ export function Download() {
             as="h1"
             align="left"
             eyebrow="Télécharger"
-            title={["NEXORA pour Windows,", "prêt en trois clics."]}
-            lead="Une version portable : décompresse, lance, c’est prêt. Tes réglages, tes projets et ton compte sont gardés d’une version à l’autre."
+            title={["NEXORA pour Windows,", downloadUrl || !ready ? "prêt en trois clics." : "bientôt disponible."]}
+            lead={
+              downloadUrl || !ready
+                ? "Une version portable : décompresse, lance, c’est prêt. Tes réglages, tes projets et ton compte sont gardés d’une version à l’autre."
+                : "La version portable pour Windows n’est pas encore publiée. NEXORA web est ouvert dès maintenant : ton compte et tes projets te suivront dans l’application."
+            }
           />
           <Reveal className="dl-card glow" data-glow>
             <div className="dl-main">
@@ -52,11 +56,15 @@ export function Download() {
                   <Icon name="download" size={18} stroke={2} /> Télécharger NEXORA {APP_VERSION}
                 </a>
               ) : (
-                <span className="btn btn-lg" aria-disabled="true">
-                  <Icon name="clock" size={18} stroke={2} /> {ready ? "Téléchargement bientôt disponible" : "Recherche de la dernière version…"}
-                </span>
+                <>
+                  {/* #072 : sans version publiée, l'action possible (NEXORA web) passe avant le bouton inactif. */}
+                  <WebButton size="lg" variant="primary" label="Ouvrir NEXORA web" />
+                  <span className="btn btn-lg" aria-disabled="true">
+                    <Icon name="clock" size={18} stroke={2} /> {ready ? "Téléchargement bientôt disponible" : "Recherche de la dernière version…"}
+                  </span>
+                </>
               )}
-              <WebButton size="lg" label="Ouvrir NEXORA web" />
+              {downloadUrl && <WebButton size="lg" label="Ouvrir NEXORA web" />}
             </div>
             {!downloadUrl && ready && (
               <p className="dl-wait">
@@ -70,6 +78,7 @@ export function Download() {
 
       <section className="section tight" data-capture="etapes">
         <div className="container">
+          {!downloadUrl && ready && <p className="steps-when">Dès sa publication, l’installation se fera en trois étapes :</p>}
           <ol className="steps" data-glow>
             {STEPS.map(([title, text], i) => (
               <Reveal as="li" className="step glow" key={title} delay={i * 110}>

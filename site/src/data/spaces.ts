@@ -1,6 +1,7 @@
 // Les 9 espaces de NEXORA présentés par le site : mêmes noms, icônes, sous-titres et ordre que le rail de
 // l'application (renderer/dist/chunks/chunk-Y6Q6RT63.js). Les fonctions décrites sont celles livrées (voir SUIVI.md).
 import { DEVICE_COUNT } from "../lib/product"
+import { FALLBACK } from "../../../nexora/app/renderer/nx/offres/catalog.js"
 import type { PlanId } from "../lib/remote"
 
 export type SpaceId = "home" | "preview" | "browser" | "dev" | "android" | "studio" | "design" | "security" | "desktop"
@@ -21,6 +22,15 @@ export type Space = {
   planNote: string
   features: Feature[]
   details?: { title: string; items: string[] }
+  /** #072 : avec l'offre Gratuite, les fonctions sans offre ne sont ouvertes que pendant un essai (App Builder). */
+  trial?: { tag: string; lead: string }
+}
+
+/** Sites surveillés par offre (catalogue des offres de NEXORA). */
+const MONITORS = {
+  free: (FALLBACK as Record<string, { limits: { monitors: number } }>).free.limits.monitors,
+  standard: (FALLBACK as Record<string, { limits: { monitors: number } }>).standard.limits.monitors,
+  pro: (FALLBACK as Record<string, { limits: { monitors: number } }>).pro.limits.monitors,
 }
 
 export const SPACES: Space[] = [
@@ -57,16 +67,17 @@ export const SPACES: Space[] = [
     name: "Responsive Lab",
     rail: "Responsive",
     icon: "multi",
-    subtitle: "Ton site sur de vrais appareils",
-    card: "Ton site sur de vrais appareils",
-    tagline: `${DEVICE_COUNT} appareils réels côte à côte : téléphones, pliables, tablettes, ordinateurs, téléviseurs, montres et même voitures.`,
+    // #072 : les appareils sont des cadres de modèles réels, pas des appareils physiques (« vrais appareils » retiré).
+    subtitle: "Ton site sur tous les écrans",
+    card: "Ton site sur tous les écrans",
+    tagline: `${DEVICE_COUNT} modèles d’appareils côte à côte : téléphones, pliables, tablettes, ordinateurs, téléviseurs, montres et même voitures.`,
     h1: ["Colle un lien,", "obtiens la maquette."],
-    lead: "Affiche un site ou un projet dans le cadre d’un vrai iPhone, d’un Samsung, d’un pliable, d’un ordinateur ou d’un téléviseur. Compare plusieurs appareils côte à côte et exporte des photos et des vidéos HD.",
+    lead: "Affiche un site ou un projet dans le cadre d’un iPhone, d’un Samsung, d’un pliable, d’un ordinateur ou d’un téléviseur. Compare plusieurs appareils côte à côte et exporte des photos et des vidéos HD.",
     plan: "free",
     planNote: "Inclus dans toutes les offres",
     features: [
-      { icon: "phone", title: `${DEVICE_COUNT} appareils réels`, text: "iPhone, Galaxy, Pixel, Xiaomi, Tecno, Infinix, pliables, tablettes, PC, téléviseurs, montres, casques, consoles, voitures et bornes." },
-      { icon: "frame", title: "Cadres officiels des fabricants", text: "Taille d’écran, densité, coins arrondis, encoche et boutons fidèles à chaque modèle." },
+      { icon: "phone", title: `${DEVICE_COUNT} modèles d’appareils`, text: "iPhone, Galaxy, Pixel, Xiaomi, Tecno, Infinix, pliables, tablettes, PC, téléviseurs, montres, casques, consoles, voitures et bornes." },
+      { icon: "frame", title: "Des cadres fidèles", text: "Cadres officiels d’Android Studio pour les Pixel, les montres Wear OS, les téléviseurs et les voitures ; les autres dessinés aux mesures de chaque modèle : écran, densité, coins arrondis, encoche." },
       { icon: "fold", title: "Pliables et rotation", text: "Ouvre ou ferme un pliable, passe en paysage et compare les états." },
       { icon: "multi", title: "Côte à côte, sur des planches", text: "Compare plusieurs appareils sur une même planche, puis retrouve tes planches plus tard." },
       { icon: "folderOpen", title: "Tes projets locaux aussi", text: "Ouvre un dossier : le framework est détecté et les dépendances sont installées automatiquement." },
@@ -154,13 +165,15 @@ export const SPACES: Space[] = [
     name: "App Builder",
     rail: "Apps",
     icon: "android",
-    subtitle: "Application Android et iPhone",
+    // #072 : NEXORA construit des applications Android ; l'iPhone n'est qu'un aperçu (« et iPhone » retiré).
+    subtitle: "Application Android, aperçu iPhone",
     card: "Ton site devient une app",
     tagline: "Application Android signée, PWA, notifications push, fiche Play Store et publication.",
     h1: ["Ton site devient", "une app Android."],
     lead: "Donne l’adresse de ton site : NEXORA construit l’application avec son icône, son écran de démarrage et ses notifications, prépare la fiche Play Store et vérifie que tout est prêt avant la publication.",
     plan: "free",
     planNote: "2 applications en essai de 7 jours avec l’offre Gratuite",
+    trial: { tag: "Essai 7 jours", lead: "Pendant l’essai de 7 jours (2 applications) :" },
     features: [
       { icon: "android", title: "APK et AAB signés", text: "Une vraie application Android qui affiche ton site, signée avec ta clé.", plan: "standard" },
       { icon: "phone", title: "Aperçu fidèle", text: "L’écran d’accueil et l’application simulés sur iPhone, Pixel, Galaxy et les autres surcouches." },
@@ -252,16 +265,22 @@ export const SPACES: Space[] = [
       { icon: "shield", title: "Note de fiabilité", text: "Sécurité, domaine et e-mail, code, disponibilité et rapidité réunis en une note, avec les tâches de la semaine." },
       { icon: "audit", title: "Audit du site", text: "En-têtes de sécurité, certificat et configuration, comparés à l’audit précédent." },
       { icon: "mail", title: "Domaine et e-mail", text: "SPF, DKIM, DMARC, DNSSEC, expiration du domaine et sous-domaines." },
-      { icon: "nxiPulse", title: "Supervision 24 h/24", text: "Site, API, port, DNS, domaine, parcours et signal de vie, vérifiés même NEXORA fermée." },
+      // #072 : les parcours rejoués tournent sur le PC (NEXORA ouvert) et demandent Pro : sortis de la supervision serveur.
+      {
+        icon: "nxiPulse",
+        title: "Supervision 24 h/24",
+        text: `Site, API, port, DNS, domaine et signal de vie, vérifiés par les serveurs NEXORA même quand l’application est fermée : ${MONITORS.free} site avec l’offre Gratuite, ${MONITORS.standard} avec Standard, ${MONITORS.pro} avec Pro.`,
+      },
       { icon: "code", title: "Code et correctifs", text: "Dépendances vulnérables, secrets oubliés, audits programmés et correctifs écrits pour ton hébergeur.", plan: "standard" },
       { icon: "bell", title: "Alertes", text: "Par e-mail et vers tes outils d’équipe, avec escalade, regroupement et heures calmes.", plan: "standard" },
       { icon: "globe", title: "Page de statut publique", text: "Tes visiteurs suivent l’état de ton service et s’abonnent aux incidents.", plan: "standard" },
       { icon: "group", title: "Visiteurs réels", text: "Les temps de chargement mesurés chez tes vrais visiteurs.", plan: "pro" },
       { icon: "nxWorld", title: "Seconde région", text: "Chaque panne confirmée depuis un deuxième point du globe.", plan: "pro" },
+      { icon: "record", title: "Parcours rejoués", text: "Un parcours enregistré (connexion, commande…) rejoué à intervalle régulier par NEXORA ouvert sur ton PC.", plan: "pro" },
     ],
     details: {
-      title: "Sept types de vérification",
-      items: ["Site", "API avec contrôle de la réponse", "Port TCP", "DNS", "Domaine", "Parcours enregistré", "Signal de vie"],
+      title: "Six vérifications par les serveurs NEXORA",
+      items: ["Site", "API avec contrôle de la réponse", "Port TCP", "DNS", "Domaine", "Signal de vie"],
     },
   },
   {

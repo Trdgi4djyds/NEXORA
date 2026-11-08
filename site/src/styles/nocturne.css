@@ -3662,3 +3662,306 @@ a:hover > .link-arrow .ico,
     filter: none !important;
   }
 }
+
+/* ==========================================================================
+   NEXORA #072 : corrections de l'audit du site (34 points), dans l'ordre de l'audit.
+   ========================================================================== */
+/* 1. Version Windows pas encore publiée : mention « bientôt » dans le second bouton. */
+.btn-soon {
+  margin-left: 2px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--line-2);
+  font: 500 10.5px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.steps-when {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 15px;
+}
+/* 11. App Builder : fonctions ouvertes pendant l'essai de l'offre Gratuite. */
+.plan-tag.trial {
+  color: var(--muted);
+  border-style: dashed;
+}
+/* 16. Pixel de la grille des espaces : la carte (flex) l'étirait sur toute sa hauteur ; l'écran, en pourcentage
+   de cette hauteur, débordait sous le téléphone et Kora était rogné à gauche. */
+.card-android .pixel {
+  align-self: flex-start;
+}
+/* 17. Grille des espaces à 2 colonnes : Sécurité en pleine largeur pour ne laisser aucune case vide. */
+@media (max-width: 959px) and (min-width: 721px) {
+  .card-security {
+    grid-column: span 2;
+  }
+}
+/* 19. Note des tarifs : l'icône suit le texte au lieu de rester seule en haut à gauche du paragraphe centré. */
+.plans-note {
+  display: block;
+  text-wrap: balance;
+}
+.plans-note .ico {
+  display: inline-block;
+  margin-right: 7px;
+  vertical-align: -3px;
+  color: var(--dim);
+}
+/* 20. « Publie partout », onglet Windows : Kora dans une fenêtre Windows 11, sur un bureau avec sa barre des tâches
+   (fond d'écran et ombre de fenêtre : contenu de la scène, comme les appareils). */
+.pf-windows {
+  padding: 5%;
+}
+.win-desk {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10.4;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background:
+    radial-gradient(ellipse 60% 70% at 70% 80%, #2b4f9e 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 25% 20%, #1c2f63 0%, transparent 60%),
+    #0d1530;
+  box-shadow: 0 40px 80px -30px #000;
+}
+.win11 {
+  position: absolute;
+  left: 12%;
+  top: 5%;
+  width: 76%;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: #f3f1ed;
+  box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.7);
+}
+.win11 img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.win11-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 26px;
+  padding-left: 10px;
+  background: #f3f1ed;
+  color: #1c1b1a;
+  font: 400 11px/1 "Segoe UI", var(--sans);
+}
+.win11-app {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.win11-ico,
+.win-app {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: #1c1b1a;
+  color: #f3f1ed;
+  font: 700 10px/1 Georgia, serif;
+  font-style: normal;
+}
+.win11-ctl {
+  display: flex;
+  height: 100%;
+}
+.win11-ctl svg {
+  box-sizing: content-box;
+  width: 9px;
+  height: 9px;
+  padding: 0 15px;
+  align-self: center;
+  fill: none;
+  stroke: #1c1b1a;
+  stroke-width: 1;
+}
+.win-task {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  height: 9%;
+  min-height: 24px;
+  background: rgba(20, 22, 30, 0.82);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.win-start {
+  display: grid;
+  grid-template-columns: repeat(2, 6px);
+  gap: 1.5px;
+}
+.win-start b {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: #4cc2ff;
+}
+.win-app {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  background: #f3f1ed;
+  color: #1c1b1a;
+}
+.win-app.on::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: -5px;
+  height: 2px;
+  border-radius: 2px;
+  background: #4cc2ff;
+}
+.pf-caption {
+  margin-top: 12px;
+}
+/* 25. Pied de page : rubriques Produit, Commencer et Aide (contact même sans adresse du support). */
+.ftr-grid {
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
+}
+.ftr-hint {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--dim);
+}
+@media (max-width: 1060px) {
+  .ftr-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .ftr-brand {
+    grid-column: 1 / -1;
+  }
+}
+/* 34. Pied de page sur téléphone : deux colonnes, les espaces sur deux colonnes, au lieu d'une liste interminable. */
+@media (max-width: 720px) {
+  .ftr-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px 20px;
+  }
+  .ftr-col[aria-label="Espaces"] {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 20px;
+  }
+  .ftr-col[aria-label="Espaces"] h2 {
+    grid-column: 1 / -1;
+  }
+  .ftr-col:last-child {
+    grid-column: 1 / -1;
+  }
+}
+/* 29. Comparatif sur téléphone : chaque fonction sur sa ligne, les trois offres dessous, en-tête des offres
+   qui reste visible. Avant : seules les étiquettes tenaient à l'écran et la page débordait en largeur. */
+@media (max-width: 720px) {
+  .cmp-wrap {
+    overflow: visible;
+  }
+  .cmp,
+  .cmp thead,
+  .cmp tbody {
+    display: block;
+    min-width: 0;
+  }
+  .cmp tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .cmp thead {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    background: var(--s1);
+  }
+  .cmp thead th:first-child {
+    display: none;
+  }
+  .cmp thead th {
+    position: static;
+    padding: 12px 6px;
+  }
+  .cmp th,
+  .cmp td {
+    padding: 10px 6px;
+  }
+  .cmp th[scope="row"],
+  .cmp-group th {
+    grid-column: 1 / -1;
+  }
+  .cmp th[scope="row"] {
+    padding: 14px 14px 2px;
+    border-bottom: 0;
+    font-size: 14px;
+  }
+  .cmp td {
+    padding-top: 6px;
+    font-size: 13.5px;
+  }
+  .cmp-group th {
+    padding: 12px 14px;
+  }
+}
+/* 30. Hero sur téléphone : une seule capture, de face, recadrée sur la barre latérale et le contenu (lisible),
+   au lieu de deux écrans inclinés, minuscules et coupés. */
+@media (max-width: 720px) {
+  .stage {
+    height: auto;
+    margin-top: 36px;
+    perspective: none;
+  }
+  .s-right {
+    display: none;
+  }
+  .s-front {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    transform: none;
+    translate: none;
+  }
+  .s-front .shots {
+    width: 160%;
+  }
+}
+/* 31. Onglets des espaces du hero sur téléphone : une rangée qui défile au lieu de trois lignes centrées. */
+@media (max-width: 720px) {
+  .space-tabs {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    margin: 12px -16px 0;
+    padding: 2px 16px 6px;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 24px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 24px), transparent);
+  }
+  .space-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .space-tabs button {
+    flex: none;
+  }
+}
+/* 32. Points de « Publie partout » : la puce s'agrandit avec son texte au lieu de le laisser déborder. */
+.pf-points > span {
+  height: auto;
+  min-height: 28px;
+  padding: 5px 10px;
+  line-height: 1.35;
+}

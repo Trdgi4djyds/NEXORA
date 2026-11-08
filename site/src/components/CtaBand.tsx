@@ -1,5 +1,5 @@
 import { Reveal } from "../lib/motion"
-import { DownloadButton, WebButton } from "./Download"
+import { MainButton, SecondButton } from "./Download"
 import { Words } from "./SectionHead"
 
 /** Appel final (#069) : grille qui s'éclaire autour du pointeur (`data-light`), titre mot à mot. */
@@ -22,8 +22,8 @@ export function CtaBand({
           </h2>
           <p>{text}</p>
           <div className="btn-stack center" data-glow>
-            <DownloadButton size="lg" />
-            <WebButton size="lg" />
+            <MainButton size="lg" />
+            <SecondButton size="lg" />
           </div>
         </Reveal>
       </div>

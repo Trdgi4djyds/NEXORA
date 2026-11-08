@@ -4,7 +4,7 @@ import { SPACES, SPACE_BY_ID } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { CountUp, useInView, usePageVisible, useReducedMotion } from "../lib/motion"
 import { APP_VERSION, DEVICE_COUNT } from "../lib/product"
-import { DownloadButton, WebButton } from "./Download"
+import { MainButton, SecondButton } from "./Download"
 import { Screen, Screens } from "./Screen"
 
 const PERIOD = 5000
@@ -32,6 +32,14 @@ export function Hero() {
   const [hover, setHover] = useState(false)
   const playing = !reduced && visible && page && !hover
   const space = order[index]
+  // #072 : sur téléphone, les onglets tiennent sur une rangée qui défile : l'onglet actif y reste visible.
+  const tabs = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const list = tabs.current
+    const btn = list?.querySelector<HTMLElement>('[aria-selected="true"]')
+    if (!list || !btn || list.scrollWidth <= list.clientWidth) return
+    list.scrollTo({ left: btn.offsetLeft - (list.clientWidth - btn.offsetWidth) / 2, behavior: reduced ? "auto" : "smooth" })
+  }, [index, reduced])
   // Premier affichage : les chiffres attendent l'entrée de la scène ; ensuite, ils défilent dès le changement.
   const first = useRef(true)
   useEffect(() => {
@@ -65,11 +73,11 @@ export function Hero() {
           </span>
         </h1>
         <p className="lead rise" style={{ animationDelay: "260ms" }}>
-          Design, code, tests sur {DEVICE_COUNT} appareils, sécurité et publication sur le web, Android et Windows, dans une seule application.
+          Design, code, tests sur {DEVICE_COUNT} modèles d’appareils, sécurité et publication sur le web, Android et Windows, dans une seule application.
         </p>
         <div className="actions rise" style={{ animationDelay: "340ms" }} data-glow>
-          <DownloadButton size="lg" />
-          <WebButton size="lg" />
+          <MainButton size="lg" />
+          <SecondButton size="lg" />
         </div>
       </div>
 
@@ -85,13 +93,14 @@ export function Hero() {
           <i className="glare" aria-hidden="true" />
         </div>
         <div className="kpi k1" aria-hidden="true">
-          <span className="label">
-            <i className="live" /> Responsive Lab
+          {/* #072 : icône de l'espace au lieu d'un point « en direct » : ces chiffres sont fixes. */}
+          <span className="label" data-space="preview">
+            <Icon name={SPACE_BY_ID.preview.icon} size={13} /> Responsive Lab
           </span>
           <b>
             <Fact value={String(DEVICE_COUNT)} delay={900} />
           </b>
-          <small>appareils réels à l’écran</small>
+          <small>modèles d’appareils à l’écran</small>
         </div>
         <div className="kpi k2" key={space} data-space={space} aria-hidden="true">
           <span className="label">
@@ -103,16 +112,16 @@ export function Hero() {
           <small>{SPACE_FACTS[space][1]}</small>
         </div>
         <div className="kpi k3" aria-hidden="true">
-          <span className="label">
-            <i className="live" /> Sécurité
+          <span className="label" data-space="security">
+            <Icon name={SPACE_BY_ID.security.icon} size={13} /> Sécurité
           </span>
           <b>24 h/24</b>
-          <small>7 types de vérification</small>
+          <small>6 vérifications par les serveurs</small>
         </div>
       </div>
 
       <div className="container">
-        <div className="space-tabs" role="tablist" aria-label="Espaces montrés dans l’aperçu">
+        <div className="space-tabs" role="tablist" aria-label="Espaces montrés dans l’aperçu" ref={tabs}>
           {order.map((id, i) => (
             <button key={id} type="button" role="tab" aria-selected={i === index} className={i === index ? "on" : ""} data-space={id} onClick={() => setIndex(i)}>
               <Icon name={SPACE_BY_ID[id].icon} size={15} />

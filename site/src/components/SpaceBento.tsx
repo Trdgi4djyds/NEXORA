@@ -4,7 +4,8 @@ import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
 import { Pixel, Screen } from "./Screen"
 
-// Ordre et taille des cartes (grille de 3 colonnes) : les espaces phares en grand, l'Accueil en bandeau.
+// Ordre et taille des cartes (grille de 3 colonnes) : les espaces phares en grand. #072 : 12 cases pleines
+// (Sécurité et l'Accueil partagent la dernière rangée) au lieu de 13, qui laissaient deux cases vides.
 const LAYOUT: [SpaceId, string][] = [
   ["preview", "w2"],
   ["dev", ""],
@@ -14,7 +15,7 @@ const LAYOUT: [SpaceId, string][] = [
   ["studio", ""],
   ["design", ""],
   ["security", ""],
-  ["home", "w3"],
+  ["home", "w2"],
 ]
 
 /**
@@ -26,13 +27,13 @@ export function SpaceBento() {
     <div className="bento" data-glow>
       {LAYOUT.map(([id, size], i) => {
         const s = SPACES.find((x) => x.id === id)!
-        const n = String(SPACES.indexOf(s) + 1).padStart(2, "0")
         const [value, caption] = SPACE_FACTS[id]
         return (
           <Reveal as="a" key={id} href={spaceHref(s)} className={`card glow ${size} card-${id}`} data-space={id} delay={(i % 3) * 70}>
             <span className="card-t">
               <span className="label">
-                <Icon name={s.icon} size={14} /> {n} · {s.name}
+                {/* #072 : plus de numéro (02 · …) : il se mêlait à la numérotation des sections (01 à 09). */}
+                <Icon name={s.icon} size={14} /> {s.name}
                 {id === "dev" && <span className="tag free">Gratuit</span>}
                 {s.plan === "standard" && <span className="tag">Standard</span>}
               </span>

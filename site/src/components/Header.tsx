@@ -4,9 +4,11 @@ import { Icon } from "../lib/icons"
 import { APP_VERSION, WEB_URL } from "../lib/product"
 import type { Route } from "../router"
 import { Brand } from "./Brand"
-import { DownloadButton } from "./Download"
+import { MainButton, SecondButton } from "./Download"
+import { useRemote } from "../lib/remote"
 
 export function Header({ route, onSearch }: { route: Route; onSearch: () => void }) {
+  const { downloadUrl } = useRemote()
   const [mega, setMega] = useState(false)
   const [mobile, setMobile] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -109,9 +111,6 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
           <a className={`nav-link${at === "nouveautes" ? " on" : ""}`} href="#/nouveautes" aria-current={current("nouveautes")} onMouseEnter={track}>
             Nouveautés
           </a>
-          <a className={`nav-link${at === "telecharger" ? " on" : ""}`} href="#/telecharger" aria-current={current("telecharger")} onMouseEnter={track}>
-            Télécharger
-          </a>
         </nav>
         <div className="hdr-actions">
           <button type="button" className="hdr-search" onClick={onSearch} aria-label="Rechercher dans le site (Ctrl K)">
@@ -119,10 +118,9 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
             <span>Rechercher</span>
             <kbd className="kbd">Ctrl K</kbd>
           </button>
-          <a className="btn btn-ghost btn-sm hdr-web" href={WEB_URL}>
-            Ouvrir NEXORA web
-          </a>
-          <DownloadButton size="sm" label="Télécharger" className="hdr-dl" />
+          {/* #072 : un seul accès à chaque destination (le lien « Télécharger » de la navigation doublait le bouton). */}
+          <SecondButton size="sm" className="hdr-web" />
+          <MainButton size="sm" className="hdr-dl" />
           <button
             type="button"
             className="icon-btn hdr-burger"
@@ -183,9 +181,9 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
               <a href="#/tarifs">Tarifs</a>
               <a href="#/nouveautes">Nouveautés</a>
               <a href="#/telecharger">Télécharger</a>
-              <a href={WEB_URL}>Ouvrir NEXORA web</a>
+              {downloadUrl && <a href={WEB_URL}>Ouvrir NEXORA web</a>}
             </div>
-            <DownloadButton size="lg" className="mobile-cta" />
+            <MainButton size="lg" className="mobile-cta" />
           </div>
         </div>
       )}

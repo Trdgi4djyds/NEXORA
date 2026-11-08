@@ -16,13 +16,13 @@ export const TECH_ROWS: string[][] = [
 // grille des espaces (#069).
 export const SPACE_FACTS: Record<SpaceId, [string, string]> = {
   home: ["8", "objectifs pour bien commencer"],
-  preview: [String(DEVICE_COUNT), "appareils réels à l’écran"],
+  preview: [String(DEVICE_COUNT), "modèles d’appareils à l’écran"],
   browser: ["6", "catégories d’audit, avec rapport"],
   dev: ["15", "modèles de projet prêts à lancer"],
   android: ["APK · AAB", "signés, prêts pour le Play Store"],
   studio: ["6", "mises en scène toutes prêtes"],
   design: ["13", "fonctions de design"],
-  security: ["7", "types de vérification, 24 h/24"],
+  security: ["6", "vérifications par les serveurs, 24 h/24"],
   desktop: ["4", "formats d’installation"],
 }
 
@@ -46,8 +46,8 @@ export const STORY: StoryStep[] = [
     space: "preview",
     verb: "Teste",
     title: "Vérifie sur tous les écrans",
-    text: `Affiche ton site dans le cadre de ${DEVICE_COUNT} appareils réels, côte à côte, puis passe au Browser Lab pour le réseau, la console et les audits.`,
-    points: [`${DEVICE_COUNT} appareils`, "Pliables et rotation", "Audits de performance"],
+    text: `Affiche ton site dans le cadre de ${DEVICE_COUNT} modèles d’appareils, côte à côte, puis passe au Browser Lab pour le réseau, la console et les audits.`,
+    points: [`${DEVICE_COUNT} modèles d’appareils`, "Pliables et rotation", "Audits de performance"],
   },
   {
     space: "security",
@@ -89,7 +89,8 @@ export const AI_USES: { space: SpaceId; title: string; text: string }[] = [
 
 // Fiche « Confiance » (#069 : libellés de fiche technique au lieu d'icônes).
 export const TRUST: { label: string; title: string; text: string }[] = [
-  { label: "Fichiers", title: "Tes fichiers restent sur ton PC", text: "Tes dossiers de projet ne quittent pas ton ordinateur. Avec un compte, tes réglages et tes projets se synchronisent entre tes appareils." },
+  // #072 : la synchronisation porte sur les réglages et la fiche des projets, jamais sur les dossiers de code.
+  { label: "Fichiers", title: "Tes fichiers restent sur ton PC", text: "Tes dossiers de code ne quittent pas ton ordinateur. Avec un compte, seuls tes réglages et la fiche de tes projets se synchronisent entre tes appareils." },
   { label: "Secrets", title: "Clés et jetons chiffrés", text: "Jetons, mots de passe et variables protégées sont chiffrés par Windows et ne sont jamais renvoyés à l’interface." },
   { label: "Sessions", title: "Chaque projet isolé", text: "Chaque projet a sa propre session : cookies, stockage et cache ne se mélangent jamais d’un site à l’autre." },
   { label: "Outils", title: "Outils vérifiés", text: "Les outils de développement viennent de leurs sources officielles, avec contrôle de l’empreinte quand elle est publiée." },
@@ -125,7 +126,7 @@ export const PERSONAS: Persona[] = [
     photo: etudiants,
     alt: "Un jeune homme souriant qui travaille sur un ordinateur portable",
     title: "Étudiants et formateurs",
-    text: "Apprends avec un vrai éditeur, un terminal et Git, gratuitement, et teste tes pages sur de vrais appareils.",
+    text: `Apprends avec un vrai éditeur, un terminal et Git, gratuitement, et teste tes pages dans le cadre de ${DEVICE_COUNT} modèles d’appareils.`,
     space: "preview",
     link: "Découvrir le Responsive Lab",
   },
@@ -154,7 +155,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Mes projets sont-ils en sécurité ?",
-    a: "Tes dossiers restent sur ton PC, tes clés et jetons sont chiffrés par Windows, et chaque projet a sa propre session. Sans compte, tout reste sur ton ordinateur ; avec un compte, tes réglages et tes projets se synchronisent.",
+    a: "Tes dossiers de code restent sur ton PC, tes clés et jetons sont chiffrés par Windows, et chaque projet a sa propre session. Sans compte, tout reste sur ton ordinateur ; avec un compte, tes réglages et la fiche de tes projets se synchronisent, jamais tes dossiers de code.",
   },
   {
     q: "Comment changer d’offre ?",

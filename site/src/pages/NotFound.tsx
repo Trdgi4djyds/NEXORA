@@ -2,8 +2,11 @@ import { Icon } from "../lib/icons"
 
 export function NotFound() {
   return (
-    <section className="page-hero notfound">
-      <div className="hero-bg dots" aria-hidden="true" />
+    // #072 : même fond que les autres en-têtes de page (grille éclairée) ; « hero-bg dots » n'avait plus de style.
+    <section className="page-hero notfound" data-light>
+      <i className="grid-bg" aria-hidden="true" />
+      <i className="grid-lit" aria-hidden="true" />
+      <i className="torch" aria-hidden="true" />
       <div className="container">
         <span className="eyebrow">Page introuvable</span>
         <h1 className="h-1">

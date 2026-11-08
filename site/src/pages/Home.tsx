@@ -15,7 +15,7 @@ import { Trust } from "../components/Trust"
 import { FAQ } from "../data/content"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
-import { APP_VERSION, RELEASES } from "../lib/product"
+import { RELEASES } from "../lib/product"
 
 export function Home() {
   const latest = RELEASES[0]
@@ -63,7 +63,7 @@ export function Home() {
             <NewsCards items={latest[1].items} limit={6} />
             <Reveal className="center-row">
               <a className="link-arrow" href="#/nouveautes">
-                Toutes les nouveautés de la version {APP_VERSION} <Icon name="nxArrowRight" size={15} stroke={2} />
+                Toutes les versions de NEXORA <Icon name="nxArrowRight" size={15} stroke={2} />
               </a>
             </Reveal>
           </div>

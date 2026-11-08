@@ -1,6 +1,6 @@
 import { Screen } from "../components/Screen"
 import { CtaBand } from "../components/CtaBand"
-import { DownloadButton } from "../components/Download"
+import { MainButton } from "../components/Download"
 import { SectionHead } from "../components/SectionHead"
 import { PLAN_LABEL, SPACES, spaceHref, type Feature, type Space } from "../data/spaces"
 import { Icon } from "../lib/icons"
@@ -64,13 +64,20 @@ function PlanSplit({ space }: { space: Space }) {
     {
       id: "free",
       title: "Gratuit",
-      lead: space.plan === "free" ? "Pour découvrir et créer" : "Non inclus dans l’offre Gratuite",
+      lead: space.plan === "free" ? (space.trial?.lead ?? "Pour découvrir et créer") : "Non inclus dans l’offre Gratuite",
       items: space.plan === "free" ? space.features.filter((f) => !f.plan) : [],
     },
     {
       id: "standard",
       title: "Standard",
-      lead: space.plan === "free" ? "Tout le Gratuit, plus :" : "Tout l’espace, avec :",
+      lead:
+        space.plan !== "free"
+          ? "Tout l’espace, avec :"
+          : space.trial
+            ? "Tout le Gratuit, sans limite d’essai, plus :"
+            : space.features.some((f) => f.plan === "standard")
+              ? "Tout le Gratuit, plus :"
+              : "Le même espace :",
       items: space.features.filter((f) => (space.plan === "free" ? f.plan === "standard" : inPlan(f, "standard"))),
     },
     {
@@ -96,7 +103,12 @@ function PlanSplit({ space }: { space: Space }) {
               ))
             ) : (
               <li className="muted">
-                {c.id === "pro" ? "Des limites plus larges : projets, membres et constructions." : "Passe à Standard pour ouvrir cet espace."}
+                {/* #072 : un espace gratuit sans fonction Standard n'est pas « à ouvrir » : il est déjà inclus. */}
+                {c.id === "pro"
+                  ? "Des limites plus larges : projets, membres et constructions."
+                  : space.plan === "free"
+                    ? "Cet espace est déjà complet avec l’offre Gratuite ; Standard élargit les limites de ton compte (projets, documents, membres)."
+                    : "Passe à Standard pour ouvrir cet espace."}
               </li>
             )}
           </ul>
@@ -135,7 +147,7 @@ export function SpacePage({ space }: { space: Space }) {
             <div className="sp-hero-side rise" style={{ animationDelay: "180ms" }}>
               <p className="lead">{space.lead}</p>
               <div className="btn-stack">
-                <DownloadButton />
+                <MainButton />
                 <a className="btn btn-ghost" href="#/tarifs">
                   Voir les tarifs
                 </a>
@@ -165,7 +177,7 @@ export function SpacePage({ space }: { space: Space }) {
                   <h3>{f.title}</h3>
                   <p>{f.text}</p>
                 </span>
-                {f.plan && <span className={`plan-tag ${f.plan}`}>{PLAN_LABEL[f.plan]}</span>}
+                {f.plan ? <span className={`plan-tag ${f.plan}`}>{PLAN_LABEL[f.plan]}</span> : space.trial && <span className="plan-tag trial">{space.trial.tag}</span>}
               </Reveal>
             ))}
           </ol>

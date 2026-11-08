@@ -6,7 +6,7 @@ import { useRemote } from "../lib/remote"
 const KEY = "nexora-site-annonce"
 
 /** Bandeau du haut : maintenance annoncée par NEXORA, sinon les nouveautés de la dernière version. */
-export function Announcement() {
+export function Announcement({ home = false }: { home?: boolean }) {
   const { maintenance } = useRemote()
   const [hidden, setHidden] = useState(() => {
     try {
@@ -25,7 +25,8 @@ export function Announcement() {
       </div>
     )
   const note = RELEASES.find(([v]) => v === APP_VERSION)?.[1]
-  if (hidden || !note) return null
+  // #072 : sur l'accueil, la pastille du hero annonce déjà la version : pas de second bandeau identique.
+  if (hidden || home || !note) return null
   const [first, second] = note.items
   const hide = () => {
     try {

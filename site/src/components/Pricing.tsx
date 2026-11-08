@@ -6,7 +6,21 @@ import { Reveal, useTween } from "../lib/motion"
 import { limitText, money, monthsOffered, useRemote, type Plan, type PlanId } from "../lib/remote"
 
 type Row = { label: string; perm?: string; limit?: string; unit?: string; note?: Partial<Record<PlanId, string>>; text?: Partial<Record<PlanId, string>> }
-const GROUPS = COMPARE as unknown as [string, Row[]][]
+
+/*
+ * NEXORA #072 (audit) : le site n'affiche que ce qui existe. Le catalogue partagé avec l'application et les offres
+ * du serveur promettent encore une « communauté » (aucune n'existe : l'assistance passe par Mon compte → Support)
+ * et un « accès en avant-première » (permission `early_access` vérifiée nulle part). Le badge du serveur « Le plus
+ * choisi » affirme une popularité qu'aucun chiffre ne soutient : le site dit « Recommandé ».
+ */
+const GROUPS = (COMPARE as unknown as [string, Row[]][]).map(([group, rows]) => [
+  group,
+  rows
+    .filter((r) => r.perm !== "early_access")
+    .map((r) => (r.label === "Assistance" ? { ...r, text: { free: "Depuis NEXORA", standard: "Standard", pro: "Prioritaire" } } : r)),
+]) as [string, Row[]][]
+const honestFeature = (f: string) => f.replace(/\s+et accès en avant-première aux nouveautés/i, "").replace(/^Accès en avant-première aux nouveautés$/i, "")
+const honestBadge = (b: string) => (/choisi|populaire|vendu|préféré/i.test(b) ? "Recommandé" : b)
 
 const LOOK: Record<PlanId, { icon: string; space: string }> = {
   free: { icon: "nxSend", space: "browser" },
@@ -23,7 +37,7 @@ function PlanCard({ plan, annual, ready, start }: { plan: Plan; annual: boolean;
   const shown = useTween(perMonth)
   return (
     <article className={`plan glow${featured ? " featured" : ""}`} data-plan={plan.id}>
-      {plan.badge && <span className="plan-badge">{plan.badge}</span>}
+      {plan.badge && <span className="plan-badge">{honestBadge(plan.badge)}</span>}
       <div className="plan-top">
         <span className="sp-ic" data-space={look.space}>
           <Icon name={look.icon} size={19} />
@@ -43,11 +57,12 @@ function PlanCard({ plan, annual, ready, start }: { plan: Plan; annual: boolean;
             : `ou ${money(plan.price_year_cents)} par an${offered ? `, soit ${offered} mois offerts` : ""}`}
       </p>
       <a className={`btn ${featured ? "btn-primary" : "btn-ghost"} plan-cta`} href={free ? start : WEB_URL}>
-        {free ? "Commencer gratuitement" : `Choisir ${plan.name}`}
+        {/* #072 : pas de paiement sur le site ; dans NEXORA, l'offre se demande (Mon compte → Offre et usage). */}
+        {free ? "Commencer gratuitement" : `Demander ${plan.name}`}
         <Icon name="nxArrowRight" size={16} stroke={2} className="ico-go" />
       </a>
       <ul className="plan-feats">
-        {plan.features.map((f) => (
+        {plan.features.map(honestFeature).filter(Boolean).map((f) => (
           <li key={f}>
             <span className="plan-check">
               <Icon name="check" size={12} stroke={3} />
@@ -94,13 +109,14 @@ export function PricingCards() {
       <div className="plans" data-glow>
         {plans.map((p, i) => (
           <Reveal key={p.id} delay={i * 90} className="plan-wrap">
-            <PlanCard plan={p} annual={annual} ready={ready} start={downloadUrl || "#/telecharger"} />
+            <PlanCard plan={p} annual={annual} ready={ready} start={downloadUrl || WEB_URL} />
           </Reveal>
         ))}
       </div>
       <p className="plans-note">
-        <Icon name="chat" size={15} /> Change d’offre à tout moment depuis NEXORA (Mon compte, puis Offre et usage) : ta demande est
-        traitée par l’équipe NEXORA et ta nouvelle offre est activée sous 24 h. Prix en dollars américains.
+        <Icon name="info" size={15} />
+        Aucun paiement sur ce site : connecte-toi à NEXORA, puis Mon compte → Offre et usage. L’équipe NEXORA traite ta demande et active ta
+        nouvelle offre sous 24 h. Prix en dollars américains.
       </p>
     </div>
   )
