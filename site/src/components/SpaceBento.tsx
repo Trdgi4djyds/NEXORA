@@ -5,7 +5,7 @@ import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
 import { cn } from "../lib/utils"
 import { CITIES, Globe, type GlobeArc, type GlobeMarker } from "./Globe"
-import { NeonArt } from "./NeonArt"
+import { TileArt } from "./TileArt"
 import { Device, Screen } from "./Screen"
 import { Badge } from "./ui/badge"
 
@@ -35,13 +35,12 @@ const SEC_ARCS: GlobeArc[] = [
 ]
 
 /**
- * App Builder (#093, #094) : trois téléphones immobiles (#094 : plus aucun balancement), posés devant l'illustration
- * néon de l'espace et fondus vers le bas ; notification push qui arrive et repart ; formats qui s'allument.
+ * App Builder (#093, #094) : trois téléphones immobiles (#094 : plus aucun balancement), fondus vers le bas ;
+ * notification push qui arrive et repart ; formats qui s'allument.
  */
-function AppScene({ icon }: { icon: string }) {
+function AppScene() {
   return (
     <span className="app-scene absolute inset-0 block">
-      <NeonArt icon={icon} className="absolute top-[14%] left-1/2 w-[78%] max-w-[380px] -translate-x-1/2" />
       <span className="fade-b absolute inset-x-0 bottom-0 top-[30%] block">
         <span className="absolute bottom-[-7%] left-[2%] block w-[33%]">
           <Device kind="pixel" />
@@ -74,8 +73,8 @@ function AppScene({ icon }: { icon: string }) {
   )
 }
 
-/** Capture recadrée qui s'efface en transparence vers le bas, illustration néon posée devant. */
-function ShotArt({ id, icon, className = "", artClass = "", shotClass = "" }: { id: SpaceId; icon: string; className?: string; artClass?: string; shotClass?: string }) {
+/** Capture recadrée qui s'efface en transparence vers le bas. */
+function ShotArt({ id, className = "", shotClass = "" }: { id: SpaceId; className?: string; shotClass?: string }) {
   return (
     <span className={cn("relative block h-[260px] overflow-hidden", className)}>
       <span className="fade-b absolute inset-0 block pt-10 pl-7">
@@ -83,13 +82,12 @@ function ShotArt({ id, icon, className = "", artClass = "", shotClass = "" }: { 
           <Screen space={id} />
         </span>
       </span>
-      <NeonArt icon={icon} className={cn("absolute top-[-8%] right-[2%] z-[2] w-[56%] max-w-[250px]", artClass)} />
     </span>
   )
 }
 
-function Visual({ id, icon }: { id: SpaceId; icon: string }): ReactNode {
-  if (id === "android") return <AppScene icon={icon} />
+function Visual({ id }: { id: SpaceId }): ReactNode {
+  if (id === "android") return <AppScene />
   if (id === "preview")
     return (
       <span className="fade-b flex items-end justify-center gap-[3.5%] px-7 pt-4 pb-8">
@@ -113,17 +111,16 @@ function Visual({ id, icon }: { id: SpaceId; icon: string }): ReactNode {
         <span className="fade-b block aspect-square h-full">
           <Globe markers={SEC_MARKERS} arcs={SEC_ARCS} density={9000} start={-0.2} />
         </span>
-        <NeonArt icon={icon} className="absolute top-[-4%] right-[5%] z-[2] w-[34%] max-w-[150px]" />
       </span>
     )
   if (id === "home")
-    return <ShotArt id={id} icon={icon} className="lg:absolute lg:inset-x-0 lg:top-[16%] lg:bottom-0 lg:h-auto" shotClass="lg:w-[150%] lg:translate-y-[24%]" artClass="lg:top-[0%] lg:right-auto lg:left-[0%] lg:w-[48%]" />
-  return <ShotArt id={id} icon={icon} />
+    return <ShotArt id={id} className="lg:absolute lg:inset-x-0 lg:top-[16%] lg:bottom-0 lg:h-auto" shotClass="lg:w-[150%] lg:translate-y-[24%]" />
+  return <ShotArt id={id} />
 }
 
 /**
- * Grille des espaces. #094 : illustration néon dans chaque carte, lumière fluo, images fondues en transparence,
- * appareils immobiles. #092 (« Signal ») : chaque carte est un aplat à la couleur de son espace (data-space), titre en
+ * Grille des espaces. #095 : illustration de fond plein dans chaque carte (rubans, TileArt), lumière fluo, images
+ * fondues en transparence, appareils immobiles (#094). #092 (« Signal ») : chaque carte est un aplat à la couleur de son espace (data-space), titre en
  * grotesque serrée, fait vérifié dans une pastille à l'encre de la carte ; vraie capture recadrée, vrais appareils
  * (Responsive Lab, App Builder) ou globe animé (Sécurité, dessiné à l'encre de la carte).
  */
@@ -142,8 +139,8 @@ export function SpaceBento() {
             className={cn("glow lift tile group flex flex-col", shape && "lg:col-span-2", shape === "row" && "lg:min-h-[400px] lg:flex-row")}
             delay={(i % 3) * 90}
           >
+            <TileArt space={id} />
             <i className="tile-fluo" aria-hidden="true" />
-            {id === "preview" && <NeonArt icon={s.icon} className="absolute top-[6%] right-[5%] z-[1] hidden w-[230px] md:block" />}
             <span className={cn("relative z-[1] flex flex-col gap-3 p-7 pb-6 md:p-8", shape === "row" && "lg:w-[46%] lg:shrink-0 lg:pr-4")}>
               <span className="flex items-center justify-between gap-3">
                 {/* #089 : sur téléphone, le nom reste d'un seul tenant et la pastille passe à la ligne. */}
@@ -168,7 +165,7 @@ export function SpaceBento() {
               </span>
             </span>
             <span className={cn("tile-visual relative mt-auto flex-1", id === "android" && "min-h-[300px] overflow-hidden lg:mt-0", id === "home" && "lg:mt-0")} aria-hidden="true">
-              <Visual id={id} icon={s.icon} />
+              <Visual id={id} />
             </span>
           </Reveal>
         )

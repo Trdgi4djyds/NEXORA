@@ -1,6 +1,6 @@
 import { TRUST } from "../data/content"
+import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
-import { NeonArt } from "./NeonArt"
 import { SectionHead } from "./SectionHead"
 
 const ICONS: Record<string, string> = { Fichiers: "folder", Secrets: "key", Sessions: "layers", Outils: "shield" }
@@ -19,8 +19,9 @@ export function Trust() {
         <ul className="grid gap-6 md:grid-cols-2" data-glow>
           {TRUST.map((t, i) => (
             <Reveal as="li" className="glow flex gap-5 rounded-[28px] border border-foreground/[0.08] bg-card p-7" key={t.title} delay={i * 70}>
-              {/* #094 : icône en néon (même illustration que les cartes d'espace, à l'échelle de la carte). */}
-              <NeonArt icon={ICONS[t.label] ?? "check"} className="-m-3 size-[92px] shrink-0" />
+              <span className="sp-ic">
+                <Icon name={ICONS[t.label] ?? "check"} size={19} />
+              </span>
               <span className="flex-1">
                 <span className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-mono text-[12px] font-medium tracking-[0.06em] text-muted-foreground uppercase">{t.label}</span>

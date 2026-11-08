@@ -8,9 +8,6 @@ const EXTRA: Record<string, string> = {
 }
 const PATHS = { ...(NEXORA_ICONS as Record<string, string>), ...EXTRA }
 
-/** Tracé SVG brut d'une icône (NEXORA #094 : illustrations néon des cartes, qui redessinent l'icône en plusieurs couches). */
-export const iconPath = (name: string): string => PATHS[name] || ""
-
 export function Icon({
   name,
   size = 18,
