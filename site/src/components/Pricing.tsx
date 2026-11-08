@@ -34,9 +34,10 @@ function PlanCard({ plan, annual, ready, start }: { plan: Plan; annual: boolean;
   const offered = monthsOffered(plan)
   const shown = useTween(perMonth)
   return (
-    <article className={cn("glow relative flex h-full flex-col overflow-hidden p-8", featured ? "panel-hi" : "panel")} data-plan={plan.id}>
+    <article className={cn("glow relative flex h-full flex-col overflow-hidden p-6 sm:p-8", featured ? "panel-hi" : "panel")} data-plan={plan.id}>
       {featured && <i className="halo top-[-160px] right-[-80px] h-[260px] w-[300px] opacity-[0.16]" aria-hidden="true" />}
-      <div className="relative flex items-center justify-between gap-3">
+      {/* #089 : passe à la ligne sur téléphone (nom et ruban « Toutes les options » ne tenaient pas sur 360 px). */}
+      <div className="relative flex flex-wrap items-center justify-between gap-x-3 gap-y-3">
         <span className="flex items-center gap-3">
           <span className={cn("sp-ic", featured && "solid")}>
             <Icon name={LOOK[plan.id] ?? "nxCrown"} size={19} />
@@ -148,45 +149,88 @@ function cell(row: Row, plan: Plan): ReactNode {
   return <span>{row.text?.[plan.id] ?? "—"}</span>
 }
 
-/** Tableau comparatif complet (catalogue des offres de NEXORA, limites et fonctions lues sur le serveur). */
+/**
+ * Tableau comparatif complet (catalogue des offres de NEXORA, limites et fonctions lues sur le serveur).
+ * #089 : sur téléphone, liste par groupe (la fonction sur une ligne, puis les valeurs de chaque offre côte à côte) :
+ * le tableau, large d'au moins 560 px, obligeait à le faire défiler de côté et faisait glisser toute la page.
+ */
 export function CompareTable() {
   const { plans } = useRemote()
   return (
-    <div className="panel overflow-x-clip px-2 pb-2 max-md:overflow-x-auto">
-      <table className="cmp min-w-[560px]">
-        <thead>
-          <tr>
-            <th scope="col" className="text-[13px] font-medium text-muted-foreground">
-              Fonctions
-            </th>
-            {plans.map((p) => (
-              <th scope="col" key={p.id} className={p.id === "pro" ? "featured" : ""}>
-                <b className={cn("block text-[17px] font-semibold", p.id === "pro" && "text-primary")}>{p.name}</b>
-                <span className="block text-[12.5px] font-normal text-muted-foreground">{p.price_month_cents ? `${money(p.price_month_cents)} / mois` : "0 $, sans limite de durée"}</span>
+    <>
+      <CompareList plans={plans} />
+      <div className="panel hidden overflow-x-clip px-2 pb-2 md:block">
+        <table className="cmp min-w-[560px]">
+          <thead>
+            <tr>
+              <th scope="col" className="text-[13px] font-medium text-muted-foreground">
+                Fonctions
               </th>
-            ))}
-          </tr>
-        </thead>
-        {GROUPS.map(([group, rows]) => (
-          <tbody key={group}>
-            <tr className="cmp-group">
-              <th colSpan={plans.length + 1} scope="colgroup">
-                {group}
-              </th>
+              {plans.map((p) => (
+                <th scope="col" key={p.id} className={p.id === "pro" ? "featured" : ""}>
+                  <b className={cn("block text-[17px] font-semibold", p.id === "pro" && "text-primary")}>{p.name}</b>
+                  <span className="block text-[12.5px] font-normal text-muted-foreground">{p.price_month_cents ? `${money(p.price_month_cents)} / mois` : "0 $, sans limite de durée"}</span>
+                </th>
+              ))}
             </tr>
-            {rows.map((row) => (
-              <tr key={row.label}>
-                <th scope="row">{row.label}</th>
-                {plans.map((p) => (
-                  <td key={p.id} className={p.id === "pro" ? "featured" : ""}>
-                    {cell(row, p)}
-                  </td>
-                ))}
+          </thead>
+          {GROUPS.map(([group, rows]) => (
+            <tbody key={group}>
+              <tr className="cmp-group">
+                <th colSpan={plans.length + 1} scope="colgroup">
+                  {group}
+                </th>
               </tr>
-            ))}
-          </tbody>
+              {rows.map((row) => (
+                <tr key={row.label}>
+                  <th scope="row">{row.label}</th>
+                  {plans.map((p) => (
+                    <td key={p.id} className={p.id === "pro" ? "featured" : ""}>
+                      {cell(row, p)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          ))}
+        </table>
+      </div>
+    </>
+  )
+}
+
+/** #089 : comparatif sur téléphone (sous 768 px) : une carte par groupe, les deux offres côte à côte sous chaque fonction. */
+function CompareList({ plans }: { plans: Plan[] }) {
+  return (
+    <div className="flex flex-col gap-4 md:hidden">
+      <div className="grid grid-cols-2 gap-2">
+        {plans.map((p) => (
+          <div key={p.id} className={cn("rounded-xl border px-4 py-3", p.id === "pro" ? "border-primary/40 bg-primary/[0.06]" : "border-white/[0.08] bg-white/[0.02]")}>
+            <b className={cn("block text-[16px] font-semibold", p.id === "pro" && "text-primary")}>{p.name}</b>
+            <span className="block text-[12px] text-muted-foreground">{p.price_month_cents ? `${money(p.price_month_cents)} / mois` : "0 $, pour toujours"}</span>
+          </div>
         ))}
-      </table>
+      </div>
+      {GROUPS.map(([group, rows]) => (
+        <section key={group} className="panel overflow-hidden" aria-label={group}>
+          <h3 className="px-5 pt-5 pb-3 text-[12px] font-semibold tracking-[0.14em] text-primary uppercase">{group}</h3>
+          <ul>
+            {rows.map((row) => (
+              <li key={row.label} className="border-t border-white/[0.06] px-5 py-3.5">
+                <p className="text-[14px] leading-snug text-[#d3cfd9]">{row.label}</p>
+                <div className="mt-2.5 grid grid-cols-2 gap-2">
+                  {plans.map((p) => (
+                    <div key={p.id} className={cn("flex min-h-10 items-center justify-between gap-2 rounded-lg px-3 py-2 text-[13px]", p.id === "pro" ? "bg-primary/[0.07]" : "bg-white/[0.03]")}>
+                      <span className="text-[11.5px] text-muted-foreground">{p.name}</span>
+                      <span className="text-right leading-tight">{cell(row, p)}</span>
+                    </div>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   )
 }

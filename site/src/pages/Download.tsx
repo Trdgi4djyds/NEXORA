@@ -49,7 +49,8 @@ export function Download() {
                 <span className="mt-1 block text-[13.5px] text-muted-foreground">Windows 10 et 11 · 64 bits · lanceur de 5 à 10 Mo · NEXORA {APP_VERSION} téléchargé et vérifié à l’installation</span>
               </div>
             </div>
-            <div className="flex shrink-0 flex-wrap gap-3">
+            {/* #089 : sur téléphone, boutons empilés en pleine largeur (« Téléchargement bientôt disponible » sortait de la carte). */}
+            <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap [&>*]:max-sm:h-auto [&>*]:max-sm:min-h-12 [&>*]:max-sm:w-full [&>*]:max-sm:py-3 [&>*]:max-sm:whitespace-normal">
               {downloadUrl ? (
                 <>
                   <Button asChild size="lg">

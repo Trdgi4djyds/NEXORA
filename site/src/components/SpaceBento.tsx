@@ -90,11 +90,12 @@ export function SpaceBento() {
           <Reveal as="a" key={id} href={spaceHref(s)} className={cn("glow lift surface group flex min-h-[420px] flex-col overflow-hidden", size)} delay={(i % 3) * 90}>
             <span className="flex flex-col gap-3 p-8 pb-6">
               <span className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-3">
+                {/* #089 : sur téléphone, le nom reste d'un seul tenant (« App / Builder » se cassait) et la pastille passe à la ligne. */}
+                <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
                   <span className="sp-ic sm">
                     <Icon name={s.icon} size={15} />
                   </span>
-                  <span className="text-[13px] font-medium text-muted-foreground">{s.name}</span>
+                  <span className="text-[13px] font-medium whitespace-nowrap text-muted-foreground">{s.name}</span>
                   {(id === "preview" || id === "browser") && <Badge>Gratuit</Badge>}
                   {/* #087 : 2 applications gratuites, App Builder et Desktop Builder confondus. */}
                   {(id === "android" || id === "desktop") && <Badge>2 apps gratuites</Badge>}
@@ -107,7 +108,7 @@ export function SpaceBento() {
               <span className="title-3 mt-2 text-foreground">{s.card}</span>
               <span className="max-w-[46ch] text-[14.5px] leading-relaxed text-muted-foreground">{s.tagline}</span>
               <span className="mt-1 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-[12.5px] text-muted-foreground">
-                <b className="font-semibold text-primary">{value}</b> {caption}
+                <b className="font-semibold whitespace-nowrap text-primary">{value}</b> {caption}
               </span>
             </span>
             <span className="relative mt-auto flex-1" aria-hidden="true">

@@ -50,7 +50,7 @@ export function SectionHead({
   return (
     <Reveal
       className={cn(
-        "mb-14 md:mb-20",
+        "mb-10 sm:mb-14 md:mb-20",
         split && "grid items-end gap-x-16 gap-y-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]",
         align === "center" && "mx-auto max-w-3xl text-center",
         align === "left" && "max-w-3xl",

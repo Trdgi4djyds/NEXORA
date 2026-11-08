@@ -37,8 +37,9 @@ export function Announcement({ home = false }: { home?: boolean }) {
     <div className="relative border-b border-white/[0.06] bg-[#0f070c]">
       <div className="wrap-wide flex items-center gap-3 py-2">
         <a className="group flex min-w-0 flex-1 items-center justify-center gap-3 text-[13px] text-muted-foreground" href="#/licence">
-          <span className="rounded-full bg-primary px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-primary-foreground">Nouveau</span>
-          <span className="truncate">NEXORA Devs Toolbox : licence gratuite, 2 applications Android ou Windows offertes, 24 h d’essai Pro complet</span>
+          <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground">Nouveau</span>
+          {/* #089 : deux lignes sur téléphone (le texte était coupé après « licence gra… »). */}
+          <span className="line-clamp-2 leading-snug sm:line-clamp-none sm:truncate">NEXORA Devs Toolbox : licence gratuite, 2 applications Android ou Windows offertes, 24 h d’essai Pro complet</span>
           <span className="hidden items-center gap-1.5 font-medium text-primary transition-[gap] group-hover:gap-2.5 sm:inline-flex">
             Obtenir ma licence <Icon name="nxArrowRight" size={14} stroke={2} />
           </span>

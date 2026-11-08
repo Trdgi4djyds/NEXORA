@@ -63,7 +63,8 @@ export function DeviceWall({ compact = false }: { compact?: boolean }) {
             </div>
             <span className="text-center text-[12.5px] leading-tight">
               <b className="block font-medium">{DEVICES[k].name}</b>
-              <small className="text-muted-foreground">{DEVICES[k].css}</small>
+              {/* #089 : 11,5 px au lieu de 10 px (petit texte illisible sur téléphone). */}
+              <small className="mt-0.5 block text-[11.5px] text-muted-foreground">{DEVICES[k].css}</small>
             </span>
           </div>
         ))}
@@ -72,11 +73,13 @@ export function DeviceWall({ compact = false }: { compact?: boolean }) {
         <Reveal className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5" data-glow>
           {DEVICE_CATEGORIES.slice(0, 10).map((c) => (
             <div key={c.id} className="glow surface flex items-center gap-3 px-4 py-3.5">
-              <span className="sp-ic sm">
+              {/* #089 : pictogramme masqué sur téléphone, pour laisser la place au nom sur deux lignes. */}
+              <span className="sp-ic sm max-sm:hidden">
                 <Icon name={GLYPH[c.glyph] ?? "phone"} size={15} />
               </span>
               <span className="min-w-0">
-                <b className="block truncate text-[14px] font-medium">{c.label}</b>
+                {/* #089 : deux lignes au lieu d'un nom tronqué (« Xiaomi, Red… », « Pliables et … »). */}
+                <b className="line-clamp-2 text-[14px] leading-snug font-medium">{c.label}</b>
                 <small className="text-[12.5px] text-muted-foreground">
                   {c.count} modèle{c.count > 1 ? "s" : ""}
                 </small>
