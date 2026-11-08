@@ -7,7 +7,11 @@
  * avec la configuration du projet Firebase (google-services.json), le service qui reçoit les messages et
  * les déclarations du manifeste — comme le ferait Gradle avec le plugin google-services, sans Gradle.
  *
- * Envoi de test : API FCM HTTP v1, authentifiée par la clé de compte de service du projet (JWT signé ici). */
+ * Envoi de test : API FCM HTTP v1, authentifiée par la clé de compte de service du projet (JWT signé ici).
+ *
+ * NEXORA #073 : messagerie. Le service du kit ne fait plus que transmettre chaque message au code de l'application
+ * (Push.java : catégories, conversations, appels, réponses, file d'attente) ; récepteur des actions des
+ * notifications (PushAction) ; messages de test « conversation », « appel » et « retrait » (buildMessage). */
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -15,13 +19,15 @@ const { run } = require('./toolchain');
 const { extract } = require('./zip');
 const fsx = require('../fsx');
 
-const REPOS = ['https://dl.google.com/dl/android/maven2/', 'https://repo1.maven.org/maven2/'];
+// NEXORA #073 : miroir de Maven Central chez Google en dernier recours (réseaux qui bloquent repo1.maven.org).
+const REPOS = ['https://dl.google.com/dl/android/maven2/', 'https://repo1.maven.org/maven2/', 'https://maven-central.storage-download.googleapis.com/maven2/'];
 const ROOT_ARTIFACT = ['com.google.firebase', 'firebase-messaging'];
 const FALLBACK_VERSION = '25.0.1';
 // Versions minimales d'androidx utilisées par le code récent des services Google Play (leurs POM citent des
 // versions plus anciennes : dans une application Gradle classique, d'autres bibliothèques les relèvent).
 const FLOORS = [['androidx.core', 'core', '1.13.1'], ['androidx.activity', 'activity', '1.9.3']];
-const KIT_FORMAT = 3;
+// NEXORA #073 : format 4 (service de réception réécrit) : un kit plus ancien est préparé à nouveau à la construction.
+const KIT_FORMAT = 4;
 const MIN_SDK = 24;
 const SHELL_DIR = path.join(__dirname, '..', '..', 'android', 'shell');
 
@@ -526,6 +532,8 @@ class PushKit {
     const app = [
       ...k.manifest.application.map(sub),
       `<service android:name="app.vitrine.shell.VtPushService" android:exported="false"><intent-filter android:priority="1"><action android:name="com.google.firebase.MESSAGING_EVENT"/></intent-filter></service>`,
+      // NEXORA #073 : boutons des notifications (Répondre, Marquer comme lu, Refuser un appel), même application fermée.
+      '<receiver android:name="app.vitrine.shell.PushAction" android:exported="false"/>',
       '<meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/vt_notification"/>',
       '<meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="vt_default"/>',
       '<meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/vt_push_color"/>',
@@ -536,7 +544,11 @@ class PushKit {
       resZips: k.res.map((f) => path.join(k.dir, f)),
       packages: k.packages,
       application: app,
-      permissions: [...new Set([...k.manifest.permissions.map(sub), 'android.permission.POST_NOTIFICATIONS', 'android.permission.INTERNET', 'android.permission.WAKE_LOCK'])],
+      permissions: [...new Set([
+        ...k.manifest.permissions.map(sub), 'android.permission.POST_NOTIFICATIONS', 'android.permission.INTERNET', 'android.permission.WAKE_LOCK', 'android.permission.VIBRATE',
+        // Appels entrants : écran d'appel par-dessus l'écran verrouillé (Android 14 : à déclarer dans la Play Console).
+        ...(push.messaging && push.calls ? ['android.permission.USE_FULL_SCREEN_INTENT'] : []),
+      ])],
       permissionDecl: k.manifest.permissionDecl.map(sub),
       queries: k.manifest.queries,
       dex: k.dex.map((d) => fs.readFileSync(path.join(k.dir, k.dexDir || 'dex', d))),
@@ -601,20 +613,68 @@ function appTopic(appId, topic) {
   return !appId || t.startsWith(p) ? t : p + t;
 }
 
-async function sendTest({
-  serviceAccount, title, body, url, image, topic, token, appId,
-}, fetchImpl) {
-  const sa = parseServiceAccount(serviceAccount);
-  if (!sa.ok) throw new Error(sa.error);
-  const tok = await accessToken(sa.json, fetchImpl);
-  const message = {
-    notification: { title: String(title || 'Test'), body: String(body || '') },
-    android: { priority: 'high', notification: { channel_id: 'vt_default', ...(image ? { image } : {}) } },
-    data: { ...(url ? { url } : {}), source: 'vitrine', ...(appId ? { vt_app: String(appId) } : {}) },
-  };
+// NEXORA #073 : identifiant Android d'une catégorie de notifications (même règle que Push.slug de l'application).
+function slug(s) {
+  return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40);
+}
+function channelId(name) {
+  const s = slug(name);
+  return s ? `vt_${s}` : 'vt_default';
+}
+const str = (v, max = 4000) => String(v == null ? '' : v).slice(0, max);
+
+/* Message FCM HTTP v1 d'après le type (kind) :
+ *  - notification (défaut) : bloc « notification », affiché par Firebase application fermée ;
+ *  - message : conversation (expéditeur, conversation, tag) en message « data », affiché par l'application
+ *    (style conversation, réponse directe, une notification par conversation) ;
+ *  - call : appel entrant (message « data » prioritaire qui expire vite) ;
+ *  - cancel : retire la notification d'une conversation ou d'un appel (tag).
+ * Les valeurs « data » sont toujours des chaînes (règle de Firebase). */
+function buildMessage({
+  kind = 'notification', title, body, url, image, topic, token, appId, tag, channel, sender, conversation, avatar, badge, key, timeout,
+} = {}) {
+  const k = ['message', 'call', 'cancel'].includes(kind) ? kind : 'notification';
+  const data = { source: 'vitrine', ...(appId ? { vt_app: str(appId, 200) } : {}) };
+  const put = (name, v, max) => { if (v !== undefined && v !== null && String(v) !== '') data[name] = str(v, max); };
+  const message = { android: { priority: 'high' } };
+  if (k === 'notification') {
+    message.notification = { title: str(title || 'Test', 200), body: str(body) };
+    message.android.notification = { channel_id: channel ? channelId(channel) : 'vt_default', ...(image ? { image: str(image, 1000) } : {}), ...(tag ? { tag: str(tag, 200) } : {}) };
+    put('url', url, 2000);
+  } else {
+    data.type = k;
+    put('tag', tag || (k === 'call' ? 'appel' : ''), 200);
+    if (k !== 'cancel') {
+      put('title', title, 200);
+      put('body', body);
+      put('sender', sender, 200);
+      put('conversation', conversation, 200);
+      put('avatar', avatar, 1000);
+      put('image', image, 1000);
+      put('url', url, 2000);
+      put('channel', channel, 100);
+      put('key', key, 500);
+      if (Number(badge) > 0) data.badge = String(Math.min(9999, Math.round(Number(badge))));
+      if (k === 'call') {
+        const t = Math.max(10, Math.min(120, Number(timeout) || 45));
+        data.timeout = String(t);
+        // Un appel qui n'a pas pu être remis à temps ne doit pas sonner plus tard.
+        message.android.ttl = `${t}s`;
+      }
+    }
+  }
+  message.data = data;
   // Le sujet est propre à l'application : un envoi ne touche jamais les autres applications.
   if (token) message.token = String(token).trim(); else message.topic = appTopic(appId, topic);
   if (appId) message.android.restricted_package_name = String(appId);
+  return message;
+}
+
+async function sendTest(opts, fetchImpl) {
+  const sa = parseServiceAccount(opts.serviceAccount);
+  if (!sa.ok) throw new Error(sa.error);
+  const tok = await accessToken(sa.json, fetchImpl);
+  const message = buildMessage(opts);
   const r = await fetchImpl(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(sa.projectId)}/messages:send`, {
     method: 'POST', headers: { authorization: `Bearer ${tok}`, 'content-type': 'application/json' }, body: JSON.stringify({ message }),
   });
@@ -628,5 +688,5 @@ async function sendTest({
 }
 
 module.exports = {
-  PushKit, appTopic, accessToken, parseGoogleServices, firebaseValuesXml, parseServiceAccount, sendTest, mergeManifests, parsePom, cmpVer,
+  PushKit, appTopic, accessToken, parseGoogleServices, firebaseValuesXml, parseServiceAccount, sendTest, buildMessage, channelId, slug, mergeManifests, parsePom, cmpVer,
 };

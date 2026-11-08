@@ -45,6 +45,14 @@ final class Config {
     String pushChannel = "Notifications";
     String pushRegisterUrl = "";
     final List<String> pushTopics = new ArrayList<>();
+    // NEXORA #073 : messagerie. Adresse des actions (réponse, lu, refus d'appel), notifications quand
+    // l'application est à l'écran, style conversation et appels entrants (offre Pro), catégories de notifications.
+    String pushActionUrl = "";
+    boolean pushShowWhenOpen = true;
+    boolean pushMessaging = false;
+    boolean pushCalls = false;
+    int pushCallTimeout = 45;
+    final List<String[]> pushChannels = new ArrayList<>(); // [identifiant, nom, importance : high | default | low]
     final List<String> permissions = new ArrayList<>();
     boolean downloads = true;
     // Notifications locales d'événements (sans serveur) : l'application elle-même affiche une notification système.
@@ -108,6 +116,19 @@ final class Config {
                 c.pushRegisterUrl = pu.optString("registerUrl", "");
                 JSONArray tp = pu.optJSONArray("topics");
                 if (tp != null) for (int i = 0; i < tp.length(); i++) c.pushTopics.add(tp.optString(i));
+                c.pushActionUrl = pu.optString("actionUrl", "");
+                c.pushShowWhenOpen = pu.optBoolean("showWhenOpen", true);
+                c.pushMessaging = pu.optBoolean("messaging", false);
+                c.pushCalls = c.pushMessaging && pu.optBoolean("calls", false);
+                c.pushCallTimeout = Math.max(10, Math.min(120, pu.optInt("callTimeout", 45)));
+                JSONArray ch = pu.optJSONArray("channels");
+                if (ch != null) {
+                    for (int i = 0; i < ch.length(); i++) {
+                        JSONObject o = ch.optJSONObject(i);
+                        if (o == null || o.optString("id").isEmpty()) continue;
+                        c.pushChannels.add(new String[]{o.optString("id"), o.optString("name", o.optString("id")), o.optString("importance", "default")});
+                    }
+                }
             }
             c.mode = j.optString("mode", c.mode);
             c.publicUrl = j.optString("publicUrl", "");

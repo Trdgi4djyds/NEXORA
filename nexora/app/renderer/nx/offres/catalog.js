@@ -141,6 +141,8 @@ export const FEATURES = {
   apk: ['La génération d’APK', 'apk'], pwa: ['Le paquet PWA', 'pwa'], source_import: ['L’import de dossiers et de code source', 'source_import'],
   play_publish: ['La publication sur le Play Store', 'play_publish'], push: ['Les notifications push', 'push'], inapp: ['Les messages in-app', 'inapp'],
   automation: ['Les notifications programmées et les automatisations', 'automation'], custom_notifications: ['Les notifications personnalisées', 'custom_notifications'],
+  // NEXORA #073 : messagerie des applications Android (style conversation, réponse depuis la notification, appels).
+  messaging_events: ['La messagerie des applications (conversations, réponses, appels entrants)', 'messaging_events'],
   integrations: ['Les achats intégrés et les outils d’intégration', 'integrations'], api_sdk: ['L’API et le SDK de statistiques', 'api_sdk'],
   crawler: ['Le Crawler (aspirateur de site)', 'crawler'], audit_advanced: ['Les tests et audits avancés', 'audits_advanced'],
   devlab: ['Le Dev Lab avancé', 'devlab'], desktop_builder: ['Le Desktop Builder', 'desktop_builder'], studio_advanced: ['Le Studio 3D avancé', 'studio_advanced'],

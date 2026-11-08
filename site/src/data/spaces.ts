@@ -177,7 +177,9 @@ export const SPACES: Space[] = [
     features: [
       { icon: "android", title: "APK et AAB signés", text: "Une vraie application Android qui affiche ton site, signée avec ta clé.", plan: "standard" },
       { icon: "phone", title: "Aperçu fidèle", text: "L’écran d’accueil et l’application simulés sur iPhone, Pixel, Galaxy et les autres surcouches." },
-      { icon: "bell", title: "Notifications push", text: "Envoie des notifications à tes utilisateurs, et des messages dans l’application.", plan: "standard" },
+      { icon: "bell", title: "Notifications push", text: "Envoie des notifications à tes utilisateurs, même application fermée, rangées par catégorie ; ta page reçoit aussi les messages.", plan: "standard" },
+      // #073 : messagerie des applications (Push.java, section « Messagerie et appels » de l'App Builder).
+      { icon: "phone", title: "Messagerie et appels", text: "Pour une app comme WhatsApp : conversations empilées, réponse depuis la notification, appels entrants en plein écran et jeton relié au compte.", plan: "pro" },
       { icon: "image", title: "Fiche Play Store", text: "Textes par langue rédigés avec l’IA, captures habillées, icône, bannière et politique de confidentialité." },
       { icon: "nxCheckCircle", title: "Prêt pour le Play Store", text: "Un score et chaque point à corriger, relié à sa section, avant d’envoyer." },
       { icon: "group", title: "Tests fermés", text: "12 testeurs pendant 14 jours : invitations, suivi et réponses pour l’accès à la production." },

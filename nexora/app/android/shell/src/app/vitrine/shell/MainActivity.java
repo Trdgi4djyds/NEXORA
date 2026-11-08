@@ -191,6 +191,11 @@ public class MainActivity extends Activity {
         step("back", this::setupBack);
         step("network", this::watchNetwork);
         String url = urlFromIntent(getIntent());
+        // NEXORA #073 : notification touchée application fermée (message remis à la page), appel entrant par-dessus l'écran verrouillé.
+        step("push-open", () -> {
+            Push.noteOpen(this, getIntent());
+            if (Push.isCall(getIntent())) showOverLock();
+        });
         if (state != null && !safeMode) {
             try { web.restoreState(state); } catch (Throwable t) { note("restore", t); }
         }
@@ -392,8 +397,42 @@ public class MainActivity extends Activity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        // NEXORA #073 : notification touchée application ouverte. Si la page gère elle-même l'ouverture
+        // (NexoraApp.push.onOpen(cb, { navigate: false })), elle la reçoit sans rechargement.
+        boolean byPage = false;
+        try {
+            byPage = Push.noteOpen(this, intent);
+            if (Push.isCall(intent)) showOverLock();
+        } catch (Throwable t) {
+            note("push-open", t);
+        }
         String url = urlFromIntent(intent);
-        if (url != null) load(url);
+        if (url != null && !byPage) load(url);
+        else Push.deliverOpened();
+    }
+
+    // Écran d'appel entrant : l'application s'affiche par-dessus l'écran verrouillé et allume l'écran.
+    @SuppressWarnings("deprecation")
+    void showOverLock() {
+        if (Build.VERSION.SDK_INT >= 27) {
+            setShowWhenLocked(true);
+            setTurnScreenOn(true);
+        } else {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        }
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    protected void onStop() {
+        // Fin de l'appel ou application quittée : plus d'affichage par-dessus l'écran verrouillé.
+        if (Build.VERSION.SDK_INT >= 27) {
+            setShowWhenLocked(false);
+            setTurnScreenOn(false);
+        } else {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        }
+        super.onStop();
     }
 
     @Override
@@ -401,10 +440,12 @@ public class MainActivity extends Activity {
         super.onResume();
         if (web != null) web.onResume();
         if (extras != null) step("resume", () -> extras.onResume());
+        step("push-resume", () -> Push.resumed(this));
     }
 
     @Override
     protected void onPause() {
+        Push.foreground = false;
         if (web != null) web.onPause();
         if (extras != null) step("pause", () -> extras.onPause());
         step("cookies", () -> CookieManager.getInstance().flush());
@@ -413,6 +454,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        Push.detach(this);
         if (netCallback != null) {
             try {
                 ((ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE)).unregisterNetworkCallback(netCallback);
@@ -1514,6 +1556,7 @@ public class MainActivity extends Activity {
     String urlFromIntent(Intent intent) {
         if (intent == null) return null;
         String extra = intent.getStringExtra("vitrine_url");
+        if (extra != null && extra.startsWith("/")) { Uri s0 = Uri.parse(cfg.startUrl); return s0.getScheme() + "://" + s0.getEncodedAuthority() + extra; }
         if (extra != null) return extra;
         // Notification push ouverte (application fermée) : Firebase transmet les données du message en « extras ».
         for (String k : new String[]{"url", "link"}) {
@@ -1766,19 +1809,74 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String pushState() {
-            JSONObject o = new JSONObject();
-            try {
-                o.put("enabled", cfg.push);
-                o.put("available", Push.available());
-                o.put("token", Push.token == null ? JSONObject.NULL : Push.token);
-                o.put("error", Push.error == null ? JSONObject.NULL : Push.error);
-                o.put("permission", Build.VERSION.SDK_INT < 33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED);
-                o.put("app", getPackageName());
-                o.put("topicPrefix", Push.prefix(MainActivity.this));
-            } catch (Exception ignored) {
-                // état partiel
-            }
-            return o.toString();
+            return Push.state(MainActivity.this);
+        }
+
+        // NEXORA #073 : messagerie (voir Push).
+        @JavascriptInterface
+        public void pushHandled(String id, boolean handled) {
+            if (!allowed()) return;
+            Push.answer(id, handled);
+        }
+
+        @JavascriptInterface
+        public void pushActive(String tag) {
+            if (!allowed()) return;
+            Push.setActive(MainActivity.this, tag);
+        }
+
+        @JavascriptInterface
+        public void pushShowWhenOpen(boolean on) {
+            if (!allowed()) return;
+            Push.showWhenOpen = on;
+        }
+
+        @JavascriptInterface
+        public void pushPageOpens(boolean on) {
+            if (!allowed()) return;
+            Push.pageOpens = on;
+        }
+
+        @JavascriptInterface
+        public String pushPending() {
+            if (!allowed()) return "[]";
+            return Push.takeQueue(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public String pushOpened() {
+            if (!allowed()) return "";
+            return Push.takeOpened();
+        }
+
+        @JavascriptInterface
+        public void pushClear(String tag) {
+            if (!allowed()) return;
+            Push.cancel(MainActivity.this, tag);
+        }
+
+        @JavascriptInterface
+        public void pushRequestToken() {
+            if (!allowed()) return;
+            Push.requestToken();
+        }
+
+        @JavascriptInterface
+        public void pushDeleteToken(String id) {
+            if (!allowed()) return;
+            Push.deleteToken(MainActivity.this, id);
+        }
+
+        @JavascriptInterface
+        public void pushRegister(String json, String id) {
+            if (!allowed()) return;
+            Push.registerFromPage(MainActivity.this, json, id);
+        }
+
+        @JavascriptInterface
+        public void pushSettings(String what, String channel) {
+            if (!allowed()) return;
+            ui.post(() -> Push.openSettings(MainActivity.this, what, channel));
         }
 
         @JavascriptInterface
@@ -1944,7 +2042,9 @@ public class MainActivity extends Activity {
             // Catégorie (canal) : nom lisible fourni par la page, sinon « Notifications ». Un même nom = un même canal.
             String chanName = o.optString("channel", "").trim();
             if (chanName.isEmpty()) chanName = "Notifications";
-            String channel = "vt_" + Integer.toHexString(chanName.toLowerCase(Locale.ROOT).hashCode());
+            String known = cfg.push ? Push.knownChannel(this, chanName) : null;
+            String channel = known != null ? known : "vt_" + Integer.toHexString(chanName.toLowerCase(Locale.ROOT).hashCode());
+            if (known != null) Push.ensureChannels(this);
             if (Build.VERSION.SDK_INT >= 26 && nm.getNotificationChannel(channel) == null) {
                 nm.createNotificationChannel(new NotificationChannel(channel, chanName, NotificationManager.IMPORTANCE_DEFAULT));
             }

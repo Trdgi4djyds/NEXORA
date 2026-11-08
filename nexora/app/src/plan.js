@@ -104,6 +104,8 @@ const PERM = {
   devlab_pro: 'devlab_pro',
   // NEXORA #053
   design_extended: 'design_extended', design_full: 'design_full',
+  // NEXORA #073 : messagerie des applications Android (style conversation, réponses, appels) et modèles.
+  messaging_events: 'messaging_events', custom_notifications: 'custom_notifications',
 };
 const QUOTA = new Set(['apk', 'pwa', 'push', 'crawler', 'desktop_builder', 'scan', 'ai']);
 const LABEL = {
@@ -117,12 +119,14 @@ const LABEL = {
   status_page: 'La page de statut publique', multi_region: 'La confirmation depuis une deuxième région',
   devlab_pro: 'Les outils Pro du Dev Lab (assistant IA du projet, débogueur, mise en ligne, contrôles, bases de données)',
   design_extended: 'NEX-DESIGN étendu', design_full: 'NEX-DESIGN complet (IA, code vers le Dev Lab, validation client, équipe, import Figma)',
+  messaging_events: 'La messagerie des applications (style conversation, réponse depuis la notification, appels entrants)',
+  custom_notifications: 'Les notifications personnalisées (modèles)',
 };
 const NAME = { free: 'Gratuit', standard: 'Standard', pro: 'Pro' };
 
 // Permissions par défaut (copie de la migration), pour un invité ou des serveurs sans la migration.
 const STANDARD_PERMS = ['apk', 'pwa', 'source_import', 'play_publish', 'push', 'crawler', 'audits_advanced', 'desktop_builder', 'devlab', 'inapp', 'alerts', 'responsive_advanced', 'status_page', 'design_extended'];
-const PRO_ONLY = ['automation', 'integrations', 'api_sdk', 'studio_advanced', 'synthetic', 'multi_region', 'devlab_pro', 'design_full'];
+const PRO_ONLY = ['automation', 'integrations', 'api_sdk', 'studio_advanced', 'synthetic', 'multi_region', 'devlab_pro', 'design_full', 'messaging_events', 'custom_notifications'];
 function defaultPerms(plan) {
   const p = {};
   for (const k of [...STANDARD_PERMS, ...PRO_ONLY]) p[k] = false;

@@ -11,6 +11,8 @@ const { techLog } = require('../plain');
 const {
   PushKit, parseGoogleServices, parseServiceAccount, sendTest,
 } = require('./push');
+// NEXORA #073 : offre vérifiée hors des canaux (envois programmés décomptés, messagerie réservée à Pro).
+const plan = require('../plan');
 
 /* NEXORA #016 : chaque application a son propre dossier de sortie. Un fichier .nexora-app.json y note
  * l'identifiant de l'application ; si le dossier appartient déjà à une autre application (même nom
@@ -218,8 +220,9 @@ function register({
       if (!due.length) continue;
       h.scheduled = h.scheduled.filter((x) => x.at > Date.now());
       for (const d of due) {
+        // NEXORA #073 : chaque envoi programmé compte dans le quota mensuel, comme un envoi immédiat.
         // eslint-disable-next-line no-await-in-loop
-        const r = await sendNow(appId, d.msg).catch((e) => ({ ok: false, error: e.message }));
+        const r = await plan.check('push', 1).then(() => sendNow(appId, d.msg)).catch((e) => ({ ok: false, error: e.message }));
         h.sent.unshift({ ...d.msg, at: Date.now(), scheduled: d.at, ok: r.ok, error: r.ok ? undefined : r.error, topic: r.topic });
       }
       h.sent = h.sent.slice(0, 200);
@@ -249,6 +252,15 @@ function register({
 
   ipcMain.handle('android:build', async (_e, spec) => {
     if (busy) throw new Error('Une construction est déjà en cours.');
+    // NEXORA #073 : style conversation, réponses depuis la notification et appels entrants = « événements de messagerie » (Pro).
+    if (spec && spec.push && spec.push.enabled && spec.push.messaging) {
+      try {
+        await plan.check('messaging_events', 0);
+      } catch (e) {
+        if (e.plan) send('plan:blocked', { channel: 'android:build', ...e.plan });
+        throw e;
+      }
+    }
     await cryptReady;
     busy = true;
     try {

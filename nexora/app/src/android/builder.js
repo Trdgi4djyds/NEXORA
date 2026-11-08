@@ -10,7 +10,7 @@ const path = require('path');
 const { run, TARGET_API } = require('./toolchain');
 const { rewrite, list } = require('./zip');
 const { optimizeWww } = require('./optimize');
-const { parseGoogleServices, firebaseValuesXml } = require('./push');
+const { parseGoogleServices, firebaseValuesXml, channelId } = require('./push');
 const { mergeKits } = require('./billing');
 
 const ROOT = path.join(__dirname, '..', '..', 'android');
@@ -308,13 +308,38 @@ function androidOrientation(o, flip) {
   return 'unspecified';
 }
 
+// NEXORA #073 : catégories de notifications (au plus 10) : identifiant Android stable déduit du nom.
+function pushChannels(list) {
+  const out = [];
+  const seen = new Set(['vt_default', 'vt_calls']);
+  for (const c of Array.isArray(list) ? list : []) {
+    const name = String((c && c.name) || '').trim().slice(0, 40);
+    const id = name ? channelId(name) : '';
+    if (!id || seen.has(id) || out.length >= 10) continue;
+    seen.add(id);
+    out.push({ id, name, importance: ['high', 'default', 'low'].includes(c.importance) ? c.importance : 'default' });
+  }
+  return out;
+}
+
 function shellConfig(spec) {
   const c = spec.config || {};
   const colors = spec.colors || {};
   const pu = spec.push || {};
   return {
     push: pu.enabled && spec.mode !== 'twa' ? {
-      enabled: true, ask: pu.ask !== false, channel: pu.channel || 'Notifications', registerUrl: pu.registerUrl || '', topics: (pu.topics || ['all']).filter(Boolean),
+      enabled: true,
+      ask: pu.ask !== false,
+      channel: pu.channel || 'Notifications',
+      registerUrl: pu.registerUrl || '',
+      topics: (pu.topics || ['all']).filter(Boolean),
+      // NEXORA #073 : messagerie (voir Push.java).
+      actionUrl: /^https?:\/\/[^/\s]+/i.test(pu.actionUrl || '') ? String(pu.actionUrl).trim() : '',
+      showWhenOpen: pu.showWhenOpen !== false,
+      messaging: Boolean(pu.messaging),
+      calls: Boolean(pu.messaging && pu.calls),
+      callTimeout: Math.max(10, Math.min(120, Number(pu.callTimeout) || 45)),
+      channels: pushChannels(pu.channels),
     } : { enabled: false },
     appName: spec.appName,
     startUrl: spec.startUrl,

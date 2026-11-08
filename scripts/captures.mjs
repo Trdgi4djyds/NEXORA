@@ -15,6 +15,8 @@
 //   --theme sombre        thème sombre de NEXORA (défaut : clair)
 //   --scroll <sélecteur>  après les clics, fait défiler jusqu'à l'élément visé (CSS), centré (#041)
 //   --taille 1440x900     taille de la fenêtre capturée
+//   --reglages <fichier>  réglages de départ de NEXORA fusionnés à ceux d'un PC neuf (JSON ; #073 : application
+//                         de l'App Builder déjà configurée, voir scripts/reglages-captures/)
 //   --upload              envoie chaque image dans le chat (figma artifacts upload) et affiche le Markdown
 //   --url <adresse>       adresse de l'aperçu (défaut : figma make preview get-local-url)
 //   --compte demo         compte NEXORA fictif (données de scripts/admin-demo.mjs, appels Supabase interceptés) :
@@ -131,7 +133,8 @@ function parseArgs(argv) {
       const at = raw.indexOf("=")
       if (at < 1) throw new Error("--saisir attend « texte indicatif=valeur ».")
       opts.actions.push({ kind: "type", field: raw.slice(0, at), text: raw.slice(at + 1) })
-    } else if (arg === "--sans-notifications") opts.quiet = true
+    } else if (arg === "--reglages") opts.settings = JSON.parse(fs.readFileSync(value(), "utf8"))
+    else if (arg === "--sans-notifications") opts.quiet = true
     else if (arg === "--attendre") opts.wait = Number(value()) || 0
     else if (arg === "--route") opts.routes.push(value())
     else if (arg === "--scroll") opts.scroll = value()
@@ -358,7 +361,7 @@ async function main() {
     await page.setViewport({ width, height })
     // Réglages de départ : thème demandé, et premier lancement déjà passé sauf s'il faut le capturer.
     const theme = opts.theme === "sombre" ? { appTheme: "dark" } : {}
-    const seed = opts.firstRun ? theme : { ...theme, ...SETUP_DONE }
+    const seed = opts.firstRun ? theme : { ...theme, ...SETUP_DONE, ...(opts.settings || {}) }
     // NEXORA #052 : Dev Lab de démonstration, projet de preview/demo-dev.mjs déjà ouvert.
     if (opts.demoDev) {
       const { DEMO_DEV_ROOT } = await import("../preview/demo-dev.mjs")

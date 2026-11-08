@@ -13,6 +13,8 @@ const ACT_FEATURES = {
   build: 'apk', install: 'apk', 'install-on': 'apk', 'test-on': 'apk', 'launch-sim': null,
   'pwa-pack': 'pwa', 'pwa-inject': 'pwa', 'play-publish': 'play_publish', 'play-check': 'play_publish',
   'push-send': 'push', 'push-kit': 'push', 'notif-send': 'push', 'notif-tpl-save': 'custom_notifications',
+  // NEXORA #073 : section « Messagerie et appels ».
+  'msg-on': 'messaging_events', 'msg-send': 'push',
   'pick-dir': 'source_import', 'use-project': 'source_import', 'build-web': 'source_import',
 };
 // Toujours permis, même application verrouillée : changer d'application, en créer, supprimer.

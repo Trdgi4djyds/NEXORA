@@ -1,4 +1,4 @@
-// NEXORA #017 : sections ajoutées à l'App Builder (#017 fiche Play Store, #018 statistiques et plantages, #019 achats intégrés, #024 écrans d'appareils, #056 prêt pour le Play Store et tests fermés). Chargé au démarrage par nx/boot.js, avant la première
+// NEXORA #017 : sections ajoutées à l'App Builder (#017 fiche Play Store, #018 statistiques et plantages, #019 achats intégrés, #024 écrans d'appareils, #056 prêt pour le Play Store et tests fermés, #073 messagerie et appels). Chargé au démarrage par nx/boot.js, avant la première
 // ouverture de l'espace : les sections et leurs méthodes sont posées sur la classe de l'App Builder, si bien
 // qu'une section ajoutée peut être rouverte directement au lancement suivant.
 import { SECTIONS, nxAppBuilder } from '../../dist/chunks/android-W5CZA2A2.js';
@@ -9,8 +9,10 @@ import * as billing from './billing.js';
 import * as home from './home.js';
 import * as ready from './ready.js';
 import * as testers from './testers.js';
+import * as messaging from './messaging.js';
 
-const MODULES = [listing, insights, billing, home, ready, testers];
+// messaging après ready : il complète ses contrôles (nxReadyGroups).
+const MODULES = [listing, insights, billing, home, ready, testers, messaging];
 
 function css() {
   if (document.querySelector('link[data-nx-android]')) return;

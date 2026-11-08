@@ -103,26 +103,104 @@
     exit: function () { N.exit(); },
     // Dernière erreur de l'application (fermeture inattendue, moteur de page arrêté…), pour le diagnostic.
     lastError: function () { try { return N.lastError ? N.lastError() : ''; } catch (e) { return ''; } },
-    // Notifications push (si l'application a été construite avec) : jeton de l'appareil, sujets, autorisation.
-    push: {
+  };
+  // Notifications push (si l'application a été construite avec) : jeton de l'appareil, sujets, autorisation.
+  // NEXORA #073 : messagerie. onMessage(cb) : cb(message) peut renvoyer true (ou une promesse de true) quand la page
+  // a déjà montré le message : pas de notification tant que l'application est à l'écran. Les messages reçus pendant
+  // que la page était absente lui sont remis à l'ouverture (message.queued). onOpen(cb) : notification touchée ou
+  // appel accepté ; onAction(cb) : Répondre, Marquer comme lu, Refuser depuis la notification ; onMissed(cb) : des
+  // messages ont été perdus (appareil longtemps hors ligne), tout relire. setActive(tag) : conversation à l'écran ;
+  // clear(tag) ; showWhenOpen(false) ; register({ fields, headers }) ; deleteToken() ; pending() ; openSettings(what).
+  App.push = (function () {
+    var msgCbs = [], openCbs = [], actionCbs = [], tokenCbs = [], missedCbs = [];
+    var backlog = null, lastOpen = null;
+    function has(m) { return !!N && typeof N[m] === 'function'; }
+    function safe(cb, a, b) { try { return cb(a, b); } catch (e) { console.error('NexoraApp.push', e); return undefined; } }
+    function takeBacklog() {
+      if (backlog === null) {
+        try { backlog = has('pushPending') ? (JSON.parse(N.pushPending() || '[]') || []) : []; } catch (e) { backlog = []; }
+      }
+      return backlog;
+    }
+    function answer(id, handled) { try { N.pushHandled(id, !!handled); } catch (e) { /* ancienne application */ } }
+    function deliverMessage(d) {
+      var results = [];
+      for (var i = 0; i < msgCbs.length; i++) results.push(safe(msgCbs[i], d.message));
+      if (!d.ask) return;
+      var sync = false, waits = [];
+      for (var j = 0; j < results.length; j++) {
+        if (results[j] === true) sync = true;
+        else if (results[j] && typeof results[j].then === 'function') waits.push(results[j]);
+      }
+      if (sync || !waits.length) { answer(d.ask, sync); return; }
+      var done = false;
+      var finish = function (v) { if (!done) { done = true; answer(d.ask, v); } };
+      setTimeout(function () { finish(false); }, 700);
+      Promise.all(waits.map(function (p) { return p.then(function (v) { if (v === true) finish(true); return v === true; }, function () { return false; }); }))
+        .then(function (vs) { finish(vs.indexOf(true) >= 0); });
+    }
+    window.addEventListener('vitrinepush', function (e) {
+      var d = e.detail || {}, i;
+      if (d.type === 'message') deliverMessage(d);
+      else if (d.type === 'open') { lastOpen = d; for (i = 0; i < openCbs.length; i++) safe(openCbs[i], d.message, d.action); }
+      else if (d.type === 'action') { for (i = 0; i < actionCbs.length; i++) safe(actionCbs[i], d); }
+      else if (d.type === 'token') { for (i = 0; i < tokenCbs.length; i++) safe(tokenCbs[i], d.token); }
+      else if (d.type === 'deleted') { for (i = 0; i < missedCbs.length; i++) safe(missedCbs[i]); }
+    });
+    // Éléments mis de côté pendant l'absence de la page, remis à chaque nouvel écouteur du bon type.
+    function replay(type, cb) {
+      var list = takeBacklog();
+      setTimeout(function () {
+        for (var i = 0; i < list.length; i++) {
+          var it = list[i];
+          if (it.type !== type) continue;
+          if (type === 'message') { var m = it.message || {}; m.queued = true; m.receivedAt = it.receivedAt; safe(cb, m); } else if (type === 'action') safe(cb, it); else safe(cb);
+        }
+      }, 0);
+    }
+    var api = {
       state: function () { try { return JSON.parse(N.pushState()); } catch (e) { return { enabled: false }; } },
       getToken: function (timeout) {
-        var s = App.push.state();
+        var s = api.state();
         if (s.token) return Promise.resolve(s.token);
         if (!s.enabled) return Promise.reject(new Error('Notifications push non activées dans cette application'));
         return new Promise(function (res, rej) {
-          var t = setTimeout(function () { window.removeEventListener('vitrinepush', on); rej(new Error(App.push.state().error || 'Jeton indisponible')); }, timeout || 15000);
-          var on = function (e) { if (e.detail && e.detail.type === 'token') { clearTimeout(t); window.removeEventListener('vitrinepush', on); res(e.detail.token); } };
+          var on = function (e) { if (e.detail && e.detail.type === 'token' && e.detail.token) { clearTimeout(t); window.removeEventListener('vitrinepush', on); res(e.detail.token); } };
+          var t = setTimeout(function () { window.removeEventListener('vitrinepush', on); rej(new Error(api.state().error || 'Jeton indisponible')); }, timeout || 15000);
           window.addEventListener('vitrinepush', on);
+          try { if (has('pushRequestToken')) N.pushRequestToken(); } catch (e) { /* ancienne application */ }
         });
       },
       subscribe: function (topic) { return call('pushSubscribe', [String(topic), true]); },
       unsubscribe: function (topic) { return call('pushSubscribe', [String(topic), false]); },
       requestPermission: function () { return call('pushPermission', []).then(function (v) { return v === true || v === 'true'; }); },
-      onMessage: function (cb) { window.addEventListener('vitrinepush', function (e) { if (e.detail && e.detail.type === 'message') cb(e.detail.message); }); },
-      onToken: function (cb) { window.addEventListener('vitrinepush', function (e) { if (e.detail && e.detail.type === 'token') cb(e.detail.token); }); },
-    },
-  };
+      onMessage: function (cb) { msgCbs.push(cb); replay('message', cb); },
+      onToken: function (cb) { tokenCbs.push(cb); },
+      onOpen: function (cb, opts) {
+        openCbs.push(cb);
+        if (opts && opts.navigate === false && has('pushPageOpens')) N.pushPageOpens(true);
+        if (!lastOpen) {
+          var o = '';
+          try { o = has('pushOpened') ? N.pushOpened() : ''; } catch (e) { o = ''; }
+          if (o) { try { lastOpen = JSON.parse(o); } catch (e) { lastOpen = null; } }
+        }
+        if (lastOpen) { var d = lastOpen; setTimeout(function () { safe(cb, d.message, d.action); }, 0); }
+      },
+      onAction: function (cb) { actionCbs.push(cb); replay('action', cb); },
+      onMissed: function (cb) { missedCbs.push(cb); replay('deleted', cb); },
+      pending: function () { return takeBacklog().slice(); },
+      setActive: function (tag) { try { N.pushActive(tag == null ? '' : String(tag)); } catch (e) { /* ancienne application */ } },
+      showWhenOpen: function (on) { try { N.pushShowWhenOpen(on !== false); } catch (e) { /* ancienne application */ } },
+      clear: function (tag) { try { N.pushClear(tag == null ? '' : String(tag)); } catch (e) { /* ancienne application */ } },
+      register: function (opts) { return api.getToken().then(function () { return call('pushRegister', [JSON.stringify(opts || {})]); }); },
+      deleteToken: function () {
+        if (!has('pushDeleteToken')) return Promise.reject(new Error('Fonction indisponible : reconstruis l’application avec NEXORA'));
+        return call('pushDeleteToken', []);
+      },
+      openSettings: function (what, channel) { try { N.pushSettings(String(what || 'notifications'), channel ? String(channel) : ''); } catch (e) { /* ancienne application */ } },
+    };
+    return api;
+  })();
   // NEXORA #019 : achats intégrés avec Google Play Billing (si l'application a été construite avec l'option).
   // products(['pro'], 'inapp' | 'subs') → [{ productId, title, price, offers… }] ; buy('pro', { type, offerToken,
   // accountId }) → achats ; purchases(type) ; acknowledge(token) ; consume(token) ; onPurchase(cb).
