@@ -5,6 +5,7 @@ import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
 import { cn } from "../lib/utils"
 import { CITIES, Globe, type GlobeArc, type GlobeMarker } from "./Globe"
+import { NeonArt } from "./NeonArt"
 import { Device, Screen } from "./Screen"
 import { Badge } from "./ui/badge"
 
@@ -33,18 +34,24 @@ const SEC_ARCS: GlobeArc[] = [
   { from: CITIES.francfort, to: CITIES.saopaulo },
 ]
 
-/** App Builder (#093) : trois téléphones qui flottent, une notification push qui arrive et repart, les formats qui s'allument. */
-function AppScene() {
+/**
+ * App Builder (#093, #094) : trois téléphones immobiles (#094 : plus aucun balancement), posés devant l'illustration
+ * néon de l'espace et fondus vers le bas ; notification push qui arrive et repart ; formats qui s'allument.
+ */
+function AppScene({ icon }: { icon: string }) {
   return (
     <span className="app-scene absolute inset-0 block">
-      <span className="float f2 absolute bottom-[-7%] left-[2%] block w-[33%]">
-        <Device kind="pixel" />
-      </span>
-      <span className="float absolute bottom-[-3%] left-[30%] z-[2] block w-[38%]">
-        <Device kind="iphone" />
-      </span>
-      <span className="float f3 absolute bottom-[-9%] left-[64%] block w-[33%]">
-        <Device kind="galaxy" />
+      <NeonArt icon={icon} className="absolute top-[14%] left-1/2 w-[78%] max-w-[380px] -translate-x-1/2" />
+      <span className="fade-b absolute inset-x-0 bottom-0 top-[30%] block">
+        <span className="absolute bottom-[-7%] left-[2%] block w-[33%]">
+          <Device kind="pixel" />
+        </span>
+        <span className="absolute bottom-[-3%] left-[30%] z-[2] block w-[38%]">
+          <Device kind="iphone" />
+        </span>
+        <span className="absolute bottom-[-9%] left-[64%] block w-[33%]">
+          <Device kind="galaxy" />
+        </span>
       </span>
       {/* Notification de démonstration (site fictif « Kora », comme dans les écrans des appareils). */}
       <span className="push-toast absolute top-[7%] left-1/2 z-[3] flex w-[min(320px,78%)] items-center gap-3 rounded-2xl bg-white/95 p-3 text-left text-[#111] shadow-[0_20px_40px_-18px_rgb(0_0_0/0.55)]">
@@ -67,53 +74,56 @@ function AppScene() {
   )
 }
 
-function Visual({ id }: { id: SpaceId }): ReactNode {
-  if (id === "android") return <AppScene />
+/** Capture recadrée qui s'efface en transparence vers le bas, illustration néon posée devant. */
+function ShotArt({ id, icon, className = "", artClass = "", shotClass = "" }: { id: SpaceId; icon: string; className?: string; artClass?: string; shotClass?: string }) {
+  return (
+    <span className={cn("relative block h-[260px] overflow-hidden", className)}>
+      <span className="fade-b absolute inset-0 block pt-10 pl-7">
+        <span className={cn("shot-crop block overflow-hidden rounded-tl-2xl ring-1 ring-white/25", shotClass)}>
+          <Screen space={id} />
+        </span>
+      </span>
+      <NeonArt icon={icon} className={cn("absolute top-[-8%] right-[2%] z-[2] w-[56%] max-w-[250px]", artClass)} />
+    </span>
+  )
+}
+
+function Visual({ id, icon }: { id: SpaceId; icon: string }): ReactNode {
+  if (id === "android") return <AppScene icon={icon} />
   if (id === "preview")
     return (
-      <span className="flex items-end justify-center gap-[3.5%] px-7 pt-4 pb-8">
-        <span className="tile-par w-[50%] max-w-[380px]" style={{ "--k": "6px" } as CSSProperties}>
+      <span className="fade-b flex items-end justify-center gap-[3.5%] px-7 pt-4 pb-8">
+        <span className="w-[50%] max-w-[380px]">
           <Device kind="macbook" />
         </span>
-        <span className="tile-par w-[16%] max-w-[122px]" style={{ "--k": "10px" } as CSSProperties}>
+        <span className="w-[16%] max-w-[122px]">
           <Device kind="ipad" />
         </span>
-        <span className="tile-par w-[8%] max-w-[60px]" style={{ "--k": "14px" } as CSSProperties}>
+        <span className="w-[8%] max-w-[60px]">
           <Device kind="galaxy" />
         </span>
-        <span className="tile-par w-[7.8%] max-w-[58px]" style={{ "--k": "18px" } as CSSProperties}>
+        <span className="w-[7.8%] max-w-[58px]">
           <Device kind="iphone" />
         </span>
       </span>
     )
   if (id === "security")
     return (
-      <span className="flex h-[260px] items-center justify-center pb-6">
-        <span className="block aspect-square h-full">
+      <span className="relative flex h-[260px] items-center justify-center pb-6">
+        <span className="fade-b block aspect-square h-full">
           <Globe markers={SEC_MARKERS} arcs={SEC_ARCS} density={9000} start={-0.2} />
         </span>
+        <NeonArt icon={icon} className="absolute top-[-4%] right-[5%] z-[2] w-[34%] max-w-[150px]" />
       </span>
     )
   if (id === "home")
-    return (
-      <span className="block h-[260px] overflow-hidden pl-7 lg:absolute lg:inset-0 lg:h-auto lg:pl-0">
-        <span className="shot-crop block overflow-hidden rounded-tl-2xl shadow-[0_-24px_60px_-24px_rgb(0_0_0/0.55)] ring-1 ring-black/20 lg:absolute lg:bottom-0 lg:left-0 lg:w-[150%]">
-          <Screen space={id} />
-        </span>
-      </span>
-    )
-  // Capture recadrée à hauteur fixe : les cartes d'une même rangée gardent la même hauteur.
-  return (
-    <span className="block h-[250px] overflow-hidden pl-7">
-      <span className="shot-crop block overflow-hidden rounded-tl-2xl shadow-[0_-24px_60px_-24px_rgb(0_0_0/0.55)] ring-1 ring-black/20">
-        <Screen space={id} />
-      </span>
-    </span>
-  )
+    return <ShotArt id={id} icon={icon} className="lg:absolute lg:inset-x-0 lg:top-[16%] lg:bottom-0 lg:h-auto" shotClass="lg:w-[150%] lg:translate-y-[24%]" artClass="lg:top-[0%] lg:right-auto lg:left-[0%] lg:w-[48%]" />
+  return <ShotArt id={id} icon={icon} />
 }
 
 /**
- * Grille des espaces. #092 (« Signal ») : chaque carte est un aplat à la couleur de son espace (data-space), titre en
+ * Grille des espaces. #094 : illustration néon dans chaque carte, lumière fluo, images fondues en transparence,
+ * appareils immobiles. #092 (« Signal ») : chaque carte est un aplat à la couleur de son espace (data-space), titre en
  * grotesque serrée, fait vérifié dans une pastille à l'encre de la carte ; vraie capture recadrée, vrais appareils
  * (Responsive Lab, App Builder) ou globe animé (Sécurité, dessiné à l'encre de la carte).
  */
@@ -129,10 +139,11 @@ export function SpaceBento() {
             key={id}
             href={spaceHref(s)}
             data-space={id}
-            data-tilt
             className={cn("glow lift tile group flex flex-col", shape && "lg:col-span-2", shape === "row" && "lg:min-h-[400px] lg:flex-row")}
             delay={(i % 3) * 90}
           >
+            <i className="tile-fluo" aria-hidden="true" />
+            {id === "preview" && <NeonArt icon={s.icon} className="absolute top-[6%] right-[5%] z-[1] hidden w-[230px] md:block" />}
             <span className={cn("relative z-[1] flex flex-col gap-3 p-7 pb-6 md:p-8", shape === "row" && "lg:w-[46%] lg:shrink-0 lg:pr-4")}>
               <span className="flex items-center justify-between gap-3">
                 {/* #089 : sur téléphone, le nom reste d'un seul tenant et la pastille passe à la ligne. */}
@@ -157,7 +168,7 @@ export function SpaceBento() {
               </span>
             </span>
             <span className={cn("tile-visual relative mt-auto flex-1", id === "android" && "min-h-[300px] overflow-hidden lg:mt-0", id === "home" && "lg:mt-0")} aria-hidden="true">
-              <Visual id={id} />
+              <Visual id={id} icon={s.icon} />
             </span>
           </Reveal>
         )

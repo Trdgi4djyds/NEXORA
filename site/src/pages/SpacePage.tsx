@@ -151,7 +151,7 @@ export function SpacePage({ space }: { space: Space }) {
               </Window>
             </div>
             {space.id === "android" && (
-              <div className="par absolute right-[1%] bottom-[-8%] flex w-[30%] items-end gap-[6%]" style={{ "--k": "12px", "--ky": "-40px" } as CSSProperties}>
+              <div className="absolute right-[1%] bottom-[-8%] flex w-[30%] items-end gap-[6%]">
                 <div className="w-[47%]">
                   <Device kind="galaxy" eager />
                 </div>
@@ -161,7 +161,7 @@ export function SpacePage({ space }: { space: Space }) {
               </div>
             )}
             {space.id === "preview" && (
-              <div className="par absolute right-[1%] bottom-[-8%] w-[15%]" style={{ "--k": "12px", "--ky": "-40px" } as CSSProperties}>
+              <div className="absolute right-[1%] bottom-[-8%] w-[15%]">
                 <Device kind="iphone" eager />
               </div>
             )}

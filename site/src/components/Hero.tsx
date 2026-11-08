@@ -152,10 +152,9 @@ export function Hero() {
               </div>
             </div>
           </div>
-          <div className="par absolute right-[2%] bottom-[-6%] hidden w-[11%] md:block" style={{ "--k": "14px", "--ky": "-50px" } as CSSProperties}>
-            <div className="float">
-              <Device kind="iphone" eager />
-            </div>
+          {/* #094 : téléphone immobile (ni flottement ni parallaxe). */}
+          <div className="absolute right-[2%] bottom-[-6%] hidden w-[11%] md:block">
+            <Device kind="iphone" eager />
           </div>
         </div>
       </div>
