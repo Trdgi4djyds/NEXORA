@@ -26,6 +26,8 @@
     "toolbox": "node scripts/toolbox-release.mjs",
     "test:maj": "node scripts/test-maj.mjs",
     "test:launcher": "node scripts/test-launcher.mjs",
+    "launcher:ressources": "node scripts/launcher-ressources.mjs",
+    "captures:lanceur": "node scripts/captures-lanceur.mjs",
     "captures": "node scripts/captures.mjs",
     "captures:admin": "node scripts/captures-admin.mjs",
     "format": "oxfmt vite.config.ts preview scripts",

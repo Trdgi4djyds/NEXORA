@@ -45,6 +45,11 @@ type SecFail struct {
 
 func (e *SecFail) Error() string { return e.Message }
 
+// LauncherUpdate : la publication exige un lanceur plus récent (min_launcher) ; run() l'installe puis le relance.
+type LauncherUpdate struct{ Release *Release }
+
+func (e *LauncherUpdate) Error() string { return "nouveau lanceur exigé par la publication" }
+
 var secTitles = map[string]string{
 	"offline":   "Connexion perdue",
 	"server":    "Serveur de sécurité indisponible",
@@ -183,6 +188,11 @@ func StartupCheck(ctx context.Context, c *http.Client, l Layout, st *State, relK
 	}
 	if m.ManifestVersion < st.LastManifest || m.ManifestVersion < stmt.MinManifestVersion {
 		return nil, &SecFail{Kind: "outdated", Message: "La publication proposée est plus ancienne que la dernière validée sur ce PC : retour en arrière refusé."}
+	}
+	// NEXORA #083 : lanceur trop ancien pour cette publication authentifiée : nouveau lanceur (vérifié par le
+	// manifeste signé) avant toute autre étape ; min_launcher n'était jusqu'ici jamais appliqué.
+	if m.Launcher != nil && m.MinLauncher != "" && CompareVersions(version, m.MinLauncher) < 0 {
+		return nil, &LauncherUpdate{Release: rel}
 	}
 	cur, cerr := Installed(l, st.Current, relKey, true)
 	if cerr != nil && st.Current != "" && !repair && !errors.Is(cerr, errExpired) {

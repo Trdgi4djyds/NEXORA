@@ -23,12 +23,16 @@ func singleInstance() (func(), bool) { return func() {}, true }
 func showError(err error)            { fmt.Fprintln(os.Stderr, "Erreur :", err) }
 func showWarning(msg string)         { fmt.Fprintln(os.Stderr, "Attention :", msg) }
 func showInfo(msg string)            { fmt.Println(msg) }
+func showDone(title, msg string)     { fmt.Println(title+" :", msg) }
 
 type consoleProgress struct{ last string }
 
 func newProgress(title string) Progress { fmt.Println(title); return &consoleProgress{} }
 func (c *consoleProgress) Set(f float64, msg string) {
 	line := fmt.Sprintf("%3.0f %% %s", f*100, msg)
+	if f < 0 { // durée inconnue (contrôle au démarrage)
+		line = "… " + msg
+	}
 	if line != c.last {
 		fmt.Println(line)
 		c.last = line

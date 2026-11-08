@@ -26,9 +26,11 @@ func manifestNumber(ver string) int64 {
 }
 
 type fixture struct {
-	pub   ed25519.PublicKey
-	priv  ed25519.PrivateKey
-	files map[string][]byte
+	pub         ed25519.PublicKey
+	priv        ed25519.PrivateKey
+	files       map[string][]byte
+	launcher    []byte // #083 : lanceur publié (facultatif)
+	minLauncher string
 }
 
 func newFixture(t *testing.T) *fixture {
@@ -71,6 +73,12 @@ func (f *fixture) manifest(t *testing.T, ver string, pkg []byte) ([]byte, string
 	m := Manifest{Format: 1, Application: "NEXORA", Product: "NEXORA", Version: ver, Channel: "stable", Exe: "NEXORA.exe", MinLauncher: "1.0.0",
 		ManifestVersion: manifestNumber(ver), IssuedAt: time.Now().UTC().Format(time.RFC3339), ExpiresAt: time.Now().Add(400 * 24 * time.Hour).UTC().Format(time.RFC3339),
 		Package: Asset{Name: "NEXORA-" + ver + "-win-x64.zip", Size: int64(len(pkg)), SHA256: sha256Hex(pkg)}, Files: files}
+	if f.minLauncher != "" {
+		m.MinLauncher = f.minLauncher
+	}
+	if f.launcher != nil {
+		m.Launcher = &Asset{Name: "NEXORA-Devs-Toolbox.exe", Size: int64(len(f.launcher)), SHA256: sha256Hex(f.launcher), Version: f.minLauncher}
+	}
 	raw, _ := json.MarshalIndent(m, "", "  ")
 	return raw, base64.StdEncoding.EncodeToString(ed25519.Sign(f.priv, raw))
 }

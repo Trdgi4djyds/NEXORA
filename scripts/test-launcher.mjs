@@ -26,11 +26,27 @@ if (ok) {
   const subsystem = b.readUInt16LE(pe + 24 + 68)
   const size = b.length
   fs.rmSync(exe, { force: true })
+  // NEXORA #083 : logo de NEXORA et informations de version dans l'exécutable (launcher/rsrc_windows_amd64.syso,
+  // pnpm launcher:ressources), plus aucun script ni outil en ligne de commande lancé par le lanceur.
+  const ico = fs.readFileSync(path.join(cwd, "..", "nexora", "app", "build", "icon.ico"))
+  let logo = null
+  for (let i = 0; i < ico.readUInt16LE(4); i++) {
+    const o = 6 + 16 * i, off = ico.readUInt32LE(o + 12)
+    if ((ico[o] || 256) === 256) logo = ico.subarray(off, off + ico.readUInt32LE(o + 8))
+  }
+  const u16 = (s) => Buffer.from(s, "utf16le")
+  const launcherVersion = /var version = "([^"]+)"/.exec(fs.readFileSync(path.join(cwd, "main.go"), "utf8"))[1]
+  const v4 = [...launcherVersion.split("."), "0", "0", "0"].slice(0, 4).join(".")
+  const lower = b.toString("latin1").toLowerCase()
+  const lower16 = b.toString("utf16le").toLowerCase()
   const checks = [
     [b.subarray(0, 2).toString() === "MZ" && b.subarray(pe, pe + 4).toString("latin1") === "PE\0\0", "exécutable Windows (PE)"],
     [machine === 0x8664, "64 bits (x64)"],
     [subsystem === 2, "interface graphique (aucune console)"],
     [size <= 10 * 1048576, `taille ${(size / 1048576).toFixed(1)} Mo (10 Mo au plus)`],
+    [!!logo && b.includes(logo), "icône de NEXORA intégrée (Explorateur, barre des tâches, raccourcis)"],
+    [b.includes(u16("NEXORA Devs Toolbox")) && b.includes(u16(v4)) && b.includes(u16("CompanyName")), `informations de version (NEXORA, ${v4})`],
+    [!lower.includes("powershell") && !lower16.includes("powershell") && !lower.includes("reg.exe"), "aucun PowerShell ni reg.exe (aucune console)"],
   ]
   for (const [pass, label] of checks) console.log(`${pass ? "OK  " : "ÉCHEC"} ${label}`)
   ok = checks.every(([pass]) => pass)

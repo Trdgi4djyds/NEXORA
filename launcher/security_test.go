@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -76,6 +77,8 @@ func (w *world) serve(rw http.ResponseWriter, r *http.Request) {
 			rw.Write(w.raw)
 		case r.URL.Path == dir+signatureName:
 			rw.Write([]byte(w.sig))
+		case r.URL.Path == dir+"NEXORA-Devs-Toolbox.exe" && w.f.launcher != nil:
+			rw.Write(w.f.launcher)
 		case r.URL.Path == dir+"NEXORA-"+w.ver+"-win-x64.zip":
 			http.ServeContent(rw, r, "p.zip", time.Time{}, bytes.NewReader(w.pkg))
 		default:
@@ -266,5 +269,50 @@ func TestStartupSequence(t *testing.T) {
 	}
 	if secTitle("offline") != "Connexion perdue" || secTitle("integrity") != "Échec du contrôle d’intégrité — Installation non authentifiée" {
 		t.Fatal("titres des écrans de sécurité")
+	}
+}
+
+// NEXORA #083 : publication qui exige un lanceur plus récent (min_launcher) : nouveau lanceur téléchargé, vérifié
+// par le manifeste signé, mis à la place de l'ancien ; un lanceur altéré sur le dépôt est refusé.
+func TestLauncherSelfUpdate(t *testing.T) {
+	w := newWorld(t)
+	w.f.launcher, w.f.minLauncher = []byte("nouveau lanceur NEXORA"), "99.0.0"
+	w.publish("1.2.0")
+	l := newLayout(t.TempDir())
+	if err := os.MkdirAll(l.Root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	os.WriteFile(l.Launcher, []byte("ancien lanceur"), 0o755)
+	st := loadState(l)
+	_, err := w.check(l, &st, false)
+	var lu *LauncherUpdate
+	if !errors.As(err, &lu) {
+		t.Fatalf("lanceur trop ancien non détecté : %v", err)
+	}
+	if err := updateSelf(l, lu.Release); err != nil {
+		t.Fatalf("mise à jour du lanceur : %v", err)
+	}
+	if b, _ := os.ReadFile(l.Launcher); string(b) != "nouveau lanceur NEXORA" {
+		t.Fatalf("lanceur non remplacé : %q", b)
+	}
+	if loadState(l).Registered != "" {
+		t.Fatal("raccourcis et registre non reposés après la mise à jour du lanceur")
+	}
+	// Lanceur différent de celui du manifeste signé : refusé, l'ancien reste en place.
+	os.WriteFile(l.Launcher, []byte("ancien lanceur"), 0o755)
+	good := w.f.launcher
+	w.f.launcher = []byte("lanceur altéré sur le dépôt")
+	defer func() { w.f.launcher = good }()
+	if err := updateSelf(l, lu.Release); err == nil {
+		t.Fatal("lanceur altéré accepté")
+	}
+	if b, _ := os.ReadFile(l.Launcher); string(b) != "ancien lanceur" {
+		t.Fatalf("ancien lanceur perdu après un refus : %q", b)
+	}
+	// Lanceur à jour : aucune mise à jour demandée.
+	w.f.minLauncher = "1.0.0"
+	w.publish("1.2.0")
+	if _, err := w.check(l, &st, false); errors.As(err, &lu) {
+		t.Fatal("mise à jour du lanceur demandée alors qu'il est à jour")
 	}
 }
