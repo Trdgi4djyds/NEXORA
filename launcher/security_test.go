@@ -44,11 +44,11 @@ func newWorld(t *testing.T) *world {
 	w.srv = httptest.NewServer(http.HandlerFunc(w.serve))
 	t.Cleanup(w.srv.Close)
 	allowHTTP = true
-	apiBase = w.srv.URL
+	apiBase, webBase = w.srv.URL, w.srv.URL
 	serverBase = w.srv.URL
 	t.Cleanup(func() {
 		allowHTTP = false
-		apiBase = "https://api.github.com"
+		apiBase, webBase = "https://api.github.com", "https://github.com"
 		serverBase = "https://nexora.abrahamtogbonon0.workers.dev"
 	})
 	return w
@@ -62,6 +62,27 @@ func (w *world) publish(ver string) {
 }
 
 func (w *world) serve(rw http.ResponseWriter, r *http.Request) {
+	// NEXORA #082 : liens directs du dépôt (voie principale du lanceur), coupés avec repoDown comme l'API.
+	dir := "/o/r/releases/download/v" + w.ver + "/"
+	if strings.HasPrefix(r.URL.Path, "/o/r/releases/") {
+		switch {
+		case w.repoDown:
+			hj, _ := rw.(http.Hijacker)
+			c, _, _ := hj.Hijack()
+			c.Close()
+		case r.URL.Path == "/o/r/releases/latest/download/"+manifestName:
+			http.Redirect(rw, r, w.srv.URL+dir+manifestName, http.StatusFound)
+		case r.URL.Path == dir+manifestName:
+			rw.Write(w.raw)
+		case r.URL.Path == dir+signatureName:
+			rw.Write([]byte(w.sig))
+		case r.URL.Path == dir+"NEXORA-"+w.ver+"-win-x64.zip":
+			http.ServeContent(rw, r, "p.zip", time.Time{}, bytes.NewReader(w.pkg))
+		default:
+			http.NotFound(rw, r)
+		}
+		return
+	}
 	switch r.URL.Path {
 	case "/security/manifest":
 		if w.statementDown {

@@ -1,0 +1,39 @@
+# NEXORA #081 : publication de NEXORA Devs Toolbox depuis GitHub, quand l'envoi direct des fichiers d'une version
+# est impossible (bac à sable de Figma Make : uploads.github.com refusé, A-050). Modèle gardé ici, copié dans
+# .github/workflows/ de la branche temporaire seulement (jamais sur main du dépôt public) :
+#   publication/  fichiers de build/toolbox (pnpm toolbox, déjà signés) sauf le paquet ;
+#   morceaux/     paquet coupé en morceaux de 95 Mo (split -b 95m -d <paquet> morceaux/<paquet>.part-) : limite de
+#                 100 Mo par fichier de GitHub, sans Git LFS (rien ne reste stocké après suppression de la branche) ;
+#   notes.md      notes de la version (releaseNotes, texte d'installation du lanceur).
+# Branche publication-v<version> envoyée par git push (jeton avec le droit workflow) → l'action recolle le paquet,
+# contrôle SHA256SUMS.txt, crée la version sur main ; supprimer ensuite la branche.
+# NEXORA #082 : version déjà publiée (même version de NEXORA, nouveau lanceur ou nouveau manifeste) : fichiers
+# remplacés, manifeste et signature envoyés en dernier (le numéro de manifeste, croissant, empêche tout retour arrière).
+name: Publication NEXORA Devs Toolbox
+on:
+  push:
+    branches: ["publication-v*"]
+permissions:
+  contents: write
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recoller le paquet et contrôler les empreintes
+        run: |
+          for p in morceaux/*.part-00; do n="$(basename "$p" .part-00)"; cat morceaux/"$n".part-* > publication/"$n"; done
+          cd publication && sha256sum -c SHA256SUMS.txt
+      - name: Créer la version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#publication-}"
+          cd publication
+          FILES="$(ls | grep -v '^nexora\.manifest\.' | tr '\n' ' ') nexora.manifest.json nexora.manifest.sig"
+          if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$VERSION" $FILES --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$VERSION" --repo "$GITHUB_REPOSITORY" --notes-file ../notes.md
+          else
+            gh release create "$VERSION" $FILES --repo "$GITHUB_REPOSITORY" --target main --title "NEXORA ${VERSION#v}" --notes-file ../notes.md
+          fi

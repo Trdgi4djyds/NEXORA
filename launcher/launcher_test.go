@@ -186,13 +186,32 @@ func TestExtractZip(t *testing.T) {
 	}
 }
 
-// Serveur GitHub factice : API des publications et fichiers attachés.
+// Serveur GitHub factice : API des publications, liens directs (#082) et fichiers attachés.
+// ghAPIBlocked : l'API répond 403 (quota épuisé) ; ghDirectBlocked : les liens directs répondent 404.
+var ghAPIBlocked, ghDirectBlocked bool
+
 func fakeGitHub(t *testing.T, ver string, pkg, raw []byte, sig string, hits *int64) *httptest.Server {
 	var srv *httptest.Server
 	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		name := "NEXORA-" + ver + "-win-x64.zip"
+		dir := "/o/r/releases/download/v" + ver + "/"
 		switch {
+		case ghDirectBlocked && strings.HasPrefix(r.URL.Path, "/o/r/releases/"):
+			http.NotFound(w, r)
+		case r.URL.Path == "/o/r/releases/latest/download/"+manifestName:
+			http.Redirect(w, r, srv.URL+dir+manifestName, http.StatusFound)
+		case r.URL.Path == dir+manifestName:
+			w.Write(raw)
+		case r.URL.Path == dir+signatureName:
+			w.Write([]byte(sig))
+		case r.URL.Path == dir+name:
+			if hits != nil {
+				atomic.AddInt64(hits, 1)
+			}
+			http.ServeContent(w, r, "p.zip", timeZero, bytes.NewReader(pkg))
+		case r.URL.Path == "/repos/o/r/releases/latest" && ghAPIBlocked:
+			http.Error(w, `{"message":"API rate limit exceeded"}`, http.StatusForbidden)
 		case r.URL.Path == "/repos/o/r/releases/latest":
-			name := "NEXORA-" + ver + "-win-x64.zip"
 			fmt.Fprintf(w, `{"tag_name":"v%s","assets":[{"name":%q,"browser_download_url":"%s/dl/m"},{"name":%q,"browser_download_url":"%s/dl/s"},{"name":%q,"browser_download_url":"%s/dl/p","size":%d}]}`,
 				ver, manifestName, srv.URL, signatureName, srv.URL, name, srv.URL, len(pkg))
 		case r.URL.Path == "/dl/m":
@@ -213,7 +232,11 @@ func fakeGitHub(t *testing.T, ver string, pkg, raw []byte, sig string, hits *int
 
 func TestInstallUpdateRollback(t *testing.T) {
 	allowHTTP = true
-	defer func() { allowHTTP = false; apiBase = "https://api.github.com" }()
+	defer func() {
+		allowHTTP = false
+		apiBase, webBase = "https://api.github.com", "https://github.com"
+		ghAPIBlocked, ghDirectBlocked = false, false
+	}()
 	f := newFixture(t)
 	l := newLayout(t.TempDir())
 	st := loadState(l)
@@ -225,7 +248,7 @@ func TestInstallUpdateRollback(t *testing.T) {
 		raw, sig := f.manifest(t, ver, pkg)
 		srv := fakeGitHub(t, ver, pkg, raw, sig, nil)
 		defer srv.Close()
-		apiBase = srv.URL
+		apiBase, webBase = srv.URL, srv.URL
 		rel, err := LatestRelease(context.Background(), c, "o/r", f.pub)
 		if err != nil {
 			t.Fatalf("publication %s refusée : %v", ver, err)
@@ -272,9 +295,69 @@ func TestInstallUpdateRollback(t *testing.T) {
 	}
 }
 
+// NEXORA #082 (A-051) : liens directs d'abord, sans l'API ; API en secours ; tag lu dans la redirection.
+func TestDirectLinksAndFallback(t *testing.T) {
+	allowHTTP = true
+	defer func() {
+		allowHTTP = false
+		apiBase, webBase = "https://api.github.com", "https://github.com"
+		ghAPIBlocked, ghDirectBlocked = false, false
+	}()
+	f := newFixture(t)
+	pkg := zipOf(t, f.files, nil)
+	raw, sig := f.manifest(t, "1.2.0", pkg)
+	var hits int64
+	srv := fakeGitHub(t, "1.2.0", pkg, raw, sig, &hits)
+	defer srv.Close()
+	apiBase, webBase = srv.URL, srv.URL
+	c := httpClient()
+
+	// Quota de l'API épuisé (403) : la publication est lue par les liens directs et installée.
+	ghAPIBlocked = true
+	rel, err := LatestRelease(context.Background(), c, "o/r", f.pub)
+	if err != nil {
+		t.Fatalf("liens directs refusés alors que seule l'API est bloquée : %v", err)
+	}
+	if rel.gh.TagName != "v1.2.0" || rel.gh.asset(rel.Manifest.Package.Name) == nil || !strings.Contains(rel.gh.asset(rel.Manifest.Package.Name).URL, "/releases/download/v1.2.0/") {
+		t.Fatalf("publication lue par les liens directs incorrecte : %+v", rel.gh)
+	}
+	l := newLayout(t.TempDir())
+	st := loadState(l)
+	if err := InstallRelease(context.Background(), c, l, &st, rel, nopProgress{}); err != nil || st.Current != "1.2.0" || hits != 1 {
+		t.Fatalf("installation par les liens directs : %v (version %q, téléchargements %d)", err, st.Current, hits)
+	}
+
+	// Liens directs indisponibles : l'API prend le relais.
+	ghAPIBlocked, ghDirectBlocked = false, true
+	if rel, err := LatestRelease(context.Background(), c, "o/r", f.pub); err != nil || rel.gh.asset(rel.Manifest.Package.Name) == nil {
+		t.Fatalf("secours par l'API en échec : %v", err)
+	}
+
+	// Les deux voies fermées : erreur, cause donnée par les liens directs (404).
+	ghAPIBlocked = true
+	if _, err := LatestRelease(context.Background(), c, "o/r", f.pub); err == nil || !strings.Contains(err.Error(), "404") {
+		t.Fatalf("aucune voie ouverte mais pas d'erreur claire : %v", err)
+	}
+
+	// Signature refusée par les liens directs : définitif, l'API n'est pas essayée.
+	ghAPIBlocked, ghDirectBlocked = false, false
+	other := newFixture(t)
+	raw2, sig2 := other.manifest(t, "1.2.0", pkg)
+	srv2 := fakeGitHub(t, "1.2.0", pkg, raw2, sig2, nil)
+	defer srv2.Close()
+	webBase = srv2.URL
+	if _, err := LatestRelease(context.Background(), c, "o/r", f.pub); err != errSignature {
+		t.Fatalf("signature refusée par les liens directs mais publication acceptée : %v", err)
+	}
+}
+
 func TestTamperedPackageRejected(t *testing.T) {
 	allowHTTP = true
-	defer func() { allowHTTP = false; apiBase = "https://api.github.com" }()
+	defer func() {
+		allowHTTP = false
+		apiBase, webBase = "https://api.github.com", "https://github.com"
+		ghAPIBlocked, ghDirectBlocked = false, false
+	}()
 	f := newFixture(t)
 	l := newLayout(t.TempDir())
 	st := State{}
@@ -283,7 +366,7 @@ func TestTamperedPackageRejected(t *testing.T) {
 	evil := zipOf(t, f.files, map[string][]byte{"evil.dll": []byte("x")})
 	srv := fakeGitHub(t, "1.2.0", evil, raw, sig, nil)
 	defer srv.Close()
-	apiBase = srv.URL
+	apiBase, webBase = srv.URL, srv.URL
 	rel, err := LatestRelease(context.Background(), httpClient(), "o/r", f.pub)
 	if err != nil {
 		t.Fatal(err)
@@ -299,7 +382,7 @@ func TestTamperedPackageRejected(t *testing.T) {
 	raw2, sig2 := other.manifest(t, "1.2.0", pkg)
 	srv2 := fakeGitHub(t, "1.2.0", pkg, raw2, sig2, nil)
 	defer srv2.Close()
-	apiBase = srv2.URL
+	apiBase, webBase = srv2.URL, srv2.URL
 	if _, err := LatestRelease(context.Background(), httpClient(), "o/r", f.pub); err != errSignature {
 		t.Fatalf("publication d'une autre clé acceptée : %v", err)
 	}

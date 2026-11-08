@@ -65,7 +65,13 @@ if (toolbox) {
     fail("nexora/NEXORA-portable.zip est absent : lance d’abord pnpm pack:windows.")
   uploads = [zip]
 }
-const notes = releaseNotes(version)
+// NEXORA #079 : publication du lanceur : pas de « version portable » à décompresser, on lance le lanceur.
+const notes = toolbox
+  ? releaseNotes(version).replace(
+      /Version portable : .*$/m,
+      "Installation : télécharge NEXORA-Devs-Toolbox.exe puis lance-le. Il vérifie la signature et chaque fichier, installe NEXORA sans droits d’administrateur et le tient à jour. Tes réglages, projets et ton compte sont gardés.",
+    )
+  : releaseNotes(version)
 
 console.log(`Version     : v${version}`)
 console.log(`Dépôt       : ${owner}/${repo}`)

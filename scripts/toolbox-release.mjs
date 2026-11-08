@@ -154,7 +154,8 @@ const manifest = {
   expires_at: new Date(issued.getTime() + days * 86400000).toISOString(),
   published_at: issued.toISOString(),
   exe: "NEXORA.exe",
-  min_launcher: "1.0.0",
+  // NEXORA #082 : 1.0.1 lit les publications par les liens directs (A-051) ; un lanceur 1.0.0 se met à jour seul.
+  min_launcher: "1.0.1",
   package: pkg,
   ...(launcher ? { launcher } : {}),
   files,

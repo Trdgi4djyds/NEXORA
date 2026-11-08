@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-var version = "1.0.0" // remplacé à la construction : -ldflags "-X main.version=…"
+var version = "1.0.1" // remplacé à la construction : -ldflags "-X main.version=…" (1.0.1 : liens directs, #082)
 
 func main() {
 	args := os.Args[1:]

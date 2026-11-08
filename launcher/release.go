@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -21,7 +22,8 @@ const defaultRepo = "Trdgi4djyds/NEXORA-portable"
 
 var (
 	apiBase      = "https://api.github.com"
-	allowHTTP    = false // essais seulement (serveur local)
+	webBase      = "https://github.com" // NEXORA #082 : liens directs des publications (sans quota)
+	allowHTTP    = false                // essais seulement (serveur local)
 	errCancelled = errors.New("installation annulée")
 	errOffline   = errors.New("hors ligne")
 )
@@ -131,7 +133,74 @@ func hostOf(raw string) string {
 }
 
 // LatestRelease lit la dernière publication (hors brouillons et préversions) et vérifie son manifeste signé.
+// NEXORA #082 (A-051) : liens directs de github.com d'abord ; l'API (60 appels par heure et par adresse IP sans
+// jeton, vite épuisés derrière une adresse partagée : entreprise, école, opérateur mobile) seulement en secours.
+// Une signature refusée ou un manifeste expiré est définitif : aucune seconde voie n'est essayée.
 func LatestRelease(ctx context.Context, c *http.Client, repo string, key ed25519.PublicKey) (*Release, error) {
+	rel, err := latestDirect(ctx, c, repo, key)
+	if err == nil || errors.Is(err, errSignature) || errors.Is(err, errExpired) || ctx.Err() != nil {
+		return rel, err
+	}
+	rel, err2 := latestAPI(ctx, c, repo, key)
+	if err2 == nil || errors.Is(err2, errSignature) || errors.Is(err2, errExpired) {
+		return rel, err2
+	}
+	return nil, err // l'API ne fait que confirmer l'échec (ou n'a plus de quota) : cause donnée par les liens directs
+}
+
+var tagInPath = regexp.MustCompile(`/releases/download/([^/]+)/[^/]+$`)
+
+// latestDirect : …/releases/latest/download/<manifeste> redirige vers …/releases/download/<tag>/<manifeste> ; le tag
+// est lu dans la redirection, puis manifeste, signature et fichiers sont pris dans cette même publication.
+func latestDirect(ctx context.Context, c *http.Client, repo string, key ed25519.PublicKey) (*Release, error) {
+	first := fmt.Sprintf("%s/%s/releases/latest/download/%s", webBase, repo, manifestName)
+	hop := *c
+	hop.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	res, err := get(ctx, &hop, first, nil)
+	if err != nil {
+		return nil, err
+	}
+	io.Copy(io.Discard, io.LimitReader(res.Body, 64<<10))
+	res.Body.Close()
+	loc := res.Header.Get("Location")
+	if res.StatusCode < 300 || res.StatusCode > 399 || loc == "" {
+		return nil, fmt.Errorf("réponse %d de %s", res.StatusCode, hostOf(first)) // 404 : aucune publication
+	}
+	base, _ := url.Parse(first)
+	target, err := base.Parse(loc)
+	if err != nil {
+		return nil, err
+	}
+	m := tagInPath.FindStringSubmatch(target.EscapedPath())
+	if m == nil {
+		return nil, errors.New("redirection inattendue du dépôt officiel")
+	}
+	tag, err := url.PathUnescape(m[1])
+	if err != nil {
+		return nil, err
+	}
+	dir := fmt.Sprintf("%s/%s/releases/download/%s/", webBase, repo, url.PathEscape(tag))
+	raw, err := fetchSmall(ctx, c, dir+manifestName, 8<<20, nil)
+	if err != nil {
+		return nil, err
+	}
+	sig, err := fetchSmall(ctx, c, dir+signatureName, 4096, nil)
+	if err != nil {
+		return nil, err
+	}
+	man, err := VerifyManifest(raw, string(sig), key)
+	if err != nil {
+		return nil, err
+	}
+	gh := &ghRelease{TagName: tag, Assets: []ghAsset{{Name: man.Package.Name, URL: dir + url.PathEscape(man.Package.Name), Size: man.Package.Size}}}
+	if man.Launcher != nil && man.Launcher.Name != "" {
+		gh.Assets = append(gh.Assets, ghAsset{Name: man.Launcher.Name, URL: dir + url.PathEscape(man.Launcher.Name), Size: man.Launcher.Size})
+	}
+	return &Release{gh: gh, Manifest: man, Raw: raw, Sig: strings.TrimSpace(string(sig))}, nil
+}
+
+// latestAPI : voie d'origine (#076) par l'API des publications, gardée en secours.
+func latestAPI(ctx context.Context, c *http.Client, repo string, key ed25519.PublicKey) (*Release, error) {
 	b, err := fetchSmall(ctx, c, fmt.Sprintf("%s/repos/%s/releases/latest", apiBase, repo), 2<<20, map[string]string{"Accept": "application/vnd.github+json"})
 	if err != nil {
 		return nil, err
