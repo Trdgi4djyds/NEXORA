@@ -5,9 +5,10 @@
 import { settings, saveSettings, esc, ico } from '../core.js';
 
 // NEXORA #076 : Responsive Lab et Browser Lab entièrement gratuits ; le Dev Lab est dans Pro.
+// NEXORA #087 : App Builder et Desktop Builder inclus dans l'offre Gratuite pour 2 applications au total.
 const GOALS = [
-  { space: 'android', icon: 'android', title: 'Transformer mon site en app Android', text: 'APK, PWA, notifications et Play Store.' },
-  { space: 'desktop', icon: 'display', title: 'Créer un logiciel Windows', text: 'Installateur, version portable et mises à jour.' },
+  { space: 'android', icon: 'android', title: 'Transformer mon site en app Android', text: 'APK, PWA, notifications et Play Store.', note: '2 apps gratuites' },
+  { space: 'desktop', icon: 'display', title: 'Créer un logiciel Windows', text: 'Installateur, version portable et mises à jour.', note: '2 apps gratuites' },
   { space: 'preview', icon: 'multi', title: 'Tester mon site sur tous les écrans', text: 'Téléphones, tablettes et ordinateurs réels.', tag: 'Gratuit' },
   { space: 'dev', icon: 'code', title: 'Coder mon projet', text: 'Éditeur, terminal, Git et aperçu.' },
   { space: 'browser', icon: 'audit', title: 'Inspecter et auditer un site', text: 'Réseau, console, performances et tests.', tag: 'Gratuit' },
@@ -39,7 +40,7 @@ function html() {
     </div>
     <div class="nxg-grid">${GOALS.map((g) => `<button type="button" class="nxg-tile" data-h-space="${g.space}" data-space="${g.space}">
         <span class="nxg-ic">${ico(g.icon, 18)}</span>
-        <span class="nxg-txt"><b>${esc(g.title)}</b><small>${esc(g.text)}</small></span>
+        <span class="nxg-txt"><b>${esc(g.title)}</b><small>${esc(g.text)}</small>${g.note ? `<span class="nxg-tag nxg-note">${esc(g.note)}</span>` : ''}</span>
         ${g.tag ? `<span class="nxg-tag">${esc(g.tag)}</span>` : ''}
       </button>`).join('')}</div>
   </section>`;

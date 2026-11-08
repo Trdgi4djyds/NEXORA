@@ -7,6 +7,7 @@
 // dans le même dossier personnel que la photo ; son adresse est gardée dans les données du compte (banner_url).
 import { b as sb, c as errText, e as cloud, u as avatar } from '../../dist/chunks/chunk-EZKHFSAB.js';
 import { ico, esc, toast } from '../core.js';
+import { FALLBACK, money } from '../offres/catalog.js';
 
 // NEXORA #037 : offres Gratuit, Standard et Pro (Équipe et Entreprise : anciennes offres, passées à Pro).
 const PLANS = { free: 'Gratuit', standard: 'Pro', pro: 'Pro', team: 'Pro', enterprise: 'Pro' };
@@ -241,7 +242,7 @@ export function sheet(tab, tabs) {
     ? `<div class="nxc-promo">
         <span class="nxc-promo-ic">${ico('star', 18)}</span>
         <b>Passe à Pro</b>
-        <small>APK, import de code, Crawler, Desktop Builder et applications sans limite d’essai, dès 12 $ par mois.</small>
+        <small>Dev Lab complet, jusqu’à ${FALLBACK.pro.limits.apps} applications, Studio et NEX-DESIGN complets, pour ${esc(money(FALLBACK.pro.price_month_cents))} par mois.</small>
         <button type="button" class="nxc-promo-btn" data-tab-back="plan">Voir les offres</button>
       </div>`
     : `<button type="button" class="nxc-plan-card" data-tab-back="plan"><span class="nxc-nav-ic">${ico('star', 15)}</span><span><b>Offre ${esc(planName(cloud.plan))}</b><small>${esc(org ? org.name : '')}</small></span>${ico('chevronRight', 13)}</button>`;

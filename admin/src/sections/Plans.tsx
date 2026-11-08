@@ -16,7 +16,8 @@ type CompareRow = { label: string; perm?: string; limit?: string; unit?: string;
 const COMPARE = COMPARE_JS as unknown as [string, CompareRow[]][]
 
 // Limites connues, dans l'ordre d'affichage.
-const LIMIT_KEYS = ["projects", "designs", "members", "monitors", "storage_mb", "apps", "app_trial_days", "ai_requests_month", "builds_month", "scans_per_day", "crawls_per_day", "push_month"]
+// NEXORA #087 : apps_lifetime (1 : applications comptées à vie, supprimées comprises) et builds_per_app_month.
+const LIMIT_KEYS = ["projects", "designs", "members", "monitors", "storage_mb", "apps", "apps_lifetime", "builds_per_app_month", "app_trial_days", "ai_requests_month", "builds_month", "scans_per_day", "crawls_per_day", "push_month"]
 // Fonctions incluses, par groupe (libellés du tableau comparatif de l'application).
 const PERM_GROUPS: [string, [string, string][]][] = COMPARE.map(([group, rows]): [string, [string, string][]] => [
   group,
@@ -136,7 +137,8 @@ function PlanPanel({ plan, subscribers, editable, onSaved, compact = false }: { 
         <small className="muted">{p.price_year_cents ? `${price(p.price_year_cents, p.currency)} par an` : "Gratuit, pour toujours"} · {subscribers} espace{subscribers > 1 ? "s" : ""} abonné{subscribers > 1 ? "s" : ""}</small>
         <p className="po-desc">{p.description}</p>
         <div className="po-keys">
-          {["projects", "apps", "builds_month"].filter((k) => k in limits && Number(limits[k]) !== 0).map((k) => <span key={k}>{limitText(limits[k])} {(LIMIT_LABEL[k] || k).toLowerCase()}</span>)}
+          {["projects", "apps", "builds_month"].filter((k) => k in limits && Number(limits[k]) !== 0).map((k) => <span key={k}>{limitText(limits[k])} {(LIMIT_LABEL[k] || k).toLowerCase()}{k === "apps" && Number(limits.apps_lifetime) > 0 ? " au total" : ""}</span>)}
+          {Number(limits.builds_per_app_month) > 0 && <span>{limits.builds_per_app_month} constructions par application et par mois</span>}
           {Number(limits.app_trial_days) > 0 && <span>essai de {limits.app_trial_days} j par application</span>}
         </div>
         {!compact && <ul className="po-feats">{feats.map((f) => <li key={f}><Icon name="check" size={11} />{f}</li>)}</ul>}
@@ -236,24 +238,25 @@ function Compare({ plans }: { plans: Plan[] }) {
   )
 }
 
-/** Essais des applications de l'offre Gratuite (nx_app_trials). */
+/** Applications des comptes (nx_app_trials) ; NEXORA #087 : offre Gratuite à 2 applications au total, Android ou
+ * Windows, applications supprimées comprises (elles restent comptées). Prolongation : seulement l'ancienne offre à essai. */
 function Trials({ rows, onChanged }: { rows: Trial[] | null; onChanged: () => void }) {
   const act = useAction()
   const now = Date.now()
   return (
     <section className="card">
-      <div className="card-head"><Icon name="clock" size={16} /><h3 className="grow">Essais des applications</h3><small className="muted">offre Gratuite : 2 applications par compte, 7 jours chacune</small></div>
+      <div className="card-head"><Icon name="clock" size={16} /><h3 className="grow">Applications des comptes</h3><small className="muted">offre Gratuite : 2 applications au total par compte, Android ou Windows, supprimées comprises ; 5 constructions par application et par mois</small></div>
       {rows === null ? <p className="muted small">La table <code>nx_app_trials</code> arrive avec la migration des offres.</p>
         : !rows.length ? <p className="muted small">Aucune application enregistrée pour l’instant.</p> : (
           <div className="po-trials">
             {rows.map((t) => {
               const ends = t.trial_ends_at ? new Date(t.trial_ends_at).getTime() : null
-              const status = t.deleted_at ? ["Supprimée", ""] : ends == null ? ["Sans limite", "ok"] : ends > now ? [`Essai · encore ${Math.ceil((ends - now) / 86400000)} j`, "info"] : ["Essai terminé", "bad"]
+              const status = t.deleted_at ? ["Supprimée · comptée", ""] : ends == null ? ["Active", "ok"] : ends > now ? [`Essai · encore ${Math.ceil((ends - now) / 86400000)} j`, "info"] : ["Essai terminé", "bad"]
               return (
                 <div key={t.id} className="po-trial">
                   <div className="grow" style={{ minWidth: 0 }}>
                     <b>{t.name || "Application"}</b>
-                    <small className="muted">{t.profiles?.full_name || t.profiles?.email || t.user_id} · {t.source_kind === "url" ? t.source_url || "adresse web" : "dossier ou code"} · créée le {fmtDate(t.created_at)} en offre {t.plan_at_creation}</small>
+                    <small className="muted">{t.profiles?.full_name || t.profiles?.email || t.user_id} · {t.platform === "windows" ? "Windows" : "Android"} · {t.source_kind === "url" ? t.source_url || "adresse web" : "dossier ou code"} · créée le {fmtDate(t.created_at)} en offre {t.plan_at_creation}</small>
                   </div>
                   <Tag tone={status[1]}>{status[0]}</Tag>
                   {ends != null && !t.deleted_at && (

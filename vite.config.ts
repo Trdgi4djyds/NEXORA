@@ -2,6 +2,7 @@ import { defineConfig, type Plugin } from "vite"
 import react from "@vitejs/plugin-react"
 import { fileURLToPath } from "node:url"
 import { nexoraPreview } from "./preview/server.mjs"
+import { siteTailwind } from "./site/tailwind.mjs"
 
 // Vite sert uniquement l'aperçu navigateur de NEXORA (voir preview/server.mjs) : l'interface est
 // déjà compilée, elle est servie telle quelle, sans bundling. `pnpm build` passe par
@@ -9,7 +10,8 @@ import { nexoraPreview } from "./preview/server.mjs"
 export default defineConfig({
   base: process.env.FIGMA_PUBLIC_URL ? `${process.env.FIGMA_PUBLIC_URL}/` : "/",
   publicDir: false,
-  plugins: [nexoraPreview(), react(), figmaErrorOverlayReplay()],
+  // NEXORA #085 : Tailwind CSS 4 limité au site vitrine (site/tailwind.mjs).
+  plugins: [nexoraPreview(), react(), ...siteTailwind(), figmaErrorOverlayReplay()],
   optimizeDeps: {
     noDiscovery: true,
     // Dépendances du back office, pré-assemblées (pas de découverte automatique dans ce projet).
@@ -21,6 +23,11 @@ export default defineConfig({
       "@supabase/supabase-js",
       // Factures PDF du back office (#031), chargées à la demande.
       "pdf-lib",
+      // Site vitrine (#085) : composants shadcn/ui (Radix) et utilitaires de classes.
+      "radix-ui",
+      "clsx",
+      "tailwind-merge",
+      "class-variance-authority",
     ],
   },
   server: {

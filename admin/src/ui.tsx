@@ -87,6 +87,9 @@ export const LIMIT_LABEL: Record<string, string> = {
   ai_requests: "Requêtes IA",
   // NEXORA #037
   apps: "Applications",
+  // NEXORA #087
+  apps_lifetime: "Applications comptées à vie (1 = oui, supprimées comprises)",
+  builds_per_app_month: "Constructions par application et par mois",
   app_trial_days: "Jours d’essai par application",
   ai_requests_month: "Requêtes IA par mois",
   crawls_per_day: "Crawls par jour",

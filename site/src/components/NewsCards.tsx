@@ -3,38 +3,41 @@ import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
 import type { NoteItem } from "../lib/product"
 
-/**
- * Nouveautés d'une version (nx/version/notes.js), chacune reliée à son espace. #069 : journal des changements en
- * lignes (espace, titre, texte) au lieu de cartes à icône ; lignes éclairées à la couleur de l'espace au survol.
- */
+/** Nouveautés d'une version (nx/version/notes.js), chacune reliée à son espace : cartes en grille. */
 export function NewsCards({ items, limit }: { items: NoteItem[]; limit?: number }) {
   const list = typeof limit === "number" ? items.slice(0, limit) : items
   return (
-    <ul className="news" data-glow>
+    <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" data-glow>
       {list.map((it, i) => {
         const space = SPACES.find((s) => s.id === it.space)
         const body = (
           <>
-            <span className="news-k">
-              <i className="dot" /> {space ? space.name : "NEXORA"}
+            <span className="flex items-center justify-between gap-3">
+              <span className="inline-flex items-center gap-2.5 text-[12.5px] font-medium text-muted-foreground">
+                <span className="sp-ic sm">
+                  <Icon name={space?.icon ?? "sparkle"} size={14} />
+                </span>
+                {space ? space.name : "NEXORA"}
+              </span>
+              {space && (
+                <span className="go-ring size-8" aria-hidden="true">
+                  <Icon name="nxArrowUpRight" size={14} stroke={2} />
+                </span>
+              )}
             </span>
-            <span className="news-v">
-              <b>{it.title}</b>
-              <span>{it.text}</span>
-            </span>
-            <span className="news-go" aria-hidden="true">
-              {space && <Icon name="nxArrowUpRight" size={16} stroke={2} />}
-            </span>
+            <b className="mt-5 block text-[16.5px] font-semibold leading-snug">{it.title}</b>
+            <span className="mt-2 block text-[14px] leading-relaxed text-muted-foreground">{it.text}</span>
           </>
         )
+        const cls = "glow lift flex h-full flex-col rounded-[22px] border border-white/[0.08] bg-card p-6"
         return (
-          <Reveal as="li" key={it.title} className="news-row glow" data-space={space?.id ?? "home"} delay={(i % 4) * 60}>
+          <Reveal as="li" key={it.title} delay={(i % 3) * 70}>
             {space ? (
-              <a className="news-a" href={spaceHref(space)}>
+              <a className={cls} href={spaceHref(space)}>
                 {body}
               </a>
             ) : (
-              <div className="news-a">{body}</div>
+              <div className={cls}>{body}</div>
             )}
           </Reveal>
         )

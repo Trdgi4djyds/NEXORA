@@ -7,6 +7,7 @@
 import { spawn, spawnSync } from "node:child_process"
 import fs from "node:fs"
 import http from "node:http"
+import os from "node:os"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import puppeteer from "puppeteer-core"
@@ -65,7 +66,9 @@ const PLAN = [
 
 async function koraShots() {
   const browser = await puppeteer.launch({ executablePath: CHROMIUM, headless: true, args: ["--no-sandbox", "--disable-gpu"] })
-  for (const [name, w, h, scale] of [["kora-bureau", 1440, 900, 1], ["kora-mobile", 390, 844, 2]]) {
+  // #085 : Kora aussi dans le Pixel Tablet (dalle 2560 × 1600) et le Pixel 10 Pro Fold ouvert (2076 × 2152).
+  const shots = [["kora-bureau", 1440, 900, 1], ["kora-mobile", 390, 844, 2], ["kora-tablette", 1280, 800, 1.5], ["kora-pliable", 692, 717, 2]]
+  for (const [name, w, h, scale] of shots) {
     const page = await browser.newPage()
     await page.setViewport({ width: w, height: h, deviceScaleFactor: scale })
     await page.goto(SITE, { waitUntil: "networkidle0" })
@@ -75,15 +78,54 @@ async function koraShots() {
   await browser.close()
 }
 
-if (!fs.existsSync(path.join(DIST, "index.html"))) throw new Error("dist/ absent : lancer d'abord pnpm build.")
+// NEXORA #086 : le site vitrine lui-même, affiché dans les maquettes d'appareils du site (« site-<appareil>.webp »).
+// Captures statiques : animations coupées (« Réduire les animations »), bandeau d'annonce masqué.
+const SITE_SHOTS = [
+  ["site-iphone", "#/", 402, 874, 2],
+  ["site-galaxy", "#/espaces/apps", 412, 915, 2],
+  ["site-pixel", "#/espaces/responsive", 427, 952, 2],
+  ["site-pliable", "#/espaces", 692, 717, 2],
+  ["site-ipad", "#/", 1024, 1366, 1],
+  ["site-tablette", "#/nouveautes", 1280, 800, 1],
+  ["site-macbook", "#/", 1536, 960, 1],
+  ["site-tv", "#/", 1920, 1080, 1],
+  ["site-voiture", "#/espaces/securite", 1024, 768, 1],
+  ["site-bureau", "#/", 1440, 900, 1],
+]
+async function siteShots() {
+  const browser = await puppeteer.launch({ executablePath: CHROMIUM, headless: true, args: ["--no-sandbox", "--disable-gpu"] })
+  try {
+    for (const [name, hash, w, h, scale] of SITE_SHOTS) {
+      const page = await browser.newPage()
+      await page.setViewport({ width: w, height: h, deviceScaleFactor: scale })
+      await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }])
+      await page.evaluateOnNewDocument(() => localStorage.setItem("nexora-site-annonce", "076-toolbox"))
+      await page.goto(`${WEB}site/${hash}`, { waitUntil: "networkidle0", timeout: 60000 }).catch(() => {})
+      await page.evaluate(() => document.fonts?.ready)
+      await new Promise((r) => setTimeout(r, 1200))
+      const png = path.join(os.tmpdir(), `${name}.png`)
+      await page.screenshot({ path: png })
+      spawnSync("convert", [png, "-quality", "78", path.join(OUT, `${name}.webp`)])
+      console.log(`  ${name}.webp (${w} × ${h} @${scale})`)
+      await page.close()
+    }
+  } finally {
+    await browser.close()
+  }
+}
+
 fs.mkdirSync(OUT, { recursive: true })
 // --sombre : mêmes écrans dans le thème sombre de NEXORA, fichiers « <espace>-sombre.webp » (#068).
 const dark = process.argv.includes("--sombre")
 const wanted = process.argv.slice(2).filter((a) => a !== "--sombre")
+// #085 : `kora` seul n'a pas besoin de la version web.
+const koraOnly = wanted.length > 0 && wanted.every((w) => w === "kora")
+if (!koraOnly && !fs.existsSync(path.join(DIST, "index.html"))) throw new Error("dist/ absent : lancer d'abord pnpm build.")
 const servers = [await serve(DIST, 4180), await serve(KORA, 4181)]
 let failed = 0
 try {
   if (!dark && (!wanted.length || wanted.includes("kora"))) await koraShots()
+  if (!dark && (!wanted.length || wanted.includes("site"))) await siteShots()
   for (const step of PLAN.filter((p) => !wanted.length || wanted.includes(p.name ?? p.slug))) {
     const args = ["scripts/captures.mjs", step.slug, "--compte", "demo", "--taille", "1600x1000", "--sans-notifications", "--label", `vitrine-${step.name ?? step.slug}${dark ? "-sombre" : ""}`, ...(dark ? ["--theme", "sombre"] : []), ...(step.web ? ["--url", WEB] : []), ...step.args]
     const res = await run("node", args, { ...process.env, NX_DEMO_OFFRE: "pro" })

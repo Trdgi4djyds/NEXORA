@@ -821,6 +821,7 @@ export type Database = {
           name: string
           org_id: string | null
           plan_at_creation: string
+          platform: string
           source_kind: string
           source_url: string | null
           trial_ends_at: string | null
@@ -834,6 +835,7 @@ export type Database = {
           name?: string
           org_id?: string | null
           plan_at_creation?: string
+          platform?: string
           source_kind?: string
           source_url?: string | null
           trial_ends_at?: string | null
@@ -847,6 +849,7 @@ export type Database = {
           name?: string
           org_id?: string | null
           plan_at_creation?: string
+          platform?: string
           source_kind?: string
           source_url?: string | null
           trial_ends_at?: string | null

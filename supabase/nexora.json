@@ -37,8 +37,9 @@
     "smtpHost": "smtp-relay.brevo.com",
     "smtpPort": 587,
     "smtpUser": "b58a4a001@smtp-brevo.com",
-    "senderEmail": "ippooz.up.2@gmail.com",
-    "senderName": "NEXORA",
+    "senderEmail": "nexoradevstoolbox@gmail.com",
+    "$senderEmail": "#087 : adresse de contact et expéditeur de NEXORA Devs Toolbox. À valider d’abord dans Brevo (Expéditeurs), puis appliquer depuis le back office (Supabase → E-mails), sinon Brevo refuse les envois.",
+    "senderName": "NEXORA Devs Toolbox",
     "authRateLimitPerHour": 30,
     "$authRateLimitPerHour": "#039 : limite horaire des e-mails des comptes (confirmation, mot de passe oublié) une fois le SMTP Brevo branché ; Supabase la laisse à 2 par heure sinon. Appliquée par le back office (section Supabase)."
   },

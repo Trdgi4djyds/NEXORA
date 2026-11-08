@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { SPACES, spaceHref } from "../data/spaces"
 import { Icon } from "../lib/icons"
+import { cn } from "../lib/utils"
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./ui/dialog"
 
-type Item = { id: string; group: string; label: string; hint?: string; icon: string; space?: string; href?: string; run?: () => void; words?: string }
+type Item = { id: string; group: string; label: string; hint?: string; icon: string; space?: string; href?: string; words?: string }
 
 const norm = (s: string) =>
   s
@@ -12,12 +14,11 @@ const norm = (s: string) =>
 
 /**
  * Recherche Ctrl K, comme dans NEXORA (« Aller à une section, une fenêtre ou un projet ») : pages du site, les
- * 9 espaces et quelques actions. Clavier : flèches, Entrée, Échap.
+ * 9 espaces et quelques actions. Clavier : flèches, Entrée, Échap. #085 : fenêtre Dialog de shadcn/ui (Radix).
  */
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [query, setQuery] = useState("")
   const [active, setActive] = useState(0)
-  const input = useRef<HTMLInputElement>(null)
   const list = useRef<HTMLUListElement>(null)
 
   const items = useMemo<Item[]>(
@@ -47,40 +48,39 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     if (!open) return
     setQuery("")
     setActive(0)
-    const t = window.setTimeout(() => input.current?.focus(), 20)
+    // Défilement de la page bloqué pendant la recherche (fenêtre non modale : voir ui/dialog.tsx).
     document.body.classList.add("menu-open")
-    return () => {
-      window.clearTimeout(t)
-      document.body.classList.remove("menu-open")
-    }
+    return () => document.body.classList.remove("menu-open")
   }, [open])
-
   useEffect(() => setActive(0), [query])
   useEffect(() => {
     list.current?.querySelector<HTMLElement>(`[data-i="${active}"]`)?.scrollIntoView({ block: "nearest" })
   }, [active])
 
-  if (!open) return null
   const choose = (it: Item | undefined) => {
     if (!it) return
     onClose()
-    if (it.run) it.run()
-    else if (it.href) location.href = it.href
+    if (it.href) location.href = it.href
   }
   let lastGroup = ""
   return (
-    <div className="cmdk-wrap" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="cmdk" role="dialog" aria-modal="true" aria-label="Rechercher dans le site">
-        <div className="cmdk-input">
-          <Icon name="search" size={18} />
+    <Dialog open={open} modal={false} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent aria-describedby="cmdk-desc">
+        <DialogTitle className="sr-only">Rechercher dans le site</DialogTitle>
+        <DialogDescription id="cmdk-desc" className="sr-only">
+          Tape pour filtrer les pages, les espaces et les actions, puis Entrée pour ouvrir.
+        </DialogDescription>
+        <div className="flex items-center gap-3 border-b border-white/[0.08] px-5">
+          <Icon name="search" size={18} className="text-primary" />
           <input
-            ref={input}
+            autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Rechercher ou aller à…"
             aria-label="Rechercher ou aller à"
             aria-controls="cmdk-list"
             aria-activedescendant={results[active] ? `cmdk-${results[active].id}` : undefined}
+            className="h-14 flex-1 bg-transparent text-[16px] text-foreground outline-none placeholder:text-muted-foreground"
             onKeyDown={(e) => {
               if (e.key === "ArrowDown") {
                 e.preventDefault()
@@ -91,44 +91,44 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
               } else if (e.key === "Enter") {
                 e.preventDefault()
                 choose(results[active])
-              } else if (e.key === "Escape") onClose()
+              }
             }}
           />
           <kbd className="kbd">Échap</kbd>
         </div>
-        <ul className="cmdk-list" id="cmdk-list" role="listbox" ref={list}>
-          {results.length === 0 && <li className="cmdk-empty">Aucun résultat pour « {query} ».</li>}
+        <ul className="max-h-[min(460px,60vh)] overflow-y-auto p-2" id="cmdk-list" role="listbox" ref={list}>
+          {results.length === 0 && <li className="px-4 py-10 text-center text-sm text-muted-foreground">Aucun résultat pour « {query} ».</li>}
           {results.map((it, i) => {
-            const head = it.group !== lastGroup ? it.group : ""
+            const headLabel = it.group !== lastGroup ? it.group : ""
             lastGroup = it.group
+            const on = i === active
             return (
               <li key={it.id} role="presentation">
-                {head && <span className="cmdk-group">{head}</span>}
+                {headLabel && <span className="block px-3 pt-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{headLabel}</span>}
                 <button
                   type="button"
                   id={`cmdk-${it.id}`}
                   role="option"
-                  aria-selected={i === active}
+                  aria-selected={on}
                   data-i={i}
-                  data-space={it.space ?? "home"}
-                  className={`cmdk-item${i === active ? " on" : ""}`}
+                  className={cn("flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors", on ? "bg-primary/10 text-foreground" : "text-muted-foreground")}
                   onMouseMove={() => setActive(i)}
                   onClick={() => choose(it)}
                 >
-                  <span className={`sp-ic sm${it.space ? "" : " plain"}`}>
+                  <span className={cn("sp-ic sm", on && "solid")}>
                     <Icon name={it.icon} size={15} />
                   </span>
-                  <span className="cmdk-txt">
-                    <b>{it.label}</b>
-                    {it.hint && <small>{it.hint}</small>}
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <b className="text-[14.5px] font-medium text-foreground">{it.label}</b>
+                    {it.hint && <small className="truncate text-[12.5px]">{it.hint}</small>}
                   </span>
-                  <Icon name="nxArrowRight" size={15} className="cmdk-go" />
+                  <Icon name="nxArrowRight" size={15} className={cn("transition", on ? "text-primary opacity-100" : "opacity-0")} />
                 </button>
               </li>
             )
           })}
         </ul>
-        <div className="cmdk-foot">
+        <div className="flex gap-5 border-t border-white/[0.08] px-5 py-3 text-[12px] text-muted-foreground">
           <span>
             <kbd className="kbd">↑</kbd> <kbd className="kbd">↓</kbd> pour choisir
           </span>
@@ -136,7 +136,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             <kbd className="kbd">Entrée</kbd> pour ouvrir
           </span>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

@@ -2,14 +2,23 @@
 // chunk-EOM7FQDL.js). Ton offre, ton usage (quotas comptés par le serveur), essais des applications, trois
 // cartes d'offre (mensuel ou annuel) et tableau comparatif. Les boutons « Passer à… » gardent l'attribut
 // data-plan-ask : la demande part au support comme avant (chunk-EOM7FQDL.js).
+// NEXORA #087 : applications Android et Windows de l'offre Gratuite (2 au total, supprimées comprises), constructions
+// comptées par application, chiffres clés des cartes (planKeys) et adresse de contact.
 import { ico, esc } from '../core.js';
 import { cloud, status, plans, appTrials } from './status.js';
-import { COMPARE, METERS, PLAN_LOOK, PLAN_ORDER, limitText, money, count, normPlan } from './catalog.js';
+import { COMPARE, CONTACT_EMAIL, METERS, PLAN_LOOK, PLAN_ORDER, limitText, money, count, normPlan, planKeys } from './catalog.js';
 import { period, fullDate, card as subCard, start as startCountdown, onClick as countdownClick } from './countdown.js';
 
 const longDate = (d) => (d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : '');
 
 function meter([key, label, unit, scope, icon], s) {
+  const per = Number((s.limits || {}).builds_per_app_month);
+  // NEXORA #087 : constructions limitées par application : la limite affichée est celle d'une application.
+  if (key === 'builds_month' && per > 0 && !s.admin) {
+    const used = Number((s.usage || {})[key] || 0);
+    return `<div class="nxo-meter"><div class="nxo-meter-top"><span class="nxo-meter-ic">${ico(icon, 13)}</span><span class="nxo-meter-lb">${esc(label)}</span></div>
+      <div class="nxo-meter-val"><b>${count(used)}</b><span>· ${count(per)} par application</span></div><i class="nxo-bar"><em style="width:0%"></em></i></div>`;
+  }
   const lim = Number((scope === 'org' ? s.org_limits || s.limits : s.limits)[key]);
   const used = Number((s.usage || {})[key] || 0);
   const off = lim === 0, unl = !(lim >= 0) || s.admin;
@@ -22,12 +31,17 @@ function meter([key, label, unit, scope, icon], s) {
 
 function trialRows(t, s) {
   if (!t || t.unavailable || !t.apps) return '';
-  const list = Object.values(t.apps).filter((a) => !a.deleted).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  // NEXORA #087 : limite à vie : les applications supprimées restent comptées, donc affichées.
+  const lifetime = !!t.lifetime && !s.admin;
+  const list = Object.values(t.apps).filter((a) => !a.deleted || lifetime).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
   const free = Number(t.trial_days) > 0 && !s.admin;
-  if (!list.length && !free) return '';
-  const tag = (a) => (a.status === 'trial' ? `<span class="nxo-tag ok">${ico('clock', 11)}Essai · encore ${a.days_left} j</span>`
+  if (!list.length && !free && !lifetime) return '';
+  const per = Number(t.builds_limit);
+  const tag = (a) => (a.deleted ? `<span class="nxo-tag">${ico('trash', 11)}Supprimée · comptée</span>`
+    : a.status === 'trial' ? `<span class="nxo-tag ok">${ico('clock', 11)}Essai · encore ${a.days_left} j</span>`
     : a.status === 'expired' ? `<span class="nxo-tag bad">${ico('lock', 11)}Essai terminé</span>`
     : a.status === 'plan' ? `<span class="nxo-tag bad">${ico('lock', 11)}Verrouillée</span>`
+    : per > 0 ? `<span class="nxo-tag${Number(a.builds_month) >= per ? ' bad' : ''}">${ico('wrench', 11)}${count(a.builds_month || 0)} / ${count(per)} constructions ce mois-ci</span>`
     : `<span class="nxo-tag">${ico('check', 11)}Active</span>`);
   // NEXORA #040 : minuteur de l'essai (mis à jour chaque seconde par countdown.js).
   const until = (a) => {
@@ -35,10 +49,14 @@ function trialRows(t, s) {
     const end = new Date(a.trial_ends_at).getTime(), begin = a.created_at ? new Date(a.created_at).getTime() : end - (Number(t.trial_days) || 7) * 86400000;
     return `<div class="nxo-trial-cd" data-nxo-until="${end}" data-from="${begin}"><i class="nxo-bar"><em style="width:0%"></em></i><small>${ico('clock', 11)}<span>…</span></small></div>`;
   };
+  const intro = lifetime
+    ? `Offre Gratuite : <b>${t.used} sur ${t.limit}</b> applications utilisées, Android ou Windows, applications supprimées comprises. Une application compte dès sa première construction, puis dispose de <b>${count(per > 0 ? per : 5)} constructions par mois</b>.`
+    : free ? `Offre Gratuite : <b>${t.used} sur ${t.limit}</b> applications d’essai utilisées. Chaque application créée depuis l’adresse d’un site accessible reste utilisable <b>${t.trial_days} jours</b>, puis elle est verrouillée.`
+    : 'Ton offre n’a pas de limite par application : tes applications restent actives.';
   return `<section class="nxc-card nxo-trials">
-    <div class="nxc-card-head"><span class="nxc-card-ic">${ico('android', 15)}</span><div><h3>Applications de l’App Builder</h3>
-    <p>${free ? `Offre Gratuite : <b>${t.used} sur ${t.limit}</b> applications d’essai utilisées. Chaque application créée depuis l’adresse d’un site accessible reste utilisable <b>${t.trial_days} jours</b>, puis elle est verrouillée.` : 'Ton offre n’a pas de limite d’essai : tes applications restent actives.'}</p></div></div>
-    ${list.length ? `<div class="nxo-trial-list">${list.map((a) => `<div class="nxo-trial"><b>${esc(a.name || 'Application')}</b><small>${a.source_kind === 'url' ? 'Adresse web' : 'Dossier ou code'} · créée le ${esc(longDate(a.created_at))}${a.trial_ends_at ? ` · fin d’essai le ${esc(longDate(a.trial_ends_at))}` : ''}</small>${tag(a)}${until(a)}</div>`).join('')}</div>` : '<p class="nx-muted small">Aucune application créée pour l’instant.</p>'}
+    <div class="nxc-card-head"><span class="nxc-card-ic">${ico('android', 15)}</span><div><h3>Tes applications</h3>
+    <p>${intro}</p></div></div>
+    ${list.length ? `<div class="nxo-trial-list">${list.map((a) => `<div class="nxo-trial"><b>${esc(a.name || 'Application')}</b><small>${a.platform === 'windows' ? 'Logiciel Windows' : 'Application Android'} · ${a.source_kind === 'url' ? 'adresse web' : 'dossier ou code'} · créée le ${esc(longDate(a.created_at))}${a.trial_ends_at ? ` · fin d’essai le ${esc(longDate(a.trial_ends_at))}` : ''}</small>${tag(a)}${until(a)}</div>`).join('')}</div>` : '<p class="nx-muted small">Aucune application construite pour l’instant.</p>'}
   </section>`;
 }
 
@@ -50,7 +68,8 @@ function planCard(p, s) {
   const perMonthYear = y ? Math.round(y / 12) : 0;
   const lim = p.limits || {};
   const rec = id === 'standard';
-  const keys = [`${limitText(lim.projects)} projets`, `${limitText(lim.apps)} apps${lim.app_trial_days > 0 ? ` · essai ${lim.app_trial_days} j` : ''}`, `${limitText(lim.builds_month)} constructions / mois`];
+  const keys = planKeys(lim);
+  if (lim.app_trial_days > 0) keys[1] += ` · essai ${lim.app_trial_days} j`;
   const cta = cur ? `<span class="nxo-btn current">${ico('check', 13)}Ton offre actuelle</span>`
     : !cloud.user ? `<button type="button" class="nxo-btn ${rec ? 'primary' : 'soft'}" data-nxo-login>Se connecter pour choisir</button>`
     : rank > mine ? `<button type="button" class="nxo-btn primary" data-plan-ask="${esc(p.id)}">Passer à ${esc(p.name)}${ico('nxArrowRight', 14)}</button>`
@@ -144,7 +163,7 @@ export async function panel() {
     </div>
     <div class="nxo-plans">${list.map((p) => planCard(p, s)).join('')}</div>
     ${compare(list, s)}
-    <p class="nxo-foot">${ico('chat', 12)} Change d’offre à tout moment : ta demande est traitée par l’équipe NEXORA et ta nouvelle offre est activée sous 24 h.</p>
+    <p class="nxo-foot">${ico('chat', 12)} Change d’offre à tout moment : ta demande est traitée par l’équipe NEXORA et ta nouvelle offre est activée sous 24 h. Une question : ${esc(CONTACT_EMAIL)}.</p>
   </div>`;
 }
 

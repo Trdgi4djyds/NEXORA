@@ -1,6 +1,13 @@
 // NEXORA #037 : catalogue des offres Gratuit, Standard et Pro (copie de la migration
 // supabase/migrations/20261104000007_offres_limites.sql). Sert tant que les serveurs n'ont pas la migration,
 // pour les invités, et pour le tableau comparatif (libellés des limites et des fonctions).
+// NEXORA #087 : copie de supabase/migrations/20261108000006_offre_gratuite_applications.sql. Gratuit : 2
+// applications au total (App Builder et Desktop Builder confondus, applications supprimées comprises), tout l'App
+// Builder et tout le Desktop Builder, 5 constructions par application et par mois. Pro : 18 $ par mois, 180 $ par an.
+// Repris aussi par le site vitrine (site/src/lib/remote.ts) et le back office (section Offres).
+
+// Adresse de contact et d'assistance de NEXORA Devs Toolbox (app_config.support_email la remplace si elle est renseignée).
+export const CONTACT_EMAIL = 'nexoradevstoolbox@gmail.com';
 
 const FREE_PERMS = {
   responsive: true, browser: true, multiscreen: true, dashboard: true,
@@ -21,20 +28,22 @@ const FREE_PERMS = {
 // NEXORA pendant le premier jour (essai Pro décompté par le serveur), puis les limites. Pro (18 $ par mois) : tout.
 FREE_PERMS.responsive_advanced = true;
 FREE_PERMS.crawler = true;
+// NEXORA #087 : tout l'App Builder et tout le Desktop Builder, pour 2 applications au total.
+for (const k of ['apk', 'pwa', 'source_import', 'play_publish', 'push', 'inapp', 'automation', 'custom_notifications', 'messaging_events', 'integrations', 'desktop_builder']) FREE_PERMS[k] = true;
 const PRO_PERMS = Object.fromEntries(Object.keys(FREE_PERMS).map((k) => [k, true]));
 
 export const FALLBACK = {
   free: {
-    id: 'free', name: 'Gratuit', description: 'Le Responsive Lab et le Browser Lab, gratuits pour toujours. Tout NEXORA pendant ton premier jour.', price_month_cents: 0, price_year_cents: 0,
+    id: 'free', name: 'Gratuit', description: 'Responsive Lab et Browser Lab complets, et 2 applications Android ou Windows. Gratuit, sans limite de durée.', price_month_cents: 0, price_year_cents: 0,
     currency: 'USD', sort: 1, badge: '', perms: FREE_PERMS,
-    limits: { projects: 3, designs: 3, members: 1, monitors: 1, storage_mb: 200, apps: 0, app_trial_days: 0, ai_requests_month: -1, scans_per_day: 1, crawls_per_day: -1, builds_month: 0, push_month: 0 },
-    features: ['Responsive Lab complet : tous les modèles d’appareils, vidéo et outils de développement', 'Browser Lab complet : inspection, réseau, console, tests et extraction', 'Tout NEXORA gratuitement pendant ton premier jour', 'NEX-DESIGN découverte (3 documents)', '1 audit de sécurité par jour, 1 site surveillé', 'Assistant IA avec ta propre clé'],
+    limits: { projects: 3, designs: 3, members: 1, monitors: 1, storage_mb: 200, apps: 2, apps_lifetime: 1, app_trial_days: 0, builds_per_app_month: 5, ai_requests_month: -1, scans_per_day: 1, crawls_per_day: -1, builds_month: 10, push_month: 1000 },
+    features: ['Responsive Lab complet : tous les modèles d’appareils, vidéo et outils de développement', 'Browser Lab complet : inspection, réseau, console, tests et extraction', '2 applications Android ou Windows au total, applications supprimées comprises', 'Tout l’App Builder et le Desktop Builder pour ces applications, 5 constructions par application et par mois', 'NEX-DESIGN découverte (3 documents)', '1 audit de sécurité par jour, 1 site surveillé', 'Assistant IA avec ta propre clé', 'Tout NEXORA pendant ton premier jour'],
   },
   pro: {
     id: 'pro', name: 'Pro', description: 'Toutes les options de NEXORA Devs Toolbox, sans limite d’espace.', price_month_cents: 1800, price_year_cents: 18000,
     currency: 'USD', sort: 2, badge: 'Toutes les options', perms: PRO_PERMS,
-    limits: { projects: 200, designs: -1, members: 10, monitors: 50, storage_mb: 51200, apps: 50, app_trial_days: 0, ai_requests_month: -1, scans_per_day: 200, crawls_per_day: -1, builds_month: 400, push_month: 100000 },
-    features: ['Les 9 espaces sans restriction', 'Dev Lab complet : éditeur, terminal, Git, débogueur, tests, bases de données, mise en ligne', 'App Builder : APK, PWA, Play Store, notifications et messagerie (400 constructions par mois)', 'Desktop Builder : logiciels Windows installables et mises à jour', 'NEX-DESIGN complet : documents illimités, IA, prototype, code, équipe', 'Studio 3D & Motion avancé', 'Sécurité : audits avancés, 50 sites surveillés 24 h/24, page de statut', '200 projets, 10 membres, 50 Go', 'Assistance prioritaire'],
+    limits: { projects: 200, designs: -1, members: 10, monitors: 50, storage_mb: 51200, apps: 50, apps_lifetime: 0, app_trial_days: 0, builds_per_app_month: -1, ai_requests_month: -1, scans_per_day: 200, crawls_per_day: -1, builds_month: 400, push_month: 100000 },
+    features: ['Les 9 espaces sans restriction', 'Dev Lab complet : éditeur, terminal, Git, débogueur, tests, bases de données, mise en ligne', 'Jusqu’à 50 applications Android ou Windows, sans limite par application (400 constructions par mois)', 'NEX-DESIGN complet : documents illimités, IA, prototype, code, équipe', 'Studio 3D & Motion avancé', 'Sécurité : audits avancés, 50 sites surveillés 24 h/24, page de statut', '200 projets, 10 membres, 50 Go', 'Assistance prioritaire'],
   },
 };
 // L'ancienne offre Standard (et Équipe, Entreprise) est traitée comme Pro.
@@ -55,7 +64,7 @@ export const METERS = [
   ['members', 'Membres de l’espace', '', 'org', 'group'],
   ['monitors', 'Sites surveillés', '', 'org', 'sync'],
   ['storage_mb', 'Stockage', 'Mo', 'org', 'download'],
-  ['apps', 'Applications', '', 'user', 'android'],
+  ['apps', 'Applications (Android ou Windows)', '', 'user', 'android'],
   ['builds_month', 'Constructions ce mois-ci', '', 'user', 'wrench'],
   ['scans_per_day', 'Audits de sécurité aujourd’hui', '', 'user', 'shield'],
   ['crawls_per_day', 'Crawls aujourd’hui', '', 'user', 'globe'],
@@ -75,12 +84,16 @@ export const COMPARE = [
     { label: 'NEX-DESIGN : variables, variantes, prototype, code, série, impression, PSD, icônes, versions', perm: 'design_extended' },
     { label: 'NEX-DESIGN : IA, code vers le Dev Lab, validation client, bibliothèques d’équipe, import Figma', perm: 'design_full' },
   ]],
+  // NEXORA #087 : 2 applications au total avec l'offre Gratuite (App Builder et Desktop Builder confondus).
   ['Applications', [
-    { label: 'Applications', limit: 'apps', note: { free: 'pendant l’essai du premier jour' } },
-    { label: 'Source des applications', text: { free: '—', pro: 'Web, dossier, code' } },
-    { label: 'Génération Android et APK', perm: 'apk' },
-    { label: 'Constructions par mois', limit: 'builds_month' },
+    { label: 'Applications Android ou Windows', limit: 'apps', note: { free: 'au total, supprimées comprises' } },
+    { label: 'Constructions par application et par mois', limit: 'builds_per_app_month' },
+    { label: 'Constructions par mois, toutes applications', limit: 'builds_month' },
+    { label: 'Source des applications', text: { free: 'Web, dossier, code', pro: 'Web, dossier, code' } },
+    { label: 'App Builder : APK et AAB signés', perm: 'apk' },
     { label: 'Paquet PWA et publication Play Store', perm: 'play_publish' },
+    { label: 'Desktop Builder : installateur, portable, ZIP, MSI, mises à jour', perm: 'desktop_builder' },
+    { label: 'Statistiques et plantages des applications', text: { free: '2 applications', pro: 'Inclus' } },
   ]],
   ['Labs et outils', [
     { label: 'Responsive Lab : tous les modèles d’appareils, multi-écrans', perm: 'responsive' },
@@ -93,7 +106,6 @@ export const COMPARE = [
     { label: 'Import de projets et de code source', perm: 'source_import' },
     { label: 'Dev Lab : dossiers, éditeur, terminal, Git, GitHub, VS Code et aperçu', perm: 'devlab' },
     { label: 'Partage en ligne d’un projet (adresse publique temporaire)', perm: 'devlab' },
-    { label: 'Desktop Builder', perm: 'desktop_builder' },
     { label: 'Dev Lab avancé : Problèmes, scripts, variables protégées, Git avancé, API, tests, dépendances', perm: 'devlab' },
     { label: 'Dev Lab Pro : assistant IA du projet, débogueur, mise en ligne, contrôles, bases de données', perm: 'devlab_pro' },
   ]],
@@ -155,6 +167,15 @@ export function neededPlan(perm) {
 const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 });
 export const money = (cents) => `${nf.format((Number(cents) || 0) / 100)} $`;
 export const count = (n) => new Intl.NumberFormat('fr-FR').format(Number(n) || 0);
+// NEXORA #087 : chiffres clés d'une offre (cartes des offres, fenêtre de l'offre) : projets, applications, constructions.
+export function planKeys(lim = {}) {
+  const apps = Number(lim.apps), perApp = Number(lim.builds_per_app_month);
+  return [
+    `${limitText(lim.projects)} projets`,
+    Number(lim.apps_lifetime) > 0 && apps >= 0 ? `${count(apps)} apps au total` : `${limitText(lim.apps)} apps`,
+    perApp > 0 ? `${count(perApp)} constructions / app / mois` : `${limitText(lim.builds_month)} constructions / mois`,
+  ];
+}
 export function limitText(v, unit = '') {
   const n = Number(v);
   if (v == null || n < 0) return 'Illimité';

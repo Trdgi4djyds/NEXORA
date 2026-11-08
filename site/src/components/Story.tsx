@@ -3,13 +3,14 @@ import { STORY } from "../data/content"
 import { SPACE_BY_ID, spaceHref } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { useMedia } from "../lib/motion"
-import { Screen, Screens } from "./Screen"
+import { cn } from "../lib/utils"
+import { Screen, Screens, Window } from "./Screen"
 import { SectionHead } from "./SectionHead"
 
 /**
  * Récit « De l'idée à la publication » : les étapes défilent à gauche, la fenêtre de NEXORA reste à l'écran à
- * droite et passe à l'espace de l'étape lue. Sur petit écran, chaque étape a sa propre fenêtre.
- * #069 : tête lumineuse sur la frise, halo de la couleur de l'étape et reflet qui suit la souris.
+ * droite (de face, #086) et passe à l'espace de l'étape lue. Sur petit écran, chaque étape a sa
+ * propre fenêtre.
  */
 export function Story() {
   const [active, setActive] = useState(0)
@@ -30,26 +31,26 @@ export function Story() {
 
   const step = STORY[active]
   return (
-    <section className="section story" id="parcours" data-capture="parcours">
-      <div className="container">
+    <section className="section" id="parcours" data-capture="parcours">
+      <div className="wrap">
         <SectionHead
-          index="02"
+          index="03"
           eyebrow="De l’idée à la publication"
           title={["Du premier écran", "au logiciel installé."]}
           lead="Conçois, code, teste, sécurise, publie et présente sans changer d’outil : chaque espace reprend là où le précédent s’est arrêté."
         />
       </div>
-      <div className="container wide">
-        <div className="story-grid">
-          <ol className="story-steps">
+      <div className="wrap-wide">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+          <ol className="relative">
             {!narrow && (
-              <li className="story-rail" aria-hidden="true" data-space={step.space}>
+              <li className="story-rail" aria-hidden="true">
                 <i style={{ transform: `scaleY(${(active + 1) / STORY.length})` }} />
-                <b className="story-head" style={{ top: `${((active + 1) / STORY.length) * 100}%` }} />
               </li>
             )}
             {STORY.map((s, i) => {
               const sp = SPACE_BY_ID[s.space]
+              const on = i === active || narrow
               return (
                 <li
                   key={s.space}
@@ -57,35 +58,33 @@ export function Story() {
                     steps.current[i] = el
                   }}
                   data-i={i}
-                  data-space={s.space}
-                  className={`story-step${i === active || narrow ? " on" : ""}`}
+                  className={cn("relative grid grid-cols-[40px_1fr] gap-5 py-10 transition-opacity duration-500 lg:min-h-[52vh] lg:py-14", on ? "opacity-100" : "opacity-35")}
                 >
-                  <span className="story-num">{String(i + 1).padStart(2, "0")}</span>
-                  <div className="story-body">
-                    <span className="story-kicker">
-                      <span className="sp-ic sm">
-                        <Icon name={sp.icon} size={15} />
-                      </span>
-                      {s.verb} · {sp.name}
+                  <span className={cn("relative z-[1] grid size-10 place-items-center rounded-full border text-[13px] font-semibold tabular-nums transition-all duration-500", on ? "border-primary bg-primary text-primary-foreground shadow-[0_0_24px_rgb(var(--neon)/0.5)]" : "border-white/15 bg-background text-muted-foreground")}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div>
+                    <span className="eyebrow">
+                      <Icon name={sp.icon} size={14} /> {s.verb} · {sp.name}
                     </span>
-                    <h3 className="h-3">{s.title}</h3>
-                    <p>{s.text}</p>
-                    <ul className="story-points">
+                    <h3 className="title-3 mt-3">{s.title}</h3>
+                    <p className="mt-3 max-w-[48ch] text-[15.5px] leading-relaxed text-muted-foreground">{s.text}</p>
+                    <ul className="mt-5 flex flex-wrap gap-2">
                       {s.points.map((p) => (
-                        <li key={p}>
-                          <Icon name="check" size={14} stroke={2.4} />
+                        <li key={p} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1 text-[13px] text-[#d2cdd8]">
+                          <Icon name="check" size={13} stroke={2.6} className="text-primary" />
                           {p}
                         </li>
                       ))}
                     </ul>
-                    <a className="link-arrow" href={spaceHref(sp)}>
+                    <a className="link-arrow mt-6" href={spaceHref(sp)}>
                       Découvrir {sp.name} <Icon name="nxArrowRight" size={15} stroke={2} />
                     </a>
                     {narrow && (
-                      <div className="story-mobile">
-                        <div className="frame">
+                      <div className="mt-8">
+                        <Window compact>
                           <Screen space={s.space} />
-                        </div>
+                        </Window>
                       </div>
                     )}
                   </div>
@@ -94,17 +93,14 @@ export function Story() {
             })}
           </ol>
           {!narrow && (
-            <div className="story-visual">
-              <div className="story-sticky" data-space={step.space}>
-                <div className="story-plate" data-light data-tilt>
-                  <div className="frame">
-                    <Screens spaces={STORY.map((s) => s.space)} current={step.space} />
-                    <i className="glare-spot" aria-hidden="true" />
-                  </div>
-                </div>
-                <div className="story-dots" aria-hidden="true">
+            <div className="relative">
+              <div className="sticky top-[calc(50vh-280px)]">
+                <Window title={`NEXORA — ${SPACE_BY_ID[step.space].name}`}>
+                  <Screens spaces={STORY.map((s) => s.space)} current={step.space} />
+                </Window>
+                <div className="mt-6 flex justify-center gap-2" aria-hidden="true">
                   {STORY.map((s, i) => (
-                    <i key={s.space} data-space={s.space} className={i === active ? "on" : ""} />
+                    <i key={s.space} className={cn("h-1.5 rounded-full transition-all duration-500", i === active ? "w-8 bg-primary shadow-[0_0_10px_rgb(var(--neon)/0.7)]" : "w-1.5 bg-white/20")} />
                   ))}
                 </div>
               </div>

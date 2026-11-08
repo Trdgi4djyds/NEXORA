@@ -12,6 +12,7 @@ import fs from "node:fs"
 import path from "node:path"
 import react from "@vitejs/plugin-react"
 import { build } from "vite"
+import { siteTailwind } from "../site/tailwind.mjs"
 import {
   BRIDGE_FILE,
   BRIDGE_PATH,
@@ -145,7 +146,8 @@ await build({
   base: "./",
   publicDir: false,
   logLevel: "warn",
-  plugins: [react()],
+  // #085 : Tailwind CSS 4 (site/tailwind.mjs).
+  plugins: [react(), ...siteTailwind()],
   // Aperçu déployé (#063) : « Ouvrir NEXORA web » mène à app.html, le site occupant la racine.
   define: previewEntry
     ? { "import.meta.env.VITE_NEXORA_WEB": JSON.stringify("../app.html") }

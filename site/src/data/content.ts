@@ -3,6 +3,7 @@ import developpeurs from "../assets/photos/developpeurs.webp"
 import agences from "../assets/photos/agences.webp"
 import commercants from "../assets/photos/commercants.webp"
 import etudiants from "../assets/photos/etudiants.webp"
+import { CONTACT_EMAIL } from "../../../nexora/app/renderer/nx/offres/catalog.js"
 import { DEVICE_COUNT } from "../lib/product"
 import type { SpaceId } from "./spaces"
 
@@ -126,7 +127,8 @@ export const PERSONAS: Persona[] = [
     photo: etudiants,
     alt: "Un jeune homme souriant qui travaille sur un ordinateur portable",
     title: "Étudiants et formateurs",
-    text: `Apprends avec un vrai éditeur, un terminal et Git, gratuitement, et teste tes pages dans le cadre de ${DEVICE_COUNT} modèles d’appareils.`,
+    // #087 : le Dev Lab est dans Pro depuis le #076 (ouvert pendant le premier jour) ; le Responsive Lab reste gratuit.
+    text: `Teste gratuitement tes pages dans le cadre de ${DEVICE_COUNT} modèles d’appareils et publie tes 2 premières applications. Le Dev Lab (éditeur, terminal, Git) est ouvert tout ton premier jour.`,
     space: "preview",
     link: "Découvrir le Responsive Lab",
   },
@@ -135,7 +137,12 @@ export const PERSONAS: Persona[] = [
 export const FAQ: { q: string; a: string }[] = [
   {
     q: "NEXORA est-il gratuit ?",
-    a: "Oui. L’offre Gratuite n’a pas de limite de durée : Responsive Lab et Browser Lab complets, NEX-DESIGN (3 documents), un audit de sécurité par jour et l’assistant IA avec ta propre clé. Ton premier jour est un essai complet de Pro (24 h). Pro ouvre le Dev Lab, l’App Builder, le Desktop Builder et les outils avancés.",
+    a: "Oui. L’offre Gratuite n’a pas de limite de durée : Responsive Lab et Browser Lab complets, 2 applications Android ou Windows avec tout l’App Builder et le Desktop Builder, NEX-DESIGN (3 documents), un audit de sécurité par jour et l’assistant IA avec ta propre clé. Ton premier jour est un essai complet de Pro (24 h). Pro ouvre le Dev Lab, jusqu’à 50 applications et les outils avancés.",
+  },
+  {
+    // #087 : 2 applications au total, App Builder et Desktop Builder confondus, applications supprimées comprises.
+    q: "Combien d’applications avec l’offre Gratuite ?",
+    a: "Deux au total : des applications Android (App Builder) ou des logiciels Windows (Desktop Builder), avec toutes leurs fonctions. Une application compte dès sa première construction et reste comptée si tu la supprimes. Chacune dispose de 5 constructions par mois ; le compteur repart le 1er du mois. Avec Pro : jusqu’à 50 applications, sans limite par application.",
   },
   {
     q: "Sur quels ordinateurs NEXORA fonctionne-t-il ?",
@@ -151,7 +158,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Puis-je publier sur le Play Store ?",
-    a: "Oui, avec Pro : NEXORA construit l’application signée, prépare la fiche Play Store (textes, captures, icône), vérifie que tout est prêt, puis l’envoie. Il suit aussi le test fermé de 14 jours avec tes testeurs.",
+    a: "Oui, même avec l’offre Gratuite pour tes 2 applications : NEXORA construit l’application signée, prépare la fiche Play Store (textes, captures, icône), vérifie que tout est prêt, puis l’envoie. Il suit aussi le test fermé de 14 jours avec tes testeurs.",
   },
   {
     q: "Mes projets sont-ils en sécurité ?",
@@ -159,7 +166,8 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Comment changer d’offre ?",
-    a: "Sur la page Ma licence du site (ou depuis NEXORA, Mon compte puis Offre et usage, qui l’ouvre dans ton navigateur). Le paiement se fait dans le navigateur et Pro s’active au contrôle de licence suivant. Le paiement annuel t’offre deux mois.",
+    // #087 (A-056) : le paiement en ligne n'est pas encore ouvert ; l'équipe active Pro sur demande.
+    a: `Depuis la page Ma licence du site, ou dans NEXORA : Mon compte puis Offre et usage. Tant que le paiement en ligne n’est pas ouvert, écris à ${CONTACT_EMAIL} ou depuis Mon compte → Support : l’équipe NEXORA active ton offre Pro, en général sous 24 h. Le paiement annuel t’offre deux mois.`,
   },
   {
     q: "Comment se passent les mises à jour ?",

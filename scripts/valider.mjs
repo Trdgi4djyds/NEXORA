@@ -953,12 +953,12 @@ async function anonChecks(types) {
 
   // Offres en ligne comparées au catalogue de l'application.
   const plans = await http(
-    `${SB_URL}/rest/v1/plans?select=id,price_month_cents,price_year_cents,active&order=sort`,
+    `${SB_URL}/rest/v1/plans?select=id,price_month_cents,price_year_cents,active,limits,perms&order=sort`,
     { headers: H },
   )
   try {
     process.removeAllListeners("warning")
-    const { FALLBACK } = await import(
+    const { FALLBACK, CONTACT_EMAIL } = await import(
       pathToFileURL(path.join(ROOT, "nexora/app/renderer/nx/offres/catalog.js"))
         .href
     )
@@ -992,6 +992,30 @@ async function anonChecks(types) {
       wrong.length
         ? `absentes ou prix différents : ${wrong.join(", ")} ; en ligne : ${desc}`
         : desc,
+    )
+    // NEXORA #087 : offre Gratuite à 2 applications (migration 20261108000006), adresse de contact.
+    const free = online.free || {}
+    const lim = free.limits || {}
+    const perms = free.perms || {}
+    const gaps = ["apps", "apps_lifetime", "builds_per_app_month"]
+      .filter((k) => Number(lim[k]) !== FALLBACK.free.limits[k])
+      .map((k) => `${k} ${lim[k] ?? "absent"} au lieu de ${FALLBACK.free.limits[k]}`)
+      .concat(["apk", "play_publish", "messaging_events", "desktop_builder"].filter((k) => perms[k] !== true).map((k) => `${k} non inclus`))
+    rec(
+      "4. Offres et règles",
+      "Offre Gratuite en ligne : 2 applications, 5 constructions par application (#087)",
+      gaps.length ? "echec" : "ok",
+      gaps.length
+        ? `${gaps.join(", ")} : appliquer la migration 20261108000006 (back office → Supabase → Tout appliquer)`
+        : `${lim.apps} applications à vie, ${lim.builds_per_app_month} constructions par application et par mois`,
+    )
+    const mail = await http(`${SB_URL}/rest/v1/app_config?select=value&key=eq.support_email`, { headers: H })
+    const shown = Array.isArray(mail.json) && mail.json[0] ? String(mail.json[0].value || "") : ""
+    rec(
+      "4. Offres et règles",
+      "Adresse de contact en ligne",
+      shown === CONTACT_EMAIL ? "ok" : "alerte",
+      shown ? shown : `vide (le site et l’application affichent ${CONTACT_EMAIL} par défaut ; la migration 20261108000006 la renseigne)`,
     )
   } catch (e) {
     rec(

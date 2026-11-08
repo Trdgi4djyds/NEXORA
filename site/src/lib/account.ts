@@ -175,4 +175,17 @@ export async function pay(kind: "checkout" | "portal", s: Session, period: "mont
   throw new Error(res.status === 404 ? "Le paiement en ligne arrive très bientôt." : `Paiement indisponible (HTTP ${res.status}).`)
 }
 
+/**
+ * NEXORA #087 : le paiement en ligne est-il ouvert ? (Worker de NEXORA, /license/config ; faux sans réponse, par
+ * exemple dans l'aperçu). Tant qu'il ne l'est pas, l'équipe active Pro sur demande (adresse de contact, Support).
+ */
+let payments: Promise<boolean> | null = null
+export function paymentsOpen(): Promise<boolean> {
+  payments ??= fetch("/license/config", { headers: { Accept: "application/json" } })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((j) => Boolean(j && (j as { payments?: boolean }).payments))
+    .catch(() => false)
+  return payments
+}
+
 export const KEY_RE = /^NXDT(-[2-9A-HJKMNP-Z]{4}){4}$/

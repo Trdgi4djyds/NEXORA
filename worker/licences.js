@@ -237,7 +237,7 @@ async function customerOf(token, uid) {
   return Array.isArray(rows) && rows[0] && rows[0].customer_id ? rows[0].customer_id : null
 }
 async function checkout(req, env) {
-  if (!payReady(env)) return json(503, { error: "not_configured", message: "Le paiement en ligne arrive très bientôt. En attendant, écris à l’assistance depuis Mon compte → Support." })
+  if (!payReady(env)) return json(503, { error: "not_configured", message: "Le paiement en ligne arrive très bientôt. En attendant, écris à nexoradevstoolbox@gmail.com ou depuis Mon compte → Support : l’équipe NEXORA active ton offre Pro." })
   const token = bearer(req)
   const user = await userOf(token)
   if (!user) return json(401, { error: "auth", message: "Connecte-toi d’abord à ton compte NEXORA." })

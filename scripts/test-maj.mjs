@@ -118,7 +118,8 @@ ok(["", "https://exemple.com/NEXORA.zip", "http://github.com/a/b", "https://gith
 const pkg = JSON.parse(fs.readFileSync(new URL("../nexora/app/package.json", import.meta.url), "utf8"))
 ok(!!NOTES[pkg.version], `nouveautés prévues pour la version ${pkg.version}`)
 const notes = releaseNotes(pkg.version)
-ok(/Dev Lab gratuit/.test(notes) && /NEXORA\.exe/.test(notes), "notes de la version publiée")
+// NEXORA #087 : note 1.2.0 réécrite (2 applications gratuites, Pro à 18 $), installation par le lanceur.
+ok(/2 applications gratuites/.test(notes) && /18 \$/.test(notes) && /NEXORA-Devs-Toolbox\.exe/.test(notes) && !/Dev Lab gratuit|Standard|décompresse/.test(notes), "notes de la version publiée", notes)
 
 fs.rmSync(tmp, { recursive: true, force: true })
 console.log(`\n${count} vérifications, ${fails ? `${fails} échec(s)` : "aucun échec"}.`)

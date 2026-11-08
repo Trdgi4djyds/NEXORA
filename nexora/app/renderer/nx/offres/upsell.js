@@ -2,7 +2,7 @@
 // l'offre (événement plan:blocked du processus principal, App Builder, espaces réservés).
 import { ico, esc, sheet, closeSheet, toast } from '../core.js';
 import { cloud, askPlan, current } from './status.js';
-import { FALLBACK, FEATURES, PLAN_LOOK, limitText, money, neededPlan, normPlan } from './catalog.js';
+import { FALLBACK, FEATURES, PLAN_LOOK, money, neededPlan, normPlan, planKeys } from './catalog.js';
 
 let lastAt = 0;
 
@@ -37,7 +37,7 @@ export function openUpsell(info = {}) {
       <div class="nxo-up-body">
         <div class="nxo-up-price"><b>${p.price_month_cents ? esc(money(p.price_month_cents)) : '0 $'}</b><span>/ mois</span>${p.price_year_cents ? `<small>ou ${esc(money(p.price_year_cents))} par an (2 mois offerts)</small>` : ''}</div>
         <ul class="nxo-feats">${perks.map((f) => `<li>${ico('nxCheckCircle', 16)}<span>${esc(f)}</span></li>`).join('')}</ul>
-        <div class="nxo-keys"><span>${esc(limitText(lim.projects))} projets</span><span>${esc(limitText(lim.apps))} apps</span><span>${esc(limitText(lim.builds_month))} constructions / mois</span></div>
+        <div class="nxo-keys">${planKeys(lim).map((k) => `<span>${esc(k)}</span>`).join('')}</div>
         ${s.plan && !auth ? `<p class="nx-muted small">Ton offre actuelle : <b>${esc(s.plan_name || s.plan)}</b>.</p>` : ''}
       </div>
     </div>
@@ -65,9 +65,10 @@ export async function onClick(e) {
   const ask = e.target.closest('[data-nxo-ask]');
   if (ask) {
     if (!cloud.user) { await openAccount('login'); return true; }
-    // NEXORA #076 : l'abonnement se paie dans le navigateur (site de NEXORA, page « Ma licence ») ; le logiciel passe
+    // NEXORA #076 : l'abonnement se prend dans le navigateur (site de NEXORA, page « Ma licence ») ; le logiciel passe
     // en Pro au contrôle de licence suivant. Sans le canal (aperçu), demande à l'équipe comme avant.
-    try { await window.vitrine.invoke('license:open-site', 'licence?offre=pro'); closeSheet(); toast('Paiement ouvert dans ton navigateur : NEXORA passe en Pro dès qu’il est confirmé.'); return true; } catch { /* aperçu : demande à l'équipe */ }
+    // NEXORA #087 : tant que le paiement en ligne n'est pas ouvert, la page indique comment l'équipe active Pro.
+    try { await window.vitrine.invoke('license:open-site', 'licence?offre=pro'); closeSheet(); toast('Page « Ma licence » ouverte dans ton navigateur : suis les indications pour passer à Pro.'); return true; } catch { /* aperçu : demande à l'équipe */ }
     ask.disabled = true;
     try {
       const t = await askPlan(ask.dataset.nxoAsk);

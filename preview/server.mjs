@@ -292,6 +292,13 @@ export function nexoraPreview() {
         }
         if (!pathname.startsWith(base)) return next()
         const rel = pathname.slice(base.length)
+        // NEXORA #087 : réglages publics du Worker (/license/config, lus par le site vitrine) : l'aperçu n'a ni le
+        // service de licences ni le paiement en ligne, il répond comme le Worker quand rien n'est configuré.
+        if (rel === "license/config" && req.method === "GET") {
+          res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" })
+          res.end(JSON.stringify({ signing: false, payments: false, webhook: false, relay: false, yearly: false }))
+          return
+        }
         // Mode démonstration de la supervision (NEXORA #015) : canaux mon:/tel: exécutés par le vrai code
         // du processus principal dans Node (preview/demo-main.mjs), seulement quand le pont le demande.
         if (rel === DEMO_MAIN_PATH && req.method === "POST") {

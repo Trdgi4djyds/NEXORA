@@ -12,13 +12,15 @@ import { FALLBACK, money } from './catalog.js';
 
 // NEXORA #076 : une seule offre payante, Pro. Dev Lab, App Builder et Desktop Builder sont réservés à Pro (après
 // l'essai du premier jour) ; le Responsive Lab et le Browser Lab restent gratuits.
+// NEXORA #087 : l'offre Gratuite ouvre aussi l'App Builder et le Desktop Builder (2 applications au total) : leur
+// voile ne s'affiche plus que pour une offre sans ces permissions (réglage du back office).
 const SPACES = [
   { id: 'devlab', perm: 'devlab', label: 'Le Dev Lab',
     perks: ['Éditeur de code complet, terminal, Git et GitHub', 'Débogueur, tests, problèmes et scripts', 'Bases de données, API et mise en ligne', 'Assistant IA de tout le projet'] },
   { id: 'android', perm: 'apk', label: 'L’App Builder',
-    perks: ['Ton site transformé en application Android (APK, AAB)', 'PWA, notifications push et messagerie', 'Fiche et publication sur le Play Store', '400 constructions par mois'] },
+    perks: ['Ton site transformé en application Android (APK, AAB)', 'PWA, notifications push et messagerie', 'Fiche et publication sur le Play Store', 'Jusqu’à 50 applications, sans limite par application'] },
   { id: 'desktop', perm: 'desktop_builder', label: 'Le Desktop Builder',
-    perks: ['Ton site transformé en logiciel Windows', 'Installateur, version portable, ZIP et MSI', 'Signature et mises à jour', '400 constructions par mois'] },
+    perks: ['Ton site transformé en logiciel Windows', 'Installateur, version portable, ZIP et MSI', 'Signature et mises à jour', 'Jusqu’à 50 applications, sans limite par application'] },
 ];
 
 function card(sp) {

@@ -1,93 +1,95 @@
-import { Screen } from "../components/Screen"
+import type { CSSProperties } from "react"
+import { Backdrop } from "../components/Backdrop"
 import { CtaBand } from "../components/CtaBand"
+import { DeviceGallery, DeviceWall } from "../components/DeviceWall"
 import { MainButton } from "../components/Download"
+import { Device, Screen, Window } from "../components/Screen"
 import { SectionHead } from "../components/SectionHead"
+import { Badge } from "../components/ui/badge"
+import { Button } from "../components/ui/button"
 import { PLAN_LABEL, SPACES, spaceHref, type Feature, type Space } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
 import { APP_VERSION, DEVICE_CATEGORIES, DEVICE_LIST } from "../lib/product"
 import type { PlanId } from "../lib/remote"
+import { cn } from "../lib/utils"
 
-const GLYPH: Record<string, string> = { phone: "phone", fold: "fold", tablet: "tablet", laptop: "laptop", display: "display", watch: "watch", tv: "tv", xr: "xr", gamepad: "gamepad", car: "car", kiosk: "kiosk" }
-
-/** Catalogue des appareils du Responsive Lab, tiré des sources de NEXORA. */
+/** Catalogue des appareils du Responsive Lab, tiré des sources de NEXORA, avec la vitrine des vrais cadres (#086). */
 function DeviceCatalog() {
   const names = DEVICE_LIST.map((d) => d.name)
   const half = Math.ceil(names.length / 2)
   return (
-    <section className="section tight" data-capture="appareils">
-      <div className="container">
+    <section className="section-tight relative overflow-hidden" data-capture="appareils" data-light>
+      <Backdrop variant="soft" />
+      <div className="wrap relative">
         <SectionHead
           eyebrow="Le catalogue"
           title={[`${DEVICE_LIST.length} appareils,`, `${DEVICE_CATEGORIES.length} familles.`]}
-          lead="Des téléphones les plus vendus aux écrans de voiture : chaque modèle avec sa taille d’écran et sa densité réelles."
+          lead="Des téléphones les plus vendus aux écrans de voiture : chaque modèle avec sa taille d’écran et sa densité réelles. Les maquettes ci-dessous affichent ce site."
         />
-        <div className="dev-cats" data-glow>
-          {DEVICE_CATEGORIES.map((c, i) => (
-            <Reveal className="dev-cat glow" key={c.id} delay={(i % 5) * 50}>
-              <span className="dev-cat-ic" style={{ color: c.color }}>
-                <Icon name={GLYPH[c.glyph] ?? "phone"} size={20} />
-              </span>
-              <span>
-                <b>{c.label}</b>
-                <small>
-                  {c.count} modèle{c.count > 1 ? "s" : ""}
-                </small>
-              </span>
-            </Reveal>
-          ))}
-        </div>
+        <DeviceWall />
       </div>
-      {[names.slice(0, half), names.slice(half)].map((row, r) => (
-        <div className={`marquee devices${r ? " rev" : ""}`} key={r} aria-hidden="true">
-          <ul className="marquee-track slow">
-            {[...row, ...row].map((n, i) => (
-              <li key={i} className="chip">
-                {n}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
+      <div className="relative mt-12">
+        <DeviceGallery />
+      </div>
+      <div className="mt-10 flex flex-col gap-3" aria-hidden="true">
+        {[names.slice(0, half), names.slice(half)].map((row, r) => (
+          <div className={`marquee slow${r ? " rev" : ""}`} key={r}>
+            <ul className="marquee-track">
+              {[...row, ...row].map((n, i) => (
+                <li key={i} className="rounded-full border border-white/[0.08] px-3.5 py-1.5 text-[13px] whitespace-nowrap text-muted-foreground">
+                  {n}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
     </section>
   )
 }
 
-/** Ce que chaque offre apporte dans cet espace (#076 : Gratuit et Pro). */
+/** Ce que chaque offre apporte dans cet espace (#076 : Gratuit et Pro ; #087 : limites propres à l'espace). */
 function PlanSplit({ space }: { space: Space }) {
   const cols: { id: PlanId; title: string; lead: string; items: Feature[] }[] = [
     {
       id: "free",
       title: "Gratuit",
-      lead: space.plan === "free" ? "Pour découvrir et créer" : "Ouvert pendant ton essai de 24 h, puis réservé à Pro",
+      lead: space.limits ? space.limits.free : space.plan === "free" ? "Pour découvrir et créer" : "Ouvert pendant ton essai de 24 h, puis réservé à Pro",
       items: space.plan === "free" ? space.features.filter((f) => !f.plan) : [],
     },
     {
       id: "pro",
       title: "Pro",
-      lead: space.plan !== "free" ? "Tout l’espace :" : space.features.some((f) => f.plan === "pro") ? "Tout le Gratuit, plus :" : "Le même espace, avec des limites plus larges :",
-      items: space.plan === "free" ? space.features.filter((f) => f.plan === "pro") : space.features,
+      lead: space.limits
+        ? space.limits.pro
+        : space.plan !== "free" ? "Tout l’espace :" : space.features.some((f) => f.plan === "pro") ? "Tout le Gratuit, plus :" : "Le même espace, avec des limites plus larges :",
+      items: space.limits
+        ? space.limits.perks.map((title) => ({ icon: "check", title, text: "" }))
+        : space.plan === "free" ? space.features.filter((f) => f.plan === "pro") : space.features,
     },
   ]
   return (
-    <div className="split" data-glow>
+    <div className="grid gap-6 md:grid-cols-2" data-glow>
       {cols.map((c, i) => (
-        <Reveal className={`split-col glow${c.id === "pro" ? " featured" : ""}`} key={c.id} delay={i * 80}>
-          <span className={`plan-tag ${c.id}`}>{c.title}</span>
-          <p className="split-lead">{c.lead}</p>
-          <ul>
+        <Reveal className={cn("glow p-8", c.id === "pro" ? "panel-hi" : "panel")} key={c.id} delay={i * 80}>
+          <Badge variant={c.id === "pro" ? "solid" : "default"}>{c.title}</Badge>
+          <p className="mt-4 text-[15px] text-muted-foreground">{c.lead}</p>
+          <ul className="mt-5 flex flex-col gap-3">
             {c.items.length ? (
               c.items.map((f) => (
-                <li key={f.title}>
-                  <Icon name="check" size={14} stroke={2.6} />
+                <li key={f.title} className="flex items-start gap-3 text-[14.5px]">
+                  <Icon name="check" size={15} stroke={2.6} className="mt-1 shrink-0 text-primary" />
                   {f.title}
                 </li>
               ))
             ) : (
-              <li className="muted">
+              <li className="text-[14.5px] text-muted-foreground">
                 {/* #072 : un espace gratuit sans fonction Pro n'est pas « à ouvrir » : il est déjà inclus. */}
                 {c.id === "pro"
-                  ? "Des limites plus larges : projets, membres et constructions."
+                  ? space.limits
+                    ? "Les mêmes fonctions, pour toutes tes applications : projets, membres et constructions plus larges."
+                    : "Des limites plus larges : projets, membres et constructions."
                   : space.plan === "free"
                     ? "Cet espace est déjà complet avec l’offre Gratuite."
                     : "Passe à Pro pour garder cet espace après ton essai."}
@@ -105,61 +107,80 @@ export function SpacePage({ space }: { space: Space }) {
   const prev = SPACES[(idx + SPACES.length - 1) % SPACES.length]
   const next = SPACES[(idx + 1) % SPACES.length]
   return (
-    <div className="space-page" data-space={space.id}>
-      <section className="sp-hero" data-capture="haut" data-light>
-        <i className="grid-bg" aria-hidden="true" />
-        <i className="grid-lit" aria-hidden="true" />
-        <i className="torch" aria-hidden="true" />
-        <div className="container">
-          <a href="#/espaces" className="crumb rise">
+    <div>
+      <section className="relative overflow-hidden pt-14 pb-10 md:pt-20" data-capture="haut" data-light>
+        <Backdrop variant="page" />
+        <div className="wrap relative">
+          <a href="#/espaces" className="rise inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground transition hover:text-primary">
             <Icon name="chevronLeft" size={15} stroke={2} /> Tous les espaces
           </a>
-          <div className="sp-hero-grid">
+          <div className="mt-8 grid items-end gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
             <div className="rise" style={{ animationDelay: "80ms" }}>
-              <span className="sp-name">
+              <span className="flex items-center gap-4">
                 <span className="sp-ic lg solid">
                   <Icon name={space.icon} size={26} />
                 </span>
                 <span className="eyebrow">{space.name}</span>
               </span>
-              <h1 className="h-1">
-                {space.h1[0]} <span className="tone-space">{space.h1[1]}</span>
+              <h1 className="title-1 mt-7">
+                {space.h1[0]} <span className="tone-neon">{space.h1[1]}</span>
               </h1>
             </div>
-            <div className="sp-hero-side rise" style={{ animationDelay: "180ms" }}>
+            <div className="rise" style={{ animationDelay: "180ms" }}>
               <p className="lead">{space.lead}</p>
-              <div className="btn-stack">
+              <div className="mt-7 flex flex-wrap gap-3">
                 <MainButton />
-                <a className="btn btn-ghost" href="#/tarifs">
-                  Voir les tarifs
-                </a>
+                <Button asChild variant="outline">
+                  <a href="#/tarifs">Voir les tarifs</a>
+                </Button>
               </div>
-              <span className={`plan-note ${space.plan}`}>{space.planNote}</span>
+              <span className="mt-5 inline-flex items-center gap-2 text-[13px] text-muted-foreground">
+                <i className="dot" /> {space.planNote}
+              </span>
             </div>
           </div>
         </div>
-        <div className="container wide rise" style={{ animationDelay: "260ms" }}>
-          <div className="sp-show" data-capture="apercu" data-tilt data-depth>
-            <div className="frame">
-              <Screen space={space.id} eager />
-              <i className="glare" aria-hidden="true" />
+        <div className="wrap-wide relative mt-14 md:mt-20">
+          {/* #086 : scène de face (aucune rotation), parallaxe légère ; vrais appareils pour l'App Builder. */}
+          <div className="hero-visual mx-auto max-w-[1180px]" data-capture="apercu" data-tilt data-depth>
+            <div className="par" style={{ "--k": "4px", "--ky": "-12px" } as CSSProperties}>
+              <Window title={`NEXORA — ${space.name}`}>
+                <Screen space={space.id} eager />
+              </Window>
             </div>
+            {space.id === "android" && (
+              <div className="par absolute right-0 bottom-[-8%] flex w-[30%] items-end gap-[6%]" style={{ "--k": "12px", "--ky": "-40px" } as CSSProperties}>
+                <div className="w-[47%]">
+                  <Device kind="galaxy" eager />
+                </div>
+                <div className="w-[45%]">
+                  <Device kind="iphone" eager />
+                </div>
+              </div>
+            )}
+            {space.id === "preview" && (
+              <div className="par absolute right-0 bottom-[-8%] w-[15%]" style={{ "--k": "12px", "--ky": "-40px" } as CSSProperties}>
+                <Device kind="iphone" eager />
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      <section className="section tight" data-capture="fonctions">
-        <div className="container">
+      <section className="section" data-capture="fonctions">
+        <div className="wrap">
           <SectionHead eyebrow="Ce que tu peux faire" title={[space.name, "en détail."]} lead={`${space.features.length} fonctions livrées dans NEXORA ${APP_VERSION}, avec l’offre qui les ouvre.`} />
-          <ol className="feat-list" data-glow>
+          <ol className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" data-glow>
             {space.features.map((f, i) => (
-              <Reveal as="li" className="feat glow" key={f.title} delay={(i % 2) * 70}>
-                <span className="feat-n">{String(i + 1).padStart(2, "0")}</span>
-                <span className="feat-b">
-                  <h3>{f.title}</h3>
-                  <p>{f.text}</p>
+              <Reveal as="li" className="glow flex flex-col rounded-[22px] border border-white/[0.08] bg-card p-6" key={f.title} delay={(i % 3) * 70}>
+                <span className="flex items-center justify-between gap-3">
+                  <span className="sp-ic">
+                    <Icon name={f.icon} size={18} />
+                  </span>
+                  {f.plan ? <Badge variant="outline">{PLAN_LABEL[f.plan]}</Badge> : space.trial ? <Badge variant="outline">{space.trial.tag}</Badge> : <span className="text-[12px] font-semibold tabular-nums text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>}
                 </span>
-                {f.plan ? <span className={`plan-tag ${f.plan}`}>{PLAN_LABEL[f.plan]}</span> : space.trial && <span className="plan-tag trial">{space.trial.tag}</span>}
+                <h3 className="mt-5 text-[17px] font-semibold">{f.title}</h3>
+                <p className="mt-2 text-[14.5px] leading-relaxed text-muted-foreground">{f.text}</p>
               </Reveal>
             ))}
           </ol>
@@ -169,13 +190,13 @@ export function SpacePage({ space }: { space: Space }) {
       {space.id === "preview" && <DeviceCatalog />}
 
       {space.details && (
-        <section className="section tight">
-          <div className="container">
-            <Reveal className="details">
-              <h2 className="h-3">{space.details.title}</h2>
-              <ul>
+        <section className="section-tight">
+          <div className="wrap">
+            <Reveal className="hud rounded-[4px] p-8 md:p-10">
+              <h2 className="title-3">{space.details.title}</h2>
+              <ul className="mt-6 flex flex-wrap gap-2.5">
                 {space.details.items.map((d) => (
-                  <li className="chip" key={d}>
+                  <li className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] px-3.5 py-1.5 text-[14px]" key={d}>
                     <i className="dot" />
                     {d}
                   </li>
@@ -186,8 +207,8 @@ export function SpacePage({ space }: { space: Space }) {
         </section>
       )}
 
-      <section className="section tight" data-capture="offres">
-        <div className="container">
+      <section className="section-tight" data-capture="offres">
+        <div className="wrap">
           <SectionHead eyebrow="Dans tes offres" title={["Ce qui est inclus,", "offre par offre."]}>
             <a className="link-arrow" href="#/tarifs/comparatif">
               Voir le comparatif complet <Icon name="nxArrowRight" size={15} stroke={2} />
@@ -197,21 +218,21 @@ export function SpacePage({ space }: { space: Space }) {
         </div>
       </section>
 
-      <section className="section tight">
-        <div className="container sp-nav" data-glow>
+      <section className="section-tight">
+        <div className="wrap grid gap-6 md:grid-cols-2" data-glow>
           {[prev, next].map((s, i) => (
-            <a key={s.id} href={spaceHref(s)} className={`sp-nav-card glow${i ? " next" : ""}`} data-space={s.id}>
-              <small>{i ? "Espace suivant" : "Espace précédent"}</small>
-              <span className="sp-nav-row">
+            <a key={s.id} href={spaceHref(s)} className={cn("glow lift flex flex-col gap-3 rounded-[22px] border border-white/[0.08] bg-card p-6", i && "md:items-end md:text-right")}>
+              <small className="text-[12px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{i ? "Espace suivant" : "Espace précédent"}</small>
+              <span className={cn("flex items-center gap-3", i && "md:flex-row-reverse")}>
                 <span className="sp-ic">
                   <Icon name={s.icon} size={19} />
                 </span>
-                <b>{s.name}</b>
-                <span className="round-go">
+                <b className="text-[19px] font-semibold">{s.name}</b>
+                <span className="go-ring">
                   <Icon name={i ? "nxArrowRight" : "back"} size={16} stroke={2} />
                 </span>
               </span>
-              <span className="muted">{s.subtitle}</span>
+              <span className="text-[14px] text-muted-foreground">{s.subtitle}</span>
             </a>
           ))}
         </div>

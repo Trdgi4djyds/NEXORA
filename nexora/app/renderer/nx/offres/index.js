@@ -1,8 +1,9 @@
 // NEXORA #037 : offres Gratuit, Standard et Pro dans l'application (et la version web).
 //  - onglet « Offre et usage » de Mon compte (crochet globalThis.__nxOffres dans chunk-EOM7FQDL.js) ;
 //  - fenêtre « offre requise » quand une action est refusée (événement plan:blocked du processus principal) ;
-//  - App Builder : essai de 7 jours des applications de l'offre Gratuite, verrou après l'essai ;
-//  - Desktop Builder voilé sans l'offre Standard (Dev Lab de base gratuit depuis #059).
+//  - App Builder et Desktop Builder (#087) : 2 applications au total avec l'offre Gratuite, 5 constructions par
+//    application et par mois, verrou au-delà (appbuilder.js, desktop.js) ;
+//  - espaces voilés sans leur permission (locks.js).
 // Chargé au démarrage par nx/boot.js.
 import { a as ICONS } from '../../dist/chunks/chunk-S4I2LXHS.js';
 import { nxAppBuilder } from '../../dist/chunks/android-W5CZA2A2.js';

@@ -134,7 +134,8 @@ function renderChip() {
   if (!on) {
     if (chip) chip.hidden = true;
     if (wasTrial && st && st.status === 'ok' && !st.trial) {
-      toast('Ton essai Pro est terminé : NEXORA passe en offre Gratuite (Responsive Lab et Browser Lab). Passe à Pro pour tout garder.', { action: 'Passer à Pro', onAction: () => api.invoke('license:open-site', 'licence?offre=pro') });
+      // NEXORA #087 : l'offre Gratuite comprend aussi 2 applications (App Builder et Desktop Builder confondus).
+      toast('Ton essai Pro est terminé : NEXORA passe en offre Gratuite (Responsive Lab, Browser Lab et 2 applications). Passe à Pro pour tout garder.', { action: 'Passer à Pro', onAction: () => api.invoke('license:open-site', 'licence?offre=pro') });
     }
     wasTrial = false;
     return;
@@ -149,7 +150,7 @@ function renderChip() {
   }
   chip.hidden = false;
   chip.innerHTML = `${ico('nxCrown', 13)}<span>Essai Pro · <b>${esc(remaining(st.trial_ends_at))}</b> restantes</span><em>Passer à Pro</em>`;
-  chip.title = `Tout NEXORA est ouvert jusqu’au ${new Date(st.trial_ends_at).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}. Ensuite : offre Gratuite (Responsive Lab et Browser Lab), ou Pro à 18 $ par mois.`;
+  chip.title = `Tout NEXORA est ouvert jusqu’au ${new Date(st.trial_ends_at).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}. Ensuite : offre Gratuite (Responsive Lab, Browser Lab et 2 applications), ou Pro à 18 $ par mois.`;
 }
 function update(s) { st = s; render(); renderChip(); }
 

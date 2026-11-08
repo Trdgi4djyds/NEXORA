@@ -1,5 +1,11 @@
 'use strict';
-/* NEXORA #076 : deux offres seulement, Gratuit (0 $) et Pro (18 $ par mois), essai Pro le premier jour (serveur).
+/* NEXORA #087 : l'offre Gratuite comprend 2 applications au total (App Builder et Desktop Builder confondus,
+ * applications supprimées comprises), avec tout l'App Builder et tout le Desktop Builder, et 5 constructions par
+ * application et par mois. Une construction (android:build, desktop:build) passe par nx_app_build (migration
+ * 20261108000006) avec l'identifiant de l'application (champ nxApp ajouté par l'interface) : le serveur réserve
+ * l'application à sa première construction et compte la construction pour l'application et pour le compte. Pro
+ * (18 $ par mois, 180 $ par an) : jusqu'à 50 applications, sans limite par application.
+ * NEXORA #076 : deux offres seulement, Gratuit (0 $) et Pro (18 $ par mois), essai Pro le premier jour (serveur).
  * Le Responsive Lab et le Browser Lab sont entièrement gratuits (leurs canaux ne sont plus contrôlés) ; le Dev Lab
  * (canaux dev:, git:, gh:) et tous les autres espaces sont dans Pro. Chaque canal passe aussi par le verrou de
  * licence (src/license.js) : sans licence validée, les canaux des espaces sont refusés.
@@ -25,7 +31,8 @@ const GATES = {
   'android:pick-dir': ['source_import', 0],
   'android:inspect-dir': ['source_import', 0],
   'android:build-web': ['source_import', 0],
-  'android:pwa-pack': ['pwa', 1],
+  // NEXORA #087 : le paquet PWA (fichiers du site) n'est plus une construction comptée.
+  'android:pwa-pack': ['pwa', 0],
   'android:pwa-inject': ['pwa', 0],
   'android:play-publish': ['play_publish', 0],
   'android:listing-push': ['play_publish', 0],
@@ -105,7 +112,9 @@ const PERM = {
   // NEXORA #073 : messagerie des applications Android (style conversation, réponses, appels) et modèles.
   messaging_events: 'messaging_events', custom_notifications: 'custom_notifications',
 };
-const QUOTA = new Set(['apk', 'pwa', 'push', 'crawler', 'desktop_builder', 'scan', 'ai']);
+const QUOTA = new Set(['apk', 'push', 'crawler', 'desktop_builder', 'scan', 'ai']);
+// NEXORA #087 : constructions comptées par application (canal → plateforme de l'application).
+const APP_BUILDS = { 'android:build': 'android', 'desktop:build': 'windows' };
 const LABEL = {
   apk: 'La génération d’APK', pwa: 'Le paquet PWA', source_import: 'L’import de dossiers et de code source',
   play_publish: 'La publication sur le Play Store', push: 'Les notifications push', automation: 'Les notifications programmées',
@@ -126,8 +135,10 @@ const NAME = { free: 'Gratuit', standard: 'Pro', pro: 'Pro' };
 // Permissions par défaut (copie de la migration), pour un invité ou des serveurs sans la migration.
 const PRO_PERMS = ['apk', 'pwa', 'source_import', 'play_publish', 'push', 'audits_advanced', 'desktop_builder', 'devlab', 'inapp', 'alerts', 'status_page', 'design_extended',
   'automation', 'integrations', 'api_sdk', 'studio_advanced', 'synthetic', 'multi_region', 'devlab_pro', 'design_full', 'messaging_events', 'custom_notifications'];
-// Produits d'appel gratuits : Responsive Lab et Browser Lab complets.
-const FREE_PERMS = ['responsive', 'browser', 'multiscreen', 'dashboard', 'responsive_advanced', 'crawler'];
+// Produits d'appel gratuits : Responsive Lab et Browser Lab complets ; NEXORA #087 : tout l'App Builder et tout le
+// Desktop Builder (2 applications au total, limite comptée par le serveur).
+const FREE_PERMS = ['responsive', 'browser', 'multiscreen', 'dashboard', 'responsive_advanced', 'crawler',
+  'apk', 'pwa', 'source_import', 'play_publish', 'push', 'inapp', 'automation', 'custom_notifications', 'messaging_events', 'integrations', 'desktop_builder'];
 function defaultPerms(plan) {
   const p = {};
   for (const k of [...PRO_PERMS, ...FREE_PERMS]) p[k] = FREE_PERMS.includes(k);
@@ -224,18 +235,44 @@ function deny(info) {
   return e;
 }
 
-// Autorise (ou refuse) une fonction ; amount > 0 : consomme le quota sur le serveur.
-async function check(feature, amount) {
+// NEXORA #087 : application construite par un canal de APP_BUILDS (champ nxApp ajouté par l'interface), ou null.
+function appOf(channel, args) {
+  const platform = APP_BUILDS[channel];
+  const a = platform && args && args[0] && args[0].nxApp;
+  if (!a || !a.id) return null;
+  return {
+    id: String(a.id).slice(0, 80), name: String(a.name || '').slice(0, 120), platform,
+    kind: ['url', 'folder', 'project'].includes(a.kind) ? a.kind : 'folder', url: a.url ? String(a.url).slice(0, 2000) : null,
+  };
+}
+
+// Autorise (ou refuse) une fonction ; amount > 0 : consomme le quota sur le serveur. app : application construite
+// (constructions comptées par application, nx_app_build).
+async function check(feature, amount, app = null) {
   const perm = PERM[feature];
   const label = LABEL[feature] || 'Cette fonction';
   if (!cloud) {
-    if (QUOTA.has(feature) && !perm) {
+    if (QUOTA.has(feature) && (!perm || amount > 0)) {
       throw deny({ feature, reason: 'auth', need: 'free', message: `${label} demande un compte NEXORA (gratuit) : connecte-toi pour profiter de ton quota mensuel.` });
     }
     if (perm && !defaultPerms('free')[perm]) {
       throw deny({ feature, reason: 'plan', plan: 'free', need: neededFor(perm), message: `${label} fait partie de l’offre ${NAME[neededFor(perm)]}. Connecte-toi à ton compte NEXORA, puis choisis ton offre dans Mon compte → Offre et usage.` });
     }
     return { ok: true, plan: 'free' };
+  }
+  if (app && amount > 0) {
+    let r = null;
+    try {
+      r = await call('POST', '/rest/v1/rpc/nx_app_build', { p_local_id: app.id, p_feature: feature, p_name: app.name, p_source_kind: app.kind, p_url: app.url, p_platform: app.platform });
+    } catch (e) {
+      // Serveurs sans la migration du #087 : contrôle par nx_use_feature ci-dessous.
+      if (!(e instanceof Missing)) throw e;
+    }
+    if (r) {
+      if (!r.ok) throw deny({ ...r, feature, message: r.message || `${label} n’est pas disponible avec ton offre.` });
+      if (status) status.at = 0; // consommation à jour au prochain plan:status
+      return r;
+    }
   }
   if (amount > 0 || QUOTA.has(feature) && !perm) {
     let r;
@@ -288,7 +325,7 @@ function guardIpc(ipcMain, opts = {}) {
     return handle(channel, async (e, ...args) => {
       if (!license.allowed(channel)) throw license.lockedError();
       try {
-        await check(gate[0], gate[1]);
+        await check(gate[0], gate[1], appOf(channel, args));
       } catch (err) {
         if (err.plan && e && e.sender && !e.sender.isDestroyed()) {
           try { e.sender.send('plan:blocked', { channel, ...err.plan }); } catch { /* fenêtre fermée */ }

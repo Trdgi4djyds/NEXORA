@@ -3,9 +3,10 @@
 // maintenance annoncée. Sans réponse, le site garde le catalogue livré avec NEXORA (nx/offres/catalog.js).
 import { useEffect, useState } from "react"
 import { projectRef, publicKey } from "../../../supabase/nexora.json"
-import { FALLBACK, PLAN_ORDER, limitText, money } from "../../../nexora/app/renderer/nx/offres/catalog.js"
+import { paymentsOpen } from "./account"
+import { CONTACT_EMAIL, FALLBACK, PLAN_ORDER, limitText, money } from "../../../nexora/app/renderer/nx/offres/catalog.js"
 
-export { limitText, money }
+export { CONTACT_EMAIL, limitText, money }
 
 export type PlanId = "free" | "pro"
 export type Plan = {
@@ -36,7 +37,8 @@ export const INITIAL: Remote = {
   ready: false,
   plans: ORDER.map((id) => FB[id]),
   downloadUrl: "",
-  supportEmail: "",
+  // NEXORA #087 : adresse de contact de NEXORA Devs Toolbox, remplacée par app_config.support_email si elle est renseignée.
+  supportEmail: CONTACT_EMAIL,
   maintenance: "",
 }
 
@@ -99,7 +101,7 @@ async function fetchAll(): Promise<Remote> {
     ready: true,
     plans: plans.status === "fulfilled" ? mergePlans(plans.value) : INITIAL.plans,
     downloadUrl: /^https:\/\/\S+$/.test(url) ? url : "",
-    supportEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail) ? mail : "",
+    supportEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail) ? mail : CONTACT_EMAIL,
     maintenance: maintenance.enabled === true ? text(maintenance.message) || "NEXORA est en maintenance." : "",
   }
 }
@@ -109,6 +111,19 @@ let cached: Remote | null = null
 export function loadRemote() {
   pending ??= fetchAll().then((r) => (cached = r))
   return pending
+}
+
+/** #087 : paiement en ligne ouvert (null tant que le Worker n'a pas répondu). */
+export function usePayments(): boolean | null {
+  const [open, setOpen] = useState<boolean | null>(null)
+  useEffect(() => {
+    let alive = true
+    paymentsOpen().then((v) => alive && setOpen(v))
+    return () => {
+      alive = false
+    }
+  }, [])
+  return open
 }
 
 export function useRemote(): Remote {

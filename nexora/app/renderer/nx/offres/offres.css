@@ -329,6 +329,14 @@ html[data-theme='dark'] .nxo-plan.nxo-pro .nxo-feats li > svg { color: #ffc24d; 
 .nxo-ab-banner.paid { gap: 8px; padding: 8px 12px; color: var(--text-2); }
 .nxo-ab-banner.trial { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #b84dff 45%, transparent); }
 .nxo-ab-ic { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; flex-shrink: 0; color: #fff; background: var(--nxo-brand); }
+/* NEXORA #087 : limite atteinte (constructions du mois, applications de l'offre Gratuite) ; bandeau du Desktop Builder,
+   posé dans la barre de construction, plus étroite que la colonne de l'App Builder. */
+.nxo-ab-banner.bad { background: #fff4f2; box-shadow: inset 0 0 0 1px #f6c7c1; }
+.nxo-ab-banner.bad .nxo-ab-ic { background: #d92d20; }
+html[data-theme='dark'] .nxo-ab-banner.bad { background: #2a1715; box-shadow: inset 0 0 0 1px #5c2a25; }
+.nxo-ab-banner.nxo-dsk { margin-bottom: 12px; flex-wrap: wrap; align-items: flex-start; }
+.nxo-ab-banner.nxo-dsk > div { flex: 1 1 200px; }
+.nxo-ab-banner.nxo-dsk > .nxo-btn { margin-left: 46px; }
 .ab.nxo-locked { position: relative; }
 .ab.nxo-locked .ab-main > :not(.nxo-ab-lock):not(.nxo-ab-slot), .ab.nxo-locked .ab-side, .ab.nxo-locked .ab-sections {
   filter: blur(2.5px) saturate(.5); opacity: .4; pointer-events: none; user-select: none;

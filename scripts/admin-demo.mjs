@@ -341,23 +341,26 @@ const orgDefs = [
   ["Espace de Yanis Mercier", true, 7, "free"],
 ]
 // NEXORA #076 : état après la migration 20261108000002 : Gratuit et Pro (18 $), Standard retirée de la vente.
+// NEXORA #087 : état après la migration 20261108000006 : Gratuit à 2 applications (Android ou Windows, supprimées
+// comprises, 5 constructions par application et par mois), Pro à 18 $ et 180 $.
 const V2 = {
   free: {
-    description: "Le Responsive Lab et le Browser Lab, gratuits pour toujours. Tout NEXORA pendant ton premier jour.",
-    limits: { projects: 3, designs: 3, members: 1, monitors: 1, storage_mb: 200, apps: 0, app_trial_days: 0, ai_requests_month: -1, scans_per_day: 1, crawls_per_day: -1, builds_month: 0, push_month: 0 },
-    features: ["Responsive Lab complet : tous les modèles d’appareils, vidéo et outils de développement", "Browser Lab complet : inspection, réseau, console, tests et extraction", "Tout NEXORA gratuitement pendant ton premier jour", "NEX-DESIGN découverte (3 documents)", "1 audit de sécurité par jour, 1 site surveillé", "Assistant IA avec ta propre clé"],
+    description: "Responsive Lab et Browser Lab complets, et 2 applications Android ou Windows. Gratuit, sans limite de durée.",
+    limits: { projects: 3, designs: 3, members: 1, monitors: 1, storage_mb: 200, apps: 2, apps_lifetime: 1, app_trial_days: 0, builds_per_app_month: 5, ai_requests_month: -1, scans_per_day: 1, crawls_per_day: -1, builds_month: 10, push_month: 1000 },
+    features: ["Responsive Lab complet : tous les modèles d’appareils, vidéo et outils de développement", "Browser Lab complet : inspection, réseau, console, tests et extraction", "2 applications Android ou Windows au total, applications supprimées comprises", "Tout l’App Builder et le Desktop Builder pour ces applications, 5 constructions par application et par mois", "NEX-DESIGN découverte (3 documents)", "1 audit de sécurité par jour, 1 site surveillé", "Assistant IA avec ta propre clé", "Tout NEXORA pendant ton premier jour"],
   },
   pro: {
     description: "Toutes les options de NEXORA Devs Toolbox, sans limite d’espace.",
     price_month_cents: 1800,
     price_year_cents: 18000,
     badge: "Toutes les options",
-    limits: { projects: 200, designs: -1, members: 10, monitors: 50, storage_mb: 51200, apps: 50, app_trial_days: 0, ai_requests_month: -1, scans_per_day: 200, crawls_per_day: -1, builds_month: 400, push_month: 100000 },
-    features: ["Les 9 espaces sans restriction", "Dev Lab complet : éditeur, terminal, Git, débogueur, tests, bases de données, mise en ligne", "App Builder : APK, PWA, Play Store, notifications et messagerie (400 constructions par mois)", "Desktop Builder : logiciels Windows installables et mises à jour", "NEX-DESIGN complet : documents illimités, IA, prototype, code, équipe", "Studio 3D & Motion avancé", "Sécurité : audits avancés, 50 sites surveillés 24 h/24, page de statut", "200 projets, 10 membres, 50 Go", "Assistance prioritaire"],
+    limits: { projects: 200, designs: -1, members: 10, monitors: 50, storage_mb: 51200, apps: 50, apps_lifetime: 0, app_trial_days: 0, builds_per_app_month: -1, ai_requests_month: -1, scans_per_day: 200, crawls_per_day: -1, builds_month: 400, push_month: 100000 },
+    features: ["Les 9 espaces sans restriction", "Dev Lab complet : éditeur, terminal, Git, débogueur, tests, bases de données, mise en ligne", "Jusqu’à 50 applications Android ou Windows, sans limite par application (400 constructions par mois)", "NEX-DESIGN complet : documents illimités, IA, prototype, code, équipe", "Studio 3D & Motion avancé", "Sécurité : audits avancés, 50 sites surveillés 24 h/24, page de statut", "200 projets, 10 membres, 50 Go", "Assistance prioritaire"],
   },
 }
+const APP_PERMS = { apk: true, pwa: true, source_import: true, play_publish: true, push: true, inapp: true, automation: true, custom_notifications: true, messaging_events: true, integrations: true, desktop_builder: true }
 export const plans = plansV1.map((p) => {
-  if (p.id === "free") return { ...p, ...V2.free, perms: { ...p.perms, responsive_advanced: true, crawler: true } }
+  if (p.id === "free") return { ...p, ...V2.free, perms: { ...p.perms, responsive_advanced: true, crawler: true, ...APP_PERMS } }
   if (p.id === "pro") return { ...p, ...V2.pro, sort: 2 }
   return { ...p, active: false, badge: "" }
 })
@@ -469,7 +472,7 @@ export const app_config = [
     "Mode maintenance (bandeau et lecture seule)",
   ],
   ["signups_enabled", true, "Les nouvelles inscriptions sont ouvertes"],
-  ["support_email", "support@nexora.app", "Adresse affichée dans l’aide"],
+  ["support_email", "nexoradevstoolbox@gmail.com", "Adresse de contact et d’assistance (site vitrine, application)"],
   ["min_app_version", "1.0.0", "Version minimale de l’application Windows"],
   [
     "email_templates",
@@ -925,7 +928,7 @@ export const nx_private_config = [
     value: {
       name: "NEXORA",
       address: "Cotonou, Bénin",
-      email: "ippooz.up.2@gmail.com",
+      email: "nexoradevstoolbox@gmail.com",
       phone: "+229 97 00 00 00",
       website: "https://nexora.abrahamtogbonon0.workers.dev/",
       tax_id: "IFU 0202000000000",
@@ -1110,14 +1113,15 @@ function demoMutate(table, method, params, postData) {
   return hit
 }
 
-// Essais des applications de l'offre Gratuite (#037).
+// Applications des comptes (#037 ; NEXORA #087 : Android ou Windows, 2 au total avec l'offre Gratuite, application
+// supprimée toujours comptée).
 export const nx_app_trials = [
-  [0, "Boutique Lumière", "https://boutique-lumiere.fr", 2, "free"],
-  [0, "Blog de l’Atelier", "https://atelier-blog.fr", 11, "free"],
-  [1, "Restaurant Le Quai", "https://lequai-restaurant.fr", 4, "free"],
-  [5, "Portfolio Lucas", "https://lucasroux.design", 9, "free"],
-  [2, "Studio Moreau", null, 20, "standard"],
-].map(([u, name, url, age, plan], i) => ({
+  [0, "Boutique Lumière", "https://boutique-lumiere.fr", 2, "free", "android", false],
+  [0, "Caisse Lumière", null, 11, "free", "windows", false],
+  [1, "Restaurant Le Quai", "https://lequai-restaurant.fr", 4, "free", "android", true],
+  [5, "Portfolio Lucas", "https://lucasroux.design", 9, "free", "android", false],
+  [2, "Studio Moreau", null, 20, "standard", "windows", false],
+].map(([u, name, url, age, plan, platform, deleted], i) => ({
   id: id(900 + i),
   user_id: P(u).id,
   org_id: organizations[u].id,
@@ -1126,9 +1130,10 @@ export const nx_app_trials = [
   source_kind: url ? "url" : "project",
   source_url: url,
   plan_at_creation: plan,
+  platform,
   created_at: ago(age),
-  trial_ends_at: plan === "free" ? ago(age - 7) : null,
-  deleted_at: null,
+  trial_ends_at: null,
+  deleted_at: deleted ? ago(1) : null,
   profiles: person(u),
 }))
 
@@ -1458,6 +1463,9 @@ function rpc(name, args) {
   if (name === "nx_app_status") return demoAppStatus(args)
   if (name === "nx_app_claim")
     return demoAppRow(args.p_local_id, args.p_name || "Mon application", 0)
+  // NEXORA #087 : construction comptée par application.
+  if (name === "nx_app_build")
+    return { ok: true, plan: "free", local_id: args.p_local_id, platform: args.p_platform || "android", app_builds_used: 3, app_builds_limit: 5, remaining: 2 }
   if (name === "nx_app_release") return true
   if (name === "nx_use_feature")
     return {
@@ -1894,11 +1902,11 @@ function demoPlanStatus(args = {}) {
           members: 1,
           monitors: 1,
           storage_mb: 64,
-          apps: demoOffer() === "expire" ? 2 : 1,
+          apps: demoApps().used,
           ai_requests_month: 18,
           scans_per_day: 1,
           crawls_per_day: 0,
-          builds_month: 0,
+          builds_month: demoApps().builds,
           push_month: 0,
         }
   return {
@@ -1919,45 +1927,60 @@ function demoPlanStatus(args = {}) {
     checked_at: new Date(now).toISOString(),
   }
 }
-// Application d'essai : créée il y a `age` jours ; essai de 7 jours en offre Gratuite.
-function demoAppRow(localId, name, age, kind = "url") {
+// NEXORA #087 : offre Gratuite à 2 applications. NX_DEMO_OFFRE : essai (par défaut : 1 application sur 2, 2
+// constructions sur 5 ce mois-ci), complet (constructions du mois utilisées, 2 applications), quota (2 applications
+// déjà créées, celle affichée ne peut pas l'être), expire (application en trop, créée pendant le premier jour).
+function demoApps() {
+  const o = demoOffer()
+  if (o === "complet") return { used: 2, builds: 7, shown: { status: "active", builds: 5 } }
+  if (o === "quota") return { used: 2, builds: 4, shown: null }
+  if (o === "expire") return { used: 3, builds: 0, shown: { status: "plan", builds: 0 } }
+  return { used: 1, builds: 2, shown: { status: "active", builds: 2 } }
+}
+// Application du compte : créée il y a `age` jours.
+function demoAppRow(localId, name, age, kind = "url", platform = "android") {
   const created = now - age * 86400000
-  const ends = created + 7 * 86400000
   const paid = ["standard", "pro"].includes(demoOffer())
-  const status = paid ? "active" : ends > now ? "trial" : "expired"
+  const shown = demoApps().shown
   return {
     ok: true,
     local_id: localId,
     name,
     source_kind: kind,
-    status,
+    platform,
+    status: paid ? "active" : (shown && shown.status) || "active",
     created_at: new Date(created).toISOString(),
-    trial_ends_at: paid ? null : new Date(ends).toISOString(),
-    days_left: status === "trial" ? Math.ceil((ends - now) / 86400000) : null,
+    trial_ends_at: null,
+    days_left: null,
     deleted: false,
+    builds_month: paid ? 3 : (shown && shown.builds) || 0,
+    builds_limit: paid ? -1 : 5,
   }
 }
 function demoAppStatus(args) {
   const ids = Array.isArray(args.p_local_ids) ? args.p_local_ids : null
-  const expired = demoOffer() === "expire"
-  const rows = ids
-    ? ids
-        .slice(0, 1)
-        .map((i) => demoAppRow(i, "Boutique Lumière", expired ? 9 : 2))
-    : [
-        demoAppRow("demo-a", "Boutique Lumière", 2),
-        demoAppRow("demo-b", "Blog de l’Atelier", 11),
-      ]
   const paid = ["standard", "pro"].includes(demoOffer())
+  const d = demoApps()
+  // Sans liste (onglet Offre et usage) : autant d'applications que le compteur (la 3e, en trop, verrouillée).
+  const all = [
+    { ...demoAppRow("demo-a", "Boutique Lumière", 2), status: "active" },
+    { ...demoAppRow("demo-b", "Caisse Lumière", 11, "project", "windows"), status: "active", builds_month: 1 },
+    { ...demoAppRow("demo-c", "Agenda Lumière", 30), status: "plan", builds_month: 0 },
+  ]
+  const rows = ids
+    ? paid || d.shown ? ids.slice(0, 1).map((i) => demoAppRow(i, "Boutique Lumière", 2)) : []
+    : all.slice(0, paid ? 3 : d.used)
   return {
     ok: true,
-    plan: paid ? "standard" : "free",
-    plan_name: paid ? "Standard" : "Gratuit",
+    plan: paid ? "pro" : "free",
+    plan_name: paid ? "Pro" : "Gratuit",
     admin: false,
-    trial_days: paid ? 0 : 7,
-    limit: paid ? 10 : 2,
-    used: paid ? 3 : ids ? (expired ? 2 : 1) : 2,
-    source_import: paid,
+    trial_days: 0,
+    limit: paid ? 50 : 2,
+    used: paid ? 3 : d.used,
+    lifetime: !paid,
+    builds_limit: paid ? -1 : 5,
+    source_import: true,
     apps: Object.fromEntries(rows.map((r) => [r.local_id, r])),
   }
 }

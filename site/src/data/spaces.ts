@@ -24,12 +24,28 @@ export type Space = {
   details?: { title: string; items: string[] }
   /** #072 : avec l'offre Gratuite, les fonctions sans offre ne sont ouvertes que pendant un essai (App Builder). */
   trial?: { tag: string; lead: string }
+  /** #087 : limites propres à l'espace, offre par offre (App Builder et Desktop Builder : 2 applications gratuites). */
+  limits?: { free: string; pro: string; perks: string[] }
 }
 
 /** Sites surveillés par offre (catalogue des offres de NEXORA). */
 const MONITORS = {
   free: (FALLBACK as Record<string, { limits: { monitors: number } }>).free.limits.monitors,
   pro: (FALLBACK as Record<string, { limits: { monitors: number } }>).pro.limits.monitors,
+}
+
+/** #087 : applications de l'offre Gratuite et de Pro, App Builder et Desktop Builder confondus (catalogue des offres). */
+const APP_FB = FALLBACK as Record<string, { limits: Record<string, number> }>
+const APP_LIMITS = {
+  free: `${APP_FB.free.limits.apps} applications au total, App Builder et Desktop Builder confondus, applications supprimées comprises ; ${APP_FB.free.limits.builds_per_app_month} constructions par application et par mois.`,
+  pro: `Jusqu’à ${APP_FB.pro.limits.apps} applications, sans limite de constructions par application.`,
+  perks: [
+    `Jusqu’à ${APP_FB.pro.limits.apps} applications Android ou Windows`,
+    `Constructions sans limite par application (${APP_FB.pro.limits.builds_month} par mois au total)`,
+    "Dev Lab complet pour modifier le code de tes applications",
+    "Studio 3D et NEX-DESIGN complets pour tes visuels et tes fiches",
+    "Assistance prioritaire",
+  ],
 }
 
 export const SPACES: Space[] = [
@@ -170,20 +186,22 @@ export const SPACES: Space[] = [
     tagline: "Application Android signée, PWA, notifications push, fiche Play Store et publication.",
     h1: ["Ton site devient", "une app Android."],
     lead: "Donne l’adresse de ton site : NEXORA construit l’application avec son icône, son écran de démarrage et ses notifications, prépare la fiche Play Store et vérifie que tout est prêt avant la publication.",
-    plan: "pro",
-    planNote: "Inclus dans Pro ; ouvert pendant ton essai de 24 h",
+    // #087 : tout l'App Builder avec l'offre Gratuite, pour 2 applications au total (avec le Desktop Builder).
+    plan: "free",
+    planNote: "2 applications gratuites, Android ou Windows ; 5 constructions par application et par mois",
+    limits: APP_LIMITS,
     features: [
-      { icon: "android", title: "APK et AAB signés", text: "Une vraie application Android qui affiche ton site, signée avec ta clé.", plan: "pro" },
+      { icon: "android", title: "APK et AAB signés", text: "Une vraie application Android qui affiche ton site, signée avec ta clé." },
       { icon: "phone", title: "Aperçu fidèle", text: "L’écran d’accueil et l’application simulés sur iPhone, Pixel, Galaxy et les autres surcouches." },
-      { icon: "bell", title: "Notifications push", text: "Envoie des notifications à tes utilisateurs, même application fermée, rangées par catégorie ; ta page reçoit aussi les messages.", plan: "pro" },
+      { icon: "bell", title: "Notifications push", text: "Envoie des notifications à tes utilisateurs, même application fermée, rangées par catégorie ; ta page reçoit aussi les messages." },
       // #073 : messagerie des applications (Push.java, section « Messagerie et appels » de l'App Builder).
-      { icon: "phone", title: "Messagerie et appels", text: "Pour une app comme WhatsApp : conversations empilées, réponse depuis la notification, appels entrants en plein écran et jeton relié au compte.", plan: "pro" },
+      { icon: "phone", title: "Messagerie et appels", text: "Pour une app comme WhatsApp : conversations empilées, réponse depuis la notification, appels entrants en plein écran et jeton relié au compte." },
       { icon: "image", title: "Fiche Play Store", text: "Textes par langue rédigés avec l’IA, captures habillées, icône, bannière et politique de confidentialité." },
       { icon: "nxCheckCircle", title: "Prêt pour le Play Store", text: "Un score et chaque point à corriger, relié à sa section, avant d’envoyer." },
       { icon: "group", title: "Tests fermés", text: "12 testeurs pendant 14 jours : invitations, suivi et réponses pour l’accès à la production." },
-      { icon: "upload", title: "Publication et PWA", text: "Envoi direct sur le Play Store, déploiement progressif, et paquet d’application web installable.", plan: "pro" },
+      { icon: "upload", title: "Publication et PWA", text: "Envoi direct sur le Play Store, déploiement progressif, et paquet d’application web installable." },
       { icon: "sync", title: "Réglages à distance", text: "Propose ou impose la nouvelle version aux anciennes installations." },
-      { icon: "nxChart", title: "Statistiques et plantages", text: "Installations actives, ouvertures, taux sans plantage et erreurs expliquées par l’IA.", plan: "pro" },
+      { icon: "nxChart", title: "Statistiques et plantages", text: "Installations actives, ouvertures, taux sans plantage et erreurs expliquées par l’IA." },
     ],
     details: {
       title: "Vérifié avant la publication",
@@ -294,8 +312,10 @@ export const SPACES: Space[] = [
     tagline: "Installateur, version portable, MSI, mises à jour automatiques, Microsoft Store et winget.",
     h1: ["Ton site devient", "un logiciel Windows."],
     lead: "Un site, un dossier de site ou un projet de bureau devient un logiciel installable : installateur, version portable, signature, mises à jour automatiques et distribution, avec un aperçu sur un vrai PC Windows 11.",
-    plan: "pro",
-    planNote: "Inclus dans Pro ; ouvert pendant ton essai de 24 h",
+    // #087 : tout le Desktop Builder avec l'offre Gratuite, pour 2 applications au total (avec l'App Builder).
+    plan: "free",
+    planNote: "2 applications gratuites, Android ou Windows ; 5 constructions par application et par mois",
+    limits: APP_LIMITS,
     features: [
       { icon: "download", title: "Installateur et portable", text: "Installateur, version portable, ZIP et MSI, pour x64 et ARM64." },
       { icon: "display", title: "Aperçu sur Windows 11", text: "Ta fenêtre, l’installateur, le menu Démarrer et la barre des tâches, avant même de construire." },

@@ -63,20 +63,22 @@ export async function status(force = false) {
   return pending;
 }
 
-// Offres proposées : lignes de la table plans si elles sont migrées (standard présente), sinon le catalogue.
+// Offres proposées : lignes de la table plans si elles sont migrées, sinon le catalogue. NEXORA #087 : repère
+// « pro » avec ses permissions (l'offre Standard, retirée de la vente au #076, n'est plus parmi les offres actives :
+// l'ancien repère renvoyait toujours le catalogue).
 export async function plans() {
   try {
     const { data, error } = await sb.from('plans').select('*').eq('active', true).order('sort');
-    if (!error && data && data.some((p) => p.id === 'standard')) {
+    if (!error && data && data.some((p) => p.id === 'pro' && p.perms && Object.keys(p.perms).length)) {
       return data.map((p) => ({ ...(FALLBACK[p.id] || {}), ...p, limits: { ...((FALLBACK[p.id] || {}).limits || {}), ...(p.limits || {}) }, perms: { ...((FALLBACK[p.id] || {}).perms || {}), ...(p.perms || {}) } }));
     }
   } catch { /* hors ligne : catalogue */ }
   return PLAN_ORDER.map((id) => FALLBACK[id]);
 }
 
-// Essais des applications de l'App Builder : { ok, plan, trial_days, limit, used, apps: { id: état } } ou null
-// (serveurs sans la migration, ou pas de compte).
-// ids : applications de l'App Builder de ce PC (null : toutes celles du compte, pour l'onglet Offre et usage).
+// Applications du compte (App Builder et, depuis le #087, Desktop Builder) : { ok, plan, trial_days, limit, used,
+// lifetime, builds_limit, apps: { id: état } } ou null (serveurs sans la migration, ou pas de compte).
+// ids : applications de ce PC (null : toutes celles du compte, pour l'onglet Offre et usage).
 export async function appTrials(force = false, ids = null) {
   if (!cloud.user) return null;
   if (!force && trials && trials.uid === cloud.user.id && Date.now() - trialsAt < 60000) return trials;
@@ -89,11 +91,15 @@ export async function appTrials(force = false, ids = null) {
 }
 export function trialsCached() { return trials && cloud.user && trials.uid === cloud.user.id ? trials : null; }
 
-export async function claimApp(app) {
-  const kind = app.source && app.source.kind === 'url' ? 'url' : app.source && app.source.kind === 'project' ? 'project' : 'folder';
-  const { data, error } = await sb.rpc('nx_app_claim', {
-    p_local_id: app.id, p_name: app.appName || '', p_source_kind: kind, p_url: (app.source && app.source.url) || null, p_org: cloud.orgId || null,
-  });
+// Réserve une application sur le compte. platform : « android » (réglages de l'App Builder) ou « windows »
+// (logiciel du Desktop Builder, NEXORA #087).
+export async function claimApp(app, platform = 'android') {
+  const src = app.source || {};
+  const kind = src.kind === 'url' ? 'url' : src.kind === 'project' || src.kind === 'electron' ? 'project' : 'folder';
+  const args = { p_local_id: app.id, p_name: (platform === 'windows' ? app.name : app.appName) || '', p_source_kind: kind, p_url: src.url || null, p_org: cloud.orgId || null };
+  let { data, error } = await sb.rpc('nx_app_claim', { ...args, p_platform: platform });
+  // Serveurs sans la migration du #087 : fonction sans la plateforme.
+  if (error && missing(error)) ({ data, error } = await sb.rpc('nx_app_claim', args));
   if (error) throw error;
   if (data && data.ok && trials) { trials.apps = { ...trials.apps, [app.id]: data }; trialsAt = 0; }
   return data;

@@ -1,5 +1,7 @@
 import type { CSSProperties, ReactNode } from "react"
 import { Reveal } from "../lib/motion"
+import { cn } from "../lib/utils"
+import { Backdrop } from "./Backdrop"
 
 /** Titre découpé en mots qui montent l'un après l'autre quand la section apparaît. */
 export function Words({ text, from = 0 }: { text: string; from?: number }) {
@@ -19,9 +21,9 @@ export function Words({ text, from = 0 }: { text: string; from?: number }) {
 }
 
 /**
- * En-tête de section éditorial (#069) : repère (numéro et nom de la section) sur un filet qui se trace à
- * l'apparition, titre mot à mot, chapeau à droite du titre (`split`), dessous (`left`) ou centré (`center`).
- * Le second ton du titre (comme la carte « Bonjour » de NEXORA) est réservé aux titres de page (h1).
+ * En-tête de section. #085 (« Néon ») : repère à la couleur d'accent (numéro, nom, filet qui se trace), titre mot à
+ * mot dont le second ton est gris pour les h2 et à la couleur d'accent pour les titres de page (h1 ; #088 : rose du logo) ; chapeau à droite (`split`),
+ * dessous (`left`) ou centré (`center`).
  */
 export function SectionHead({
   index,
@@ -30,6 +32,7 @@ export function SectionHead({
   lead,
   align = "split",
   as = "h2",
+  className = "",
   children,
 }: {
   index?: string
@@ -38,35 +41,51 @@ export function SectionHead({
   lead?: ReactNode
   align?: "split" | "left" | "center"
   as?: "h1" | "h2"
+  className?: string
   children?: ReactNode
 }) {
   const H = as
   const n = title[0].split(" ").length
+  const split = align === "split"
   return (
-    <Reveal className={`section-head sh-${align}${as === "h1" ? " sh-page" : ""}`}>
-      <span className="sh-mark">
-        {index && <span className="sh-index">{index}</span>}
-        <span className="sh-label">{eyebrow}</span>
-        <i className="sh-rule" aria-hidden="true" />
-      </span>
-      <H className={`${as === "h1" ? "h-1" : "h-2"} words`}>
-        <Words text={title[0]} />{" "}
-        {/* #074 : second ton des titres de page en dégradé vert, rose, violet (un seul bloc : le dégradé ne
-            traverse pas les mots animés séparément). */}
-        {as === "h1" ? (
-          <span className="tone grad-text">{title[1]}</span>
-        ) : (
-          <span className="tone">
+    <Reveal
+      className={cn(
+        "mb-14 md:mb-20",
+        split && "grid items-end gap-x-16 gap-y-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]",
+        align === "center" && "mx-auto max-w-3xl text-center",
+        align === "left" && "max-w-3xl",
+        className,
+      )}
+    >
+      <div>
+        <span className={cn("eyebrow mb-5", align === "center" && "justify-center")}>
+          {index && <span className="idx">{index} /</span>}
+          {eyebrow}
+          <i className="rule" aria-hidden="true" />
+        </span>
+        <H className={cn(as === "h1" ? "title-1" : "title-2", "words")}>
+          <Words text={title[0]} />{" "}
+          <span className={as === "h1" ? "tone-neon" : "tone"}>
             <Words text={title[1]} from={n} />
           </span>
-        )}
-      </H>
+        </H>
+      </div>
       {(lead || children) && (
-        <div className="sh-side">
-          {lead && <p className="lead">{lead}</p>}
-          {children}
+        <div className={cn(!split && "mt-6", align === "center" && "flex flex-col items-center")}>
+          {lead && <p className={cn("lead", align === "center" && "mx-auto max-w-2xl")}>{lead}</p>}
+          {children && <div className={cn(lead && "mt-5")}>{children}</div>}
         </div>
       )}
     </Reveal>
+  )
+}
+
+/** En-tête des pages intérieures (#086) : décor technique (quadrillage éclairé, halos qui dérivent, circuit), titre de page. */
+export function PageHero({ children, className = "", capture = "haut" }: { children: ReactNode; className?: string; capture?: string }) {
+  return (
+    <section className={cn("relative overflow-hidden pt-16 pb-14 md:pt-24 md:pb-20", className)} data-capture={capture} data-light>
+      <Backdrop variant="page" />
+      <div className="wrap relative">{children}</div>
+    </section>
   )
 }

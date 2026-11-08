@@ -6,6 +6,9 @@
 //      offres, quotas atomiques, essais des applications, limites des données, fonctions soumises à l'offre.
 //      Puis migration des prix du #051 (20261106000001_prix_offres.sql) : anciens prix corrigés,
 //      prix retouché conservé, second passage sans effet.
+//   3. NEXORA #087 : migration 20261108000006_offre_gratuite_applications.sql rejouée deux fois par-dessus :
+//      Gratuit à 2 applications au total (Android ou Windows, supprimées comprises), 5 constructions par
+//      application et par mois (nx_app_build), anciennes versions refusées, Pro à 18 $ et 180 $, statistiques.
 // PGlite n'est pas une dépendance du dépôt : l'installer à part, par exemple
 //   mkdir -p /tmp/pgtest && cd /tmp/pgtest && echo '{}' > package.json && pnpm add @electric-sql/pglite@0.3
 // puis : node scripts/test-offres.mjs (dossier réglable par PGLITE_DIR). Sans PGlite, la partie 2 est sautée.
@@ -39,8 +42,9 @@ async function gates() {
       handlers[ch] = fn
     },
   }
-  const server = { status: null, use: null, mode: "ok" }
+  const server = { status: null, use: null, app: null, mode: "ok" }
   const calls = []
+  const bodies = []
   const json = (status, body) => ({
     ok: status < 300,
     status,
@@ -63,11 +67,17 @@ async function gates() {
     if (/nx_plan_status/.test(url)) return json(200, server.status)
     if (/nx_use_feature/.test(url))
       return json(200, server.use(JSON.parse(o.body)))
+    // NEXORA #087 : constructions comptées par application.
+    if (/nx_app_build/.test(url)) {
+      bodies.push(JSON.parse(o.body))
+      return server.app ? json(200, server.app(JSON.parse(o.body))) : json(404, { code: "PGRST202", message: "not found" })
+    }
     return json(500, {})
   }
   plan.guardIpc(ipcMain, { fetchImpl })
   for (const ch of [
     "android:build",
+    "desktop:build",
     "dev:open",
     "tunnel:start",
     "ai:chat",
@@ -97,10 +107,10 @@ async function gates() {
   )
   let r = await inv("lab:fetch")
   ok(r === "ran:lab:fetch", "canal libre non contrôlé")
-  r = await inv("android:build")
+  r = await inv("android:build", { nxApp: { id: "a1", name: "App" } })
   ok(
-    /offre Pro/.test(r) && sent.at(-1)[0] === "plan:blocked",
-    "invité : APK refusé, événement plan:blocked",
+    /demande un compte NEXORA \(gratuit\)/.test(r) && sent.at(-1)[0] === "plan:blocked",
+    "invité : APK refusé (compte gratuit demandé, #087), événement plan:blocked",
     r,
   )
   // NEXORA #059 : assistant IA (clé de l'utilisateur) libre. #076 : tout le Dev Lab dans Pro.
@@ -160,10 +170,35 @@ async function gates() {
   )
   r = await inv("android:build")
   ok(
-    /offre Pro/.test(r),
-    "Gratuit connecté : APK refusé par le serveur",
+    /offre Pro/.test(r) && !calls.some((c) => /nx_app_build/.test(c)),
+    "Gratuit connecté, sans identifiant d’application : contrôle par nx_use_feature (refus du serveur)",
     r,
   )
+  // NEXORA #087 : construction comptée par application (2 applications au total, 5 constructions par mois).
+  server.app = (b) =>
+    b.p_local_id === "plein"
+      ? { ok: false, reason: "quota", need: "pro", limit: 5, used: 5, message: "« Plein » a déjà utilisé ses 5 constructions de ce mois-ci." }
+      : { ok: true, plan: "free", app_builds_used: 1, app_builds_limit: 5, remaining: 4 }
+  r = await inv("android:build", { appId: "com.ex.app", nxApp: { id: "a1", name: "Mon app", kind: "url", url: "https://ex.com/" } })
+  ok(
+    r === "ran:android:build" && bodies.at(-1).p_local_id === "a1" && bodies.at(-1).p_platform === "android" &&
+      bodies.at(-1).p_feature === "apk" && bodies.at(-1).p_url === "https://ex.com/",
+    "Gratuit connecté : APK accepté par nx_app_build (application et plateforme transmises)",
+    bodies.at(-1),
+  )
+  r = await inv("desktop:build", { app: { name: "Logiciel" }, nxApp: { id: "w1", name: "Logiciel", kind: "electron" } })
+  ok(
+    r === "ran:desktop:build" && bodies.at(-1).p_platform === "windows" && bodies.at(-1).p_feature === "desktop_builder" && bodies.at(-1).p_source_kind === "folder",
+    "Gratuit connecté : logiciel Windows compté comme application Windows",
+    bodies.at(-1),
+  )
+  r = await inv("android:build", { nxApp: { id: "plein", name: "Plein" } })
+  ok(
+    /5 constructions de ce mois-ci/.test(r) && sent.at(-1)[0] === "plan:blocked" && sent.at(-1)[1].reason === "quota",
+    "Gratuit connecté : 6e construction de l’application refusée, fenêtre de l’offre",
+    r,
+  )
+  server.app = null
   r = await inv("tunnel:start")
   ok(
     /Dev Lab .* fait partie de l’offre Pro/.test(r),
@@ -207,7 +242,7 @@ async function gates() {
     token: `${tok}c`,
     email: "a@b.c",
   })
-  r = await inv("android:build")
+  r = await inv("android:build", { nxApp: { id: "a1" } })
   ok(
     r === "ran:android:build",
     "serveurs sans migration : APK selon l’abonnement (ancienne offre Standard lue comme Pro)",
@@ -219,8 +254,8 @@ async function gates() {
     "serveurs sans migration : offre lue dans l’abonnement",
   )
   await inv("mon:cloud-session", null)
-  r = await inv("android:build")
-  ok(/offre Pro/.test(r), "déconnexion : retour à l’offre Gratuite")
+  r = await inv("android:build", { nxApp: { id: "a1" } })
+  ok(/compte NEXORA/.test(r), "déconnexion : retour à l’offre Gratuite (compte demandé pour construire)", r)
 }
 
 // ---------- 2. Migration sur PGlite ----------
@@ -721,6 +756,141 @@ insert into plans (id, name, price_month_cents, price_year_cents, currency, sort
   )
   r = await rpc(U.free, "nx_use_feature", "'ai'")
   ok(r.ok, "réajustements : requête IA acceptée après le quota d’origine (illimité)", r)
+
+  // ---------- 3. NEXORA #087 : Gratuit à 2 applications, constructions par application, Pro à 18 $ ----------
+  console.log("\n— Migration 20261108000006_offre_gratuite_applications.sql (PGlite)")
+  const MIG_087 = fs.readFileSync(
+    path.join(ROOT, "supabase/migrations/20261108000006_offre_gratuite_applications.sql"),
+    "utf8",
+  )
+  await ex("create table app_config (key text primary key, value jsonb, description text, updated_at timestamptz default now(), updated_by uuid)")
+  await ex(MIG_087)
+  // Retouches « du back office » entre les deux passages : elles doivent rester.
+  await q("update plans set price_year_cents = 17000 where id = 'pro'")
+  await q("update app_config set value = to_jsonb('aide@exemple.com'::text) where key = 'support_email'")
+  await ex(MIG_087)
+  const o87 = Object.fromEntries((await q("select id, price_month_cents as m, price_year_cents as y, limits, perms, features, description from plans")).map((p) => [p.id, p]))
+  ok(
+    o87.free.limits.apps === 2 && o87.free.limits.apps_lifetime === 1 && o87.free.limits.builds_per_app_month === 5 &&
+      o87.free.limits.builds_month === 10 && o87.free.limits.push_month === 1000 && o87.free.limits.app_trial_days === 0,
+    "Gratuit : 2 applications à vie, 5 constructions par application, 10 par mois, 1 000 envois push",
+    o87.free.limits,
+  )
+  ok(
+    ["apk", "pwa", "source_import", "play_publish", "push", "inapp", "automation", "custom_notifications", "messaging_events", "integrations", "desktop_builder"].every((k) => o87.free.perms[k] === true) &&
+      !o87.free.perms.devlab && !o87.free.perms.api_sdk && !o87.free.perms.studio_advanced,
+    "Gratuit : tout l’App Builder et le Desktop Builder, Dev Lab et outils avancés toujours dans Pro",
+  )
+  ok(
+    o87.pro.m === 1800 && o87.pro.y === 17000 && o87.pro.limits.builds_per_app_month === -1 && o87.pro.limits.apps_lifetime === 0,
+    "Pro : 18 $ (au premier passage), prix retouché ensuite conservé, sans limite par application",
+    `${o87.pro.m}/${o87.pro.y}`,
+  )
+  ok(
+    o87.free.features.includes("2 applications Android ou Windows au total, applications supprimées comprises") &&
+      o87.pro.features.some((f) => /50 applications Android ou Windows/.test(f)) &&
+      !JSON.stringify([o87.free.features, o87.pro.features, o87.free.description]).match(/Standard|7 jours|Dev Lab gratuit/),
+    "textes des offres réécrits une seule fois, sans Standard ni essai de 7 jours",
+  )
+  ok(
+    (await q("select value #>> '{}' as v from app_config where key = 'support_email'"))[0].v === "aide@exemple.com",
+    "adresse de contact posée au premier passage, retouche conservée",
+  )
+  await q("update plans set price_year_cents = 18000 where id = 'pro'")
+
+  const addUser = async (id, org, name) => {
+    await q("insert into auth.users values ($1, $2)", [id, `${name}@ex.com`])
+    await q("insert into profiles (id, email) values ($1, $2)", [id, `${name}@ex.com`])
+    await q("insert into organizations (id, name, personal, owner_id) values ($1, $2, true, $3)", [org, name, id])
+    await q("insert into organization_members values ($1, $2, 'owner')", [org, id])
+  }
+  const F2 = "55555555-5555-5555-5555-555555555555", OF2 = "aaaaaaaa-0000-0000-0000-000000000005"
+  const F3 = "66666666-6666-6666-6666-666666666666", OF3 = "aaaaaaaa-0000-0000-0000-000000000006"
+  await addUser(F2, OF2, "gratuit2")
+  await addUser(F3, OF3, "gratuit3")
+  const build = (u, id, feature = "apk", platform = "android") =>
+    rpc(u, "nx_app_build", `'${id}', '${feature}', 'App ${id}', 'url', 'https://example.com/', '${platform}'`)
+
+  r = await rpc(F2, "nx_use_feature", "'apk', 1, true")
+  ok(r.ok && r.limit === 10, "Gratuit : construction autorisée (vérification), 10 par mois au plus", r)
+  r = await rpc(F2, "nx_use_feature", "'apk'")
+  ok(!r.ok && r.reason === "update" && /comptées par application \(5 par mois\)/.test(r.message), "Gratuit : construction hors nx_app_build refusée (ancienne version de NEXORA)", r)
+  r = await rpc(F2, "nx_use_feature", "'desktop_builder'")
+  ok(!r.ok && r.reason === "update", "Gratuit : logiciel Windows hors nx_app_build refusé aussi", r.reason)
+  r = await rpc(F2, "nx_use_feature", "'pwa'")
+  ok(r.ok && r.remaining === -1, "paquet PWA : n’est plus une construction", r)
+  r = await build(F2, "w1", "desktop_builder", "windows")
+  ok(r.ok && r.platform === "windows" && r.app_builds_used === 1 && r.app_builds_limit === 5 && r.remaining === 4, "Gratuit : 1re application (Windows) réservée à sa première construction", r)
+  for (let i = 0; i < 4; i += 1) r = await build(F2, "w1", "desktop_builder", "windows")
+  ok(r.ok && r.app_builds_used === 5 && r.remaining === 0, "Gratuit : 5 constructions de la même application", r)
+  r = await build(F2, "w1", "desktop_builder", "windows")
+  ok(!r.ok && r.reason === "quota" && r.limit === 5 && r.used === 5 && /5 constructions de ce mois-ci/.test(r.message), "Gratuit : 6e construction de l’application refusée", r)
+  r = await build(F2, "a1")
+  ok(r.ok && r.platform === "android" && r.app_builds_used === 1, "Gratuit : 2e application (Android), son propre compteur", r)
+  r = await rpc(F2, "nx_app_claim", "'a3', 'Troisième', 'folder', null")
+  ok(!r.ok && r.reason === "quota" && r.used === 2 && /tes 2 applications .*Android et Windows confondus, applications supprimées comprises/.test(r.message), "Gratuit : 3e application refusée (Android ou Windows confondus)", r)
+  r = await build(F2, "a3")
+  ok(!r.ok && r.reason === "quota", "Gratuit : construction d’une 3e application refusée", r.reason)
+  await rpc(F2, "nx_app_release", "'a1'")
+  r = await rpc(F2, "nx_app_claim", "'a3', 'Troisième', 'url', 'https://example.com/'")
+  ok(!r.ok && r.reason === "quota", "Gratuit : application supprimée toujours comptée (pas de nouvelle place)", r)
+  r = await build(F2, "a1")
+  ok(r.ok && r.app_builds_used === 2, "Gratuit : application supprimée reprise à la construction, compteur gardé", r)
+  r = await rpc(F2, "nx_app_status")
+  ok(
+    r.used === 2 && r.limit === 2 && r.lifetime === true && r.builds_limit === 5 && r.apps.w1.platform === "windows" &&
+      r.apps.w1.builds_month === 5 && r.apps.a1.builds_month === 2 && r.apps.a1.status === "active" && !r.apps.a1.deleted,
+    "nx_app_status : compteur à vie, plateformes et constructions du mois par application",
+    r,
+  )
+  r = await rpc(F2, "nx_plan_status")
+  ok(r.usage.apps === 2 && r.usage.builds_month === 7 && r.limits.builds_per_app_month === 5, "nx_plan_status : 2 applications, 7 constructions comptées au compte", r.usage)
+  await q(`update plans set limits = limits || '{"builds_month": 8}' where id = 'free'`)
+  r = await build(F2, "a1")
+  ok(r.ok && r.app_builds_used === 3, "quota du compte : 8e construction acceptée", r)
+  r = await build(F2, "a1")
+  ok(!r.ok && r.reason === "quota" && r.limit === 8, "quota du compte atteint : construction refusée", r)
+  r = await rpc(F2, "nx_app_status")
+  ok(r.apps.a1.builds_month === 3, "construction refusée par le compte : pas comptée pour l’application", r.apps.a1.builds_month)
+  await q(`update plans set limits = limits || '{"builds_month": 10}' where id = 'free'`)
+
+  // Applications créées avec Pro (ou pendant l'essai d'un jour), puis retour à l'offre Gratuite.
+  await q("insert into subscriptions (org_id, plan_id) values ($1, 'pro')", [OF3])
+  for (const id of ["p1", "p2", "p3"]) await build(F3, id)
+  r = await build(F3, "p3")
+  ok(r.ok && r.app_builds_limit === -1 && r.remaining === -1, "Pro : constructions sans limite par application", r)
+  r = await rpc(F3, "nx_use_feature", "'apk'")
+  ok(r.ok, "Pro : construction directe toujours acceptée (anciennes versions)", r)
+  await q("delete from subscriptions where org_id = $1", [OF3])
+  r = await rpc(F3, "nx_app_status")
+  ok(r.apps.p1.status === "active" && r.apps.p2.status === "active" && r.apps.p3.status === "plan" && r.used === 3, "retour au Gratuit : les 2 premières applications restent, la 3e est verrouillée", r)
+  r = await build(F3, "p3")
+  ok(!r.ok && r.reason === "plan" && /dépasse les 2 applications/.test(r.message), "application verrouillée : construction refusée", r)
+  r = await build(F3, "p1")
+  ok(r.ok && r.app_builds_used === 2 && r.app_builds_limit === 5, "retour au Gratuit : 5 constructions par mois pour les applications gardées", r)
+  await rpc(F3, "nx_app_release", "'p1'")
+  r = await rpc(F3, "nx_app_status")
+  ok(r.apps.p3.status === "plan", "supprimer une application gardée n’en débloque pas une autre", r.apps.p3.status)
+
+  r = await rpc(U.admin, "nx_app_build", "'adm1', 'apk', 'Admin', 'url', null, 'android'")
+  ok(r.ok && r.app_builds_limit === -1, "administrateur : aucune limite", r)
+  await ex("reset role; select set_config('request.jwt.claim.sub', '', false)")
+  r = (await q("select public.nx_app_build('x', 'apk') as r"))[0].r
+  ok(!r.ok && r.reason === "auth", "sans compte : construction refusée", r)
+  r = await rpc(F2, "nx_app_build", "'a1', 'nimporte'")
+  ok(!r.ok && r.reason === "unknown", "fonction inconnue refusée", r)
+  const priv = (await q(
+    "select has_function_privilege('anon', 'public.nx_app_build(text,text,text,text,text,text)', 'execute') as anon, has_function_privilege('authenticated', 'public.nx_app_build(text,text,text,text,text,text)', 'execute') as auth, has_function_privilege('authenticated', 'public.nx_app_used(uuid,text)', 'execute') as used, (select count(*) from pg_proc where proname = 'nx_app_claim')::int as claims",
+  ))[0]
+  ok(!priv.anon && priv.auth && !priv.used && priv.claims === 1, "droits : nx_app_build réservé aux comptes, nx_app_used interne, une seule nx_app_claim", priv)
+
+  e = await asErr(F2, "select * from public.app_insights_register('com.ex.un', 'Un')")
+  ok(e === null, "Gratuit : statistiques et plantages d’une 1re application", e)
+  await as(F2, "select * from public.app_insights_register('com.ex.deux', 'Deux')")
+  e = await asErr(F2, "select * from public.app_insights_register('com.ex.un', 'Un, renommée')")
+  ok(e === null, "Gratuit : application déjà suivie, réinscrite sans compter", e)
+  e = await asErr(F2, "select * from public.app_insights_register('com.ex.trois', 'Trois')")
+  ok(e && /suit les statistiques et les plantages de 2 applications/.test(e), "Gratuit : statistiques d’une 3e application refusées", e)
   return true
 }
 

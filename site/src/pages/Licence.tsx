@@ -1,12 +1,20 @@
 // NEXORA #076 : « Ma licence ». NEXORA Devs Toolbox ne démarre qu'avec une licence validée par le serveur : ici,
 // l'utilisateur crée son compte ou s'y connecte, obtient sa clé gratuite, voit ses appareils et son essai, passe à
 // Pro (paiement dans le navigateur) et gère son abonnement. #/licence/verifier : vérification publique d'une clé.
-import { useEffect, useState, type FormEvent } from "react"
-import { SectionHead } from "../components/SectionHead"
+// #085 : mise en forme « Néon » avec les composants shadcn/ui (Tabs, Input, Label, Button, Badge) ; logique inchangée.
+import { useEffect, useState, type FormEvent, type ReactNode } from "react"
+import { PageHero, SectionHead } from "../components/SectionHead"
 import { DownloadButton } from "../components/Download"
+import { Badge } from "../components/ui/badge"
+import { Button } from "../components/ui/button"
+import { Input } from "../components/ui/input"
+import { Label } from "../components/ui/label"
+import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs"
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
-import { money, useRemote } from "../lib/remote"
+import { money, usePayments, useRemote } from "../lib/remote"
+import { cn } from "../lib/utils"
 import {
   KEY_RE, myLicence, pay, recover, releaseDevice, session, sessionFromLink, signIn, signOut, signUp, verifyKey,
   type Licence as Lic, type Session, type Verify,
@@ -14,6 +22,28 @@ import {
 
 const date = (iso?: string | null, time = false) =>
   iso ? new Date(iso).toLocaleString("fr-FR", time ? { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" } : { day: "numeric", month: "long", year: "numeric" }) : ""
+
+const card = "rounded-[22px] border border-white/[0.08] bg-card p-6 md:p-7"
+
+function Msg({ kind, children }: { kind: "ok" | "bad"; children: ReactNode }) {
+  return (
+    <p className={cn("rounded-xl border px-3.5 py-2.5 text-[13.5px]", kind === "ok" ? "border-brand-blue/35 bg-brand-blue/[0.08] text-brand-blue" : "border-destructive/40 bg-destructive/10 text-[#ff9c9c]")} role="status">
+      {children}
+    </p>
+  )
+}
+
+function Field({ id, label, icon, children }: { id: string; label: string; icon: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <Icon name={icon} size={16} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted-foreground" />
+        {children}
+      </div>
+    </div>
+  )
+}
 
 function AuthCard({ onSession }: { onSession: (s: Session) => void }) {
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login")
@@ -46,34 +76,52 @@ function AuthCard({ onSession }: { onSession: (s: Session) => void }) {
   }
 
   return (
-    <form className="lic-card lic-auth" onSubmit={submit} noValidate>
+    <form className="panel-hi relative flex flex-col gap-5 overflow-hidden p-6 md:p-8" onSubmit={submit} noValidate>
+      <i className="halo top-[-140px] right-[-80px] h-[240px] w-[280px] opacity-[0.12]" aria-hidden="true" />
       {mode !== "forgot" ? (
-        <div className="lic-tabs" role="tablist" aria-label="Compte NEXORA">
-          <button type="button" role="tab" aria-selected={mode === "login"} onClick={() => { setMode("login"); setMsg(null) }}>Connexion</button>
-          <button type="button" role="tab" aria-selected={mode === "signup"} onClick={() => { setMode("signup"); setMsg(null) }}>Créer un compte</button>
-        </div>
+        <Tabs
+          value={mode}
+          onValueChange={(v) => {
+            setMode(v as "login" | "signup")
+            setMsg(null)
+          }}
+          className="relative"
+        >
+          <TabsList aria-label="Compte NEXORA" className="w-full">
+            <TabsTrigger value="login">Connexion</TabsTrigger>
+            <TabsTrigger value="signup">Créer un compte</TabsTrigger>
+          </TabsList>
+        </Tabs>
       ) : (
-        <h2 className="lic-h">Mot de passe oublié</h2>
+        <h2 className="relative text-[20px] font-semibold">Mot de passe oublié</h2>
       )}
-      <label className="lic-field">
-        <span>Adresse e-mail</span>
-        <span className="lic-input"><Icon name="mail" size={16} /><input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="toi@exemple.com" /></span>
-      </label>
+      <Field id="lic-email" label="Adresse e-mail" icon="mail">
+        <Input id="lic-email" className="pl-10" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="toi@exemple.com" />
+      </Field>
       {mode !== "forgot" && (
-        <label className="lic-field">
-          <span>Mot de passe</span>
-          <span className="lic-input"><Icon name="lock" size={16} /><input type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} required minLength={mode === "signup" ? 8 : undefined} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={mode === "signup" ? "8 caractères minimum" : ""} /></span>
-        </label>
+        <Field id="lic-pass" label="Mot de passe" icon="lock">
+          <Input
+            id="lic-pass"
+            className="pl-10"
+            type="password"
+            autoComplete={mode === "signup" ? "new-password" : "current-password"}
+            required
+            minLength={mode === "signup" ? 8 : undefined}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={mode === "signup" ? "8 caractères minimum" : ""}
+          />
+        </Field>
       )}
-      {msg && <p className={`lic-msg ${msg.kind}`} role="status">{msg.text}</p>}
-      <button className="btn btn-primary btn-lg lic-submit" type="submit" disabled={busy || !email.trim() || (mode !== "forgot" && !password)}>
+      {msg && <Msg kind={msg.kind}>{msg.text}</Msg>}
+      <Button size="lg" type="submit" className="relative w-full" disabled={busy || !email.trim() || (mode !== "forgot" && !password)}>
         {busy ? "Un instant…" : mode === "login" ? "Se connecter" : mode === "signup" ? "Créer mon compte et ma licence" : "Envoyer le lien"}
-      </button>
-      <p className="lic-foot">
+      </Button>
+      <p className="relative flex flex-wrap items-center justify-between gap-2 text-[13px] text-muted-foreground">
         {mode === "forgot" ? (
-          <button type="button" className="lic-link" onClick={() => { setMode("login"); setMsg(null) }}>Retour à la connexion</button>
+          <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setMode("login"); setMsg(null) }}>Retour à la connexion</button>
         ) : (
-          <button type="button" className="lic-link" onClick={() => { setMode("forgot"); setMsg(null) }}>Mot de passe oublié ?</button>
+          <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setMode("forgot"); setMsg(null) }}>Mot de passe oublié ?</button>
         )}
         <span>Même compte que dans NEXORA.</span>
       </p>
@@ -85,24 +133,44 @@ function KeyCard({ lic }: { lic: Lic }) {
   const [copied, setCopied] = useState(false)
   const pro = lic.plan === "pro" && !lic.trial
   return (
-    <Reveal className="lic-card lic-key">
-      <div className="lic-key-top">
-        <span className={`plan-tag ${pro || lic.trial ? "pro" : "free"}`}>{lic.trial ? "Essai Pro" : lic.plan_name || (pro ? "Pro" : "Gratuit")}</span>
-        {lic.status !== "active" ? <span className="lic-state bad">Licence révoquée</span> : <span className="lic-state ok"><Icon name="check" size={13} stroke={2.6} />Active</span>}
+    <Reveal className="panel-hi relative overflow-hidden p-6 md:p-8 lg:col-span-2">
+      <i className="halo top-[-160px] left-[30%] h-[260px] w-[420px] opacity-[0.12]" aria-hidden="true" />
+      <div className="relative flex flex-wrap items-center justify-between gap-3">
+        <Badge variant={pro || lic.trial ? "solid" : "default"}>{lic.trial ? "Essai Pro" : lic.plan_name || (pro ? "Pro" : "Gratuit")}</Badge>
+        {lic.status !== "active" ? (
+          <span className="text-[13px] font-medium text-[#ff9c9c]">Licence révoquée</span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-brand-blue">
+            <i className="dot live ok" /> Active
+          </span>
+        )}
       </div>
-      <small className="lic-k">Ta clé de licence</small>
-      <code className="lic-code" aria-label="Clé de licence">{lic.key}</code>
-      <div className="lic-acts">
-        <button type="button" className="btn btn-ghost" onClick={() => { navigator.clipboard?.writeText(lic.key).then(() => { setCopied(true); window.setTimeout(() => setCopied(false), 1800) }) }}>
+      <small className="relative mt-6 block text-[12px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Ta clé de licence</small>
+      <code className="hud relative mt-3 block rounded-[4px] px-5 py-4 text-[clamp(16px,2.2vw,24px)] font-semibold tracking-[0.08em] break-all text-primary" aria-label="Clé de licence">
+        {lic.key}
+      </code>
+      <div className="relative mt-5 flex flex-wrap gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            navigator.clipboard?.writeText(lic.key).then(() => {
+              setCopied(true)
+              window.setTimeout(() => setCopied(false), 1800)
+            })
+          }}
+        >
           <Icon name={copied ? "check" : "copy"} size={16} /> {copied ? "Copiée" : "Copier la clé"}
-        </button>
-        <a className="btn btn-primary" href={`nexora://licence?key=${encodeURIComponent(lic.key)}`}>
-          <Icon name="external" size={16} /> Ouvrir NEXORA Devs Toolbox
-        </a>
+        </Button>
+        <Button asChild>
+          <a href={`nexora://licence?key=${encodeURIComponent(lic.key)}`}>
+            <Icon name="external" size={16} /> Ouvrir NEXORA Devs Toolbox
+          </a>
+        </Button>
       </div>
-      <p className="lic-note">
+      <p className="relative mt-5 text-[14px] text-muted-foreground">
         {lic.trial
-          ? `Ton premier jour est un essai complet de Pro, jusqu’au ${date(lic.trial_ends_at, true)}. Ensuite, l’offre Gratuite s’applique : Responsive Lab et Browser Lab restent entièrement ouverts.`
+          ? `Ton premier jour est un essai complet de Pro, jusqu’au ${date(lic.trial_ends_at, true)}. Ensuite, l’offre Gratuite s’applique : Responsive Lab et Browser Lab complets, et 2 applications Android ou Windows.`
           : lic.activated_at
             ? `Activée le ${date(lic.activated_at)}. NEXORA vérifie ta licence auprès du serveur à chaque démarrage.`
             : "Lance NEXORA Devs Toolbox et connecte-toi avec ce compte : la licence s’active toute seule. Tu peux aussi coller la clé."}
@@ -112,7 +180,8 @@ function KeyCard({ lic }: { lic: Lic }) {
 }
 
 function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
-  const { plans } = useRemote()
+  const { plans, supportEmail } = useRemote()
+  const payments = usePayments()
   const pro = plans.find((p) => p.id === "pro")
   const [period, setPeriod] = useState<"month" | "year">("month")
   const [busy, setBusy] = useState(false)
@@ -133,43 +202,74 @@ function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
 
   if (paid) {
     return (
-      <Reveal className="lic-card lic-plan paid" delay={80}>
-        <span className="lic-ic"><Icon name="nxCrown" size={20} /></span>
-        <h3>Offre Pro active</h3>
-        <p>
+      <Reveal className={cn(card, "flex flex-col gap-4")} delay={80}>
+        <span className="sp-ic solid">
+          <Icon name="nxCrown" size={20} />
+        </span>
+        <h3 className="text-[20px] font-semibold">Offre Pro active</h3>
+        <p className="text-[14.5px] text-muted-foreground">
           {lic.granted
             ? `Offerte par l’équipe NEXORA${lic.granted_until ? ` jusqu’au ${date(lic.granted_until)}` : ", sans date de fin"}.`
             : b && b.current_period_end
-            ? b.cancel_at_period_end
-              ? `Résiliée : Pro reste ouvert jusqu’au ${date(b.current_period_end)}, puis l’offre Gratuite s’applique.`
-              : `Abonnement ${b.period === "year" ? "annuel" : "mensuel"} renouvelé le ${date(b.current_period_end)}.`
-            : "Abonnement attribué par l’équipe NEXORA."}
+              ? b.cancel_at_period_end
+                ? `Résiliée : Pro reste ouvert jusqu’au ${date(b.current_period_end)}, puis l’offre Gratuite s’applique.`
+                : `Abonnement ${b.period === "year" ? "annuel" : "mensuel"} renouvelé le ${date(b.current_period_end)}.`
+              : "Abonnement attribué par l’équipe NEXORA."}
           {b && b.status === "past_due" ? " Le dernier paiement a échoué : mets à jour ton moyen de paiement." : ""}
         </p>
-        {err && <p className="lic-msg bad" role="status">{err}</p>}
-        <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => go("portal")}>
+        {err && <Msg kind="bad">{err}</Msg>}
+        <Button type="button" variant="outline" className="w-fit" disabled={busy} onClick={() => go("portal")}>
           <Icon name="external" size={16} /> Gérer mon abonnement
-        </button>
+        </Button>
       </Reveal>
     )
   }
   const month = pro?.price_month_cents ?? 1800
   const year = pro?.price_year_cents ?? 18000
   return (
-    <Reveal className="lic-card lic-plan" delay={80}>
-      <span className="lic-ic"><Icon name="nxCrown" size={20} /></span>
-      <h3>Passe à Pro</h3>
-      <p>Dev Lab, App Builder, Desktop Builder, Studio et NEX-DESIGN complets, et des limites larges.</p>
-      <div className="lic-period" role="radiogroup" aria-label="Périodicité">
-        <button type="button" role="radio" aria-checked={period === "month"} onClick={() => setPeriod("month")}>Mensuel</button>
-        <button type="button" role="radio" aria-checked={period === "year"} onClick={() => setPeriod("year")}>Annuel <small>2 mois offerts</small></button>
-      </div>
-      <p className="lic-price"><b>{money(period === "year" ? year : month)}</b><span>{period === "year" ? " / an" : " / mois"}</span></p>
-      {err && <p className="lic-msg bad" role="status">{err}</p>}
-      <button type="button" className="btn btn-primary btn-lg" disabled={busy} onClick={() => go("checkout")}>
-        {busy ? "Ouverture du paiement…" : "Passer à Pro"}
-      </button>
-      <small className="lic-fine">Paiement sécurisé dans ton navigateur, sans engagement. NEXORA passe en Pro au contrôle de licence suivant.</small>
+    <Reveal className={cn(card, "flex flex-col gap-4")} delay={80}>
+      <span className="sp-ic solid">
+        <Icon name="nxCrown" size={20} />
+      </span>
+      <h3 className="text-[20px] font-semibold">Passe à Pro</h3>
+      <p className="text-[14.5px] text-muted-foreground">Dev Lab complet, jusqu’à 50 applications sans limite par application, Studio et NEX-DESIGN complets, et des limites larges.</p>
+      <ToggleGroup type="single" value={period} onValueChange={(v) => v && setPeriod(v as "month" | "year")} aria-label="Périodicité" className="w-fit">
+        <ToggleGroupItem value="month" className="h-9 px-4">
+          Mensuel
+        </ToggleGroupItem>
+        <ToggleGroupItem value="year" className="h-9 px-4">
+          Annuel <small className="opacity-80">2 mois offerts</small>
+        </ToggleGroupItem>
+      </ToggleGroup>
+      <p className="flex items-baseline gap-1.5">
+        <b className="text-[40px] leading-none font-semibold tracking-[-0.03em] text-primary">{money(period === "year" ? year : month)}</b>
+        <span className="text-muted-foreground">{period === "year" ? " / an" : " / mois"}</span>
+      </p>
+      {err && <Msg kind="bad">{err}</Msg>}
+      {/* #087 (A-056) : paiement en ligne pas encore ouvert : demande à l'équipe, qui active Pro. */}
+      {payments === false ? (
+        <>
+          <Button asChild size="lg">
+            <a
+              href={`mailto:${supportEmail}?subject=${encodeURIComponent("Passage à l’offre Pro")}&body=${encodeURIComponent(
+                `Bonjour,\n\nJe souhaite passer à l’offre Pro (${period === "year" ? "paiement annuel" : "paiement mensuel"}) avec le compte ${s.email}.\n`,
+              )}`}
+            >
+              <Icon name="mail" size={16} /> Demander Pro à l’équipe
+            </a>
+          </Button>
+          <small className="text-[12.5px] text-muted-foreground">
+            Le paiement en ligne arrive bientôt. En attendant, l’équipe NEXORA active ton offre sur demande, en général sous 24 h : écris à {supportEmail} ou depuis NEXORA (Mon compte → Support).
+          </small>
+        </>
+      ) : (
+        <>
+          <Button type="button" size="lg" disabled={busy || payments === null} onClick={() => go("checkout")}>
+            {busy ? "Ouverture du paiement…" : "Passer à Pro"}
+          </Button>
+          <small className="text-[12.5px] text-muted-foreground">Paiement sécurisé dans ton navigateur, sans engagement. NEXORA passe en Pro au contrôle de licence suivant.</small>
+        </>
+      )}
     </Reveal>
   )
 }
@@ -181,27 +281,47 @@ function Devices({ lic, s, onChange }: { lic: Lic; s: Session; onChange: () => v
   async function release(id: string) {
     setBusy(id)
     setErr("")
-    try { await releaseDevice(s, id); onChange() } catch (e) { setErr(e instanceof Error ? e.message : String(e)) } finally { setBusy("") }
+    try {
+      await releaseDevice(s, id)
+      onChange()
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy("")
+    }
   }
   return (
-    <Reveal className="lic-card lic-devices" delay={140}>
-      <h3><Icon name="laptop" size={18} /> Ordinateurs{lic.max_devices ? <small className="lic-count">{active} / {lic.max_devices}</small> : null}</h3>
+    <Reveal className={cn(card, "flex flex-col gap-4")} delay={140}>
+      <h3 className="flex items-center gap-2.5 text-[18px] font-semibold">
+        <Icon name="laptop" size={18} className="text-primary" /> Ordinateurs
+        {lic.max_devices ? <small className="ml-auto rounded-full border border-white/10 px-2.5 py-0.5 text-[12px] font-medium text-muted-foreground">{active} / {lic.max_devices}</small> : null}
+      </h3>
       {lic.devices.length ? (
-        <ul>
+        <ul className="flex flex-col divide-y divide-white/[0.08]">
           {lic.devices.map((d, i) => (
-            <li key={`${d.id || d.name}-${i}`} className={d.released ? "off" : ""}>
-              <b>{d.name || "PC Windows"}{d.released ? " · libéré" : ""}</b>
-              <span>{[d.os, d.app_version && `NEXORA ${d.app_version}`].filter(Boolean).join(" · ")}</span>
-              <small>Dernière connexion le {date(d.last_seen, true)}{d.last_ip ? ` · adresse ${d.last_ip}` : ""}</small>
-              {d.id && !d.released && <button type="button" className="lic-link" disabled={busy === d.id} onClick={() => release(d.id as string)}>{busy === d.id ? "…" : "Libérer cet ordinateur"}</button>}
+            <li key={`${d.id || d.name}-${i}`} className={cn("flex flex-col gap-0.5 py-3", d.released && "opacity-50")}>
+              <b className="text-[14.5px] font-medium">
+                {d.name || "PC Windows"}
+                {d.released ? " · libéré" : ""}
+              </b>
+              <span className="text-[13px] text-muted-foreground">{[d.os, d.app_version && `NEXORA ${d.app_version}`].filter(Boolean).join(" · ")}</span>
+              <small className="text-[12px] text-muted-foreground/80">
+                Dernière connexion le {date(d.last_seen, true)}
+                {d.last_ip ? ` · adresse ${d.last_ip}` : ""}
+              </small>
+              {d.id && !d.released && (
+                <button type="button" className="mt-1 w-fit text-[13px] font-medium text-primary hover:underline disabled:opacity-50" disabled={busy === d.id} onClick={() => release(d.id as string)}>
+                  {busy === d.id ? "…" : "Libérer cet ordinateur"}
+                </button>
+              )}
             </li>
           ))}
         </ul>
       ) : (
-        <p className="lic-note">Aucun ordinateur pour l’instant : ils apparaissent ici dès le premier démarrage de NEXORA.</p>
+        <p className="text-[14px] text-muted-foreground">Aucun ordinateur pour l’instant : ils apparaissent ici dès le premier démarrage de NEXORA.</p>
       )}
-      {err && <p className="lic-msg bad" role="status">{err}</p>}
-      <p className="lic-fine">Libère un ordinateur que tu n’utilises plus pour en ajouter un autre. Un ordinateur inconnu ? Change ton mot de passe et écris à l’assistance.</p>
+      {err && <Msg kind="bad">{err}</Msg>}
+      <p className="text-[12.5px] text-muted-foreground">Libère un ordinateur que tu n’utilises plus pour en ajouter un autre. Un ordinateur inconnu ? Change ton mot de passe et écris à l’assistance.</p>
     </Reveal>
   )
 }
@@ -216,31 +336,54 @@ function Verifier() {
     e.preventDefault()
     setErr("")
     setRes(null)
-    if (!KEY_RE.test(norm)) { setErr("Une clé NEXORA a la forme NXDT-XXXX-XXXX-XXXX-XXXX."); return }
+    if (!KEY_RE.test(norm)) {
+      setErr("Une clé NEXORA a la forme NXDT-XXXX-XXXX-XXXX-XXXX.")
+      return
+    }
     setBusy(true)
-    try { setRes(await verifyKey(norm)) } catch (e2) { setErr(e2 instanceof Error ? e2.message : String(e2)) } finally { setBusy(false) }
+    try {
+      setRes(await verifyKey(norm))
+    } catch (e2) {
+      setErr(e2 instanceof Error ? e2.message : String(e2))
+    } finally {
+      setBusy(false)
+    }
   }
   return (
-    <form className="lic-card lic-verify" onSubmit={submit} id="verifier">
-      <h3><Icon name="shield" size={18} /> Vérifier une clé</h3>
-      <p className="lic-note">Pour t’assurer qu’une clé est authentique avant de l’utiliser. Le titulaire n’est jamais affiché en entier.</p>
-      <div className="lic-row">
-        <span className="lic-input"><Icon name="key" size={16} /><input value={key} onChange={(e) => setKey(e.target.value)} placeholder="NXDT-XXXX-XXXX-XXXX-XXXX" spellCheck={false} autoCapitalize="characters" aria-label="Clé de licence" /></span>
-        <button className="btn btn-ghost" type="submit" disabled={busy || !norm}>{busy ? "…" : "Vérifier"}</button>
+    <form className="hud flex flex-col gap-4 rounded-[4px] p-6 md:p-8" onSubmit={submit} id="verifier">
+      <h3 className="flex items-center gap-2.5 text-[18px] font-semibold">
+        <Icon name="shield" size={18} className="text-primary" /> Vérifier une clé
+      </h3>
+      <p className="text-[14px] text-muted-foreground">Pour t’assurer qu’une clé est authentique avant de l’utiliser. Le titulaire n’est jamais affiché en entier.</p>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="relative flex-1">
+          <Icon name="key" size={16} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input className="pl-10 tracking-[0.06em]" value={key} onChange={(e) => setKey(e.target.value)} placeholder="NXDT-XXXX-XXXX-XXXX-XXXX" spellCheck={false} autoCapitalize="characters" aria-label="Clé de licence" />
+        </div>
+        <Button type="submit" variant="outline" className="h-11" disabled={busy || !norm}>
+          {busy ? "…" : "Vérifier"}
+        </Button>
       </div>
-      {err && <p className="lic-msg bad" role="status">{err}</p>}
+      {err && <Msg kind="bad">{err}</Msg>}
       {res && (
-        <p className={`lic-msg ${res.valid ? "ok" : "bad"}`} role="status">
+        <Msg kind={res.valid ? "ok" : "bad"}>
           {res.valid
             ? `Clé authentique et active · offre ${res.plan_name || res.plan} · titulaire ${res.holder} · créée le ${date(res.created_at)}${res.activated ? "" : " · pas encore activée"}.`
             : res.reason === "unknown"
               ? "Cette clé n’existe pas. Vérifie chaque caractère."
               : "Cette clé existe mais a été révoquée : elle ne permet plus de démarrer NEXORA."}
-        </p>
+        </Msg>
       )}
     </form>
   )
 }
+
+const POINTS: [string, string, string][] = [
+  ["key", "Une licence gratuite par compte", "Générée tout de suite, liée à ton adresse e-mail."],
+  ["star", "24 h d’essai complet", "Le premier jour, tout Pro est ouvert. Ensuite, Responsive Lab, Browser Lab et 2 applications restent gratuits."],
+  ["shield", "Vérifiée à chaque démarrage", "Connexion signée avec nos serveurs : sans licence valide, NEXORA ne s’ouvre pas."],
+  ["download", "Un lanceur léger", "Il télécharge, vérifie et met à jour NEXORA pour toi."],
+]
 
 export function Licence({ query }: { query: string }) {
   const [s, setS] = useState<Session | null>(null)
@@ -253,9 +396,19 @@ export function Licence({ query }: { query: string }) {
   async function load(sess: Session | null) {
     setS(sess)
     setErr("")
-    if (!sess) { setLic(null); setLoading(false); return }
+    if (!sess) {
+      setLic(null)
+      setLoading(false)
+      return
+    }
     setLoading(true)
-    try { setLic(await myLicence(sess)) } catch (e) { setErr(e instanceof Error ? e.message : String(e)) } finally { setLoading(false) }
+    try {
+      setLic(await myLicence(sess))
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -265,54 +418,76 @@ export function Licence({ query }: { query: string }) {
 
   return (
     <>
-      <section className="page-hero lic-hero" data-light>
-        <i className="grid-bg" aria-hidden="true" />
-        <i className="grid-lit" aria-hidden="true" />
-        <i className="torch" aria-hidden="true" />
-        <div className="container">
-          <SectionHead
-            as="h1"
-            align="left"
-            eyebrow="Ma licence"
-            title={["Ta licence NEXORA,", "toujours à portée."]}
-            lead="NEXORA Devs Toolbox démarre avec une licence vérifiée par nos serveurs. Elle est gratuite : crée ton compte, récupère ta clé, puis passe à Pro quand tu en as besoin."
-          />
-          {paiement === "ok" && <p className="lic-banner ok"><Icon name="pass" size={16} /> Paiement reçu. Ton offre Pro s’active dans quelques secondes ; NEXORA la prend en compte au prochain contrôle.</p>}
-          {paiement === "annule" && <p className="lic-banner"><Icon name="info" size={16} /> Paiement annulé : rien n’a été débité.</p>}
-          <div className="lic-grid">
-            {loading ? (
-              <div className="lic-card lic-wait"><span className="lic-spin" aria-hidden="true" /> Lecture de ta licence…</div>
-            ) : !s ? (
-              <>
-                <AuthCard onSession={load} />
-                <ul className="lic-points">
-                  <li><Icon name="key" size={18} /><div><b>Une licence gratuite par compte</b><span>Générée tout de suite, liée à ton adresse e-mail.</span></div></li>
-                  <li><Icon name="star" size={18} /><div><b>24 h d’essai complet</b><span>Le premier jour, tout Pro est ouvert. Ensuite, Responsive Lab et Browser Lab restent gratuits.</span></div></li>
-                  <li><Icon name="shield" size={18} /><div><b>Vérifiée à chaque démarrage</b><span>Connexion signée avec nos serveurs : sans licence valide, NEXORA ne s’ouvre pas.</span></div></li>
-                  <li><Icon name="download" size={18} /><div><b>Un lanceur léger</b><span>Il télécharge, vérifie et met à jour NEXORA pour toi.</span></div></li>
-                </ul>
-              </>
-            ) : err ? (
-              <div className="lic-card"><p className="lic-msg bad">{err}</p><button type="button" className="btn btn-ghost" onClick={() => session().then(load)}>Réessayer</button></div>
-            ) : lic ? (
-              <>
-                <KeyCard lic={lic} />
-                <PlanCard lic={lic} s={s} />
-                <Devices lic={lic} s={s} onChange={() => load(s)} />
-                <div className="lic-card lic-me">
-                  <span>Connecté en tant que <b>{s.email}</b></span>
-                  <div className="lic-acts">
-                    <DownloadButton size="sm" variant="ink" label="Télécharger le lanceur" />
-                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => signOut().then(() => load(null))}>Se déconnecter</button>
-                  </div>
+      <PageHero capture="haut">
+        <SectionHead
+          as="h1"
+          align="left"
+          eyebrow="Ma licence"
+          title={["Ta licence NEXORA,", "toujours à portée."]}
+          lead="NEXORA Devs Toolbox démarre avec une licence vérifiée par nos serveurs. Elle est gratuite : crée ton compte, récupère ta clé, puis passe à Pro quand tu en as besoin."
+          className="mb-10 md:mb-12"
+        />
+        {paiement === "ok" && (
+          <p className="mb-6 flex items-center gap-2.5 rounded-2xl border border-brand-blue/35 bg-brand-blue/[0.08] px-4 py-3 text-[14px] text-brand-blue">
+            <Icon name="pass" size={16} /> Paiement reçu. Ton offre Pro s’active dans quelques secondes ; NEXORA la prend en compte au prochain contrôle.
+          </p>
+        )}
+        {paiement === "annule" && (
+          <p className="mb-6 flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[14px] text-muted-foreground">
+            <Icon name="info" size={16} /> Paiement annulé : rien n’a été débité.
+          </p>
+        )}
+        <div className="grid gap-5 lg:grid-cols-2">
+          {loading ? (
+            <div className={cn(card, "flex items-center gap-3 text-muted-foreground")}>
+              <span className="size-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary" aria-hidden="true" /> Lecture de ta licence…
+            </div>
+          ) : !s ? (
+            <>
+              <AuthCard onSession={load} />
+              <ul className="flex flex-col gap-3" data-glow>
+                {POINTS.map(([icon, title, text]) => (
+                  <li key={title} className="glow flex items-start gap-4 rounded-2xl border border-white/[0.08] bg-card p-5">
+                    <span className="sp-ic">
+                      <Icon name={icon} size={18} />
+                    </span>
+                    <div>
+                      <b className="block text-[15.5px] font-semibold">{title}</b>
+                      <span className="text-[14px] text-muted-foreground">{text}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : err ? (
+            <div className={cn(card, "flex flex-col gap-4")}>
+              <Msg kind="bad">{err}</Msg>
+              <Button type="button" variant="outline" className="w-fit" onClick={() => session().then(load)}>
+                Réessayer
+              </Button>
+            </div>
+          ) : lic ? (
+            <>
+              <KeyCard lic={lic} />
+              <PlanCard lic={lic} s={s} />
+              <Devices lic={lic} s={s} onChange={() => load(s)} />
+              <div className={cn(card, "flex flex-wrap items-center justify-between gap-4 lg:col-span-2")}>
+                <span className="text-[14px] text-muted-foreground">
+                  Connecté en tant que <b className="font-medium text-foreground">{s.email}</b>
+                </span>
+                <div className="flex flex-wrap gap-2.5">
+                  <DownloadButton size="sm" label="Télécharger le lanceur" />
+                  <Button type="button" size="sm" variant="ghost" onClick={() => signOut().then(() => load(null))}>
+                    Se déconnecter
+                  </Button>
                 </div>
-              </>
-            ) : null}
-          </div>
+              </div>
+            </>
+          ) : null}
         </div>
-      </section>
-      <section className="section tight">
-        <div className="container lic-verify-wrap">
+      </PageHero>
+      <section className="section-tight pt-0">
+        <div className="wrap max-w-[860px]">
           <Verifier />
         </div>
       </section>

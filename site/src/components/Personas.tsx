@@ -1,46 +1,40 @@
-import { useState } from "react"
 import { PERSONAS } from "../data/content"
 import { SPACE_BY_ID, spaceHref } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
 import { SectionHead } from "./SectionHead"
 
-/**
- * « Pour qui ? » (#069) : liste éditoriale au lieu de cartes à photo. Au survol, la ligne s'éclaire à la couleur
- * de son espace et la photo apparaît près du pointeur (`data-light`, `lib/glow.ts`) ; sans souris, pas de photo.
- */
+/** « Pour qui ? » : quatre cartes à photo (noir et blanc, en couleur au survol). */
 export function Personas() {
-  const [active, setActive] = useState<number | null>(null)
   return (
-    <section className="section personas" data-capture="pour-qui">
-      <div className="container">
+    <section className="section" data-capture="pour-qui">
+      <div className="wrap">
         <SectionHead
-          index="05"
+          index="06"
           eyebrow="Pour qui ?"
           title={["Quatre façons", "de travailler avec NEXORA."]}
           lead="Freelance, agence, commerce ou salle de classe : chacun y trouve l’espace qui lui fait gagner le plus de temps."
         />
-        <div className={`pq-wrap${active === null ? "" : " has-on"}`} data-light onMouseLeave={() => setActive(null)}>
-          <ul className="pq">
-            {PERSONAS.map((p, i) => (
-              <Reveal as="li" key={p.title} delay={i * 70} data-space={p.space} className={`pq-row${active === i ? " on" : ""}`} onMouseEnter={() => setActive(i)}>
-                <a className="pq-link" href={spaceHref(SPACE_BY_ID[p.space])}>
-                  <span className="pq-n">{String(i + 1).padStart(2, "0")}</span>
-                  <span className="pq-title">{p.title}</span>
-                  <span className="pq-text">{p.text}</span>
-                  <span className="pq-go">
+        <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4" data-glow>
+          {PERSONAS.map((p, i) => (
+            <Reveal as="li" key={p.title} delay={i * 80}>
+              <a className="glow lift surface group flex h-full flex-col overflow-hidden" href={spaceHref(SPACE_BY_ID[p.space])}>
+                <span className="relative block aspect-[4/3] overflow-hidden">
+                  <img src={p.photo} alt={p.alt} loading="lazy" width={960} height={720} className="h-full w-full object-cover grayscale transition duration-700 group-hover:scale-105 group-hover:grayscale-0" />
+                  <span className="absolute inset-0 bg-[#060509]/30 transition group-hover:bg-transparent" />
+                  <span className="absolute top-3 left-3 rounded-full border border-white/15 bg-[#060509]/75 px-2.5 py-1 text-[11.5px] font-semibold tabular-nums text-primary backdrop-blur">{String(i + 1).padStart(2, "0")}</span>
+                </span>
+                <span className="flex flex-1 flex-col p-6">
+                  <b className="text-[17px] font-semibold">{p.title}</b>
+                  <span className="mt-2 flex-1 text-[14px] leading-relaxed text-muted-foreground">{p.text}</span>
+                  <span className="link-arrow mt-5 text-[14px]">
                     {p.link} <Icon name="nxArrowRight" size={15} stroke={2} />
                   </span>
-                </a>
-              </Reveal>
-            ))}
-          </ul>
-          <span className="pq-float" aria-hidden="true">
-            {PERSONAS.map((p, i) => (
-              <img key={p.title} src={p.photo} alt="" className={active === i ? "on" : ""} loading="lazy" width={960} height={720} />
-            ))}
-          </span>
-        </div>
+                </span>
+              </a>
+            </Reveal>
+          ))}
+        </ul>
       </div>
     </section>
   )

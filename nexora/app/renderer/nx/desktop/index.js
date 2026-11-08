@@ -3,6 +3,8 @@
 // portable, archive ZIP, paquet MSI, fichier GitHub Actions pour macOS et Linux.
 // Mise en page et styles de l'App Builder (.ab-*) ; la construction est faite par le processus principal
 // (src/desktop/, canaux desktop:*). Réglages enregistrés dans settings.desktop.
+// NEXORA #087 : offre Gratuite à 2 applications (App Builder et Desktop Builder confondus) : identifiant du logiciel
+// joint à la construction, bandeau de l'offre au-dessus du bouton « Construire » (../offres/desktop.js).
 import {
   api, state, settings, saveSettings, esc, uid, $, ico, toast, sheet, sheetHtml, closeSheet, pickFile, loadImage, makeCanvas, luminance,
 } from '../core.js';
@@ -11,6 +13,7 @@ import { iconDataUrl, sidebarCanvas, buildAssets, initials } from './icons.js';
 import { pcHtml, MODES, modeOf, SCREEN } from './preview.js';
 import { b as supabase, e as cloud } from '../../dist/chunks/chunk-EZKHFSAB.js';
 import { explain as insExplain, chart as insChart, table as insTable } from '../android/insights.js';
+import { banner as offerBanner, nxApp as offerApp, refresh as refreshOffer, released as offerReleased } from '../offres/desktop.js';
 
 export const SECTIONS = [
   ['source', 'Source', 'globe', 'Site en ligne, dossier ou projet de bureau'],
@@ -220,6 +223,9 @@ class DesktopSpace {
     try { this.status = await api.invoke('desktop:status'); } catch (e) { this.status = { error: e.message || String(e) }; }
     this.renderTools();
     if (this.section === 'build') this.renderForm();
+    // NEXORA #087 : applications de l'offre (logiciel réservé, constructions du mois).
+    await refreshOffer();
+    this.renderBuildBar();
   }
   /** Rafraîchir l'espace (F5, bouton de la barre d'outils, petits boutons des panneaux). */
   async refresh(scope = 'space') {
@@ -882,7 +888,7 @@ class DesktopSpace {
     const a = this.cfg;
     const p = this.progress;
     const r = this.result;
-    box.innerHTML = `
+    box.innerHTML = `${offerBanner(a)}
       <div class="ab-build-row dsk-build-formats">${FORMATS.map(([k, l, d]) => chip(a, `install.formats.${k}`, l, d)).join('')}</div>
       <div class="ab-build-row"><span class="dsk-build-sum">${esc(a.version)} · ${a.install.archs.x64 && a.install.archs.arm64 ? 'x64 et ARM64' : a.install.archs.arm64 ? 'ARM64' : 'x64'}${a.signing.enabled ? ' · signé' : ''}</span>
         ${this.building ? `<button class="btn ab-go" data-act="cancel">${ico('stop', 15)}<span>Annuler</span></button>` : `<button class="btn primary ab-go" data-act="build">${ico('rocket', 15)}<span>Construire le logiciel</span></button>`}</div>
@@ -1223,6 +1229,7 @@ class DesktopSpace {
       closeSheet('dsk-del');
       const at = this.st.apps.findIndex((x) => x.id === a.id);
       this.st.apps = this.st.apps.filter((x) => x.id !== a.id);
+      offerReleased(a.id);
       if (!this.st.apps.length) this.st.apps.push(defaults());
       // Le logiciel voisin (celui d'avant dans la liste) est affiché.
       this.selectApp(this.st.apps[Math.max(0, Math.min(this.st.apps.length - 1, at - 1))].id);
@@ -1435,7 +1442,7 @@ class DesktopSpace {
     this.renderBuildBar();
     try {
       const assets = await buildAssets(a);
-      const r = await api.invoke('desktop:build', { app: this.payload(a), assets, out: a.out || '' });
+      const r = await api.invoke('desktop:build', { app: this.payload(a), assets, out: a.out || '', nxApp: offerApp(a) });
       this.result = { ...r, at: Date.now() };
       a.builds.unshift({
         at: Date.now(), version: r.version, files: r.files, outDir: r.outDir, unpacked: r.unpacked, project: r.project, electron: r.electron, ms: r.ms, warnings: r.warnings,
