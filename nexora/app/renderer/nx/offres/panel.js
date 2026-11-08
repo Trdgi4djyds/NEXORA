@@ -4,9 +4,11 @@
 // data-plan-ask : la demande part au support comme avant (chunk-EOM7FQDL.js).
 // NEXORA #087 : applications Android et Windows de l'offre Gratuite (2 au total, supprimées comprises), constructions
 // comptées par application, chiffres clés des cartes (planKeys) et adresse de contact.
-import { ico, esc } from '../core.js';
-import { cloud, status, plans, appTrials } from './status.js';
-import { COMPARE, CONTACT_EMAIL, METERS, PLAN_LOOK, PLAN_ORDER, limitText, money, count, normPlan, planKeys } from './catalog.js';
+// NEXORA #090 : parrainage (NEXORA REFERRAL) : carte « Un parrain t'a invité ? » (code promo du parrain, rattachement
+// définitif) ou « Parrainage actif », et prix de Pro avec la remise (prix sans remise barré).
+import { ico, esc, toast } from '../core.js';
+import { cloud, status, plans, appTrials, referral, attachReferral, missing } from './status.js';
+import { COMPARE, CONTACT_EMAIL, METERS, PLAN_LOOK, PLAN_ORDER, REFERRAL, discounted, limitText, money, count, percent, normPlan, planKeys } from './catalog.js';
 import { period, fullDate, card as subCard, start as startCountdown, onClick as countdownClick } from './countdown.js';
 
 const longDate = (d) => (d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : '');
@@ -61,10 +63,14 @@ function trialRows(t, s) {
 }
 
 // NEXORA #040 : cartes de tarifs (en-tête en dégradé doux, gros prix, bouton plein, avantages cochés).
-function planCard(p, s) {
+function planCard(p, s, ref) {
   const id = normPlan(p.id), look = PLAN_LOOK[id] || PLAN_LOOK.standard;
   const cur = id === s.plan, rank = PLAN_ORDER.indexOf(id), mine = PLAN_ORDER.indexOf(s.plan);
-  const m = p.price_month_cents, y = p.price_year_cents;
+  // NEXORA #090 : filleul d'un parrain : prix de Pro avec la remise, prix sans remise barré.
+  const refOn = id === 'pro' && !!(ref && ref.referred) && p.price_month_cents > 0;
+  const pct = refOn ? Number(ref.discount_pct) || REFERRAL.discount_pct : 0;
+  const listM = p.price_month_cents, listY = p.price_year_cents;
+  const m = refOn ? discounted(listM, pct) : listM, y = refOn ? discounted(listY, pct) : listY;
   const perMonthYear = y ? Math.round(y / 12) : 0;
   const lim = p.limits || {};
   const rec = id === 'standard';
@@ -87,10 +93,11 @@ function planCard(p, s) {
           <span class="grow"></span>
           ${cur ? `<span class="nxo-pill ink">${ico('check', 10)}Ton offre</span>` : p.badge && !rec ? `<span class="nxo-pill">${esc(p.badge)}</span>` : ''}
         </div>
-        <div class="nxo-price">
+        <div class="nxo-price${refOn ? ' ref' : ''}">
           <span class="nxo-amt" data-m="${amt(m)}" data-y="${amt(perMonthYear)}">${amt(m)}</span><span class="nxo-cur">$</span>
           <span class="nxo-per"><b>par mois</b><small class="nxo-bill" data-m="${billM}" data-y="${billY}">${billM}</small></span>
         </div>
+        ${refOn ? `<div class="nxo-ref-price"><s class="nxo-was" data-m="${esc(money(listM))}" data-y="${esc(money(Math.round(listY / 12)))}">${esc(money(listM))}</s><span class="nxo-pill nxo-ref-pill">${ico('gift', 11)}−${esc(percent(pct))} % parrainage</span></div>` : ''}
         <p class="nxo-plan-desc">${esc(p.description || '')}</p>
         ${cta}
       </div>
@@ -101,6 +108,52 @@ function planCard(p, s) {
       </div>
     </article>
   </div>`;
+}
+
+// NEXORA #090 : code promo d'un parrain (compte sans abonnement payé), ou parrainage déjà actif.
+const REF_REFUSED = {
+  unknown: 'Ce code n’existe pas ou n’est plus actif : vérifie-le auprès de ton parrain.',
+  self: 'Tu ne peux pas utiliser ton propre code de parrainage.',
+  customer: 'Le parrainage s’applique à un premier abonnement Pro.',
+};
+function referralCard(ref) {
+  if (!cloud.user || !ref) return '';
+  const pct = Number(ref.discount_pct) || REFERRAL.discount_pct;
+  const head = (title, text) => `<div class="nxc-card-head"><span class="nxc-card-ic">${ico('gift', 15)}</span><div><h3>${title}</h3><p>${text}</p></div></div>`;
+  if (ref.referred) {
+    return `<section class="nxc-card nxo-ref on">${head('Parrainage actif', `Code <b>${esc(ref.code)}</b>${ref.partner ? ` de ${esc(ref.partner)}` : ''} : ${esc(percent(pct))} % de remise sur chaque paiement Pro, soit <b>${esc(money(ref.month_cents))}</b> par mois ou <b>${esc(money(ref.year_cents))}</b> par an, tant que ton abonnement continue.`)}</section>`;
+  }
+  if (!ref.eligible) return '';
+  return `<section class="nxc-card nxo-ref">${head('Un parrain t’a invité ?', `Saisis son code promo : ${esc(percent(pct))} % de remise sur chaque paiement Pro (${esc(money(ref.month_cents))} par mois au lieu de ${esc(money(ref.list_month_cents))}), tant que ton abonnement continue. Un seul parrain par compte.`)}
+    <div class="nxo-ref-form"><input class="nxo-ref-input" data-nxo-ref-input maxlength="24" placeholder="Code promo du parrain" autocomplete="off" spellcheck="false" aria-label="Code promo du parrain"><button type="button" class="nxo-btn primary small" data-nxo-ref-apply>Appliquer</button></div>
+    <p class="nxo-ref-msg" role="alert" hidden></p></section>`;
+}
+async function applyReferral(btn) {
+  const box = btn.closest('.nxo-ref');
+  const input = box && box.querySelector('[data-nxo-ref-input]');
+  const msg = box && box.querySelector('.nxo-ref-msg');
+  if (!input || !msg) return;
+  const show = (text) => { msg.hidden = false; msg.textContent = text; };
+  const code = input.value.trim();
+  if (!/^[A-Za-z0-9][A-Za-z0-9-]{2,23}$/.test(code)) { show('Un code promo compte de 3 à 24 lettres, chiffres ou tirets.'); input.focus(); return; }
+  btn.disabled = true;
+  try {
+    const r = await attachReferral(code);
+    if (!r || r.ok === false) { show(REF_REFUSED[r && r.reason] || REF_REFUSED.unknown); return; }
+    const root = btn.closest('.nxo');
+    if (root) root.outerHTML = await panel();
+    toast(`Code ${r.code || code.toUpperCase()} appliqué : ${percent(r.discount_pct || REFERRAL.discount_pct)} % de remise sur Pro.`);
+  } catch (e) {
+    show(missing(e) ? 'Le parrainage arrive très bientôt sur ton compte : réessaie plus tard.' : (e && e.message) || 'Le code n’a pas pu être appliqué.');
+  } finally { btn.disabled = false; }
+}
+// Entrée dans le champ du code : comme « Appliquer ».
+export function onKey(e) {
+  if (e.key !== 'Enter' || !e.target || !e.target.matches || !e.target.matches('[data-nxo-ref-input]')) return false;
+  e.preventDefault();
+  const b = e.target.closest('.nxo-ref').querySelector('[data-nxo-ref-apply]');
+  if (b && !b.disabled) applyReferral(b);
+  return true;
 }
 
 function cell(row, p) {
@@ -119,7 +172,7 @@ function compare(list, s) {
 }
 
 export async function panel() {
-  const [s, list, t] = await Promise.all([status(true), plans(), appTrials(true).catch(() => null)]);
+  const [s, list, t, ref] = await Promise.all([status(true), plans(), appTrials(true).catch(() => null), referral().catch(() => null)]);
   const look = PLAN_LOOK[s.plan] || PLAN_LOOK.free;
   const next = list.find((p) => PLAN_ORDER.indexOf(normPlan(p.id)) === PLAN_ORDER.indexOf(s.plan) + 1);
   const org = cloud.org;
@@ -136,7 +189,7 @@ export async function panel() {
       <span class="nxo-now-art" aria-hidden="true">${ico(look.icon, 150)}</span>
       <div class="nxo-now-main">
         <small class="nxo-kicker">${ico('star', 12)} Ton offre</small>
-        <h3>${esc(name)}<span class="nxo-now-price">${cur.price_month_cents ? `${esc(money(cur.price_month_cents))} / mois` : '0 $ / mois'}</span></h3>
+        <h3>${esc(name)}<span class="nxo-now-price">${cur.price_month_cents ? `${esc(money(normPlan(cur.id) === 'pro' && ref && ref.referred ? ref.month_cents : cur.price_month_cents))} / mois` : '0 $ / mois'}</span></h3>
         <p>${org ? `${esc(org.name)}${orgPlan}` : 'Compte invité'}${per ? ` · échéance le ${esc(fullDate(per.end))}` : ''}</p>
         ${s.admin ? `<div class="nxo-chips"><span class="nxo-chip">${ico('lock', 12)}Administrateur NEXORA : aucune limite</span></div>` : ''}
       </div>
@@ -161,9 +214,10 @@ export async function panel() {
         <button type="button" role="tab" data-nxo-period="year" aria-selected="false" title="Annuel : 2 mois offerts">Annuel<em>2 mois offerts</em></button>
       </div>
     </div>
-    <div class="nxo-plans">${list.map((p) => planCard(p, s)).join('')}</div>
+    <div class="nxo-plans">${list.map((p) => planCard(p, s, ref)).join('')}</div>
+    ${referralCard(ref)}
     ${compare(list, s)}
-    <p class="nxo-foot">${ico('chat', 12)} Change d’offre à tout moment : ta demande est traitée par l’équipe NEXORA et ta nouvelle offre est activée sous 24 h. Une question : ${esc(CONTACT_EMAIL)}.</p>
+    <p class="nxo-foot">${ico('chat', 12)} Change d’offre à tout moment : ta demande est traitée par l’équipe NEXORA et ta nouvelle offre est activée sous 24 h${ref && ref.referred ? ', remise du parrainage comprise' : ''}. Une question : ${esc(CONTACT_EMAIL)}.</p>
   </div>`;
 }
 
@@ -175,9 +229,11 @@ export function onClick(e) {
     const y = per.dataset.nxoPeriod === 'year';
     root.dataset.period = y ? 'year' : 'month';
     for (const b of root.querySelectorAll('[data-nxo-period]')) { b.classList.toggle('on', b === per); b.setAttribute('aria-selected', String(b === per)); }
-    for (const a of root.querySelectorAll('.nxo-amt, .nxo-bill')) a.textContent = y ? a.dataset.y : a.dataset.m;
+    for (const a of root.querySelectorAll('.nxo-amt, .nxo-bill, .nxo-was')) a.textContent = y ? a.dataset.y : a.dataset.m;
     return true;
   }
+  const ap = e.target.closest('[data-nxo-ref-apply]');
+  if (ap) { if (!ap.disabled) applyReferral(ap); return true; }
   const sc = e.target.closest('[data-nxo-scroll]');
   if (sc) { const t = document.querySelector(sc.dataset.nxoScroll); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); return true; }
   return false;

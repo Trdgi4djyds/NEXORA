@@ -4,10 +4,20 @@
 // NEXORA #087 : copie de supabase/migrations/20261108000006_offre_gratuite_applications.sql. Gratuit : 2
 // applications au total (App Builder et Desktop Builder confondus, applications supprimées comprises), tout l'App
 // Builder et tout le Desktop Builder, 5 constructions par application et par mois. Pro : 18 $ par mois, 180 $ par an.
+// NEXORA #090 : Pro à 25 $ par mois, 250 $ par an (supabase/migrations/20261108000007_parrainage.sql) ; avec le lien
+// ou le code promo d'un parrain (NEXORA REFERRAL), 30 % de remise sur chaque paiement (17,50 $ par mois) ; le parrain
+// touche 25 % de ce que paie le filleul (REFERRAL).
 // Repris aussi par le site vitrine (site/src/lib/remote.ts) et le back office (section Offres).
 
 // Adresse de contact et d'assistance de NEXORA Devs Toolbox (app_config.support_email la remplace si elle est renseignée).
 export const CONTACT_EMAIL = 'nexoradevstoolbox@gmail.com';
+
+// NEXORA #090 : règles du parrainage par défaut (app_config.referral les remplace : nx_referral_cfg, nx_referral_prices).
+// Remise du filleul sur chaque paiement Pro, commission du parrain sur ce que paie le filleul, retrait minimum, délai
+// avant que les gains soient disponibles, durée de mémorisation du lien d'un parrain.
+export const REFERRAL = { discount_pct: 30, commission_pct: 25, min_payout_cents: 2000, hold_days: 30, cookie_days: 90 };
+// Prix avec la remise du parrainage (centimes arrondis).
+export const discounted = (cents, pct = REFERRAL.discount_pct) => Math.round((Number(cents) || 0) * (100 - (Number(pct) || 0)) / 100);
 
 const FREE_PERMS = {
   responsive: true, browser: true, multiscreen: true, dashboard: true,
@@ -25,7 +35,7 @@ const FREE_PERMS = {
   devlab_pro: false,
 };
 // NEXORA #076 : deux offres seulement. Gratuit : Responsive Lab et Browser Lab complets (produits d'appel), tout
-// NEXORA pendant le premier jour (essai Pro décompté par le serveur), puis les limites. Pro (18 $ par mois) : tout.
+// NEXORA pendant le premier jour (essai Pro décompté par le serveur), puis les limites. Pro (25 $ par mois depuis #090) : tout.
 FREE_PERMS.responsive_advanced = true;
 FREE_PERMS.crawler = true;
 // NEXORA #087 : tout l'App Builder et tout le Desktop Builder, pour 2 applications au total.
@@ -40,7 +50,7 @@ export const FALLBACK = {
     features: ['Responsive Lab complet : tous les modèles d’appareils, vidéo et outils de développement', 'Browser Lab complet : inspection, réseau, console, tests et extraction', '2 applications Android ou Windows au total, applications supprimées comprises', 'Tout l’App Builder et le Desktop Builder pour ces applications, 5 constructions par application et par mois', 'NEX-DESIGN découverte (3 documents)', '1 audit de sécurité par jour, 1 site surveillé', 'Assistant IA avec ta propre clé', 'Tout NEXORA pendant ton premier jour'],
   },
   pro: {
-    id: 'pro', name: 'Pro', description: 'Toutes les options de NEXORA Devs Toolbox, sans limite d’espace.', price_month_cents: 1800, price_year_cents: 18000,
+    id: 'pro', name: 'Pro', description: 'Toutes les options de NEXORA Devs Toolbox, sans limite d’espace.', price_month_cents: 2500, price_year_cents: 25000,
     currency: 'USD', sort: 2, badge: 'Toutes les options', perms: PRO_PERMS,
     limits: { projects: 200, designs: -1, members: 10, monitors: 50, storage_mb: 51200, apps: 50, apps_lifetime: 0, app_trial_days: 0, builds_per_app_month: -1, ai_requests_month: -1, scans_per_day: 200, crawls_per_day: -1, builds_month: 400, push_month: 100000 },
     features: ['Les 9 espaces sans restriction', 'Dev Lab complet : éditeur, terminal, Git, débogueur, tests, bases de données, mise en ligne', 'Jusqu’à 50 applications Android ou Windows, sans limite par application (400 constructions par mois)', 'NEX-DESIGN complet : documents illimités, IA, prototype, code, équipe', 'Studio 3D & Motion avancé', 'Sécurité : audits avancés, 50 sites surveillés 24 h/24, page de statut', '200 projets, 10 membres, 50 Go', 'Assistance prioritaire'],
@@ -165,7 +175,12 @@ export function neededPlan(perm) {
 }
 
 const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 });
-export const money = (cents) => `${nf.format((Number(cents) || 0) / 100)} $`;
+// NEXORA #090 : montant non entier avec ses centimes (17,50 $), et le millième des commissions (4,375 $).
+const nfCents = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+export const money = (cents) => { const v = (Number(cents) || 0) / 100; return `${(Number.isInteger(v) ? nf : nfCents).format(v)} $`; };
+// NEXORA #090 : taux à la française (25 ; 2,5), pour les remises et les commissions du parrainage.
+const nfPct = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 });
+export const percent = (v) => nfPct.format(Number(v) || 0);
 export const count = (n) => new Intl.NumberFormat('fr-FR').format(Number(n) || 0);
 // NEXORA #087 : chiffres clés d'une offre (cartes des offres, fenêtre de l'offre) : projets, applications, constructions.
 export function planKeys(lim = {}) {

@@ -2,7 +2,8 @@ import { useState, type ReactNode } from "react"
 import { COMPARE } from "../../../nexora/app/renderer/nx/offres/catalog.js"
 import { Icon } from "../lib/icons"
 import { Reveal, useTween } from "../lib/motion"
-import { limitText, money, monthsOffered, usePayments, useRemote, type Plan, type PlanId } from "../lib/remote"
+import { discounted, limitText, money, percent, monthsOffered, usePayments, useRemote, type Plan, type PlanId } from "../lib/remote"
+import { useParrain, type Parrain } from "../lib/referral"
 import { cn } from "../lib/utils"
 import { Badge } from "./ui/badge"
 import { Button } from "./ui/button"
@@ -27,10 +28,15 @@ const honestBadge = (b: string) => (/choisi|populaire|vendu|préféré/i.test(b)
 
 const LOOK: Record<PlanId, string> = { free: "nxSend", pro: "nxCrown" }
 
-function PlanCard({ plan, annual, ready, start }: { plan: Plan; annual: boolean; ready: boolean; start: string }) {
+function PlanCard({ plan, annual, ready, start, parrain, referralPct }: { plan: Plan; annual: boolean; ready: boolean; start: string; parrain: Parrain | null; referralPct: number }) {
   const featured = plan.id === "pro"
   const free = !plan.price_month_cents
-  const perMonth = annual && plan.price_year_cents ? Math.round(plan.price_year_cents / 12) : plan.price_month_cents
+  // NEXORA #090 : lien d'un parrain gardé par le site : prix avec la remise (à chaque paiement), prix normal barré.
+  const refOn = featured && !free && !!parrain
+  const pct = refOn && parrain ? parrain.discount_pct : referralPct
+  const listPerMonth = annual && plan.price_year_cents ? Math.round(plan.price_year_cents / 12) : plan.price_month_cents
+  const perMonth = refOn ? discounted(listPerMonth, pct) : listPerMonth
+  const yearPrice = refOn ? discounted(plan.price_year_cents, pct) : plan.price_year_cents
   const offered = monthsOffered(plan)
   const shown = useTween(perMonth)
   return (
@@ -50,14 +56,21 @@ function PlanCard({ plan, annual, ready, start }: { plan: Plan; annual: boolean;
       <div className={cn("relative mt-6 flex items-baseline gap-2 transition-opacity", !ready && "opacity-40")} aria-live="polite">
         <b className={cn("text-[54px] leading-none font-semibold tracking-[-0.04em] tabular-nums", featured && "text-primary [text-shadow:0_0_30px_rgb(var(--neon)/0.4)]")}>{money(Math.round(shown))}</b>
         <span className="text-muted-foreground">/ mois</span>
+        {refOn && <s className="ml-1 text-[17px] text-muted-foreground/80 tabular-nums">{money(listPerMonth)}</s>}
       </div>
       <p className="relative mt-2 text-[13px] text-muted-foreground">
         {free
           ? "Sans carte bancaire, sans limite de durée"
           : annual
-            ? `${money(plan.price_year_cents)} facturés une fois par an`
-            : `ou ${money(plan.price_year_cents)} par an${offered ? `, soit ${offered} mois offerts` : ""}`}
+            ? `${money(yearPrice)} facturés une fois par an`
+            : `ou ${money(yearPrice)} par an${offered ? `, soit ${offered} mois offerts` : ""}`}
       </p>
+      {featured && !free && pct > 0 && (
+        <p className={cn("relative mt-3 flex items-center gap-2 text-[13px]", refOn ? "font-medium text-primary" : "text-muted-foreground")}>
+          <Icon name="gift" size={15} className={refOn ? "" : "text-primary"} />
+          {refOn && parrain ? `Code ${parrain.code}${parrain.partner ? ` de ${parrain.partner}` : ""} : −${percent(pct)} % à chaque paiement` : `−${percent(pct)} % à chaque paiement avec le code d’un parrain`}
+        </p>
+      )}
       <Button asChild size="lg" variant={featured ? "default" : "outline"} className="relative mt-7 w-full">
         {/* #076 : paiement dans le navigateur, page « Ma licence ». */}
         <a href={free ? start : "#/licence?offre=pro"}>
@@ -81,7 +94,8 @@ function PlanCard({ plan, annual, ready, start }: { plan: Plan; annual: boolean;
 
 /** Cartes des offres (prix lus sur le serveur, comme l'application), mensuel ou annuel. */
 export function PricingCards() {
-  const { plans, ready, downloadUrl, supportEmail } = useRemote()
+  const { plans, ready, downloadUrl, supportEmail, referral } = useRemote()
+  const parrain = useParrain()
   const payments = usePayments()
   const [annual, setAnnual] = useState(false)
   const offered = Math.max(0, ...plans.map(monthsOffered))
@@ -100,7 +114,7 @@ export function PricingCards() {
       <div className={cn("mx-auto grid gap-8 md:grid-cols-2", plans.length > 2 ? "max-w-6xl lg:grid-cols-3" : "max-w-[940px]")} data-glow>
         {plans.map((p, i) => (
           <Reveal key={p.id} delay={i * 90}>
-            <PlanCard plan={p} annual={annual} ready={ready} start={downloadUrl || "#/telecharger"} />
+            <PlanCard plan={p} annual={annual} ready={ready} start={downloadUrl || "#/telecharger"} parrain={referral.enabled ? parrain : null} referralPct={referral.enabled ? referral.discount_pct : 0} />
           </Reveal>
         ))}
       </div>

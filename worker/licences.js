@@ -3,7 +3,9 @@
 //                         adresse IP vue par Cloudflare) puis SIGNE la réponse (Ed25519). Le logiciel refuse
 //                         toute réponse non signée par la clé de NEXORA : il ne s'ouvre pas sans ce contrôle.
 //   GET  /license/config  ce qui est réglé (signature, paiements), sans jamais renvoyer un secret.
-//   POST /pay/checkout    page de paiement de l'abonnement Pro (mensuel ou annuel) dans le navigateur.
+//   POST /pay/checkout    page de paiement de l'abonnement Pro (mensuel ou annuel) dans le navigateur. NEXORA #090 :
+//                         code ou lien d'un parrain (champ ref) rattaché au compte (nx_referral_attach), puis remise du
+//                         parrainage appliquée à chaque paiement (coupon Stripe « nexora-parrainage-<pourcentage> »).
 //   POST /pay/portal      espace de gestion de l'abonnement (moyen de paiement, factures, résiliation).
 //   POST /pay/webhook     événements du prestataire (signature vérifiée) → nx_billing_apply.
 //   GET  /security/manifest  NEXORA #077 : déclaration de publication SIGNÉE par le service de sécurité, valable
@@ -236,6 +238,24 @@ async function customerOf(token, uid) {
   const rows = await r.json().catch(() => [])
   return Array.isArray(rows) && rows[0] && rows[0].customer_id ? rows[0].customer_id : null
 }
+// NEXORA #090 : coupon de la remise du parrainage, créé une fois dans Stripe (durée « forever » : chaque paiement de
+// l'abonnement garde la remise). Son identifiant suit le pourcentage réglé dans le back office.
+export async function referralCoupon(env, pct) {
+  const id = `nexora-parrainage-${String(pct).replace(/[^0-9]+/g, "-")}`
+  try {
+    await stripe(env, "GET", `coupons/${id}`)
+    return id
+  } catch (e) {
+    if (!/no such coupon|resource_missing/i.test(String((e && e.message) || e))) throw e
+  }
+  await stripe(env, "POST", "coupons", { id, percent_off: String(pct), duration: "forever", name: `Parrainage NEXORA (-${pct} %)`, "metadata[nexora]": "referral" })
+  return id
+}
+const REFERRAL_REFUSED = {
+  unknown: "Ce code de parrainage n’existe pas ou n’est plus actif.",
+  self: "Tu ne peux pas utiliser ton propre code de parrainage.",
+  customer: "Le parrainage s’applique à un premier abonnement Pro.",
+}
 async function checkout(req, env) {
   if (!payReady(env)) return json(503, { error: "not_configured", message: "Le paiement en ligne arrive très bientôt. En attendant, écris à nexoradevstoolbox@gmail.com ou depuis Mon compte → Support : l’équipe NEXORA active ton offre Pro." })
   const token = bearer(req)
@@ -243,13 +263,26 @@ async function checkout(req, env) {
   if (!user) return json(401, { error: "auth", message: "Connecte-toi d’abord à ton compte NEXORA." })
   const a = await req.json().catch(() => ({}))
   const year = a.period === "year" && env.STRIPE_PRICE_YEAR
+  // #090 : code ou lien d'un parrain, rattaché au compte avant le paiement (refus expliqué : code inconnu, le sien…).
+  const ref = typeof a.ref === "string" ? a.ref.trim().slice(0, 24) : ""
+  if (ref) {
+    const att = await rpc("nx_referral_attach", { p_code: ref, p_source: a.ref_source === "link" ? "link" : "code" }, token)
+    if (att.ok && att.body && att.body.ok === false) return json(400, { error: "referral", message: REFERRAL_REFUSED[att.body.reason] || REFERRAL_REFUSED.unknown })
+  }
+  const mine = await rpc("nx_referral_mine", {}, token)
+  const pct = mine.ok && mine.body && mine.body.referred ? Number(mine.body.discount_pct) || 0 : 0
   const customer = await customerOf(token, user.id)
   const form = {
     mode: "subscription", "line_items[0][price]": year ? env.STRIPE_PRICE_YEAR : env.STRIPE_PRICE_MONTH, "line_items[0][quantity]": "1",
     client_reference_id: user.id, "metadata[nexora_user]": user.id, "subscription_data[metadata][nexora_user]": user.id,
-    allow_promotion_codes: "true", locale: "fr",
+    locale: "fr",
     success_url: `${SITE}/site/#/licence?paiement=ok`, cancel_url: `${SITE}/site/#/licence?paiement=annule`,
   }
+  // Stripe refuse les codes promo du formulaire quand une remise est déjà appliquée.
+  if (pct > 0) {
+    form["discounts[0][coupon]"] = await referralCoupon(env, pct)
+    form["subscription_data[metadata][nexora_referral]"] = String(mine.body.code || "")
+  } else form.allow_promotion_codes = "true"
   if (customer) form.customer = customer; else form.customer_email = user.email
   const s = await stripe(env, "POST", "checkout/sessions", form)
   return json(200, { url: s.url })
@@ -297,9 +330,13 @@ export async function eventToBilling(env, ev) {
   }
   if (ev.type === "invoice.paid" || ev.type === "invoice.payment_failed") {
     const line = o.lines && o.lines.data && o.lines.data[0]
+    // #090 : période de la facture (commission du parrain, abonnement annuel gardé) : intervalle du prix, sinon durée.
+    const interval = line && line.price && line.price.recurring && line.price.recurring.interval
+    const span = line && line.period ? Number(line.period.end) - Number(line.period.start) : 0
     return {
       status: ev.type === "invoice.paid" ? "active" : "past_due", customer: o.customer, subscription: o.subscription || (o.parent && o.parent.subscription_details && o.parent.subscription_details.subscription) || null,
-      end: iso(line && line.period && line.period.end), period: null, cancel: false, user: null, amount: o.amount_paid || 0, currency: o.currency || "usd",
+      end: iso(line && line.period && line.period.end), period: interval ? (interval === "year" ? "year" : "month") : span > 200 * 86400 ? "year" : span > 0 ? "month" : null,
+      cancel: false, user: null, amount: o.amount_paid || 0, currency: o.currency || "usd",
     }
   }
   return null
@@ -312,7 +349,8 @@ async function webhook(req, env) {
   const b = await eventToBilling(env, ev)
   if (!b) return json(200, { ignored: ev.type })
   const r = await rpc("nx_billing_apply", {
-    p_secret: env.NX_PROBE_SECRET, p_provider: "stripe", p_event_id: ev.id, p_user: b.user, p_status: b.status, p_period: b.period || "month",
+    // #090 : période inconnue → null (la période connue de l'abonnement est gardée).
+    p_secret: env.NX_PROBE_SECRET, p_provider: "stripe", p_event_id: ev.id, p_user: b.user, p_status: b.status, p_period: b.period || null,
     p_period_end: b.end, p_customer: b.customer || null, p_subscription: b.subscription || null, p_amount: b.amount || 0, p_currency: b.currency || "usd",
     p_kind: ev.type, p_cancel_at_end: Boolean(b.cancel),
   })

@@ -156,14 +156,38 @@ export async function verifyKey(key: string): Promise<Verify> {
   return call(`${REST}rpc/nx_license_verify`, { method: "POST", body: JSON.stringify({ p_key: key }) })
 }
 
-/** Paiement (Worker de NEXORA, même adresse que le site) : page de paiement ou espace d'abonnement. */
-export async function pay(kind: "checkout" | "portal", s: Session, period: "month" | "year" = "month"): Promise<string> {
+/** NEXORA #090 : parrainage du compte et prix de Pro qui s'appliquent (nx_referral_mine). */
+export type ReferralMine = {
+  referred: boolean
+  eligible?: boolean
+  code?: string
+  partner?: string
+  source?: string
+  discount_pct: number
+  month_cents: number
+  year_cents: number
+  list_month_cents: number
+  list_year_cents: number
+  ok?: boolean
+  reason?: "unknown" | "self" | "customer"
+}
+export async function referralMine(s: Session): Promise<ReferralMine> {
+  return call(`${REST}rpc/nx_referral_mine`, { method: "POST", token: s.access_token, body: "{}" })
+}
+/** Rattache le code d'un parrain au compte (avant un premier abonnement Pro ; définitif). */
+export async function referralAttach(s: Session, code: string, source: "link" | "code"): Promise<ReferralMine> {
+  return call(`${REST}rpc/nx_referral_attach`, { method: "POST", token: s.access_token, body: JSON.stringify({ p_code: code, p_source: source }) })
+}
+
+/** Paiement (Worker de NEXORA, même adresse que le site) : page de paiement ou espace d'abonnement. #090 : code d'un
+ *  parrain (ref) rattaché par le Worker avant le paiement, remise appliquée à chaque paiement. */
+export async function pay(kind: "checkout" | "portal", s: Session, period: "month" | "year" = "month", ref?: { code: string; source: "link" | "code" }): Promise<string> {
   let res: Response
   try {
     res = await fetch(`/pay/${kind}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${s.access_token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ period }),
+      body: JSON.stringify({ period, ...(ref ? { ref: ref.code, ref_source: ref.source } : {}) }),
     })
   } catch {
     throw new Error("Le service de paiement est injoignable : réessaie dans un instant.")

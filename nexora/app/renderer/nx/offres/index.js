@@ -10,7 +10,7 @@ import { nxAppBuilder } from '../../dist/chunks/android-W5CZA2A2.js';
 import { state } from '../core.js';
 import { cloud, status, onChange, refreshMain } from './status.js';
 import { planOf } from './catalog.js';
-import { panel, onClick as panelClick } from './panel.js';
+import { panel, onClick as panelClick, onKey as panelKey } from './panel.js';
 import { openUpsell, onClick as upsellClick } from './upsell.js';
 import * as appbuilder from './appbuilder.js';
 import * as locks from './locks.js';
@@ -52,6 +52,8 @@ export async function install() {
   globalThis.__nxOffres = { panel, planName: (id) => planOf(id).name };
   appbuilder.install(nxAppBuilder.prototype);
   document.addEventListener('click', (e) => { if (!panelClick(e)) upsellClick(e); });
+  // NEXORA #090 : Entrée dans le champ du code promo d'un parrain.
+  document.addEventListener('keydown', panelKey);
   try { window.vitrine.on('plan:blocked', (info) => openUpsell(info || {})); } catch { /* aperçu sans l'événement */ }
   onChange((st) => {
     locks.apply(); locks.lockCards();

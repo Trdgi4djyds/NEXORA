@@ -14,6 +14,8 @@ import { NotFound } from "./pages/NotFound"
 import { spaceBySlug } from "./data/spaces"
 import { installGlow } from "./lib/glow"
 import { installDepth } from "./lib/depth"
+import { captureFromUrl } from "./lib/referral"
+import { loadRemote } from "./lib/remote"
 import { scrollToId, useRoute, type Route } from "./router"
 
 function page(route: Route): { key: string; title: string; node: ReactNode } {
@@ -43,6 +45,10 @@ export function App() {
   useEffect(() => installGlow(), [])
   // Profondeur liée au défilement des scènes en 3D (#074).
   useEffect(() => installDepth(), [])
+  // NEXORA #090 : lien d'un parrain (?parrain=CODE), gardé le temps réglé dans le back office.
+  useEffect(() => {
+    captureFromUrl(() => loadRemote().then((r) => r.referral.cookie_days))
+  }, [])
 
   // Ctrl K (ou Cmd K) ouvre la recherche, comme dans NEXORA.
   useEffect(() => {

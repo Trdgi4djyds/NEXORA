@@ -6,6 +6,7 @@
 //   - journaux de session : espace ouvert (envoyés par le processus principal avec le signal de vie).
 import { b as sb } from '../../dist/chunks/chunk-EZKHFSAB.js';
 import { esc, ico, toast } from '../core.js';
+import { FALLBACK, money } from '../offres/catalog.js';
 
 const api = window.vitrine;
 let st = null;
@@ -150,7 +151,7 @@ function renderChip() {
   }
   chip.hidden = false;
   chip.innerHTML = `${ico('nxCrown', 13)}<span>Essai Pro · <b>${esc(remaining(st.trial_ends_at))}</b> restantes</span><em>Passer à Pro</em>`;
-  chip.title = `Tout NEXORA est ouvert jusqu’au ${new Date(st.trial_ends_at).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}. Ensuite : offre Gratuite (Responsive Lab, Browser Lab et 2 applications), ou Pro à 18 $ par mois.`;
+  chip.title = `Tout NEXORA est ouvert jusqu’au ${new Date(st.trial_ends_at).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}. Ensuite : offre Gratuite (Responsive Lab, Browser Lab et 2 applications), ou Pro à ${money(FALLBACK.pro.price_month_cents)} par mois (30 % de moins avec le code d’un parrain).`;
 }
 function update(s) { st = s; render(); renderChip(); }
 

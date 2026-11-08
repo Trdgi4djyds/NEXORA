@@ -1,5 +1,7 @@
 'use strict';
-/* NEXORA #087 : l'offre Gratuite comprend 2 applications au total (App Builder et Desktop Builder confondus,
+/* NEXORA #090 : Pro à 25 $ par mois (250 $ par an), 30 % de remise avec le lien ou le code promo d'un parrain (NEXORA
+ * REFERRAL, 25 % de ce que paie le filleul pour le parrain) ; prix et remise lus sur le serveur, aucun changement des canaux contrôlés.
+ * NEXORA #087 : l'offre Gratuite comprend 2 applications au total (App Builder et Desktop Builder confondus,
  * applications supprimées comprises), avec tout l'App Builder et tout le Desktop Builder, et 5 constructions par
  * application et par mois. Une construction (android:build, desktop:build) passe par nx_app_build (migration
  * 20261108000006) avec l'identifiant de l'application (champ nxApp ajouté par l'interface) : le serveur réserve

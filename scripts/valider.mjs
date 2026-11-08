@@ -198,6 +198,16 @@ function localChecks() {
     }`,
   )
 
+  // NEXORA #090 : parrainage (NEXORA REFERRAL) : migration rejouée sur PGlite, paiement du Worker avec la remise.
+  r = run("pnpm", ["-s", "test:parrainage"], { PGLITE_DIR: pglite })
+  const refMissing = /PGlite introuvable/i.test(r.out)
+  rec(
+    "4. Offres et règles",
+    "Essais du parrainage : parrains, code du mois, filleuls, commissions, retraits (pnpm test:parrainage)",
+    refMissing ? "alerte" : r.code !== 0 ? "echec" : "ok",
+    refMissing ? "sautés (PGlite absent, voir l'en-tête de scripts/test-parrainage.mjs)" : lastLine(r.out, /vérifications/) || `code ${r.code}`,
+  )
+
   const tsc = path.join(ROOT, "node_modules", ".bin", "tsc")
   r = fs.existsSync(tsc)
     ? run(tsc, ["--noEmit", "-p", "admin"])
@@ -218,6 +228,16 @@ function localChecks() {
     r.code === 0 ? "ok" : "echec",
     r.code === 0 ? "aucune erreur" : lastLine(r.out),
   )
+  // NEXORA #090 : espace des parrains (referral/, React).
+  r = fs.existsSync(tsc)
+    ? run(tsc, ["--noEmit", "-p", "referral"])
+    : { code: null, out: "tsc introuvable" }
+  rec(
+    R,
+    "Types de l’espace des parrains (tsc --noEmit)",
+    r.code === 0 ? "ok" : "echec",
+    r.code === 0 ? "aucune erreur" : lastLine(r.out),
+  )
 
   if (!NO_BUILD) {
     r = run("pnpm", ["-s", "build"])
@@ -233,6 +253,8 @@ function localChecks() {
     "index.html",
     "admin/index.html",
     "site/index.html",
+    // NEXORA #090 : espace des parrains.
+    "referral/index.html",
     "_headers",
     "nx/boot.js",
   ]

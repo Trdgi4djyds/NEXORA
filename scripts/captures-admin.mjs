@@ -6,7 +6,10 @@
 //                         licences, licences-appareils (#076), licences-reglages (#077), invitations, contenus, fichiers, supervision, site, audits, audit-site,
 //                         support, ticket, annonces, offres, fonctionnalites, configuration,
 //                         journal, supabase, emails, email-maj, email-journal, factures, facture,
-//                         facture-brouillon (défaut : tous)
+//                         facture-brouillon, parrainage, parrainage-parrains, parrainage-codes, parrainage-filleuls,
+//                         parrainage-commissions, parrainage-retraits, parrainage-reglages, parrain-invitation,
+//                         parrain-connexion, parrain-code, parrain-tableau, parrain-codes, parrain-filleuls, parrain-gains,
+//                         parrain-retraits (#090 : espace des parrains, /referral/) (défaut : tous)
 //   --label <nom>         série rangée dans captures/AAAA-MM-JJ-<nom>/ (défaut : « admin »)
 //   --theme sombre        thème sombre (défaut : clair)
 //   --taille 1440x900     taille de la fenêtre
@@ -28,6 +31,8 @@ import {
   demoResponse,
   demoSession,
 } from "./admin-demo.mjs"
+// NEXORA #090 : espace des parrains (/referral/) et section Parrainage.
+import { demoInviteToken, demoPartnerSession, demoReferral } from "./referral-demo.mjs"
 
 const SCREENS = [
   ["connexion", "Connexion", null],
@@ -65,6 +70,23 @@ const SCREENS = [
     "Brouillon de facture",
     `invoices/${demoIds.invoiceDraft}`,
   ],
+  // NEXORA #090 : section Parrainage, puis l'espace des parrains (route « @referral… : #/… » : page /referral/ ;
+  // -anon sans session, -code avec le code du mois à saisir).
+  ["parrainage", "Parrainage : bilan", "referral"],
+  ["parrainage-parrains", "Parrainage : parrains", "referral/partners"],
+  ["parrainage-codes", "Parrainage : codes du mois", "referral/codes"],
+  ["parrainage-filleuls", "Parrainage : filleuls", "referral/referrals"],
+  ["parrainage-commissions", "Parrainage : commissions", "referral/commissions"],
+  ["parrainage-retraits", "Parrainage : retraits", "referral/payouts"],
+  ["parrainage-reglages", "Parrainage : réglages", "referral/settings"],
+  ["parrain-invitation", "Espace des parrains : invitation", `@referral-anon:#/invitation/${demoInviteToken}`],
+  ["parrain-connexion", "Espace des parrains : connexion", "@referral-anon:#/"],
+  ["parrain-code", "Espace des parrains : code du mois", "@referral-code:#/"],
+  ["parrain-tableau", "Espace des parrains : vue d’ensemble", "@referral:#/"],
+  ["parrain-codes", "Espace des parrains : codes et liens", "@referral:#/codes"],
+  ["parrain-filleuls", "Espace des parrains : filleuls", "@referral:#/filleuls"],
+  ["parrain-gains", "Espace des parrains : gains", "@referral:#/gains"],
+  ["parrain-retraits", "Espace des parrains : retraits", "@referral:#/retraits"],
 ]
 const CHROMIUM = process.env.CHROME_PATH || "/usr/bin/chromium"
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -247,6 +269,25 @@ async function main() {
     const theme = opts.theme === "sombre" ? "dark" : "light"
     for (const [index, [slug, label, route]] of opts.list.entries()) {
       where = label
+      if (route && route.startsWith("@referral")) {
+        // #090 : espace des parrains, session gardée sous sa propre clé.
+        const [kind, hash] = [route.slice(0, route.indexOf(":")), route.slice(route.indexOf(":") + 1)]
+        demoReferral.state = kind === "@referral-code" ? "code" : "actif"
+        const partner = kind === "@referral-anon" || !opts.demo ? "" : JSON.stringify(demoPartnerSession())
+        await page.goto("about:blank")
+        const initRef = await page.evaluateOnNewDocument((s) => {
+          if (s) localStorage.setItem("nexora-referral-auth", s)
+          else localStorage.removeItem("nexora-referral-auth")
+          localStorage.removeItem("nexora-referral-invite")
+        }, partner)
+        await page.goto(`${base.replace(/admin\/$/, "referral/")}${hash}`, { waitUntil: "load", timeout: 30000 })
+        await settle(page)
+        await page.removeScriptToEvaluateOnNewDocument(initRef.identifier)
+        const refFile = path.join(dir, `${String(index + 1).padStart(2, "0")}-${slug}.png`)
+        await page.screenshot({ path: refFile, fullPage: false })
+        shots.push({ file: refFile, label })
+        continue
+      }
       const session = route && opts.demo ? JSON.stringify(demoSession()) : ""
       await page.goto("about:blank")
       // Réglages de la page avant son chargement : thème, session de démonstration, jeton Supabase.

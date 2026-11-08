@@ -4,6 +4,7 @@
 // Le back office web (admin/, React) est assemblé par Vite dans dist/admin/, avec des chemins
 // relatifs : il fonctionne quelle que soit l'adresse de publication (Figma Make, GitHub Pages…).
 // Le site vitrine (site/, React, NEXORA #060) est assemblé de la même façon dans dist/site/.
+// L'espace des parrains (referral/, React, NEXORA #090) est assemblé de la même façon dans dist/referral/.
 // `--mode development` (passé seulement par .figma/make/deploy-preview, l'aperçu déployé de Figma Make,
 // NEXORA #063) : le site vitrine devient la page d'entrée (dist/index.html) et NEXORA web passe à
 // dist/app.html. La publication (Cloudflare : `pnpm run build`, sans argument) garde NEXORA web à la racine.
@@ -111,6 +112,12 @@ fs.writeFileSync(
     "/admin/*",
     "  X-Frame-Options: DENY",
     "  Content-Security-Policy: frame-ancestors 'none'",
+    // NEXORA #090 : espace des parrains (NEXORA REFERRAL), même protection que le back office.
+    "/referral/*",
+    "  X-Frame-Options: DENY",
+    "  Content-Security-Policy: frame-ancestors 'none'",
+    "/referral/assets/*",
+    "  Cache-Control: public, max-age=31536000, immutable",
     // NEXORA #060 : fichiers du site vitrine nommés avec leur empreinte, gardés en cache un an.
     "/site/assets/*",
     "  Cache-Control: public, max-age=31536000, immutable",
@@ -190,6 +197,47 @@ siteHtml = siteHtml.replace(
   ].join("\n"),
 )
 fs.writeFileSync(sitePage, siteHtml)
+
+// NEXORA #090 : espace des parrains (NEXORA REFERRAL), servi sous /referral/. Politique de sécurité posée dans la page
+// publiée : fichiers de l'espace seulement, connexion à Supabase (session et fonctions nx_partner_*), aucune ressource
+// tierce, aucun cadre.
+await build({
+  configFile: false,
+  mode: "production",
+  root: path.join(ROOT, "referral"),
+  base: "./",
+  publicDir: false,
+  logLevel: "warn",
+  plugins: [react()],
+  build: {
+    outDir: path.join(OUT_DIR, "referral"),
+    emptyOutDir: true,
+    chunkSizeWarningLimit: 1000,
+  },
+})
+const referralPage = path.join(OUT_DIR, "referral", "index.html")
+let referralHtml = fs.readFileSync(referralPage, "utf8")
+if ([...referralHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)].length)
+  throw new Error("referral/index.html : aucun script en ligne n’est permis (politique de sécurité).")
+const referralCsp = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self'",
+  "img-src 'self' data:",
+  "font-src 'self'",
+  `connect-src 'self' https://${projectRef}.supabase.co`,
+  "base-uri 'none'",
+  "form-action 'none'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+].join("; ")
+if (!referralHtml.includes('<meta charset="UTF-8" />'))
+  throw new Error("referral/index.html : balise meta charset introuvable.")
+referralHtml = referralHtml.replace(
+  '<meta charset="UTF-8" />',
+  ['<meta charset="UTF-8" />', `    <meta http-equiv="Content-Security-Policy" content="${referralCsp}" />`].join("\n"),
+)
+fs.writeFileSync(referralPage, referralHtml)
 
 // Aperçu déployé de Figma Make (#063) : le site vitrine à la racine (mêmes fichiers que dist/site/, chemins
 // préfixés), NEXORA web dans app.html (ses chemins relatifs restent valables à la racine).

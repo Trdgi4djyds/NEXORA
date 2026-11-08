@@ -380,3 +380,22 @@ html[data-theme='dark'] :is(.nxo-ab-lock-card, .nxo-space-card) { box-shadow: va
 @media (max-width: 760px) { .nxo-now { flex-wrap: wrap; padding-left: 26px; } .nxo-now-art { opacity: .25; } .nxo-now-acts { align-items: flex-start; } }
 html[data-contrast='high'] .nxo-plan-head::before { display: none; }
 html[data-contrast='high'] .nxo-plan .nxo-name { color: var(--text); background: none; }
+
+/* ------------------------------------------------------------------ parrainage (NEXORA #090) */
+.nxo-ref-price { display: flex; align-items: center; gap: 8px; margin-top: -4px; }
+.nxo-was { font-size: 13px; font-weight: 600; color: var(--text-2); text-decoration-thickness: 1.5px; }
+.nxo-pill.nxo-ref-pill { color: #2b1d00; background: linear-gradient(140deg, #ffe39a, #e2a91c); box-shadow: none; }
+.nxo-ref .nxc-card-head p b { color: var(--text); font-weight: 650; }
+.nxo-ref.on { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #e2a91c 55%, transparent); }
+.nxo-ref.on .nxc-card-ic { color: #2b1d00; background: linear-gradient(140deg, #ffe39a, #e2a91c); }
+.nxo-ref-form { display: flex; gap: 8px; margin-top: 12px; max-width: 460px; }
+.nxo-ref-input {
+  flex: 1; min-width: 0; height: 32px; padding: 0 12px; border: 0; border-radius: 99px; font: inherit; font-size: 13px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--text); background: var(--fill-2); box-shadow: inset 0 0 0 1px var(--sep); outline: none;
+}
+.nxo-ref-input::placeholder { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--text-3); }
+.nxo-ref-input:focus { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.nxo-ref-msg { margin: 8px 0 0; font-size: 12px; font-weight: 550; color: #c0392b; }
+html[data-theme='dark'] .nxo-ref-msg { color: #ff8a7a; }
+.nxo-price.ref .nxo-amt { font-size: 38px; }
+.nxo-price.ref .nxo-cur { font-size: 17px; }

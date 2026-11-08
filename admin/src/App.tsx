@@ -24,6 +24,7 @@ import { Audit } from "./sections/Audit"
 import { SupabaseSetup } from "./sections/SupabaseSetup"
 import { Emails } from "./sections/Emails"
 import { Invoices } from "./sections/Invoices"
+import { Referral } from "./sections/Referral"
 
 export type SectionProps = { param?: string }
 type Section = {
@@ -41,6 +42,8 @@ export const SECTIONS: Section[] = [
   { id: "users", label: "Utilisateurs", icon: "user", group: "Clients", view: Users, desc: "Comptes, rôles, accès et sécurité." },
   { id: "orgs", label: "Équipes et offres", icon: "group", group: "Clients", view: Orgs, desc: "Espaces, membres et abonnements." },
   { id: "invoices", label: "Factures", icon: "pdf", group: "Clients", view: Invoices, desc: "Factures PDF aux couleurs de NEXORA, envoyées par e-mail avec Brevo." },
+  // NEXORA #090 : NEXORA REFERRAL (parrains, codes du mois, filleuls, commissions, retraits).
+  { id: "referral", label: "Parrainage", icon: "gift", group: "Clients", view: Referral, desc: "NEXORA REFERRAL : parrains invités par l’équipe, code d’accès du mois, filleuls, commissions et retraits." },
   { id: "devices", label: "Appareils", icon: "laptop", group: "Clients", view: Devices, desc: "Postes Windows et navigateurs connectés." },
   { id: "licences", label: "Licences", icon: "key", group: "Clients", view: Licences, desc: "Licences de NEXORA Devs Toolbox, appareils, adresses IP, contrôles, sessions et journaux du logiciel." },
   { id: "invitations", label: "Invitations", icon: "mail", group: "Clients", view: Invitations, desc: "Invitations envoyées aux équipes." },

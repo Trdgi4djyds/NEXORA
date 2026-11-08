@@ -4,9 +4,9 @@
 import { useEffect, useState } from "react"
 import { projectRef, publicKey } from "../../../supabase/nexora.json"
 import { paymentsOpen } from "./account"
-import { CONTACT_EMAIL, FALLBACK, PLAN_ORDER, limitText, money } from "../../../nexora/app/renderer/nx/offres/catalog.js"
+import { CONTACT_EMAIL, FALLBACK, PLAN_ORDER, REFERRAL, discounted, limitText, money, percent } from "../../../nexora/app/renderer/nx/offres/catalog.js"
 
-export { CONTACT_EMAIL, limitText, money }
+export { CONTACT_EMAIL, REFERRAL, discounted, limitText, money, percent }
 
 export type PlanId = "free" | "pro"
 export type Plan = {
@@ -27,6 +27,8 @@ export type Remote = {
   downloadUrl: string
   supportEmail: string
   maintenance: string
+  /** NEXORA #090 : parrainage (app_config.referral) : programme ouvert, remise du filleul, lien mémorisé (jours). */
+  referral: { enabled: boolean; discount_pct: number; cookie_days: number }
 }
 
 const FB = FALLBACK as unknown as Record<PlanId, Plan>
@@ -40,6 +42,7 @@ export const INITIAL: Remote = {
   // NEXORA #087 : adresse de contact de NEXORA Devs Toolbox, remplacée par app_config.support_email si elle est renseignée.
   supportEmail: CONTACT_EMAIL,
   maintenance: "",
+  referral: { enabled: true, discount_pct: REFERRAL.discount_pct, cookie_days: REFERRAL.cookie_days },
 }
 
 type Row = Record<string, unknown>
@@ -89,7 +92,7 @@ async function fetchAll(): Promise<Remote> {
     rest(
       "plans?select=id,name,description,price_month_cents,price_year_cents,currency,badge,features,limits,perms&active=eq.true&order=sort",
     ),
-    rest("app_config?select=key,value&key=in.(desktop_download_url,support_email,maintenance)"),
+    rest("app_config?select=key,value&key=in.(desktop_download_url,support_email,maintenance,referral)"),
   ])
   const cfg: Record<string, unknown> = {}
   if (config.status === "fulfilled" && Array.isArray(config.value))
@@ -97,12 +100,19 @@ async function fetchAll(): Promise<Remote> {
   const url = text(cfg.desktop_download_url)
   const mail = text(cfg.support_email)
   const maintenance = record<unknown>(cfg.maintenance)
+  const ref = record<unknown>(cfg.referral)
+  const num = (v: unknown, fb: number, max: number) => (typeof v === "number" && v >= 0 && v <= max ? v : fb)
   return {
     ready: true,
     plans: plans.status === "fulfilled" ? mergePlans(plans.value) : INITIAL.plans,
     downloadUrl: /^https:\/\/\S+$/.test(url) ? url : "",
     supportEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail) ? mail : CONTACT_EMAIL,
     maintenance: maintenance.enabled === true ? text(maintenance.message) || "NEXORA est en maintenance." : "",
+    referral: {
+      enabled: ref.enabled !== false,
+      discount_pct: num(ref.discount_pct, REFERRAL.discount_pct, 90),
+      cookie_days: num(ref.cookie_days, REFERRAL.cookie_days, 365),
+    },
   }
 }
 

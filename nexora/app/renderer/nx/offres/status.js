@@ -119,6 +119,20 @@ export async function askPlan(id) {
   return t;
 }
 
+// NEXORA #090 : parrainage du compte (NEXORA REFERRAL) : { referred, eligible, code, partner, discount_pct, month_cents,
+// year_cents, list_month_cents, list_year_cents } ou null (sans compte, serveurs sans la migration 20261108000007).
+export async function referral() {
+  if (!cloud.user) return null;
+  const { data, error } = await sb.rpc('nx_referral_mine').then((r) => r, (e) => ({ error: e }));
+  return error || !data ? null : data;
+}
+// Code promo d'un parrain saisi par le client : { ok, reason (unknown, self, customer), … } (rattachement définitif).
+export async function attachReferral(code) {
+  const { data, error } = await sb.rpc('nx_referral_attach', { p_code: code, p_source: 'code' });
+  if (error) throw error;
+  return data;
+}
+
 // Le processus principal garde l'offre 5 minutes : on lui demande de la relire (changement d'offre, de compte).
 export function refreshMain() {
   try { const api = window.vitrine; if (api && api.invoke) Promise.resolve(api.invoke('plan:refresh')).catch(() => {}); } catch { /* aperçu */ }

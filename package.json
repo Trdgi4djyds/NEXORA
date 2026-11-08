@@ -11,6 +11,7 @@
     "check": "node scripts/pack-windows.mjs --check",
     "test:offres": "node scripts/test-offres.mjs",
     "test:licences": "node scripts/test-licences.mjs",
+    "test:parrainage": "node scripts/test-parrainage.mjs",
     "test:securite": "node scripts/test-securite.mjs",
     "test:novx": "node scripts/test-novx.mjs",
     "test:devlab": "node scripts/test-devlab.mjs",

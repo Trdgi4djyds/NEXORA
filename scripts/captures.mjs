@@ -12,6 +12,8 @@
 //   --route <#/chemin>    avec « site » : page du site à capturer (répétable ; défaut : #/, l'accueil du site)
 //   --click <texte>       avec un seul espace : clique ensuite sur le bouton portant ce texte, ou cette
 //                         infobulle pour un bouton à icône seule (répétable)
+//   --compte-onglet <id>  NEXORA #090 : avec un seul espace et --compte demo, ouvre la fenêtre Mon compte sur cet
+//                         onglet (plan = « Offre et usage », profile, security…), par la même fonction que NEXORA
 //   --theme sombre        thème sombre de NEXORA (défaut : clair)
 //   --scroll <sélecteur>  après les clics, fait défiler jusqu'à l'élément visé (CSS), centré (#041)
 //   --taille 1440x900     taille de la fenêtre capturée
@@ -139,6 +141,7 @@ function parseArgs(argv) {
     else if (arg === "--licence") opts.licence = JSON.stringify(JSON.parse(value()))
     else if (arg === "--sans-notifications") opts.quiet = true
     else if (arg === "--attendre") opts.wait = Number(value()) || 0
+    else if (arg === "--compte-onglet") opts.actions.push({ kind: "account", tab: value() })
     else if (arg === "--route") opts.routes.push(value())
     else if (arg === "--scroll") opts.scroll = value()
     else if (arg === "--theme") opts.theme = value()
@@ -177,7 +180,7 @@ function parseArgs(argv) {
       ? SPACES
       : SPACES.filter((space) => opts.screens.includes(space.slug))
   if (opts.actions.length && opts.spaces.length !== 1)
-    throw new Error("--click et --saisir demandent un seul espace.")
+    throw new Error("--click, --saisir et --compte-onglet demandent un seul espace.")
   return opts
 }
 
@@ -262,12 +265,16 @@ async function useDemoAccount(page, quiet = false) {
     "./admin-demo.mjs"
   )
   const servedHead = new Set()
-  await page.evaluateOnNewDocument((s) => {
+  const demo = demoSession()
+  await page.evaluateOnNewDocument((s, site) => {
     // Seulement la page de NEXORA (pas les cadres des appareils, ni leurs pages data: sans stockage).
     if (window !== window.top) return
     if (!localStorage.getItem("nexora-auth"))
       localStorage.setItem("nexora-auth", s)
-  }, JSON.stringify(demoSession()))
+    // NEXORA #090 : même compte fictif connecté au site vitrine (page « Ma licence », session de site/src/lib/account.ts).
+    if (!localStorage.getItem("nexora-site-session"))
+      localStorage.setItem("nexora-site-session", site)
+  }, JSON.stringify(demo), JSON.stringify({ access_token: demo.access_token, refresh_token: demo.refresh_token, expires_at: demo.expires_at, email: demo.user.email, user_id: demo.user.id }))
   const linked = new Map([
     [
       "demo-boutique",
@@ -463,6 +470,15 @@ async function main() {
         if (action.kind === "type") {
           if (!(await typeInto(page, action.field, action.text)))
             throw new Error(`Champ « ${action.field}… » introuvable dans ${space.label}.`)
+        } else if (action.kind === "account") {
+          // #090 : fenêtre Mon compte ouverte comme par NEXORA (nx/offres/upsell.js, openAccount).
+          const opened = await page.evaluate(async (tab) => {
+            const m = await import(new URL("dist/chunks/chunk-EOM7FQDL.js", location.href).href)
+            if (typeof m.j !== "function") return false
+            await m.j(tab)
+            return true
+          }, action.tab)
+          if (!opened) throw new Error(`Onglet « ${action.tab} » de Mon compte impossible à ouvrir.`)
         } else if (!(await clickByText(page, action.text)))
           throw new Error(`Bouton « ${action.text} » introuvable dans ${space.label}.`)
         await settle(page, 1200)

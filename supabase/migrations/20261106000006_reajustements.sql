@@ -26,8 +26,17 @@ begin
   end loop;
 end $$;
 
-update public.plans set price_month_cents = 2400, updated_at = now() where id = 'pro' and price_month_cents = 1800;
-update public.plans set price_year_cents = 24000, updated_at = now() where id = 'pro' and price_year_cents = 18000;
+-- NEXORA #090 : sans effet après une réécriture plus récente des offres (repères offres_v2 à offres_v4 de app_config) :
+-- rejouée par « Tout appliquer », elle remettait le Pro à 18 $ du #076 et du #087 à 24 $ (A-053).
+do $$
+begin
+  if to_regclass('public.app_config') is not null then
+    if exists (select 1 from public.app_config where key in ('offres_v2', 'offres_v3', 'offres_v4')) then return; end if;
+  end if;
+  update public.plans set price_month_cents = 2400, updated_at = now() where id = 'pro' and price_month_cents = 1800;
+  update public.plans set price_year_cents = 24000, updated_at = now() where id = 'pro' and price_year_cents = 18000;
+end
+$$;
 
 update public.plans set limits = limits || '{"ai_requests_month": -1}'::jsonb, updated_at = now()
 where (id, limits ->> 'ai_requests_month') in (('free', '30'), ('standard', '500'), ('pro', '3000'));

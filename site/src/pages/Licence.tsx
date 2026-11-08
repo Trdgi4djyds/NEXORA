@@ -13,11 +13,12 @@ import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
-import { money, usePayments, useRemote } from "../lib/remote"
+import { discounted, money, percent, usePayments, useRemote } from "../lib/remote"
+import { CODE_RE, useParrain } from "../lib/referral"
 import { cn } from "../lib/utils"
 import {
-  KEY_RE, myLicence, pay, recover, releaseDevice, session, sessionFromLink, signIn, signOut, signUp, verifyKey,
-  type Licence as Lic, type Session, type Verify,
+  KEY_RE, myLicence, pay, recover, referralAttach, referralMine, releaseDevice, session, sessionFromLink, signIn, signOut, signUp, verifyKey,
+  type Licence as Lic, type ReferralMine, type Session, type Verify,
 } from "../lib/account"
 
 const date = (iso?: string | null, time = false) =>
@@ -179,8 +180,15 @@ function KeyCard({ lic }: { lic: Lic }) {
   )
 }
 
+// NEXORA #090 : refus du rattachement d'un code de parrain (nx_referral_attach).
+const REF_REFUSED: Record<string, string> = {
+  unknown: "Ce code n’existe pas ou n’est plus actif : vérifie-le auprès de ton parrain.",
+  self: "Tu ne peux pas utiliser ton propre code de parrainage.",
+  customer: "Le parrainage s’applique à un premier abonnement Pro.",
+}
+
 function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
-  const { plans, supportEmail } = useRemote()
+  const { plans, supportEmail, referral } = useRemote()
   const payments = usePayments()
   const pro = plans.find((p) => p.id === "pro")
   const [period, setPeriod] = useState<"month" | "year">("month")
@@ -188,6 +196,47 @@ function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
   const [err, setErr] = useState("")
   const paid = lic.paid_plan === "pro"
   const b = lic.billing
+  // NEXORA #090 : parrainage du compte. Le lien d'un parrain gardé par le site est rattaché au compte (avant un premier
+  // abonnement) ; sinon, le client peut saisir le code promo d'un parrain.
+  const parrain = useParrain()
+  const [mine, setMine] = useState<ReferralMine | null>(null)
+  const [code, setCode] = useState(parrain?.code || "")
+  const [refBusy, setRefBusy] = useState(false)
+  const [refErr, setRefErr] = useState("")
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      let m = await referralMine(s).catch(() => null)
+      if (m && !m.referred && m.eligible && parrain && referral.enabled) {
+        const r = await referralAttach(s, parrain.code, "link").catch(() => null)
+        if (r && r.ok !== false) m = r
+      }
+      if (alive) setMine(m)
+    })()
+    return () => {
+      alive = false
+    }
+  }, [s, parrain, referral.enabled])
+  async function applyCode(e: FormEvent) {
+    e.preventDefault()
+    const v = code.trim()
+    if (!CODE_RE.test(v)) {
+      setRefErr("Un code promo compte de 3 à 24 lettres, chiffres ou tirets.")
+      return
+    }
+    setRefBusy(true)
+    setRefErr("")
+    try {
+      const r = await referralAttach(s, v, parrain && parrain.code === v.toUpperCase() ? "link" : "code")
+      if (r.ok === false) setRefErr(REF_REFUSED[r.reason || "unknown"] || REF_REFUSED.unknown)
+      else setMine(r)
+    } catch (x) {
+      setRefErr(x instanceof Error ? x.message : String(x))
+    } finally {
+      setRefBusy(false)
+    }
+  }
+  const refOn = Boolean(mine && mine.referred)
 
   async function go(kind: "checkout" | "portal") {
     setBusy(true)
@@ -224,8 +273,11 @@ function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
       </Reveal>
     )
   }
-  const month = pro?.price_month_cents ?? 1800
-  const year = pro?.price_year_cents ?? 18000
+  const listMonth = pro?.price_month_cents ?? 2500
+  const listYear = pro?.price_year_cents ?? 25000
+  const pct = mine?.discount_pct ?? referral.discount_pct
+  const month = refOn ? discounted(listMonth, pct) : listMonth
+  const year = refOn ? discounted(listYear, pct) : listYear
   return (
     <Reveal className={cn(card, "flex flex-col gap-4")} delay={80}>
       <span className="sp-ic solid">
@@ -244,7 +296,25 @@ function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
       <p className="flex items-baseline gap-1.5">
         <b className="text-[40px] leading-none font-semibold tracking-[-0.03em] text-primary">{money(period === "year" ? year : month)}</b>
         <span className="text-muted-foreground">{period === "year" ? " / an" : " / mois"}</span>
+        {refOn && <s className="ml-1 text-[16px] text-muted-foreground/80">{money(period === "year" ? listYear : listMonth)}</s>}
       </p>
+      {refOn && mine ? (
+        <Msg kind="ok">
+          Parrainage actif : code {mine.code}
+          {mine.partner ? ` de ${mine.partner}` : ""}, −{percent(pct)} % à chaque paiement, tant que ton abonnement continue.
+        </Msg>
+      ) : mine?.eligible && referral.enabled ? (
+        <form className="flex flex-col gap-2" onSubmit={applyCode}>
+          <Label htmlFor="ref-code">Code promo d’un parrain (−{percent(pct)} % à chaque paiement)</Label>
+          <div className="flex gap-2">
+            <Input id="ref-code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 24))} placeholder="CODE25" autoComplete="off" spellCheck={false} className="uppercase tracking-[0.08em]" />
+            <Button type="submit" variant="outline" disabled={refBusy || !code}>
+              {refBusy ? "…" : "Appliquer"}
+            </Button>
+          </div>
+          {refErr && <Msg kind="bad">{refErr}</Msg>}
+        </form>
+      ) : null}
       {err && <Msg kind="bad">{err}</Msg>}
       {/* #087 (A-056) : paiement en ligne pas encore ouvert : demande à l'équipe, qui active Pro. */}
       {payments === false ? (
@@ -252,7 +322,7 @@ function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
           <Button asChild size="lg">
             <a
               href={`mailto:${supportEmail}?subject=${encodeURIComponent("Passage à l’offre Pro")}&body=${encodeURIComponent(
-                `Bonjour,\n\nJe souhaite passer à l’offre Pro (${period === "year" ? "paiement annuel" : "paiement mensuel"}) avec le compte ${s.email}.\n`,
+                `Bonjour,\n\nJe souhaite passer à l’offre Pro (${period === "year" ? "paiement annuel" : "paiement mensuel"}) avec le compte ${s.email}.\n${refOn && mine ? `Code de parrainage : ${mine.code} (−${pct} %).\n` : ""}`,
               )}`}
             >
               <Icon name="mail" size={16} /> Demander Pro à l’équipe

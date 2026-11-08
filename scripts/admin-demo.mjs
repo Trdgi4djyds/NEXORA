@@ -4,6 +4,8 @@
 // captures rangées dans captures/.
 import { readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
+// NEXORA #090 : parrainage (NEXORA REFERRAL).
+import { referralRpc, referralTables } from "./referral-demo.mjs"
 
 const now = Date.now()
 const ago = (days, hours = 0) =>
@@ -343,6 +345,7 @@ const orgDefs = [
 // NEXORA #076 : état après la migration 20261108000002 : Gratuit et Pro (18 $), Standard retirée de la vente.
 // NEXORA #087 : état après la migration 20261108000006 : Gratuit à 2 applications (Android ou Windows, supprimées
 // comprises, 5 constructions par application et par mois), Pro à 18 $ et 180 $.
+// NEXORA #090 : état après la migration 20261108000007 : Pro à 25 $ et 250 $.
 const V2 = {
   free: {
     description: "Responsive Lab et Browser Lab complets, et 2 applications Android ou Windows. Gratuit, sans limite de durée.",
@@ -351,8 +354,8 @@ const V2 = {
   },
   pro: {
     description: "Toutes les options de NEXORA Devs Toolbox, sans limite d’espace.",
-    price_month_cents: 1800,
-    price_year_cents: 18000,
+    price_month_cents: 2500,
+    price_year_cents: 25000,
     badge: "Toutes les options",
     limits: { projects: 200, designs: -1, members: 10, monitors: 50, storage_mb: 51200, apps: 50, apps_lifetime: 0, app_trial_days: 0, builds_per_app_month: -1, ai_requests_month: -1, scans_per_day: 200, crawls_per_day: -1, builds_month: 400, push_month: 100000 },
     features: ["Les 9 espaces sans restriction", "Dev Lab complet : éditeur, terminal, Git, débogueur, tests, bases de données, mise en ligne", "Jusqu’à 50 applications Android ou Windows, sans limite par application (400 constructions par mois)", "NEX-DESIGN complet : documents illimités, IA, prototype, code, équipe", "Studio 3D & Motion avancé", "Sécurité : audits avancés, 50 sites surveillés 24 h/24, page de statut", "200 projets, 10 membres, 50 Go", "Assistance prioritaire"],
@@ -1279,6 +1282,7 @@ export const nx_client_logs = [
 }))
 
 const TABLES = {
+  ...referralTables,
   profiles,
   nx_app_trials,
   plans,
@@ -1354,6 +1358,17 @@ function demoLibraries() {
 }
 
 function rpc(name, args) {
+  // NEXORA #090 : fonctions du parrainage (scripts/referral-demo.mjs).
+  const referral = referralRpc(name, args)
+  if (referral !== undefined) return referral
+  // NEXORA #090 : licence du compte de démonstration (page « Ma licence » du site vitrine) : offre Gratuite.
+  if (name === "nx_license_mine")
+    return {
+      key: "NXDT-7KQ4-M2XV-9HTR-B3WN", status: "active", created_at: new Date(now - 12 * 86400000).toISOString(), activated_at: new Date(now - 12 * 86400000).toISOString(),
+      plan: "free", plan_name: "Gratuit", paid_plan: "free", trial: false, trial_ends_at: new Date(now - 11 * 86400000).toISOString(), granted: false, max_devices: 3, billing: null,
+      devices: [{ id: "demo-pc", name: "PC-BUREAU", os: "Windows 11", app_version: "1.2.0", last_seen: new Date(now - 3600000).toISOString(), last_ip: "41.202.10.5" }],
+      server_time: new Date(now).toISOString(),
+    }
   const count = (list, fn) => list.filter(fn).length
   if (name === "admin_stats")
     return {
