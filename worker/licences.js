@@ -72,21 +72,33 @@ async function releaseKey() {
   return releaseKeyCache
 }
 // Dernière publication du dépôt officiel, vérifiée ; gardée 5 minutes. Jamais d'exception : { publication, error }.
+// NEXORA #079 : liens directs de téléchargement de github.com au lieu de l'API (api.github.com refuse les appels
+// sans jeton venus des adresses partagées de Cloudflare : quota de 60 par heure dépassé, « repository_unreachable »).
+// …/releases/latest/download/<fichier> redirige vers …/releases/download/<tag>/<fichier> : le tag est lu dans la
+// redirection, puis la signature est prise dans la même publication (pas de mélange si une publication arrive entre-temps).
+const GH_HEADERS = { "user-agent": "NEXORA-Security-Service" }
 export async function latestPublication(force = false) {
   if (!force && statementCache && Date.now() - statementCache.at < 5 * 60 * 1000) return statementCache.value
   let value
   try {
-    const gh = await fetch(`https://api.github.com/repos/${RELEASE_REPO}/releases/latest`, { headers: { accept: "application/vnd.github+json", "user-agent": "NEXORA-Security-Service" } })
-    if (gh.status === 404) value = { publication: null, error: "no_release" }
-    else if (!gh.ok) value = { publication: null, error: "repository_unreachable" }
+    const latest = `https://github.com/${RELEASE_REPO}/releases/latest/download/nexora.manifest.json`
+    const hop = await fetch(latest, { headers: GH_HEADERS, redirect: "manual" })
+    const location = hop.status >= 300 && hop.status < 400 ? hop.headers.get("location") || "" : ""
+    const tag = decodeURIComponent((/\/releases\/download\/([^/]+)\//.exec(location) || [])[1] || "")
+    // 404 : aucune publication, ou publication sans manifeste (indiscernables sans l'API).
+    if (hop.status === 404) value = { publication: null, error: "no_release" }
+    else if (!location) value = { publication: null, error: "repository_unreachable" }
     else {
-      const rel = await gh.json()
-      const ma = (rel.assets || []).find((a) => a.name === "nexora.manifest.json")
-      const sa = (rel.assets || []).find((a) => a.name === "nexora.manifest.sig")
-      if (!ma || !sa) value = { publication: null, error: "no_manifest" }
+      const base = tag ? `https://github.com/${RELEASE_REPO}/releases/download/${encodeURIComponent(tag)}/` : `https://github.com/${RELEASE_REPO}/releases/latest/download/`
+      const [mr, sr] = await Promise.all([
+        fetch(new URL(location, latest).href, { headers: GH_HEADERS }),
+        fetch(`${base}nexora.manifest.sig`, { headers: GH_HEADERS }),
+      ])
+      if (mr.status === 404 || sr.status === 404) value = { publication: null, error: "no_manifest" }
+      else if (!mr.ok || !sr.ok) value = { publication: null, error: "repository_unreachable" }
       else {
-        const raw = new Uint8Array(await (await fetch(ma.browser_download_url, { headers: { "user-agent": "NEXORA-Security-Service" } })).arrayBuffer())
-        const sig = (await (await fetch(sa.browser_download_url, { headers: { "user-agent": "NEXORA-Security-Service" } })).text()).trim()
+        const raw = new Uint8Array(await mr.arrayBuffer())
+        const sig = (await sr.text()).trim()
         const good = await crypto.subtle.verify({ name: "Ed25519" }, await releaseKey(), unb64(sig), raw).catch(() => false)
         if (!good) value = { publication: null, error: "signature" }
         else {
@@ -94,7 +106,7 @@ export async function latestPublication(force = false) {
           value = {
             publication: {
               version: m.version, manifest_version: Number(m.manifest_version) || 0, manifest_sha256: hex(await crypto.subtle.digest("SHA-256", raw)),
-              issued_at: m.issued_at || m.published_at || null, expires_at: m.expires_at || null, release: m.release || m.channel || "stable", tag: rel.tag_name || "",
+              issued_at: m.issued_at || m.published_at || null, expires_at: m.expires_at || null, release: m.release || m.channel || "stable", tag,
             },
             error: "",
           }

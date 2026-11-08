@@ -777,6 +777,13 @@ async function supabaseChecks() {
         "nx_status_unsubscribe",
         "nx_review_get",
         "nx_review_post",
+        // NEXORA #079 : licences (#076) et service de sécurité (#077). Paiements et anomalies du lanceur : secret
+        // partagé avec le Worker (nx_worker_secret_ok) ; politique des versions : déjà publique dans la déclaration
+        // signée de /security/manifest ; vérification d'une clé : page publique du site, adresse du titulaire masquée.
+        "nx_billing_apply",
+        "nx_security_report",
+        "nx_release_policy",
+        "nx_license_verify",
       ])
       const anon = lints.filter(
         (l) =>
@@ -960,6 +967,8 @@ async function anonChecks(types) {
         .map((p) => [p.id, p]),
     )
     const wrong = Object.entries(FALLBACK)
+      // NEXORA #079 : seulement les offres vendues (FALLBACK.standard n'est plus qu'un alias de Pro depuis #076).
+      .filter(([id, p]) => p.id === id)
       .filter(
         ([id, p]) =>
           !online[id] ||

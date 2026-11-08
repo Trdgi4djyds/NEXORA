@@ -290,12 +290,16 @@ ok(denied && rep2.ok && lrow.reason === "modified" && lrow.detail.file === "NEXO
     const relKeys = crypto.generateKeyPairSync("ed25519")
     const manRaw = Buffer.from(JSON.stringify({ format: 1, version: "1.3.0", manifest_version: 202611090000, issued_at: "2026-11-09T00:00:00Z" }))
     let manSig = crypto.sign(null, manRaw, relKeys.privateKey).toString("base64")
-    const ghFetch = async (u) => {
+    let ghRelease = true
+    const ghFetch = async (u, o = {}) => {
       u = String(u)
-      calls.push({ u })
-      if (u.includes("/releases/latest")) return new Response(JSON.stringify({ tag_name: "v1.3.0", assets: [{ name: "nexora.manifest.json", browser_download_url: "https://gh/m" }, { name: "nexora.manifest.sig", browser_download_url: "https://gh/s" }] }), { status: 200 })
-      if (u === "https://gh/m") return new Response(manRaw, { status: 200 })
-      if (u === "https://gh/s") return new Response(manSig, { status: 200 })
+      calls.push({ u, o })
+      // #079 : liens directs de github.com (redirection de latest vers le tag), plus jamais api.github.com.
+      if (u.includes("api.github.com")) return new Response("{}", { status: 403 })
+      if (u === "https://github.com/Trdgi4djyds/NEXORA-portable/releases/latest/download/nexora.manifest.json")
+        return ghRelease && o.redirect === "manual" ? new Response(null, { status: 302, headers: { location: "https://github.com/Trdgi4djyds/NEXORA-portable/releases/download/v1.3.0/nexora.manifest.json" } }) : new Response("Not Found", { status: 404 })
+      if (u === "https://github.com/Trdgi4djyds/NEXORA-portable/releases/download/v1.3.0/nexora.manifest.json") return new Response(manRaw, { status: 200 })
+      if (u === "https://github.com/Trdgi4djyds/NEXORA-portable/releases/download/v1.3.0/nexora.manifest.sig") return new Response(manSig, { status: 200 })
       if (u.endsWith("/rpc/nx_release_policy")) return new Response(JSON.stringify({ min_version: "1.2.0", min_manifest_version: 7, block_outdated: true }), { status: 200 })
       if (u.endsWith("/rpc/nx_security_report")) return new Response(JSON.stringify({ ok: true }), { status: 200 })
       return new Response("{}", { status: 404 })
@@ -307,8 +311,14 @@ ok(denied && rep2.ok && lrow.reason === "modified" && lrow.detail.file === "NEXO
     const decl = JSON.parse(st1.payload)
     const okSig = crypto.verify(null, Buffer.from(st1.payload), publicKey, Buffer.from(st1.sig, "base64"))
     const ttl = Date.parse(decl.expires_at) - Date.parse(decl.issued_at)
-    ok(okSig && decl.status === "ok" && decl.latest.version === "1.3.0" && decl.latest.manifest_sha256 === crypto.createHash("sha256").update(manRaw).digest("hex") && decl.min_manifest_version === 7 && ttl === 86400000,
+    ok(okSig && decl.status === "ok" && decl.latest.version === "1.3.0" && decl.latest.tag === "v1.3.0" && decl.latest.manifest_sha256 === crypto.createHash("sha256").update(manRaw).digest("hex") && decl.min_manifest_version === 7 && ttl === 86400000,
       "Service de sécurité : déclaration signée, dernière publication vérifiée (empreinte du manifeste), versions autorisées, valable 24 h", decl)
+    ok(!calls.some((c) => String(c.u).includes("api.github.com")), "Service de sécurité : liens directs de téléchargement, aucun appel à l’API GitHub (quota)")
+    ghRelease = false
+    await W2.latestPublication(true)
+    const decl0 = JSON.parse((await (await W2.handleLicences(new Request("https://x/security/manifest"), env)).json()).payload)
+    ok(decl0.status === "no_release" && decl0.latest === null, "Service de sécurité : dépôt sans publication signalé « no_release » (et non « injoignable »)", decl0)
+    ghRelease = true
     manSig = crypto.sign(null, Buffer.from("autre"), relKeys.privateKey).toString("base64")
     await W2.latestPublication(true)
     const decl2 = JSON.parse((await (await W2.handleLicences(new Request("https://x/security/manifest"), env)).json()).payload)
