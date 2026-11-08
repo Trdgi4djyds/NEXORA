@@ -207,7 +207,7 @@ function CompareList({ plans }: { plans: Plan[] }) {
         {plans.map((p) => (
           <div key={p.id} className={cn("rounded-xl border px-4 py-3", p.id === "pro" ? "border-primary/40 bg-primary/[0.06]" : "border-white/[0.08] bg-white/[0.02]")}>
             <b className={cn("block text-[16px] font-semibold", p.id === "pro" && "text-primary")}>{p.name}</b>
-            <span className="block text-[12px] text-muted-foreground">{p.price_month_cents ? `${money(p.price_month_cents)} / mois` : "0 $, pour toujours"}</span>
+            <span className="block text-[12px] text-muted-foreground">{p.price_month_cents ? `${money(p.price_month_cents)} / mois` : "0 $, sans limite de durée"}</span>
           </div>
         ))}
       </div>
@@ -217,7 +217,7 @@ function CompareList({ plans }: { plans: Plan[] }) {
           <ul>
             {rows.map((row) => (
               <li key={row.label} className="border-t border-white/[0.06] px-5 py-3.5">
-                <p className="text-[14px] leading-snug text-[#d3cfd9]">{row.label}</p>
+                <p className="cmp-label text-[14px] leading-snug">{row.label}</p>
                 <div className="mt-2.5 grid grid-cols-2 gap-2">
                   {plans.map((p) => (
                     <div key={p.id} className={cn("flex min-h-10 items-center justify-between gap-2 rounded-lg px-3 py-2 text-[13px]", p.id === "pro" ? "bg-primary/[0.07]" : "bg-white/[0.03]")}>

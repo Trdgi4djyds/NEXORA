@@ -1329,7 +1329,9 @@
   text-transform: uppercase;
   color: var(--primary);
 }
-.cmp tbody th {
+/* #089 : .cmp-label = nom de la fonction dans le comparatif sur téléphone (CompareList de Pricing.tsx). */
+.cmp tbody th,
+.cmp-label {
   font-weight: 400;
   color: #d3cfd9;
 }
