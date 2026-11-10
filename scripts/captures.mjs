@@ -479,8 +479,16 @@ async function main() {
             return true
           }, action.tab)
           if (!opened) throw new Error(`Onglet « ${action.tab} » de Mon compte impossible à ouvrir.`)
-        } else if (!(await clickByText(page, action.text)))
-          throw new Error(`Bouton « ${action.text} » introuvable dans ${space.label}.`)
+        } else {
+          // NEXORA #100 : les modules chargés après l'espace (nx/studioplus…) ajoutent leurs boutons quelques
+          // secondes plus tard : jusqu'à 10 s d'attente avant de conclure qu'un bouton manque.
+          let clicked = false
+          for (let i = 0; i < 20 && !clicked; i += 1) {
+            clicked = await clickByText(page, action.text)
+            if (!clicked) await sleep(500)
+          }
+          if (!clicked) throw new Error(`Bouton « ${action.text} » introuvable dans ${space.label}.`)
+        }
         await settle(page, 1200)
       }
       if (opts.wait) await sleep(opts.wait)

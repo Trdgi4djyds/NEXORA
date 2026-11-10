@@ -2,7 +2,7 @@
 // state.studio, sans modifier le code compilé : création par l'IA, import OBJ/STL/PLY/SPLAT, réseaux sociaux et
 // zones de sécurité, bruitages, repères et clés, rendus par lots, packs web et réalité augmentée, Lottie,
 // validation des vidéos, versions, bibliothèque d'équipe, écran depuis NEX-DESIGN, confort et accessibilité.
-import { esc, toast, has, card, btn, btns, note, field, chips, check, details, icon, sleep } from './ui.js';
+import { esc, toast, busy, done, has, card, btn, btns, note, field, chips, check, details, icon, sleep } from './ui.js';
 import * as MODELS from './models.js';
 import * as DIR from './direction.js';
 import * as AUDIO from './audio.js';
@@ -12,6 +12,7 @@ import * as REVIEW from './review.js';
 import * as TEAM from './team.js';
 import * as BR from './bridges.js';
 import * as COMFORT from './comfort.js';
+import * as DEV from './devices.js';
 
 const DECISION = { approve: 'approuvé', changes: 'changements demandés', comment: 'commentaire' };
 const fmtT = (t) => `${(Math.round(t * 100) / 100).toString().replace('.', ',')} s`;
@@ -23,6 +24,9 @@ function sceneCards(S) {
     <textarea class="input sx-area" rows="3" data-sxt="ia" placeholder="Ex. : présentation dynamique de mon app de livraison, ambiance soirée, 10 secondes">${esc(S.sxPrompt || '')}</textarea>
     ${btns(btn('ia-direct', 'Créer la mise en scène', 'sparkle', { primary: true }))}
     ${details('Objet composé par l’IA', 'cube', `${note('L’IA assemble un objet à partir de formes simples (boîtes, sphères, cylindres…), ajouté comme un modèle importé.')}<input class="input" data-sxt="obj" value="${esc(S.sxObjPrompt || '')}" placeholder="Ex. : une tasse de café avec sa soucoupe">${btns(btn('ia-object', 'Composer l’objet', 'cube'))}`)}`, { pro: true });
+  // NEXORA #100 : appareils réalistes (react-3d-mockups, MIT), à taille réelle, écran habillé.
+  h += card('devices', 'Appareils réalistes', 'phone', `${note('Modèles détaillés à taille réelle (aluminium, verre, caméras, clavier). L’écran reprend la capture de la scène s’il y en a une, sinon un fond NEXORA ; change-le ensuite depuis le panneau de l’appareil.')}
+    ${DEV.GROUPS.map(([g, keys]) => field(esc(g), `<div class="sx-devs">${keys.map((k) => `<button class="btn small" data-sx="dev-add" data-k="${k}" title="Ajouter ${esc(DEV.DEVICES[k].name)} à la scène">${icon('plus', 12)}<span>${esc(DEV.DEVICES[k].name)}</span></button>`).join('')}</div>`)).join('')}`);
   h += card('import', 'Importer un modèle', 'upload', `${note('OBJ, STL et PLY (maillages) ; PLY et SPLAT des applications de capture 3D (affichés en nuage de points). Le modèle est centré, posé au sol et mis à l’échelle. Pour un GLB, utilise « Importer » de la barre du bas.')}${btns(btn('import-model', 'OBJ, STL, PLY ou SPLAT', 'upload'))}`);
   const pick = DIR.socialPick(S);
   h += card('social', 'Réseaux sociaux et stores', 'phone', `${field('Formats', `<div class="sx-checks">${Object.entries(DIR.FORMATS).map(([k, l]) => check(esc(l), `social:${k}`, !!pick[k])).join('')}</div>`)}
@@ -81,6 +85,14 @@ function itemCards(S, id) {
     if (docs === undefined && !S.sxDocsLoading) { S.sxDocsLoading = true; BR.designPages().then((d) => { S.sxDocs = d; S.sxDocsLoading = false; S.renderProps(); }).catch(() => { S.sxDocs = []; S.sxDocsLoading = false; }); }
     h += card('design', 'Écran depuis NEX-DESIGN', 'palette', docs && docs.length ? `${note('Affiche une page de tes documents NEX-DESIGN sur l’écran de cet appareil.')}<div class="sx-list">${docs.map((d) => `<div class="sx-row">${d.thumb ? `<img class="sx-thumb" src="${esc(d.thumb)}" alt="">` : ''}<span><b>${esc(d.name)}</b><small>${d.pages} page(s)</small></span><span class="grow"></span><button class="btn small" data-sx="design-screen" data-k="${esc(d.id)}" title="Afficher « ${esc(d.name)} » sur l’écran">Afficher</button></div>`).join('')}</div>` : note(docs ? 'Aucun document NEX-DESIGN pour l’instant : crée une page dans NEX-DESIGN, elle apparaîtra ici.' : 'Chargement de tes documents…'));
   }
+  if (e.item.nxDevice) {
+    const docs = S.sxDocs;
+    if (docs === undefined && !S.sxDocsLoading) { S.sxDocsLoading = true; BR.designPages().then((d) => { S.sxDocs = d; S.sxDocsLoading = false; S.renderProps(); }).catch(() => { S.sxDocs = []; S.sxDocsLoading = false; }); }
+    const name = (DEV.DEVICES[e.item.nxDevice] || {}).name || 'Appareil';
+    h += card('dev-screen', `Écran · ${name}`, 'display', `${note('Modèle réaliste : l’image est recadrée au format exact de l’écran, sans déformation.')}
+      ${btns(btn('dev-pick', 'Choisir une image…', 'image', { primary: true }), btn('dev-reset', 'Fond NEXORA', 'refreshCw'))}
+      ${docs && docs.length ? field('Page NEX-DESIGN', `<div class="sx-list">${docs.map((d) => `<div class="sx-row">${d.thumb ? `<img class="sx-thumb" src="${esc(d.thumb)}" alt="">` : ''}<span><b>${esc(d.name)}</b><small>${d.pages} page(s)</small></span><span class="grow"></span><button class="btn small" data-sx="dev-design" data-k="${esc(d.id)}" title="Afficher « ${esc(d.name)} » sur l’écran">Afficher</button></div>`).join('')}</div>`) : ''}`);
+  }
   if (e.item.nxPoints) h += card('points', 'Nuage de points', 'nxParticles', `<div class="st-field"><span>Taille des points<b data-sxv="pts">${e.item.nxPoints.toFixed(2).replace('.', ',')}</b></span><input type="range" min="0.02" max="0.6" step="0.01" value="${e.item.nxPoints}" data-sxr="pts"></div>${note('Capture 3D affichée en points colorés (pas de rendu « gaussian splatting » complet).')}`);
   return h;
 }
@@ -120,6 +132,10 @@ async function onAction(S, el) {
   if (a === 'k-shift' && sel) return KEYS.shift(S, sel, Number(el.dataset.d));
   if (a === 'k-ease' && sel) return KEYS.ease(S, sel, k);
   if (a === 'design-screen') return BR.toScreen(S, k);
+  if (a === 'dev-add') { await DEV.add(S, k); return; }
+  if (a === 'dev-pick') return DEV.pickScreen(S);
+  if (a === 'dev-reset') return DEV.setScreen(S, null, 'Fond NEXORA rétabli.');
+  if (a === 'dev-design') { const t = busy('Rendu de la page NEX-DESIGN…'); try { const r = await BR.pageImage(k); await DEV.setScreen(S, r.image, r.label); } finally { done(t); } return; }
 }
 function onInput(S, el, final) {
   const d = el.dataset;

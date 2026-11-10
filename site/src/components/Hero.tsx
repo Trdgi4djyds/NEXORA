@@ -1,21 +1,24 @@
-import heroPhoto from "../assets/photos/horizon-hero.webp"
 import { Icon } from "../lib/icons"
 import { CountUp } from "../lib/motion"
 import { APP_VERSION, DEVICE_COUNT } from "../lib/product"
+import { RENDUS } from "../lib/rendus"
 import { MainButton, SecondButton } from "./Download"
 
 /**
- * Hero. #099 (« Horizon ») : photo plein cadre (bâtiment courbe aux lignes de lumière, Unsplash) qui passe sous
- * l'en-tête, titre fin en bas à gauche, boutons blancs, et carte en verre dépoli qui déborde sur la section suivante
- * avec un chiffre vérifié (catalogue des appareils du Responsive Lab). Sur téléphone, la carte suit le texte.
+ * Hero. #099 (« Horizon ») : fond plein cadre qui passe sous l'en-tête, titre fin en bas à gauche, boutons blancs, et
+ * carte en verre dépoli qui déborde sur la section suivante avec un chiffre vérifié (catalogue du Responsive Lab).
+ * #100 : la photo de bâtiment laisse place à l'aurore (lignes de lumière, halo violet et bleu) et au rendu 3D d'un
+ * MacBook Pro et d'un iPhone affichant les vraies captures de NEXORA (react-3d-mockups). Sur téléphone, le rendu et la
+ * carte suivent le texte.
  */
 export function Hero() {
   return (
     <section className="hero" data-capture="haut">
       <div className="hero-photo flex flex-col justify-end">
-        <img src={heroPhoto} alt="" width={2400} height={1600} fetchPriority="high" decoding="async" aria-hidden="true" />
-        <div className="wrap-wide relative z-[1] pt-36 pb-14 lg:pt-44 lg:pb-32">
-          <div className="max-w-[760px]">
+        <i className="aurora" aria-hidden="true" />
+        <img className="hero-render hidden lg:block" src={RENDUS.macbookIphone.src} alt={RENDUS.macbookIphone.alt} width={RENDUS.macbookIphone.w} height={RENDUS.macbookIphone.h} fetchPriority="high" decoding="async" />
+        <div className="wrap-wide relative z-[2] pt-36 pb-14 lg:pt-44 lg:pb-32">
+          <div className="max-w-[640px]">
             <span className="eyebrow rise border-white/50 text-white">NEXORA Devs Toolbox</span>
             <h1 className="title-xl rise mt-6 text-white" style={{ animationDelay: "120ms" }}>
               L’atelier complet du web, installé sur ton PC
@@ -34,6 +37,7 @@ export function Hero() {
               <span>Windows 10 et 11</span>
               <span>Licence gratuite, sans limite de durée</span>
             </p>
+            <img className="hero-render lg:hidden" src={RENDUS.macbookIphone.src} alt={RENDUS.macbookIphone.alt} width={RENDUS.macbookIphone.w} height={RENDUS.macbookIphone.h} loading="lazy" decoding="async" />
           </div>
           <a href="/espaces/responsive" className="hero-card glass rise group mt-12 flex flex-col p-6 lg:mt-0 lg:min-h-[300px]" style={{ animationDelay: "560ms" }}>
             <span className="eyebrow border-white/45 text-white">modèles d’appareils</span>

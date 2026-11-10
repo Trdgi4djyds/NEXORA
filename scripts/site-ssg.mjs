@@ -139,7 +139,7 @@ export async function buildSite({ ROOT, OUT_DIR, csp, noIndex = false, define = 
     <meta http-equiv="Content-Security-Policy" content="${csp}" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
-    <meta name="theme-color" content="#050505" />
+    <meta name="theme-color" content="#06050b" />
     <title>Hors ligne — NEXORA</title>
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     ${css}
@@ -302,8 +302,8 @@ ${latest[1].items.map((it) => `- ${it.title} : ${it.text}`).join("\n")}
         display: "standalone",
         display_override: ["window-controls-overlay", "standalone", "minimal-ui"],
         orientation: "any",
-        theme_color: "#050505",
-        background_color: "#050505",
+        theme_color: "#06050b",
+        background_color: "#06050b",
         categories: ["developer", "productivity", "utilities"],
         prefer_related_applications: false,
         launch_handler: { client_mode: ["navigate-existing", "auto"] },

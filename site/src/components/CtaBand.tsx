@@ -1,11 +1,11 @@
-import photo from "../assets/photos/horizon-crepuscule.webp"
 import { Reveal } from "../lib/motion"
+import { RENDUS } from "../lib/rendus"
 import { MainButton, SecondButton } from "./Download"
 import { Words } from "./SectionHead"
 
 /**
- * Appel final. #099 (« Horizon ») : grande photo de montagnes au crépuscule (Unsplash) dans un cadre aux coins
- * légèrement arrondis, voile sombre, titre fin et boutons blancs. Remplace l'aplat citron vert et le globe de « Signal ».
+ * Appel final. #099 (« Horizon ») : grand cadre aux coins légèrement arrondis, titre fin et boutons blancs.
+ * #100 : aurore et rendu 3D de deux MacBook Pro face à face sur les vrais écrans de NEXORA (photo retirée).
  */
 export function CtaBand({
   title = "Ouvre ton premier projet aujourd’hui.",
@@ -18,8 +18,8 @@ export function CtaBand({
     <section className="section-tight" data-capture="appel">
       <div className="wrap-wide">
         <div className="cta-photo relative overflow-hidden rounded-md">
-          <img src={photo} alt="" loading="lazy" width={2000} height={1125} aria-hidden="true" />
-          <Reveal className="relative z-[1] flex min-h-[460px] flex-col justify-end gap-10 p-7 md:min-h-[520px] md:p-12 lg:flex-row lg:items-end lg:justify-between">
+          <i className="aurora" aria-hidden="true" />
+          <Reveal className="relative z-[1] flex flex-col gap-8 p-7 pb-0 md:p-12 md:pb-0 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-[640px]">
               <span className="eyebrow border-white/50 text-white">commencer</span>
               <h2 className="title-1 words mt-6 text-white">
@@ -34,6 +34,7 @@ export function CtaBand({
               </div>
             </div>
           </Reveal>
+          <img className="cta-render mt-6 md:mt-2" src={RENDUS.deuxMacbook.src} alt={RENDUS.deuxMacbook.alt} loading="lazy" width={RENDUS.deuxMacbook.w} height={RENDUS.deuxMacbook.h} />
         </div>
       </div>
     </section>

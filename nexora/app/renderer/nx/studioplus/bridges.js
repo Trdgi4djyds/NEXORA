@@ -18,6 +18,12 @@ async function renderPage(pg, max = 1600) {
     return c.toDataURL({ format: 'png', multiplier: 1 });
   } finally { c.dispose(); }
 }
+// NEXORA #100 : la même page en image (data:), pour l'écran d'un appareil réaliste (GLB).
+export async function pageImage(docId, pageIdx = 0) {
+  const doc = await getDoc(docId); const pg = doc && doc.pages[pageIdx];
+  if (!pg) throw new Error('Page introuvable.');
+  return { image: await renderPage(pg), label: `« ${doc.name} · ${pg.name} » affichée sur l’écran.` };
+}
 export async function toScreen(S, docId, pageIdx = 0) {
   const e = S.sel && S.objects.get(S.sel);
   if (!e || e.item.type !== 'device') { toast('Sélectionne d’abord un appareil.', { kind: 'bad' }); return; }

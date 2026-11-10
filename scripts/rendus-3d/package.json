@@ -1,0 +1,17 @@
+{
+  "name": "nexora-rendus-3d",
+  "private": true,
+  "type": "module",
+  "description": "NEXORA #100 : atelier de rendus 3D du site et des appareils réalistes du Studio (installé hors du dépôt, voir README.md).",
+  "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
+    "@vitejs/plugin-react": "^6.3.0",
+    "puppeteer-core": "^25.16.0",
+    "react": "^19.3.1",
+    "react-3d-mockups": "0.2.0",
+    "react-dom": "^19.3.1",
+    "three": "0.186.1",
+    "vite": "^8.3.7"
+  }
+}

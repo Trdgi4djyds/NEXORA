@@ -3,6 +3,7 @@ import { SPACE_FACTS } from "../data/content"
 import { SPACES, spaceHref } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { Reveal, useInView, usePageVisible, useReducedMotion } from "../lib/motion"
+import { GLASS } from "../lib/rendus"
 import { Screens } from "./Screen"
 import { Words } from "./SectionHead"
 
@@ -61,6 +62,8 @@ export function Showcase() {
         </div>
         <Reveal delay={120} className="relative mx-auto w-full max-w-[640px] py-6">
           <div className="stack-sheet" aria-hidden="true" />
+          {/* #100 : icône en verre de l'espace montré, qui déborde de la carte. */}
+          <img key={s.id} className="glass-ic glass-sticker" src={GLASS[s.id]} alt="" width={320} height={320} />
           <a href={spaceHref(s)} className="stack-card group flex flex-col p-5 sm:p-6" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
             <span className="flex flex-wrap items-center justify-between gap-3">
               <span className="eyebrow border-white/45 text-white">{s.rail}</span>
