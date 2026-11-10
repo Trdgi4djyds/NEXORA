@@ -327,3 +327,56 @@ html:not([data-contrast='high']) body :is(.dz-export, .dz-ph-ic, .dz-ib.on, .hm-
 html body .dz-export { border-radius: var(--hz-pill); }
 /* NEX-DESIGN : carte « Commence avec un modèle » (grise bleutée) sur le fond des surfaces. */
 html:not([data-contrast='high']) body .nx-start-card { background: var(--surface) !important; border-radius: 24px; box-shadow: 0 0 0 1px var(--sep-strong) !important; }
+
+/* ------------------------------------------------------------------ #104 : formulaires (même système que le site,
+   le back office et l'espace des parrains) : libellé lisible au-dessus, champ plein à filet fin et coins de 12 px
+   (les champs de recherche restent en pilule), survol, focus à filet d'encre et halo, lecture seule en pointillés,
+   erreur en rouge, cases et interrupteurs à l'encre de l'accent, bouton désactivé lisible (au lieu d'un voile). */
+html body :is(.field > span, .field-label) { font-size: 12.5px; font-weight: 600; color: var(--text); letter-spacing: 0; }
+html body .field small, html body .field .hint { color: var(--text-3); line-height: 1.45; }
+html body .input:not(textarea) { border-radius: 12px; padding: 0 13px; }
+html body :is(.side-search input, .hm-open, .tb-go) { border-radius: var(--hz-pill); }
+html body .input { background: var(--input); box-shadow: inset 0 0 0 1px var(--sep); transition: box-shadow .16s, background-color .16s; }
+html body .input::placeholder { color: var(--text-3); }
+html body .input:hover:not(:focus):not(:disabled) { box-shadow: inset 0 0 0 1px var(--sep-strong); }
+html body .input:focus { background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--text), 0 0 0 4px var(--accent-softer); }
+html body textarea.input { border-radius: 14px; padding: 10px 13px; line-height: 1.55; }
+html body .input:is(:disabled, [readonly]) { background: transparent; color: var(--text-2); box-shadow: none; outline: 1px dashed var(--sep-strong); outline-offset: -1px; cursor: not-allowed; }
+html body .input:is([aria-invalid='true'], :user-invalid) { box-shadow: inset 0 0 0 1.5px var(--bad-dot), 0 0 0 4px color-mix(in srgb, var(--bad-dot) 16%, transparent); }
+/* Cases à cocher : coche à l'encre de l'accent (blanche sur une case blanche avec l'accent par défaut au #103). */
+html body .check-row .box { border-radius: 6px; box-shadow: inset 0 0 0 1.5px var(--sep-strong); background: transparent; }
+html:not([data-contrast='high']) body .check-row input:checked + .box { background: var(--accent); box-shadow: none; transform: none; }
+html:not([data-contrast='high']) body .check-row input:checked + .box::after { border-color: var(--accent-ink); }
+html body .check-row input:focus-visible + .box { outline: 2px solid var(--text); outline-offset: 2px; }
+/* Bouton désactivé : fond discret et texte gris, plus de voile qui rendait le bouton blanc gris sale. */
+html body .btn:disabled { opacity: 1; background: var(--fill-2) !important; color: var(--text-3) !important; box-shadow: inset 0 0 0 1px var(--sep) !important; }
+/* Tuiles de choix (« Nouveau ») : surfaces de la direction au lieu du gris bleuté des jetons d'origine. */
+html:not([data-contrast='high']) body .nw-tile { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--sep); }
+html:not([data-contrast='high']) body .nw-tile:hover { background: var(--fill); box-shadow: inset 0 0 0 1px var(--sep-strong); transform: none; }
+html:not([data-contrast='high']) body .nw-tile.on { background: var(--surface-2); box-shadow: inset 0 0 0 1.5px var(--text); }
+
+/* Connexion et inscription (nx/auth/auth.css, chargée après cette feuille : sélecteurs plus précis) : panneau de la
+   marque noir comme le site (titre fin, illustration en niveaux de gris), onglets en pilule, champs de 46 px,
+   bouton principal en pilule pleine. */
+html body .sheet:has(> .nxl) { border-radius: 28px; overflow: hidden; }
+html:not([data-contrast='high']) body .nxl-brand { background: #0a0a0a; border-right: 0; color: #fff; }
+html body .nxl-logo b, html body .nxl-pitch h3, html body .nxl-pitch li b { color: #fff; }
+html body .nxl-logo img { box-shadow: none; }
+html body .nxl-pitch h3 { font-size: 26px; font-weight: 300; letter-spacing: -0.03em; }
+html body .nxl-pitch li small, html body .nxl-trust { color: #a3a3a3; }
+html body .nxl-ic { border-radius: var(--hz-pill); color: #fff; background: transparent; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); }
+html body .nxl-art { filter: grayscale(1); opacity: .9; }
+html body .nxl-art-svg .nxl-card { fill: #161616; }
+html body .nxl-art-svg .nxl-soft { fill: #2a2a2a; }
+html body .nxl-art-svg .nxl-line { fill: #262626; }
+html body .nxl-tabs { border-radius: var(--hz-pill); padding: 4px; }
+html body .nxl-tabs button { border-radius: var(--hz-pill); }
+html body .nxl-tabs button.on { background: var(--seg-on); color: var(--hz-ink); box-shadow: none; }
+html body .nxl-head h2 { font-size: 30px; font-weight: 400; letter-spacing: -0.035em; }
+html:not([data-contrast='high']) body :is(.nxl-badge, .nxl-form .nx-sent > svg) { background: var(--hz-on); color: var(--hz-ink); border-radius: var(--hz-pill); box-shadow: none; }
+html body .nxl-field .nxl-input .input { height: 46px; border-radius: 14px; }
+html body .nxl-close { border-radius: var(--hz-pill); }
+html body .nxl-submit.btn { height: 48px; border-radius: var(--hz-pill); box-shadow: none; }
+html body .nxl-alt.btn { height: 46px; border-radius: var(--hz-pill); }
+html body .nxl-form .nx-msg:is(.ok, .bad) { border-radius: 14px; }
+html body .nxl-input:focus-within > svg { color: var(--text); }

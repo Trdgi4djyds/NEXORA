@@ -1,10 +1,14 @@
-// Facture PDF de NEXORA (#031), générée dans le navigateur avec pdf-lib : A4, logo, bandeau aux couleurs
-// de la marque, émetteur et client, lignes, totaux, modalités de paiement, pied de page légal.
-// Polices standard (Helvetica, encodage WinAnsi) : aucun fichier de police à embarquer.
-import {
-  appendBezierCurve, clip, closePath, degrees, endPath, lineTo, moveTo, PDFDocument, popGraphicsState, pushGraphicsState, rgb,
-  StandardFonts, type PDFFont, type PDFImage, type PDFPage, type RGB,
-} from "pdf-lib"
+// Facture PDF de NEXORA (#031), générée dans le navigateur avec pdf-lib : A4, logo, émetteur et client, lignes,
+// totaux, modalités de paiement, pied de page légal. #104 : direction « Horizon » du site et des interfaces : bandeau
+// noir (logo, repère « /facture », titre fin), carte des informations clés qui déborde du bandeau, repères « /émis par »
+// et « /facturé à » en pilule à contour, en-tête du tableau gris, total dans un bloc noir, monochrome ; les couleurs
+// d'état (payée, annulée) restent sur la pastille et le tampon. Police Urbanist (fichiers TrueType de `fonts/`, OFL,
+// intégrés en sous-ensemble par @pdf-lib/fontkit) ; Helvetica si les fichiers ne se chargent pas.
+import fontkit from "@pdf-lib/fontkit"
+import { degrees, PDFDocument, rgb, setCharacterSpacing, StandardFonts, type PDFFont, type PDFImage, type PDFPage, type RGB } from "pdf-lib"
+import lightUrl from "./fonts/Urbanist-Light.ttf?url"
+import regularUrl from "./fonts/Urbanist-Regular.ttf?url"
+import semiUrl from "./fonts/Urbanist-SemiBold.ttf?url"
 import { longDate, money, totals, type InvoiceDoc, type Party } from "./format"
 
 // Caractères hors WinAnsi (police standard) : remplacés par un équivalent sûr.
@@ -29,21 +33,20 @@ function win(s: unknown) {
 
 const hex = (h: string): RGB => rgb(parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255)
 const C = {
-  ink: hex("#1d1d1f"),
-  text: hex("#3a3a3c"),
-  muted: hex("#6e6e73"),
-  faint: hex("#9a9aa0"),
-  line: hex("#e5e5ea"),
-  box: hex("#f6f6f9"),
-  brand: hex("#7b4fe6"),
-  brandTint: hex("#f3eefe"),
-  ok: hex("#1f9d55"),
-  okTint: hex("#e7f6ee"),
-  bad: hex("#e5302a"),
-  badTint: hex("#fdecec"),
+  ink: hex("#0a0a0a"),
+  text: hex("#3d3d3d"),
+  muted: hex("#6b6b6b"),
+  faint: hex("#9a9a9a"),
+  line: hex("#e6e6e6"),
+  box: hex("#f4f4f4"),
+  band: hex("#0a0a0a"),
+  bandMuted: hex("#a3a3a3"),
+  bandLine: hex("#3a3a3a"),
+  ok: hex("#16884a"),
+  okTint: hex("#e6f5ec"),
+  bad: hex("#d92d20"),
   white: rgb(1, 1, 1),
 }
-const GRAD = ["#ff6a88", "#d34bd5", "#5b6cff"].map((h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)])
 
 /** Logo réduit à 192 px (PNG) pour un PDF léger. */
 async function logoBytes(url: string) {
@@ -58,20 +61,12 @@ async function logoBytes(url: string) {
   return new Uint8Array(await blob!.arrayBuffer())
 }
 
-// Chemin d'un rectangle arrondi (opérateurs PDF), pour remplir ou découper proprement.
-function roundedPath(x: number, y: number, w: number, h: number, r: number) {
-  const k = 0.5523 * r
-  return [
-    moveTo(x + r, y), lineTo(x + w - r, y), appendBezierCurve(x + w - r + k, y, x + w, y + r - k, x + w, y + r),
-    lineTo(x + w, y + h - r), appendBezierCurve(x + w, y + h - r + k, x + w - r + k, y + h, x + w - r, y + h),
-    lineTo(x + r, y + h), appendBezierCurve(x + r - k, y + h, x, y + h - r + k, x, y + h - r),
-    lineTo(x, y + r), appendBezierCurve(x, y + r - k, x + r - k, y, x + r, y), closePath(),
-  ]
-}
-const mixGrad = (k: number) => {
-  const [a, b, f] = k < 0.48 ? [GRAD[0], GRAD[1], k / 0.48] : [GRAD[1], GRAD[2], (k - 0.48) / 0.52]
-  const m = (j: number) => (a[j] + (b[j] - a[j]) * f) / 255
-  return rgb(m(0), m(1), m(2))
+/** Polices Urbanist (gardées après le premier chargement) ; null si un fichier manque. */
+let fontFiles: Promise<ArrayBuffer[] | null> | null = null
+function urbanist() {
+  fontFiles ??= Promise.all([lightUrl, regularUrl, semiUrl].map((u) => fetch(u).then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))))
+    .catch(() => null)
+  return fontFiles
 }
 
 export async function invoicePdf(d: InvoiceDoc, logoUrl: string): Promise<Uint8Array> {
@@ -83,8 +78,16 @@ export async function invoicePdf(d: InvoiceDoc, logoUrl: string): Promise<Uint8A
   pdf.setCreator("NEXORA — back office")
   pdf.setProducer("NEXORA")
   pdf.setLanguage("fr-FR")
-  const reg = await pdf.embedFont(StandardFonts.Helvetica)
-  const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
+  let light: PDFFont, reg: PDFFont, bold: PDFFont
+  const files = await urbanist()
+  if (files) {
+    pdf.registerFontkit(fontkit)
+    ;[light, reg, bold] = await Promise.all(files.map((f) => pdf.embedFont(f, { subset: true })))
+  } else {
+    reg = await pdf.embedFont(StandardFonts.Helvetica)
+    light = reg
+    bold = await pdf.embedFont(StandardFonts.HelveticaBold)
+  }
   let logo: PDFImage | null = null
   try { logo = await pdf.embedPng(await logoBytes(logoUrl)) } catch { logo = null }
 
@@ -94,25 +97,30 @@ export async function invoicePdf(d: InvoiceDoc, logoUrl: string): Promise<Uint8A
   const t = totals(d.lines, d.taxRate)
   const cur = d.currency || "EUR"
   const paid = d.status === "payee"
+  const cancelled = d.status === "annulee"
   const pages: PDFPage[] = []
 
-  const text = (pg: PDFPage, s: string, x: number, y: number, o: { size?: number; font?: PDFFont; color?: RGB; align?: "left" | "right" | "center"; opacity?: number } = {}) => {
+  type TextOpts = { size?: number; font?: PDFFont; color?: RGB; align?: "left" | "right" | "center"; opacity?: number; spacing?: number }
+  const width = (s: string, size: number, f: PDFFont, spacing = 0) => f.widthOfTextAtSize(win(s), size) + spacing * Math.max(0, win(s).length - 1)
+  const text = (pg: PDFPage, s: string, x: number, y: number, o: TextOpts = {}) => {
     const f = o.font || reg
     const size = o.size || 10
     const str = win(s)
-    const w = f.widthOfTextAtSize(str, size)
+    const w = width(str, size, f, o.spacing)
     const dx = o.align === "right" ? -w : o.align === "center" ? -w / 2 : 0
+    if (o.spacing) pg.pushOperators(setCharacterSpacing(o.spacing))
     pg.drawText(str, { x: x + dx, y, size, font: f, color: o.color || C.text, opacity: o.opacity ?? 1 })
+    if (o.spacing) pg.pushOperators(setCharacterSpacing(0))
     return w
   }
   // Découpe un texte en lignes qui tiennent dans la largeur (retours à la ligne gardés).
-  const wrap = (s: string, size: number, width: number, f: PDFFont = reg) => {
+  const wrap = (s: string, size: number, maxW: number, f: PDFFont = reg) => {
     const out: string[] = []
     for (const para of win(s).split("\n")) {
       let line = ""
       for (const word of para.split(/ +/)) {
         const next = line ? `${line} ${word}` : word
-        if (f.widthOfTextAtSize(next, size) <= width || !line) line = next
+        if (f.widthOfTextAtSize(next, size) <= maxW || !line) line = next
         else { out.push(line); line = word }
       }
       out.push(line)
@@ -126,55 +134,70 @@ export async function invoicePdf(d: InvoiceDoc, logoUrl: string): Promise<Uint8A
   }
   const fillRound = (pg: PDFPage, x: number, y: number, w: number, h: number, r: number, color: RGB, opacity = 1) =>
     pg.drawSvgPath(roundSvg(w, h, r), { x, y: y + h, color, opacity })
-  const strokeRound = (pg: PDFPage, x: number, y: number, w: number, h: number, r: number, color: RGB, width = 0.8) =>
-    pg.drawSvgPath(roundSvg(w, h, r), { x, y: y + h, borderColor: color, borderWidth: width })
-  // Dégradé de la marque (rose → magenta → bleu) en fines bandes verticales, découpé par un rectangle arrondi.
-  const gradient = (pg: PDFPage, x: number, y: number, w: number, h: number, r = 0) => {
-    pg.pushOperators(pushGraphicsState(), ...roundedPath(x, y, w, h, Math.min(r, h / 2, w / 2) || 0.01), clip(), endPath())
-    const n = Math.max(24, Math.round(w / 3))
-    for (let i = 0; i < n; i++) pg.drawRectangle({ x: x + (w / n) * i, y, width: w / n + 0.6, height: h, color: mixGrad(i / (n - 1)) })
-    pg.pushOperators(popGraphicsState())
+  const strokeRound = (pg: PDFPage, x: number, y: number, w: number, h: number, r: number, color: RGB, bw = 0.8) =>
+    pg.drawSvgPath(roundSvg(w, h, r), { x, y: y + h, borderColor: color, borderWidth: bw })
+  /** Repère « /tag » : pilule à contour, barre oblique grise devant (comme le site). */
+  const tag = (pg: PDFPage, label: string, x: number, y: number, o: { color?: RGB; line?: RGB; slash?: RGB; align?: "left" | "right" } = {}) => {
+    const size = 8
+    const sw = width("/", size, reg)
+    const lw = width(label, size, reg)
+    const w = 10 + sw + 5 + lw + 10
+    const x0 = o.align === "right" ? x - w : x
+    strokeRound(pg, x0, y - 6, w, 19, 9.5, o.line || hex("#d4d4d4"), 0.7)
+    text(pg, "/", x0 + 10, y, { size, color: o.slash || C.faint })
+    text(pg, label, x0 + 10 + sw + 5, y, { size, color: o.color || C.ink })
+    return w
   }
-  const pill = (pg: PDFPage, label: string, xRight: number, y: number, fg: RGB, bg: RGB) => {
-    const w = bold.widthOfTextAtSize(win(label), 8.5) + 20
-    fillRound(pg, xRight - w, y - 6, w, 19, 9.5, bg)
-    text(pg, label, xRight - w / 2, y, { size: 8.5, font: bold, color: fg, align: "center" })
+  /** Pastille d'état (pleine). */
+  const pill = (pg: PDFPage, label: string, xRight: number, y: number, fg: RGB, bg: RGB, outline?: RGB) => {
+    const w = width(label, 8.5, bold, 0.6) + 24
+    if (outline) strokeRound(pg, xRight - w, y - 7, w, 21, 10.5, outline, 0.8)
+    else fillRound(pg, xRight - w, y - 7, w, 21, 10.5, bg)
+    text(pg, label, xRight - w / 2, y, { size: 8.5, font: bold, color: fg, align: "center", spacing: 0.6 })
   }
 
-  // En-tête : grand bandeau dégradé (première page) ou bandeau fin (pages suivantes).
+  // En-tête : grand bandeau noir (première page) ou filet noir et rappel du numéro (pages suivantes).
+  const BAND = 196
   const newPage = (first: boolean) => {
     const pg = pdf.addPage([W, H])
     pages.push(pg)
     if (!first) {
-      gradient(pg, 0, H - 8, W, 8)
-      text(pg, `${d.number ? `Facture ${d.number}` : "Facture brouillon"} · suite`, M, H - 40, { size: 11, font: bold, color: C.ink })
-      text(pg, d.issuer.name || "NEXORA", W - M, H - 40, { size: 9, color: C.muted, align: "right" })
-      return { pg, y: H - 64 }
+      pg.drawRectangle({ x: 0, y: H - 6, width: W, height: 6, color: C.band })
+      text(pg, `${d.number ? `Facture ${d.number}` : "Facture brouillon"} · suite`, M, H - 42, { size: 12, font: bold, color: C.ink })
+      text(pg, d.issuer.name || "NEXORA", W - M, H - 42, { size: 9, color: C.muted, align: "right" })
+      pg.drawLine({ start: { x: M, y: H - 56 }, end: { x: W - M, y: H - 56 }, thickness: 0.6, color: C.line })
+      return { pg, y: H - 76 }
     }
-    const top = H - 156
-    gradient(pg, 0, top, W, 156)
-    pg.drawCircle({ x: W - 70, y: H - 20, size: 120, color: C.white, opacity: 0.07 })
-    pg.drawCircle({ x: W - 150, y: top - 10, size: 70, color: C.white, opacity: 0.06 })
-    fillRound(pg, M, H - 86, 46, 46, 13, C.white)
-    if (logo) pg.drawImage(logo, { x: M + 5, y: H - 81, width: 36, height: 36 })
-    text(pg, "NEXORA", M + 58, H - 62, { size: 17, font: bold, color: C.white })
+    const top = H - BAND
+    pg.drawRectangle({ x: 0, y: top, width: W, height: BAND, color: C.band })
+    // Logo sur une tuile blanche, nom de NEXORA espacé.
+    fillRound(pg, M, H - 78, 40, 40, 11, C.white)
+    if (logo) pg.drawImage(logo, { x: M + 4, y: H - 74, width: 32, height: 32 })
+    text(pg, "NEXORA", M + 52, H - 63, { size: 13, font: bold, color: C.white, spacing: 2.4 })
     // Émetteur sous le nom de NEXORA, seulement s'il est différent (NEXORA #038 : aucun nom de société par défaut).
-    if (d.issuer.name && d.issuer.name.trim().toUpperCase() !== "NEXORA") text(pg, `par ${d.issuer.name}`, M + 58, H - 77, { size: 9.5, color: C.white, opacity: 0.85 })
-    text(pg, "Facture", W - M, H - 66, { size: 30, font: bold, color: C.white, align: "right" })
-    text(pg, d.number ? `N° ${d.number}` : "Brouillon, non numérotée", W - M, H - 83, { size: 10.5, color: C.white, opacity: 0.9, align: "right" })
-    const st: [string, RGB] = paid ? ["PAYÉE", C.ok] : d.status === "annulee" ? ["ANNULÉE", C.bad] : !d.number ? ["BROUILLON", C.muted] : ["À RÉGLER", C.brand]
-    pill(pg, st[0], W - M, H - 110, st[1], C.white)
+    if (d.issuer.name && d.issuer.name.trim().toUpperCase() !== "NEXORA") text(pg, `par ${d.issuer.name}`, M + 52, H - 77, { size: 9, color: C.bandMuted })
+    tag(pg, "facture", W - M, H - 62, { color: C.white, line: C.bandLine, slash: C.bandMuted, align: "right" })
+    // Titre fin et numéro en second ton.
+    text(pg, "Facture", M - 2, top + 72, { size: 48, font: light, color: C.white })
+    text(pg, d.number ? `N° ${d.number}` : "Brouillon, non numérotée", M, top + 50, { size: 11, color: C.bandMuted })
+    const st: [string, RGB, RGB, RGB?] = paid
+      ? ["PAYÉE", C.white, C.ok]
+      : cancelled
+        ? ["ANNULÉE", C.white, C.bad]
+        : !d.number
+          ? ["BROUILLON", C.white, C.band, C.bandLine]
+          : ["À RÉGLER", C.ink, C.white]
+    pill(pg, st[0], W - M, top + 78, st[1], st[2], st[3])
     return { pg, y: top }
   }
 
   let { pg, y } = newPage(true)
 
   // Carte des informations clés, à cheval sur le bandeau.
-  const cardH = 64
-  const cardY = y - cardH / 2 - 6
-  fillRound(pg, M + 1, cardY - 2, W - 2 * M - 2, cardH, 14, hex("#2a1d63"), 0.06)
-  fillRound(pg, M, cardY, W - 2 * M, cardH, 14, C.white)
-  strokeRound(pg, M, cardY, W - 2 * M, cardH, 14, C.line, 0.6)
+  const cardH = 66
+  const cardY = y - cardH / 2
+  fillRound(pg, M, cardY, W - 2 * M, cardH, 16, C.white)
+  strokeRound(pg, M, cardY, W - 2 * M, cardH, 16, C.line, 0.7)
   const meta: [string, string, boolean?][] = [
     ["Date d’émission", d.issuedAt ? longDate(d.issuedAt) : "À l’émission"],
     [paid ? "Payée le" : "Échéance", paid ? longDate(d.paidAt) : longDate(d.dueAt)],
@@ -184,100 +207,108 @@ export async function invoicePdf(d: InvoiceDoc, logoUrl: string): Promise<Uint8A
   const colW = (W - 2 * M) / 4
   meta.forEach(([k, v, strong], i) => {
     const x = M + i * colW + 18
-    if (i) pg.drawLine({ start: { x: M + i * colW, y: cardY + 14 }, end: { x: M + i * colW, y: cardY + cardH - 14 }, thickness: 0.6, color: C.line })
-    text(pg, k.toUpperCase(), x, cardY + cardH - 24, { size: 7.5, font: bold, color: strong ? C.brand : C.muted })
-    const value = wrap(v, strong ? 14 : 11, colW - 30, bold)[0]
-    text(pg, value, x, cardY + 18, { size: strong ? 14 : 11, font: bold, color: strong ? C.brand : C.ink })
+    if (i) pg.drawLine({ start: { x: M + i * colW, y: cardY + 15 }, end: { x: M + i * colW, y: cardY + cardH - 15 }, thickness: 0.6, color: C.line })
+    text(pg, k.toUpperCase(), x, cardY + cardH - 25, { size: 7, font: bold, color: C.muted, spacing: 0.7 })
+    const value = wrap(v, strong ? 15 : 11, colW - 30, strong ? bold : reg)[0]
+    text(pg, value, x, cardY + 17, { size: strong ? 15 : 11, font: strong ? bold : reg, color: C.ink })
   })
   y = cardY - 34
 
   // Émetteur et client.
-  const party = (label: string, p: Party, x: number, width: number) => {
+  const party = (label: string, p: Party, x: number, w: number) => {
     let yy = y
-    text(pg, label, x, yy, { size: 7.5, font: bold, color: C.brand })
-    yy -= 17
-    for (const l of wrap(p.name || "—", 12, width, bold)) { text(pg, l, x, yy, { size: 12, font: bold, color: C.ink }); yy -= 15 }
+    tag(pg, label, x, yy)
+    yy -= 26
+    for (const l of wrap(p.name || "—", 13, w, bold)) { text(pg, l, x, yy, { size: 13, font: bold, color: C.ink }); yy -= 16 }
+    yy -= 2
     const rest = [p.company && p.company !== p.name ? p.company : "", p.address || "", p.email || "", p.phone || "", p.website || "", p.tax_id ? `N° fiscal : ${p.tax_id}` : ""].filter(Boolean)
-    for (const r of rest) for (const l of wrap(r, 9.5, width)) { text(pg, l, x, yy, { size: 9.5, color: C.text }); yy -= 12.5 }
+    for (const r of rest) for (const l of wrap(r, 9.5, w)) { text(pg, l, x, yy, { size: 9.5, color: C.text }); yy -= 12.5 }
     return yy
   }
   const half = (W - 2 * M - 40) / 2
-  const yA = party("ÉMIS PAR", d.issuer, M, half)
-  const yB = party("FACTURÉ À", d.customer, M + half + 40, half)
-  pg.drawLine({ start: { x: M + half + 20, y: y + 6 }, end: { x: M + half + 20, y: Math.min(yA, yB) + 8 }, thickness: 0.6, color: C.line })
-  y = Math.min(yA, yB) - 20
+  const yA = party("émis par", d.issuer, M, half)
+  const yB = party("facturé à", d.customer, M + half + 40, half)
+  y = Math.min(yA, yB) - 18
 
   // Lignes, numérotées.
-  const cols = { num: M + 14, desc: M + 40, qty: W - M - 200, unit: W - M - 96, total: W - M - 14 }
+  const cols = { num: M + 16, desc: M + 44, qty: W - M - 200, unit: W - M - 98, total: W - M - 16 }
   const descW = cols.qty - 36 - cols.desc
   const head = () => {
-    fillRound(pg, M, y - 24, W - 2 * M, 28, 9, C.brandTint)
-    const o = { size: 7.5, font: bold, color: C.brand }
-    text(pg, "N°", cols.num, y - 13, o)
-    text(pg, "DESCRIPTION", cols.desc, y - 13, o)
-    text(pg, "QTÉ", cols.qty, y - 13, { ...o, align: "right" })
-    text(pg, "PRIX UNITAIRE HT", cols.unit, y - 13, { ...o, align: "right" })
-    text(pg, "TOTAL HT", cols.total, y - 13, { ...o, align: "right" })
-    y -= 42
+    fillRound(pg, M, y - 26, W - 2 * M, 30, 15, C.box)
+    const o: TextOpts = { size: 7, font: bold, color: C.muted, spacing: 0.7 }
+    text(pg, "N°", cols.num, y - 14, o)
+    text(pg, "DESCRIPTION", cols.desc, y - 14, o)
+    text(pg, "QTÉ", cols.qty, y - 14, { ...o, align: "right" })
+    text(pg, "PRIX UNITAIRE HT", cols.unit, y - 14, { ...o, align: "right" })
+    text(pg, "TOTAL HT", cols.total, y - 14, { ...o, align: "right" })
+    y -= 46
   }
   head()
   const num = (q: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(q)
   d.lines.forEach((l, i) => {
-    const lines = wrap(l.label || "—", 10, descW)
-    const h = (lines.length - 1) * 13 + 26
-    if (y - h < 250) {
+    const lines = wrap(l.label || "—", 10.5, descW)
+    const h = (lines.length - 1) * 14 + 27
+    if (y - h < 220) {
       ;({ pg, y } = newPage(false))
       head()
     }
-    text(pg, String(i + 1).padStart(2, "0"), cols.num, y, { size: 9, font: bold, color: C.faint })
-    lines.forEach((s, j) => text(pg, s, cols.desc, y - j * 13, { size: 10, color: C.ink }))
-    text(pg, num(Number(l.qty) || 0), cols.qty, y, { size: 10, align: "right" })
-    text(pg, money(Number(l.unit_cents) || 0, cur), cols.unit, y, { size: 10, align: "right" })
-    text(pg, money(Math.round((Number(l.qty) || 0) * (Number(l.unit_cents) || 0)), cur), cols.total, y, { size: 10, font: bold, color: C.ink, align: "right" })
-    if (i < d.lines.length - 1) pg.drawLine({ start: { x: M + 12, y: y - h + 17 }, end: { x: W - M - 12, y: y - h + 17 }, thickness: 0.6, color: C.line })
+    text(pg, String(i + 1).padStart(2, "0"), cols.num, y, { size: 9, color: C.faint })
+    lines.forEach((s, j) => text(pg, s, cols.desc, y - j * 14, { size: 10.5, color: C.ink }))
+    text(pg, num(Number(l.qty) || 0), cols.qty, y, { size: 10.5, align: "right" })
+    text(pg, money(Number(l.unit_cents) || 0, cur), cols.unit, y, { size: 10.5, align: "right" })
+    text(pg, money(Math.round((Number(l.qty) || 0) * (Number(l.unit_cents) || 0)), cur), cols.total, y, { size: 10.5, font: bold, color: C.ink, align: "right" })
+    if (i < d.lines.length - 1) pg.drawLine({ start: { x: M + 14, y: y - h + 18 }, end: { x: W - M - 14, y: y - h + 18 }, thickness: 0.6, color: C.line })
     y -= h
   })
   if (!d.lines.length) { text(pg, "Aucune ligne pour l’instant.", cols.desc, y, { size: 10, color: C.muted }); y -= 22 }
 
+  // Note, sous les lignes (#104 : avant le bas de facture, pour ne jamais occuper une page à elle seule).
+  if (d.notes.trim()) {
+    const lines = wrap(d.notes.trim(), 9.5, W - 2 * M - 32)
+    const h = lines.length * 13 + 44
+    if (y - h < 200) ({ pg, y } = newPage(false))
+    y -= 6
+    strokeRound(pg, M, y - h, W - 2 * M, h, 16, C.line, 0.8)
+    tag(pg, "note", M + 16, y - 22)
+    lines.forEach((s, j) => text(pg, s, M + 16, y - 44 - j * 13, { size: 9.5, color: C.text }))
+    y -= h + 8
+  }
+
   // Bas de facture : paiement à gauche, totaux à droite.
-  if (y < 250) ({ pg, y } = newPage(false))
+  if (y < 200) ({ pg, y } = newPage(false))
   y -= 4
-  pg.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.8, color: C.line })
-  y -= 26
-  const tw = 220
+  pg.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.8, color: C.ink })
+  y -= 28
+  const tw = 222
   const tx = W - M - tw
-  const topBlock = y + 12
+  const topBlock = y + 14
   const totRow = (k: string, v: string) => {
-    text(pg, k, tx + 4, y, { size: 10, color: C.muted })
-    text(pg, v, W - M - 14, y, { size: 10, color: C.ink, align: "right" })
-    y -= 19
+    text(pg, k, tx + 6, y, { size: 10, color: C.muted })
+    text(pg, v, W - M - 16, y, { size: 10.5, color: C.ink, align: "right" })
+    y -= 20
   }
   totRow("Sous-total HT", money(t.subtotal, cur))
   if (d.taxRate > 0) totRow(`TVA (${num(d.taxRate)} %)`, money(t.tax, cur))
   else totRow(d.issuer.vat_note || "TVA non applicable", money(0, cur))
-  y -= 10
-  gradient(pg, tx - 6, y - 15, tw + 6, 40, 12)
-  text(pg, d.taxRate > 0 ? "Total TTC" : "Total", tx + 8, y, { size: 11.5, font: bold, color: C.white })
-  text(pg, money(t.total, cur), W - M - 14, y - 1, { size: 16, font: bold, color: C.white, align: "right" })
-  const bottomTotals = y - 15
+  y -= 20
+  fillRound(pg, tx - 6, y - 17, tw + 6, 46, 16, C.band)
+  text(pg, d.taxRate > 0 ? "Total TTC" : "Total", tx + 10, y, { size: 11, color: C.white })
+  text(pg, money(t.total, cur), W - M - 16, y - 2, { size: 18, font: bold, color: C.white, align: "right" })
+  const bottomTotals = y - 17
 
   // Carte de paiement (ou de règlement) à gauche des totaux.
-  const lw = tx - 26 - M
+  const lw = tx - 28 - M
   const payBody = paid
     ? `Facture réglée le ${longDate(d.paidAt)}. Merci !`
     : (d.issuer.payment || "").trim()
       ? `${d.issuer.payment!.trim()}${d.number ? `\nRéférence à indiquer : ${d.number}` : ""}`
       : `À régler avant le ${longDate(d.dueAt)}.${d.number ? `\nRéférence à indiquer : ${d.number}` : ""}`
-  const payLines = wrap(payBody, 9.5, lw - 34)
-  const payH = Math.max(payLines.length * 13 + 36, topBlock - bottomTotals)
+  const payLines = wrap(payBody, 9.5, lw - 36)
+  const payH = Math.max(payLines.length * 13 + 44, topBlock - bottomTotals)
   const payY = topBlock - payH
-  fillRound(pg, M, payY, lw, payH, 12, paid ? C.okTint : C.box)
-  // Barre de couleur à gauche, découpée par les coins arrondis de la carte.
-  pg.pushOperators(pushGraphicsState(), ...roundedPath(M, payY, lw, payH, 12), clip(), endPath())
-  pg.drawRectangle({ x: M, y: payY, width: 4, height: payH, color: paid ? C.ok : C.brand })
-  pg.pushOperators(popGraphicsState())
-  text(pg, paid ? "RÈGLEMENT" : "MODALITÉS DE PAIEMENT", M + 18, topBlock - 18, { size: 7.5, font: bold, color: paid ? C.ok : C.brand })
-  payLines.forEach((s, j) => text(pg, s, M + 18, topBlock - 34 - j * 13, { size: 9.5, color: C.text }))
+  fillRound(pg, M, payY, lw, payH, 16, paid ? C.okTint : C.box)
+  tag(pg, paid ? "règlement" : "modalités de paiement", M + 18, topBlock - 22, { line: hex("#cfcfcf") })
+  payLines.forEach((s, j) => text(pg, s, M + 18, topBlock - 44 - j * 13, { size: 9.5, color: C.text }))
   y = Math.min(payY, bottomTotals) - 18
 
   // Tampon « Payée ».
@@ -286,29 +317,18 @@ export async function invoicePdf(d: InvoiceDoc, logoUrl: string): Promise<Uint8A
     const sy = Math.min(payY, bottomTotals) - 58
     if (sy > 90) {
       pg.drawRectangle({ x: sx, y: sy, width: 132, height: 40, borderColor: C.ok, borderWidth: 2, opacity: 0, borderOpacity: 0.75, rotate: degrees(-8) })
-      pg.drawText("PAYÉE", { x: sx + 20, y: sy + 9, size: 22, font: bold, color: C.ok, opacity: 0.75, rotate: degrees(-8) })
+      pg.drawText(win("PAYÉE"), { x: sx + 22, y: sy + 10, size: 22, font: bold, color: C.ok, opacity: 0.75, rotate: degrees(-8) })
       // La rotation abaisse le bord droit du tampon d'environ 19 points.
       y = Math.min(y, sy - 30)
     }
   }
 
-  // Note.
-  if (d.notes.trim()) {
-    const lines = wrap(d.notes.trim(), 9.5, W - 2 * M - 32)
-    const h = lines.length * 13 + 34
-    if (y - h < 80) ({ pg, y } = newPage(false))
-    strokeRound(pg, M, y - h, W - 2 * M, h, 12, C.line, 0.8)
-    text(pg, "NOTE", M + 16, y - 18, { size: 7.5, font: bold, color: C.muted })
-    lines.forEach((s, j) => text(pg, s, M + 16, y - 34 - j * 13, { size: 9.5, color: C.text }))
-    y -= h + 12
-  }
-
-  // Pied de page sur chaque page : filet dégradé, remerciement, mentions de l'émetteur, numéro de page.
+  // Pied de page sur chaque page : filet noir, remerciement, mentions de l'émetteur, numéro de page.
   const legal = [d.issuer.name, d.issuer.address?.replace(/\n+/g, ", "), d.issuer.tax_id ? `N° fiscal ${d.issuer.tax_id}` : "", d.issuer.email, d.issuer.website].filter(Boolean).join(" · ")
   pages.forEach((p, i) => {
-    gradient(p, M, 63, W - 2 * M, 2.4)
-    if (d.issuer.footer) text(p, d.issuer.footer, M, 46, { size: 9.5, font: bold, color: C.ink })
-    text(p, `Page ${i + 1} / ${pages.length}`, W - M, 46, { size: 8.5, color: C.faint, align: "right" })
+    p.drawLine({ start: { x: M, y: 64 }, end: { x: W - M, y: 64 }, thickness: 0.8, color: C.ink })
+    if (d.issuer.footer) text(p, d.issuer.footer, M, 47, { size: 10, font: bold, color: C.ink })
+    text(p, `${i + 1} / ${pages.length}`, W - M, 47, { size: 8.5, color: C.faint, align: "right" })
     wrap(legal, 8, W - 2 * M).slice(0, 2).forEach((s, j) => text(p, s, M, 32 - j * 10, { size: 8, color: C.faint }))
   })
   return pdf.save()

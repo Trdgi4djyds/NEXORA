@@ -1,37 +1,62 @@
-/* Page de statut publique de NEXORA (#048) : plate, lisible, claire ou sombre selon le système. */
-:root { --bg: #f5f5f7; --surface: #ffffff; --text: #1d1d1f; --text-2: #3a3a3c; --text-3: #6e6e73; --sep: #e5e5ea; --ok: #1f9d55; --warn: #c27803; --bad: #d92d20; --mute: #aeaeb2; --maint: #5856d6; color-scheme: light dark; }
-@media (prefers-color-scheme: dark) { :root { --bg: #0b0b0d; --surface: #1c1c1e; --text: #f5f5f7; --text-2: #d1d1d6; --text-3: #98989d; --sep: #2c2c2e; --ok: #32d74b; --warn: #ffb340; --bad: #ff6961; --mute: #48484a; --maint: #7d7aff; } }
+/* Page de statut publique de NEXORA (#048). #104 : direction « Horizon » du site et des interfaces : police Urbanist
+   (fichier local, la politique de sécurité n'autorise que les fichiers de la page), noir #050505 et gris très sombre
+   en sombre, gris clair et blanc en clair (selon le système), titre fin, repères « /tag » en pilule à contour, cartes
+   à grands rayons et filet fin, formulaire d'abonnement en pilule. Les couleurs d'état (barres, bandeau) restent :
+   ce sont elles qui informent. */
+@font-face { font-family: "Urbanist"; src: url("./urbanist-var.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+:root {
+  color-scheme: light;
+  --bg: #f2f2f2; --surface: #ffffff; --text: #0a0a0a; --text-2: #3d3d3d; --text-3: #6b6b6b; --sep: #e6e6e6; --sep-2: #d0d0d0;
+  --ok: #16884a; --warn: #c46a00; --bad: #d92d20; --mute: #d4d4d4; --maint: #4b4bd6; --ink: #0a0a0a; --ink-fg: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #050505; --surface: #111111; --text: #ffffff; --text-2: #c4c4c4; --text-3: #8c8c8c; --sep: rgb(255 255 255 / 0.08); --sep-2: rgb(255 255 255 / 0.18);
+    --ok: #32c76c; --warn: #f2a33a; --bad: #ff6159; --mute: #2a2a2a; --maint: #8b8bff; --ink: #ffffff; --ink-fg: #050505;
+  }
+}
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "Inter", "Segoe UI", system-ui, -apple-system, sans-serif; }
-.wrap { max-width: 860px; margin: 0 auto; padding: 48px 20px 64px; display: flex; flex-direction: column; gap: 18px; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15.5px/1.55 "Urbanist", "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 880px; margin: 0 auto; padding: 64px 20px 72px; display: flex; flex-direction: column; gap: 18px; }
 .loading, .empty { color: var(--text-3); text-align: center; padding: 80px 0; }
-h1 { margin: 0; font-size: 28px; letter-spacing: -0.02em; }
-.intro { margin: 4px 0 0; color: var(--text-2); }
-.banner { display: flex; align-items: center; gap: 14px; padding: 18px 20px; border-radius: 16px; color: #fff; font-weight: 650; font-size: 17px; }
+header { margin-bottom: 10px; }
+header::before { content: "/ statut"; display: inline-flex; margin-bottom: 18px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--sep-2); font-size: 12.5px; color: var(--text-2); }
+h1 { margin: 0; font-size: clamp(34px, 5vw, 52px); font-weight: 300; line-height: 1.05; letter-spacing: -0.035em; }
+.intro { margin: 10px 0 0; color: var(--text-3); font-size: 16px; }
+.banner { display: flex; align-items: center; gap: 14px; padding: 20px 24px; border-radius: 24px; color: #fff; font-weight: 600; font-size: 18px; letter-spacing: -0.01em; }
 .banner.up { background: var(--ok); } .banner.degraded { background: var(--warn); } .banner.down { background: var(--bad); }
-.banner small { display: block; font-weight: 500; font-size: 13px; opacity: 0.92; }
-.dot { width: 12px; height: 12px; border-radius: 50%; background: currentColor; flex: none; }
-.card { background: var(--surface); border-radius: 16px; border: 1px solid var(--sep); padding: 6px 20px; }
-.card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-3); margin: 14px 0 4px; }
-.svc { padding: 16px 0; border-bottom: 1px solid var(--sep); }
+.banner small { display: block; font-weight: 400; font-size: 13.5px; opacity: 0.92; letter-spacing: 0; }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: currentColor; flex: none; box-shadow: 0 0 0 5px rgb(255 255 255 / 0.22); }
+.card { background: var(--surface); border-radius: 24px; border: 1px solid var(--sep); padding: 10px 24px; }
+.card h2 { display: inline-flex; align-items: center; gap: 6px; margin: 16px 0 6px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--sep-2); font-size: 12px; font-weight: 500; color: var(--text-2); }
+.card h2::before { content: "/"; color: var(--text-3); }
+.svc { padding: 18px 0; border-bottom: 1px solid var(--sep); }
 .svc:last-child { border-bottom: 0; }
 .svc-h { display: flex; align-items: center; gap: 10px; }
-.svc-h b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.state { font-size: 13px; font-weight: 600; }
+.svc-h b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 16px; }
+.state { font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, currentColor 12%, transparent); }
 .state.up { color: var(--ok); } .state.degraded { color: var(--warn); } .state.down { color: var(--bad); } .state.maint { color: var(--maint); } .state.paused, .state.unknown { color: var(--text-3); }
-.bars { display: grid; grid-template-columns: repeat(90, 1fr); gap: 2px; height: 30px; margin: 10px 0 6px; }
-.bars i { border-radius: 2px; background: var(--mute); }
+.bars { display: grid; grid-template-columns: repeat(90, 1fr); gap: 2px; height: 32px; margin: 12px 0 8px; }
+.bars i { border-radius: 3px; background: var(--mute); }
 .bars i.ok { background: var(--ok); } .bars i.warn { background: var(--warn); } .bars i.bad { background: var(--bad); }
-.legend { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-3); }
-.inc { padding: 14px 0; border-bottom: 1px solid var(--sep); }
+.legend { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-3); }
+.inc { padding: 16px 0; border-bottom: 1px solid var(--sep); }
 .inc:last-child { border-bottom: 0; }
-.inc b { display: block; }
+.inc b { display: block; font-weight: 600; }
 .inc small { color: var(--text-3); }
-.inc .cause { color: var(--text-2); font-size: 14px; }
-form.sub { display: flex; gap: 8px; flex-wrap: wrap; padding: 14px 0; }
-form.sub input { flex: 1; min-width: 220px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--sep); background: var(--bg); color: var(--text); font: inherit; }
-form.sub button { padding: 10px 16px; border-radius: 10px; border: 0; background: var(--text); color: var(--bg); font: inherit; font-weight: 650; cursor: pointer; }
-.msg { margin: 0 0 12px; font-size: 14px; color: var(--text-2); }
-.notice { padding: 12px 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--sep); }
-footer { text-align: center; color: var(--text-3); font-size: 12px; margin-top: 8px; }
+.inc .cause { color: var(--text-2); font-size: 14.5px; }
+/* Formulaire d'abonnement : champ et bouton en pilule, mêmes états que les autres formulaires de NEXORA. */
+form.sub { display: flex; gap: 10px; flex-wrap: wrap; padding: 14px 0 18px; }
+form.sub input { flex: 1; min-width: 220px; height: 48px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--sep-2); background: var(--bg); color: var(--text); font: inherit; outline: none; transition: border-color 0.16s, box-shadow 0.16s; }
+form.sub input::placeholder { color: var(--text-3); }
+form.sub input:hover { border-color: var(--text-3); }
+form.sub input:focus { border-color: var(--text); box-shadow: 0 0 0 4px color-mix(in srgb, var(--text) 10%, transparent); }
+form.sub input:user-invalid { border-color: var(--bad); box-shadow: 0 0 0 4px color-mix(in srgb, var(--bad) 15%, transparent); }
+form.sub button { height: 48px; padding: 0 22px; border-radius: 999px; border: 0; background: var(--ink); color: var(--ink-fg); font: inherit; font-weight: 600; cursor: pointer; }
+form.sub button:hover { opacity: 0.88; }
+form.sub button:disabled { opacity: 1; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text-3); cursor: default; }
+.msg { margin: 0 0 14px; font-size: 14.5px; color: var(--text-2); }
+.notice { padding: 14px 18px; border-radius: 18px; background: var(--surface); border: 1px solid var(--sep); }
+footer { text-align: center; color: var(--text-3); font-size: 12.5px; margin-top: 10px; }
 footer a { color: inherit; }

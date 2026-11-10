@@ -7,7 +7,7 @@ import { box, bullets, button, code, esc, layout, p, pill, rows, TONES, type Ton
 
 export const LOGO_URL = `${NEXORA_WEB_URL}logo.png`
 /** Version des modèles enregistrés dans la base (app_config.email_templates) : à augmenter à chaque changement. */
-export const TEMPLATES_VERSION = 2
+export const TEMPLATES_VERSION = 3
 
 type V = Record<string, string>
 export type Rendered = { subject: string; html: string; text?: string }
@@ -34,7 +34,7 @@ export type EmailTemplate = {
 }
 
 const base = { webUrl: NEXORA_WEB_URL, logoUrl: LOGO_URL }
-const strong = (s: string) => `<b class="nx-ink" style="color:#1d1d1f">${esc(s)}</b>`
+const strong = (s: string) => `<b class="nx-ink" style="color:#0a0a0a">${esc(s)}</b>`
 const REASON_ACCOUNT = "Tu reçois cet e-mail parce qu’une action a été demandée pour ton compte NEXORA."
 const REASON_SECURITY = "Tu reçois cet e-mail pour la sécurité de ton compte NEXORA. Il ne contient aucun lien à usage unique."
 const SUPPORT = "Si ce n’est pas toi, change ton mot de passe tout de suite (écran de connexion → « Mot de passe oublié ») et réponds à cet e-mail pour prévenir le support."
@@ -394,7 +394,7 @@ export function updateEmail(d: UpdateData): Rendered {
         (d.intro.trim() ? p(esc(d.intro.trim()).replace(/\n/g, "<br>")) : "") +
         (items.length ? p(strong("Les nouveautés"), "margin-bottom:12px") + bullets(items.map(esc)) : "") +
         button(`Télécharger NEXORA ${d.version}`, d.url) +
-        p(`Déjà installée ? NEXORA te propose la mise à jour au prochain lancement (Réglages → Mises à jour). Tu peux aussi utiliser <a class="nx-link" href="${esc(NEXORA_WEB_URL)}" style="color:#7b4fe6;text-decoration:none;font-weight:600">NEXORA en ligne</a>, toujours à jour.`, "font-size:14px"),
+        p(`Déjà installée ? NEXORA te propose la mise à jour au prochain lancement (Réglages → Mises à jour). Tu peux aussi utiliser <a class="nx-link" href="${esc(NEXORA_WEB_URL)}" style="color:#0a0a0a;text-decoration:underline;font-weight:600">NEXORA en ligne</a>, toujours à jour.`, "font-size:14px"),
       note: "Tes réglages et tes projets sont conservés pendant la mise à jour.",
       reason: "Tu reçois cet e-mail parce que tu as un compte NEXORA.",
     }),
@@ -465,12 +465,12 @@ export function invoiceEmail(d: InvoiceMailData): Rendered {
         (d.paid
           ? p("Merci, ton paiement est bien reçu. Garde cette facture pour ta comptabilité.")
           : d.payment.trim()
-            ? p(strong("Modalités de paiement"), "margin-bottom:8px") + box(`<div class="nx-text" style="font-size:14px;line-height:1.6;color:#3a3a3c">${esc(d.payment.trim()).replace(/\n/g, "<br>")}</div>`)
+            ? p(strong("Modalités de paiement"), "margin-bottom:8px") + box(`<div class="nx-text" style="font-size:14.5px;line-height:1.65;color:#3d3d3d">${esc(d.payment.trim()).replace(/\n/g, "<br>")}</div>`)
             : "") +
         box(
           `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-<td style="vertical-align:middle;padding-right:12px"><div style="width:34px;height:40px;border-radius:7px;background:#e5302a;color:#ffffff;font-size:10px;font-weight:700;line-height:40px;text-align:center">PDF</div></td>
-<td class="nx-ink" style="vertical-align:middle;font-size:14px;font-weight:600;color:#1d1d1f">${esc(d.filename)}<div class="nx-muted" style="font-size:12.5px;font-weight:400;color:#6e6e73">Pièce jointe</div></td></tr></table>`,
+<td style="vertical-align:middle;padding-right:12px"><div class="nx-dot" style="width:36px;height:44px;border-radius:9px;background:#0a0a0a;color:#ffffff;font-size:10px;font-weight:700;line-height:44px;text-align:center;letter-spacing:.5px">PDF</div></td>
+<td class="nx-ink" style="vertical-align:middle;font-size:14.5px;font-weight:600;color:#0a0a0a">${esc(d.filename)}<div class="nx-muted" style="font-size:12.5px;font-weight:400;color:#6b6b6b">Pièce jointe · PDF</div></td></tr></table>`,
           "padding:14px 16px",
         ),
       note: "Une question sur cette facture ? Réponds simplement à cet e-mail.",

@@ -335,3 +335,19 @@ h1, h2, h3 { font-weight: 400; }
 @media (max-width: 960px) {
   .tabs { margin: 0 calc(-1 * clamp(16px, 3vw, 36px)); border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
 }
+
+/* ------------------------------------------------------------------ #104 : formulaires (même système que le site,
+   le logiciel et le back office) : libellé lisible, champ plein à filet fin et coins de 14 px, survol, focus à filet
+   blanc et halo, erreur en rouge, lecture seule en pointillés, bouton désactivé lisible au lieu d'un voile. */
+.field > span { font-size: 13px; font-weight: 600; color: var(--text); }
+.field small { color: var(--text-3); line-height: 1.45; }
+.input { height: 48px; border-radius: 14px; padding: 0 16px; background: rgb(255 255 255 / 0.04); box-shadow: inset 0 0 0 1px var(--line-2); transition: box-shadow 0.16s, background-color 0.16s; }
+.input:hover:not(:focus):not(:disabled) { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.28); }
+.input:focus { background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--text), 0 0 0 4px rgb(255 255 255 / 0.08); }
+.input:is(:disabled, [readonly]) { opacity: 1; background: transparent; color: var(--text-2); box-shadow: none; outline: 1px dashed var(--line-2); outline-offset: -1px; }
+.input:is([aria-invalid="true"], :user-invalid) { box-shadow: inset 0 0 0 1.5px var(--bad), 0 0 0 4px var(--bad-soft); }
+.code-input { height: 64px; border-radius: 18px; }
+.code-input.sm { height: 48px; border-radius: 14px; }
+.share-code, .share-link { border-radius: 16px; }
+.btn:disabled, .btn.primary:disabled { opacity: 1; color: var(--text-3); background: rgb(255 255 255 / 0.05); box-shadow: inset 0 0 0 1px var(--line); }
+.form .btn.primary.block { height: 48px; }

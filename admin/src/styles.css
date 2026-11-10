@@ -1188,3 +1188,46 @@ html[data-theme="dark"] .po-plan.po-pro { background: var(--surface); }
 .auth-head h1 { font-weight: 400; letter-spacing: -.04em; font-size: 36px; }
 .auth-ic { border-radius: 999px; color: var(--text); box-shadow: inset 0 0 0 1px var(--sep); }
 .inv-totals .total { background: var(--ink); color: var(--ink-fg); border-radius: 18px; }
+
+/* =====================================================================================================
+   Formulaires (NEXORA #104) : même système que le logiciel, le site et l'espace des parrains. Libellé lisible
+   au-dessus, aide en gris dessous ; champ plein à filet fin et coins de 14 px (la recherche reste en pilule) ;
+   survol, focus à filet d'encre et halo ; lecture seule en pointillés ; erreur en rouge ; cases et boutons radio
+   dessinés à l'encre ; interrupteur à l'encre ; bouton désactivé lisible au lieu d'un voile.
+   ===================================================================================================== */
+.field { gap: 7px; }
+.field > span { font-size: 12.5px; font-weight: 600; color: var(--text); letter-spacing: 0; }
+.field small { font-size: 12px; line-height: 1.45; color: var(--text-3); }
+.input, .input.sm { border-radius: 14px; padding: 0 14px; background: var(--input); box-shadow: inset 0 0 0 1px var(--sep); transition: box-shadow .16s, background-color .16s; }
+.input { height: 42px; }
+.input.sm { height: 34px; border-radius: 11px; padding: 0 11px; }
+.input::placeholder { color: var(--text-3); }
+.input:hover:not(:focus):not(:disabled) { box-shadow: inset 0 0 0 1px var(--sep-strong); }
+.input:focus { background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--text), 0 0 0 4px var(--accent-soft); }
+textarea.input { height: auto; min-height: 92px; padding: 11px 14px; border-radius: 16px; line-height: 1.55; }
+select.input { padding-right: 36px; background-position: right 14px center; cursor: pointer; }
+select.input.sm { padding-right: 28px; background-position: right 10px center; }
+.input:is(:disabled, [readonly]) { background: transparent; color: var(--text-2); box-shadow: none; outline: 1px dashed var(--sep-strong); outline-offset: -1px; cursor: not-allowed; }
+.input:is([aria-invalid="true"], :user-invalid) { box-shadow: inset 0 0 0 1.5px var(--bad), 0 0 0 4px var(--tint-bad); }
+.search .input { border-radius: 999px; padding-left: 36px; }
+/* Cases à cocher et boutons radio (hors interrupteurs) : dessinés à l'encre. */
+input[type="checkbox"]:not(.switch input),
+input[type="radio"] {
+  appearance: none; -webkit-appearance: none; display: inline-grid; place-content: center; flex: none;
+  width: 18px; height: 18px; margin: 0; border-radius: 6px; background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--sep-strong); cursor: pointer; transition: background-color .15s, box-shadow .15s;
+}
+input[type="radio"] { border-radius: 50%; }
+input[type="checkbox"]:not(.switch input):checked { background: var(--ink); box-shadow: none; }
+input[type="checkbox"]:not(.switch input):checked::after {
+  content: ""; width: 9px; height: 5px; border: 2px solid var(--ink-fg); border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px);
+}
+input[type="radio"]:checked { box-shadow: inset 0 0 0 5px var(--ink); background: var(--ink-fg); }
+input[type="checkbox"]:not(.switch input):focus-visible, input[type="radio"]:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.check { gap: 9px; font-size: 13px; }
+/* Interrupteur à l'encre (vert du #040 retiré : monochrome). */
+.switch input:checked + i { background: var(--ink); }
+.switch i::after { box-shadow: none; }
+html[data-theme="dark"] .switch input:checked + i::after { background: #050505; }
+/* Bouton désactivé : fond discret, texte gris. */
+.btn:disabled, .btn.primary:disabled, .btn.ink:disabled { opacity: 1; background: var(--fill-2); color: var(--text-3); box-shadow: inset 0 0 0 1px var(--sep); }

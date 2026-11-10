@@ -5,8 +5,9 @@ import { cn } from "../../lib/utils"
 
 // shadcn/ui, NEXORA #099 (« Horizon ») : bouton plein en pilule blanche (encre dans une section blanche), à pastille noire
 // et flèche quand il en porte une (.btn-orb) ; bouton à contour en verre dépoli qui passe au blanc au survol ; aucun halo.
+// #104 : bouton désactivé en fond discret à texte gris (le voile à 50 % rendait le bouton blanc gris sale).
 const buttonVariants = cva(
-  "relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-[background-color,color,box-shadow,transform,border-color] duration-200 outline-none select-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-60 [&_svg]:pointer-events-none [&_svg]:shrink-0 active:translate-y-px",
+  "relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full font-medium transition-[background-color,color,box-shadow,transform,border-color] duration-200 outline-none select-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:border-transparent disabled:bg-foreground/[0.07] disabled:text-muted-foreground aria-disabled:pointer-events-none aria-disabled:opacity-60 [&_svg]:pointer-events-none [&_svg]:shrink-0 active:translate-y-px",
   {
     variants: {
       variant: {

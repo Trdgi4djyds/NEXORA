@@ -21,8 +21,10 @@ export default defineConfig({
       "react/jsx-dev-runtime",
       "react-dom/client",
       "@supabase/supabase-js",
-      // Factures PDF du back office (#031), chargées à la demande.
+      // Factures PDF du back office (#031), chargées à la demande ; #104 : polices Urbanist intégrées par fontkit
+      // (dépendance pako en CommonJS, à pré-assembler pour le serveur de développement).
       "pdf-lib",
+      "@pdf-lib/fontkit",
       // Site vitrine (#085) : composants shadcn/ui (Radix) et utilitaires de classes.
       "radix-ui",
       "clsx",
