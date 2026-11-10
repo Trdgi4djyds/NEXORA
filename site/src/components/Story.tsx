@@ -3,13 +3,13 @@ import { STORY } from "../data/content"
 import { SPACE_BY_ID, spaceHref } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
-import { RENDUS } from "../lib/rendus"
 import { cn } from "../lib/utils"
+import { FloatScene } from "./FloatScene"
 import { Words } from "./SectionHead"
 
 /**
  * Récit « De l'idée à la publication ». #099 (« Horizon ») : section « services » de la référence : en-tête en deux
- * tons et chapeau à droite, rendu 3D d'un Studio Display sur NEX-DESIGN (#100) à gauche, étapes dépliables à droite (une
+ * tons et chapeau à droite, écran incliné du Dev Lab et panneaux de verre (#101) à gauche, étapes dépliables à droite (une
  * seule ouverte : texte, points, lien vers l'espace). Remplace la frise et la fenêtre collante de « Signal ».
  */
 export function Story() {
@@ -29,15 +29,9 @@ export function Story() {
           </p>
         </Reveal>
         <div className="mt-14 grid gap-10 lg:mt-20 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-16">
-          <Reveal className="relative flex min-h-[340px] items-center justify-center overflow-hidden rounded-md border border-foreground/[0.08] bg-[#0b0914] p-6 lg:min-h-0">
-            <i className="aurora" aria-hidden="true" />
-            <img src={RENDUS.studioDisplay.src} alt={RENDUS.studioDisplay.alt} loading="lazy" width={RENDUS.studioDisplay.w} height={RENDUS.studioDisplay.h} className="relative z-[1] w-[88%] max-w-[560px] drop-shadow-[0_30px_40px_rgb(0_0_0/0.55)]" />
-            <span className="absolute right-5 bottom-5 left-5 z-[2] flex items-end justify-between gap-4 text-white">
-              <span className="max-w-[28ch] text-[15px] leading-snug">Tout tourne sur ton ordinateur : tes fichiers ne quittent pas ton PC.</span>
-              <a href="/espaces" className="orb" aria-label="Voir les 9 espaces">
-                <Icon name="nxArrowUpRight" size={18} stroke={2} />
-              </a>
-            </span>
+          {/* #101 : écran incliné et panneaux de verre (référence de l'utilisateur), vraie capture du Dev Lab. */}
+          <Reveal className="relative self-start lg:sticky lg:top-28">
+            <FloatScene space="dev" className="w-full" />
           </Reveal>
           <ol className="border-t border-foreground/12">
             {STORY.map((s, i) => {

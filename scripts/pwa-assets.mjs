@@ -33,10 +33,8 @@ const page = await browser.newPage()
 
 // Image de partage (Open Graph, X, LinkedIn, messageries) : composition aux couleurs du site.
 const font = (f) => pathToFileURL(path.join(ROOT, "site", "src", "assets", "fonts", f)).href
-const logo = pathToFileURL(SRC).href
-// NEXORA #099 (« Horizon ») : titre fin en Urbanist, repère « /tag » en pilule. #100 : aurore violette et rendu 3D
-// du MacBook et de l'iPhone (site/src/assets/rendus/) à la place de la photo de bâtiment.
-const render = pathToFileURL(path.join(ROOT, "site", "src", "assets", "rendus", "macbook-iphone.webp")).href
+// NEXORA #101 : composition du hero (référence de l'utilisateur : outil de design) : colonnes de lumière, titre dans
+// un cadre de sélection, pastille de couleur, curseur « Agent IA » ; aucune photo ni rendu 3D.
 await page.setViewport({ width: 1200, height: 630, deviceScaleFactor: 1 })
 const ogFile = path.join(ROOT, "node_modules", ".cache", "nexora-og.html")
 fs.mkdirSync(path.dirname(ogFile), { recursive: true })
@@ -44,20 +42,22 @@ fs.writeFileSync(
   ogFile,
   `<!doctype html><html><head><meta charset="utf-8"><style>
   @font-face{font-family:U;src:url(${font("urbanist-var.woff2")});font-weight:300 700}
-  *{margin:0;box-sizing:border-box}body{width:1200px;height:630px;background:radial-gradient(70% 60% at 62% 112%,rgba(139,92,246,.6),transparent 70%),radial-gradient(40% 50% at 96% 100%,rgba(72,152,247,.45),transparent 70%),repeating-linear-gradient(90deg,transparent 0 99px,rgba(255,255,255,.06) 99px 100px),#06050b;color:#fff;font-family:U;position:relative;overflow:hidden}
-  .r{position:absolute;right:-40px;bottom:96px;width:620px;filter:drop-shadow(0 0 50px rgba(139,92,246,.4))}
-  .wrap{position:absolute;inset:60px 72px;z-index:1}.brand{display:flex;align-items:center;gap:16px}.brand img{width:60px;height:60px;border-radius:50%}
-  .brand b{font:600 28px U;letter-spacing:.14em}.tag{display:inline-flex;margin-top:70px;font:500 20px U;border:1.5px solid rgba(255,255,255,.6);padding:6px 16px;border-radius:999px}
-  h1{margin-top:22px;font:400 64px/1.04 U;letter-spacing:-.03em;max-width:600px}
-  .foot{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between}
-  .url{display:inline-flex;align-items:center;gap:14px;font:500 22px U;background:#fff;color:#0a0a0a;padding:10px 12px 10px 24px;border-radius:999px}
-  .url i{width:34px;height:34px;border-radius:50%;background:#0a0a0a}.meta{font:500 20px U;color:rgba(255,255,255,.7)}
-  </style></head><body><img class="r" src="${render}"><div class="wrap">
-  <div class="brand"><img src="${logo}"><b>NEXORA</b></div>
-  <span class="tag">/ NEXORA Devs Toolbox</span>
-  <h1>L’atelier complet du web, installé sur ton PC</h1>
-  <div class="foot"><span class="meta">Design · Code · Tests · Apps · Windows</span><span class="url">nexoradevs.online <i></i></span></div>
-  </div></body></html>`,
+  *{margin:0;box-sizing:border-box}body{width:1200px;height:630px;color:#fff;font-family:U;position:relative;overflow:hidden;
+  background:radial-gradient(55% 34% at 50% -4%,rgba(48,74,255,.75),transparent 72%),radial-gradient(60% 32% at 50% 104%,rgba(72,152,247,.6),transparent 72%),radial-gradient(28% 26% at 6% 102%,rgba(139,92,246,.55),transparent 70%),radial-gradient(28% 26% at 94% 0%,rgba(139,92,246,.5),transparent 70%),repeating-linear-gradient(90deg,transparent 0 99px,rgba(255,255,255,.1) 99px 100px),#000}
+  .sel{position:absolute;left:50%;top:150px;translate:-50% 0;border:2px solid #4898f7;padding:2px 14px 8px;text-align:center}
+  h1{font:600 128px/.92 U;letter-spacing:-.035em;white-space:nowrap}mark{display:inline-block;line-height:.92;color:#cfe0ff;background:rgba(72,152,247,.26)}
+  .h{position:absolute;width:13px;height:13px;background:#000;border:2px solid #4898f7}.tl{left:-8px;top:-8px}.tr{right:-8px;top:-8px}.bl{left:-8px;bottom:-8px}.br{right:-8px;bottom:-8px}
+  .chip{position:absolute;left:20px;top:-58px;display:flex;align-items:center;gap:10px;height:38px;padding:0 12px 0 8px;border-radius:8px;background:#1d1d22;font:500 15px U}.chip i{width:24px;height:24px;border-radius:5px;background:#4898f7}
+  .size{position:absolute;left:50%;bottom:-44px;translate:-50% 0;padding:6px 12px;border-radius:6px;background:#4898f7;font:500 15px U}
+  .agent{position:absolute;right:-118px;top:56%;padding:5px 9px;border-radius:5px;background:#f45d3c;font:600 14px U}
+  .brand{position:absolute;left:56px;bottom:44px;font:700 34px U;letter-spacing:-.02em}.brand i{font-style:normal;color:#4898f7}
+  .pill{position:absolute;right:56px;bottom:44px;padding:12px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(120,130,255,.14);font:500 17px U}
+  .url{position:absolute;left:50%;bottom:52px;translate:-50% 0;font:500 18px U;color:rgba(255,255,255,.75)}
+  </style></head><body>
+  <div class="sel"><span class="chip"><i></i>4898F7</span><i class="h tl"></i><i class="h tr"></i><i class="h bl"></i><i class="h br"></i><span class="agent">Agent IA</span>
+  <h1><mark>L’atelier</mark> web<br>tout-en-un</h1><span class="size">nexoradevs.online</span></div>
+  <span class="brand">NEXORA<i>.</i></span><span class="pill">Design × Code × Supervision</span>
+  </body></html>`,
 )
 // Fichier local (et non setContent) : une page vide ne peut pas lire les polices ni le logo du dépôt.
 await page.goto(pathToFileURL(ogFile).href, { waitUntil: "load" })

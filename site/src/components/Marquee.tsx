@@ -8,7 +8,7 @@ import { Logo } from "./Logo"
 export function Marquee() {
   const row = [...FRAMEWORKS, ...TOOLS]
   return (
-    <section className="relative pt-36 pb-16 lg:pt-44" aria-labelledby="tech-title" data-capture="stack">
+    <section className="relative py-16 lg:py-20" aria-labelledby="tech-title" data-capture="stack">
       <div className="marquee slow">
         <ul className="marquee-track items-center">
           {[...row, ...row].map((t, i) => (

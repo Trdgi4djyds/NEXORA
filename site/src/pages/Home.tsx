@@ -11,6 +11,7 @@ import { Platforms } from "../components/Platforms"
 import { PricingCards } from "../components/Pricing"
 import { SectionHead } from "../components/SectionHead"
 import { Showcase } from "../components/Showcase"
+import { SpaceRow } from "../components/SpaceRow"
 import { SpaceBento } from "../components/SpaceBento"
 import { Story } from "../components/Story"
 import { Trust } from "../components/Trust"
@@ -21,7 +22,7 @@ import { RELEASES, WEB_URL } from "../lib/product"
 import { useRemote } from "../lib/remote"
 
 /**
- * Accueil. #099 (« Horizon ») : ordre de la référence de l'utilisateur : hero photo et carte en verre, rangée de logos,
+ * Accueil. #099 (« Horizon ») ; #101 : hero en outil de design, cartes de verre des espaces. Ordre : hero, rangée de logos,
  * vitrine des espaces, à propos et damier de chiffres, grille des espaces en cartes « projet », méthode (photo et
  * étapes dépliables), puis les sections propres à NEXORA ; noir et gris très sombre (.light) en alternance.
  */
@@ -33,6 +34,8 @@ export function Home() {
     <>
       <Hero />
       <Marquee />
+      {/* #101 : cartes de verre inclinées des 9 espaces (référence de l'utilisateur). */}
+      <SpaceRow />
       <Showcase />
       <About />
       <section className="section" id="espaces" data-capture="espaces">

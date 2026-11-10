@@ -1,11 +1,12 @@
 import { Reveal } from "../lib/motion"
-import { RENDUS } from "../lib/rendus"
 import { MainButton, SecondButton } from "./Download"
+import { Screen } from "./Screen"
 import { Words } from "./SectionHead"
 
 /**
- * Appel final. #099 (« Horizon ») : grand cadre aux coins légèrement arrondis, titre fin et boutons blancs.
- * #100 : aurore et rendu 3D de deux MacBook Pro face à face sur les vrais écrans de NEXORA (photo retirée).
+ * Appel final. #101 : composition de l'image de référence de l'utilisateur (écran fin incliné sur son pied, nom de la
+ * marque en lettres géantes derrière, halo) : l'écran montre la vraie Accueil de NEXORA, dessiné en CSS (aucun modèle
+ * 3D) ; titre, texte et boutons à gauche.
  */
 export function CtaBand({
   title = "Ouvre ton premier projet aujourd’hui.",
@@ -15,27 +16,31 @@ export function CtaBand({
   text?: string
 }) {
   return (
-    <section className="section-tight" data-capture="appel">
-      <div className="wrap-wide">
-        <div className="cta-photo relative overflow-hidden rounded-md">
-          <i className="aurora" aria-hidden="true" />
-          <Reveal className="relative z-[1] flex flex-col gap-8 p-7 pb-0 md:p-12 md:pb-0 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-[640px]">
-              <span className="eyebrow border-white/50 text-white">commencer</span>
-              <h2 className="title-1 words mt-6 text-white">
-                <Words text={title} />
-              </h2>
-            </div>
-            <div className="max-w-sm">
-              <p className="text-[16px] leading-relaxed text-white/75">{text}</p>
-              <div className="mt-7 flex flex-wrap gap-3">
-                <MainButton size="lg" />
-                <SecondButton size="lg" className="border-white/30 bg-white/[0.08] text-white hover:bg-white hover:text-black" />
-              </div>
-            </div>
-          </Reveal>
-          <img className="cta-render mt-6 md:mt-2" src={RENDUS.deuxMacbook.src} alt={RENDUS.deuxMacbook.alt} loading="lazy" width={RENDUS.deuxMacbook.w} height={RENDUS.deuxMacbook.h} />
-        </div>
+    <section className="cta-x relative overflow-hidden" data-capture="appel">
+      <i className="cta-glow" aria-hidden="true" />
+      <span className="cta-word" aria-hidden="true">
+        NEXORA
+      </span>
+      <div className="wrap-wide relative grid items-center gap-14 py-24 md:py-32 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)]">
+        <Reveal className="max-w-[560px]">
+          <span className="eyebrow">commencer</span>
+          <h2 className="title-1 words mt-6">
+            <Words text={title} />
+          </h2>
+          <p className="mt-6 text-[16px] leading-relaxed text-muted-foreground">{text}</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <MainButton size="lg" />
+            <SecondButton size="lg" />
+          </div>
+        </Reveal>
+        <Reveal delay={120} className="cta-mon">
+          <div className="cta-screen">
+            <Screen space="home" />
+            <i className="cta-glare" aria-hidden="true" />
+          </div>
+          <i className="cta-neck" aria-hidden="true" />
+          <i className="cta-foot" aria-hidden="true" />
+        </Reveal>
       </div>
     </section>
   )

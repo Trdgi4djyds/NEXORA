@@ -2,7 +2,7 @@ import { SPACE_FACTS } from "../data/content"
 import { SPACES, spaceHref, type Space } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
-import { GLASS } from "../lib/rendus"
+import { GlassTile } from "./Neon"
 import { Screen } from "./Screen"
 
 /** Offre d'un espace, dans le coin de la carte (comme l'année des projets de la référence). */
@@ -16,7 +16,7 @@ function offer(s: Space) {
 /**
  * Grille des espaces. #099 (« Horizon ») : cartes « projet » de la référence : nom et offre en tête, vraie capture
  * de NEXORA (thème sombre) avec son repère « /tag » et un rond blanc à flèche, puis deux lignes de méta-données
- * (ce que tu y fais, un fait vérifié). Remplace les aplats colorés de « Signal » (#092 à #095). #100 : icône en verre.
+ * (ce que tu y fais, un fait vérifié). Remplace les aplats colorés de « Signal » (#092 à #095). #101 : tuile de verre à icône néon.
  */
 export function SpaceBento() {
   return (
@@ -31,8 +31,8 @@ export function SpaceBento() {
             </span>
             <span className="proj-shot mt-3" aria-hidden="true">
               <Screen space={s.id} />
-              {/* #100 : icône de l'espace en verre (three.js), posée sur la capture. */}
-              <img className="glass-ic absolute top-3 left-3 z-[1] w-14" src={GLASS[s.id]} alt="" loading="lazy" width={320} height={320} />
+              {/* #101 : tuile de verre à icône néon, posée sur la capture. */}
+              <GlassTile space={s.id} size="sm" label={false} className="absolute top-3 left-3 z-[1]" />
               <span className="eyebrow absolute right-4 top-4 z-[1] border-white/50 bg-black/30 text-white backdrop-blur-md">{s.rail}</span>
               <span className="orb sm absolute right-4 bottom-4 z-[1]">
                 <Icon name="nxArrowUpRight" size={15} stroke={2} />

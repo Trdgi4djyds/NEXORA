@@ -1,56 +1,111 @@
+import { useEffect, useRef, useState } from "react"
 import { Icon } from "../lib/icons"
-import { CountUp } from "../lib/motion"
 import { APP_VERSION, DEVICE_COUNT } from "../lib/product"
-import { RENDUS } from "../lib/rendus"
-import { MainButton, SecondButton } from "./Download"
+import { useRemote } from "../lib/remote"
 
 /**
- * Hero. #099 (« Horizon ») : fond plein cadre qui passe sous l'en-tête, titre fin en bas à gauche, boutons blancs, et
- * carte en verre dépoli qui déborde sur la section suivante avec un chiffre vérifié (catalogue du Responsive Lab).
- * #100 : la photo de bâtiment laisse place à l'aurore (lignes de lumière, halo violet et bleu) et au rendu 3D d'un
- * MacBook Pro et d'un iPhone affichant les vraies captures de NEXORA (react-3d-mockups). Sur téléphone, le rendu et la
- * carte suivent le texte.
+ * Hero. #101 : composition de l'image de référence de l'utilisateur (outil de design « secret ingredient ») : fond
+ * noir à colonnes de lumière verticales, halo bleu et violet en haut et en bas ; titre géant centré sur deux lignes,
+ * tout entier dans un cadre de sélection (poignées, poignée de rotation, taille mesurée en direct), début surligné,
+ * pastille de couleur, étoile et curseur « Agent IA » ; barre d'outils dessous, dont le bouton bleu est le vrai bouton
+ * de téléchargement ; version en bas à gauche, pilule de verre en bas à droite. Plus aucun rendu 3D ni photo.
  */
 export function Hero() {
+  const { downloadUrl } = useRemote()
+  const box = useRef<HTMLDivElement>(null)
+  // Taille du cadre en pixels, mesurée après l'affichage (la page pré-générée montre une valeur fixe).
+  const [size, setSize] = useState("1180 × 360")
+  useEffect(() => {
+    const el = box.current
+    if (!el || typeof ResizeObserver === "undefined") return
+    const ro = new ResizeObserver(() => setSize(`${Math.round(el.offsetWidth)} × ${Math.round(el.offsetHeight)}`))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
   return (
-    <section className="hero" data-capture="haut">
-      <div className="hero-photo flex flex-col justify-end">
-        <i className="aurora" aria-hidden="true" />
-        <img className="hero-render hidden lg:block" src={RENDUS.macbookIphone.src} alt={RENDUS.macbookIphone.alt} width={RENDUS.macbookIphone.w} height={RENDUS.macbookIphone.h} fetchPriority="high" decoding="async" />
-        <div className="wrap-wide relative z-[2] pt-36 pb-14 lg:pt-44 lg:pb-32">
-          <div className="max-w-[640px]">
-            <span className="eyebrow rise border-white/50 text-white">NEXORA Devs Toolbox</span>
-            <h1 className="title-xl rise mt-6 text-white" style={{ animationDelay: "120ms" }}>
-              L’atelier complet du web, installé sur ton PC
-            </h1>
-            <p className="rise mt-6 max-w-[560px] text-[17px] leading-relaxed text-white/75" style={{ animationDelay: "240ms" }}>
-              Design, code, tests sur {DEVICE_COUNT} modèles d’appareils, sécurité et publication sur le web, Android et Windows, dans une seule application.
-            </p>
-            <div className="rise mt-9 flex flex-wrap gap-3" style={{ animationDelay: "340ms" }}>
-              <MainButton size="lg" />
-              <SecondButton size="lg" className="border-white/30 bg-white/[0.08] text-white hover:bg-white hover:text-black" />
-            </div>
-            <p className="rise mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-white/60" style={{ animationDelay: "420ms" }}>
-              <span className="inline-flex items-center gap-2">
-                <i className="dot live bg-white" /> Version {APP_VERSION}
-              </span>
-              <span>Windows 10 et 11</span>
-              <span>Licence gratuite, sans limite de durée</span>
-            </p>
-            <img className="hero-render lg:hidden" src={RENDUS.macbookIphone.src} alt={RENDUS.macbookIphone.alt} width={RENDUS.macbookIphone.w} height={RENDUS.macbookIphone.h} loading="lazy" decoding="async" />
-          </div>
-          <a href="/espaces/responsive" className="hero-card glass rise group mt-12 flex flex-col p-6 lg:mt-0 lg:min-h-[300px]" style={{ animationDelay: "560ms" }}>
-            <span className="eyebrow border-white/45 text-white">modèles d’appareils</span>
-            <b className="display mt-8 block text-[64px] leading-none font-normal tracking-[-0.03em] tabular-nums">
-              <CountUp value={DEVICE_COUNT} duration={1200} delay={700} />
-            </b>
-            <span className="mt-6 block text-[17px] font-medium">Ton site sur tous les écrans</span>
-            <span className="mt-1.5 block max-w-[30ch] text-[13.5px] leading-snug text-white/70">Téléphones, pliables, tablettes, ordinateurs, téléviseurs et montres, côte à côte dans le Responsive Lab.</span>
-            <span className="orb mt-6 self-end lg:mt-auto" aria-hidden="true">
-              <Icon name="nxArrowUpRight" size={18} stroke={2} />
+    <section className="hero hx" data-capture="haut">
+      <div className="hx-bg" aria-hidden="true">
+        {Array.from({ length: 12 }, (_, i) => (
+          <i key={i} />
+        ))}
+      </div>
+      <div className="wrap-wide hx-inner">
+        <span className="eyebrow rise border-white/45 text-white/90">NEXORA Devs Toolbox · Windows 10 et 11</span>
+        <div className="hx-sel rise" ref={box} style={{ animationDelay: "120ms" }}>
+          <span className="hx-chip" aria-hidden="true">
+            <i />
+            4898F7
+            <em>100 %</em>
+          </span>
+          <svg className="hx-rot" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M8 22c-2-6 2-13 9-14" />
+            <path d="M13 5l4 3-4 3M5 18l3 4 4-3" />
+          </svg>
+          <i className="hx-h tl" aria-hidden="true" />
+          <i className="hx-h tr" aria-hidden="true" />
+          <i className="hx-h bl" aria-hidden="true" />
+          <i className="hx-h br" aria-hidden="true" />
+          <i className="hx-h tc" aria-hidden="true" />
+          <svg className="hx-star" viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M20 6c1.6 9.6 4.4 12.4 14 14-9.6 1.6-12.4 4.4-14 14-1.6-9.6-4.4-12.4-14-14 9.6-1.6 12.4-4.4 14-14z" />
+            <path d="M38 4v10M33 9h10M42 16v6M39 19h6" />
+          </svg>
+          <span className="hx-agent" aria-hidden="true">
+            <svg viewBox="0 0 16 16">
+              <path d="M1 1l13 5-5.5 2L6 14z" />
+            </svg>
+            <b>Agent IA</b>
+          </span>
+          <h1 className="hx-title">
+            <span className="hx-line">
+              <mark>L’atelier</mark> web
             </span>
+            <span className="hx-line">tout-en-un</span>
+          </h1>
+          <span className="hx-size" aria-hidden="true">
+            {size}
+          </span>
+        </div>
+        <div className="hx-tools rise" style={{ animationDelay: "260ms" }}>
+          <span className="hx-tool-set" aria-hidden="true">
+            <span className="hx-tool">
+              <Icon name="nxPointer" size={19} />
+              <Icon name="chevronDown" size={12} stroke={2} />
+            </span>
+            <span className="hx-tool">
+              <Icon name="pen" size={19} />
+              <Icon name="chevronDown" size={12} stroke={2} />
+            </span>
+            <span className="hx-tool">
+              <Icon name="frame" size={19} />
+              <Icon name="chevronDown" size={12} stroke={2} />
+            </span>
+            <span className="hx-tool">
+              <Icon name="nxType" size={19} />
+            </span>
+          </span>
+          <a className="hx-gen" href={downloadUrl || "/telecharger"} rel={downloadUrl ? "noopener" : undefined}>
+            <span className="hx-gen-ic">
+              <Icon name="sparkle" size={16} stroke={2} />
+            </span>
+            Télécharger pour Windows
           </a>
         </div>
+        <p className="hx-lead rise" style={{ animationDelay: "360ms" }}>
+          Design, code, tests sur {DEVICE_COUNT} modèles d’appareils, supervision et publication sur le web, Android et Windows, dans une seule application installée sur ton PC.
+        </p>
+        <a className="link-arrow rise mt-6 text-white" href="/licence" style={{ animationDelay: "440ms" }}>
+          Obtenir ma licence gratuite <Icon name="nxArrowUpRight" size={13} stroke={2} />
+        </a>
+      </div>
+      <div className="wrap-wide hx-foot">
+        <span className="hx-brand">
+          <span>
+            NEXORA<i>.</i>
+          </span>
+          <small>Version {APP_VERSION}</small>
+        </span>
+        <span className="hx-pill">Design × Code × Supervision</span>
       </div>
     </section>
   )
