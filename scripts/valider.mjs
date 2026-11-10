@@ -563,7 +563,8 @@ async function siteChecks() {
       .relative(dist, path.join(e.parentPath, e.name))
       .split(path.sep)
       .join("/")
-    if (/^(admin|vendor)\//.test(rel) || rel === "_headers") continue
+    // NEXORA #096 : sw.js porte l'heure de sa construction (version du cache) : différent à chaque construction.
+    if (/^(admin|vendor)\//.test(rel) || rel === "_headers" || rel === "_redirects" || rel === "sw.js") continue
     if (fs.statSync(path.join(dist, rel)).size > 3 << 20) continue
     list.push(rel)
   }
@@ -574,7 +575,8 @@ async function siteChecks() {
       while (i < list.length) {
         const rel = list[i++]
         // Cloudflare redirige …/index.html vers …/ : on compare l'adresse servie.
-        const url = rel.replace(/(^|\/)index\.html$/, "$1")
+        // NEXORA #096 : Cloudflare sert « page.html » à l'adresse « /page » (et redirige /page.html vers /page).
+        const url = rel.replace(/(^|\/)index\.html$/, "$1").replace(/\.html$/, "")
         try {
           const r = await http(
             SITE + url.split("/").map(encodeURIComponent).join("/"),
