@@ -4,12 +4,21 @@
 //   - compteurs de l'Accueil qui défilent jusqu'à leur valeur à l'ouverture de l'espace.
 // NEXORA #045 : icône pleine du rail (#043) et lumière qui suit le pointeur (#042) retirées : icônes plates au
 // trait partout, aucun effet lumineux.
+// NEXORA #103 : police Urbanist (direction « Horizon » du site) à la place d'Inter, la police par défaut des Réglages
+// (« inter ») : les Réglages posent --font en style sur <html> ; seule la valeur par défaut est remplacée, les autres
+// choix (système, arrondie, serif, chasse fixe) restent tels quels.
 // Réglage « Animations » de NEXORA (data-motion : reduced, none) et préférence du système respectés.
 import { settings } from '../core.js';
 
 const root = document.documentElement;
 const still = () => root.dataset.motion === 'none' || root.dataset.motion === 'reduced'
   || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const URBANIST = "'Urbanist', 'Inter', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif";
+function font() {
+  const v = root.style.getPropertyValue('--font').trim();
+  if ((!v || v.startsWith("'Inter'")) && v !== URBANIST) root.style.setProperty('--font', URBANIST);
+}
 
 function accent() {
   const v = !settings.accent || settings.accent === 'nexora' ? 'espace' : 'reglages';
@@ -37,8 +46,9 @@ function countUp() {
 
 export async function install() {
   accent();
+  font();
   // L'accent est posé en style sur <html> par les Réglages : chaque changement (thème, accent) est relu.
-  new MutationObserver(accent).observe(root, { attributes: true, attributeFilter: ['style', 'data-theme'] });
+  new MutationObserver(() => { accent(); font(); }).observe(root, { attributes: true, attributeFilter: ['style', 'data-theme'] });
   let mode = document.body.dataset.mode;
   new MutationObserver(() => {
     if (document.body.dataset.mode === mode) return;

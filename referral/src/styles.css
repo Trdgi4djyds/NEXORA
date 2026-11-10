@@ -1,38 +1,39 @@
-/* NEXORA #090 : NEXORA REFERRAL, espace des parrains. Même direction que le site vitrine (« Néon » du #085, couleurs du
-   logo du #088) : fond très sombre, Poppins, accent rose du ruban, bleu du ruban en second, aucun dégradé, cartes à
-   bordure fine. Polices locales (politique de sécurité : fichiers du site seulement). */
-@font-face { font-family: "Poppins"; font-weight: 400; font-display: swap; src: url("../../site/src/assets/fonts/poppins-400.woff2") format("woff2"); }
-@font-face { font-family: "Poppins"; font-weight: 500; font-display: swap; src: url("../../site/src/assets/fonts/poppins-500.woff2") format("woff2"); }
-@font-face { font-family: "Poppins"; font-weight: 600; font-display: swap; src: url("../../site/src/assets/fonts/poppins-600.woff2") format("woff2"); }
-@font-face { font-family: "Poppins"; font-weight: 700; font-display: swap; src: url("../../site/src/assets/fonts/poppins-700.woff2") format("woff2"); }
+/* NEXORA #090 : NEXORA REFERRAL, espace des parrains. #103 : direction « Horizon » du site vitrine (#099 à #102), à la
+   demande de l'utilisateur (refonte de toutes les interfaces sur le nouveau motif) : noir #050505 et gris très sombre,
+   monochrome (l'accent rose du #090 devient blanc, texte encre posé dessus), police Urbanist, titres fins, repères
+   « /tag » en pilule à contour, navigation en pilule de verre au centre, boutons en pilule, une tuile pleine blanche
+   par écran (comme le damier du site). Les couleurs d'état (payé, en attente, refusé) restent. Polices locales
+   (politique de sécurité : fichiers du site seulement). */
+@font-face { font-family: "Urbanist"; font-weight: 300 700; font-display: swap; src: url("../../site/src/assets/fonts/urbanist-var.woff2") format("woff2"); }
 
 :root {
   color-scheme: dark;
-  --bg: #060509;
-  --surface: #0c0b10;
-  --surface-2: #121118;
-  --surface-3: #18161f;
-  --text: #f3f1f6;
-  --text-2: #a39eae;
-  --text-3: #6f6a7a;
+  --bg: #050505;
+  --surface: #111111;
+  --surface-2: #161616;
+  --surface-3: #1d1d1d;
+  --text: #ffffff;
+  --text-2: #a3a3a3;
+  --text-3: #6f6f6f;
   --line: rgb(255 255 255 / 0.08);
-  --line-2: rgb(255 255 255 / 0.14);
-  --rose: #ff5a8c;
-  --rose-hi: #ff7fa6;
-  --rose-soft: rgb(255 90 140 / 0.12);
-  --rose-ink: #1c0612;
-  --blue: #5b8cff;
-  --blue-soft: rgb(91 140 255 / 0.13);
+  --line-2: rgb(255 255 255 / 0.16);
+  /* Anciennes variables « rose » et « bleu » : l'accent du site, blanc, avec l'encre posée dessus. */
+  --rose: #ffffff;
+  --rose-hi: #ffffff;
+  --rose-soft: rgb(255 255 255 / 0.08);
+  --rose-ink: #050505;
+  --blue: #ffffff;
+  --blue-soft: rgb(255 255 255 / 0.08);
   --ok: #4ad295;
   --ok-soft: rgb(74 210 149 / 0.12);
   --warn: #f2b84b;
   --warn-soft: rgb(242 184 75 / 0.12);
   --bad: #ff6b6b;
   --bad-soft: rgb(255 107 107 / 0.12);
-  --r: 14px;
-  --r-lg: 20px;
-  font-family: "Poppins", ui-sans-serif, system-ui, sans-serif;
-  font-size: 14px;
+  --r: 16px;
+  --r-lg: 24px;
+  font-family: "Urbanist", ui-sans-serif, system-ui, sans-serif;
+  font-size: 14.5px;
   line-height: 1.5;
   color: var(--text);
   background: var(--bg);
@@ -288,4 +289,49 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
 }
 @media (max-width: 380px) {
   .kpis, .kpis.three { grid-template-columns: 1fr; }
+}
+
+/* ------------------------------------------------------------------ #103 : motif « Horizon » du site vitrine */
+h1, h2, h3 { font-weight: 400; }
+.head h1, .pitch h1 { font-weight: 400; letter-spacing: -0.04em; }
+.pitch h1 em { color: var(--text-3); }
+.panel h2, .card-head h2 { font-weight: 500; }
+/* Repère « /tag » : pilule à contour, barre oblique devant. */
+.eyebrow { gap: 6px; color: var(--text); background: transparent; box-shadow: inset 0 0 0 1px var(--line-2); font-weight: 500; }
+.eyebrow::before { content: "/"; color: var(--text-3); }
+.eyebrow .ico { display: none; }
+.brand small { color: var(--text-3); }
+.btn.primary { box-shadow: none; }
+.btn.primary:hover:not(:disabled) { background: #e6e6e6; }
+.input, .share-code, .share-link { border-radius: 999px; }
+.code-input { border-radius: 18px; }
+.input:focus { box-shadow: inset 0 0 0 1.5px var(--text); }
+.seg { border-radius: 999px; }
+.seg button { border-radius: 999px; }
+.seg button.on { color: var(--rose-ink); background: var(--rose); box-shadow: none; }
+/* Navigation : pilule de verre au centre, page ouverte en blanc. */
+.top { background: rgb(5 5 5 / 0.82); }
+.tabs { flex: 0 1 auto; margin: 0 auto; padding: 4px; border-radius: 999px; background: rgb(255 255 255 / 0.05); box-shadow: inset 0 0 0 1px var(--line); backdrop-filter: blur(14px); }
+.tabs a { height: 36px; border-radius: 999px; }
+.tabs a.on { color: var(--rose-ink); background: var(--rose); box-shadow: none; }
+.tabs a.on .ico { color: inherit; }
+/* Une tuile pleine par écran (damier du site) : revenus récurrents en blanc, texte encre. */
+.kpi.rose { background: #ffffff; box-shadow: none; color: #050505; }
+.kpi.rose small, .kpi.rose > span, .kpi.rose b em { color: rgb(5 5 5 / 0.62); }
+.kpi.rose b { color: #050505; }
+.kpi.rose .kpi-ic { color: #ffffff; background: #050505; }
+.kpi b { font-weight: 300; }
+.kpi-ic, .empty-ic, .big-ic, .how li > i, .pitch-list .ico { border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); }
+.how li > i { color: var(--text); background: transparent; }
+.big-ic { color: var(--text); background: var(--surface-2); }
+.pitch-list .ico { color: var(--text); background: transparent; }
+.bar-track { border-radius: 999px; }
+.bar-track i { border-radius: 999px; }
+.bar:last-child .bar-track i { background: #bdbdbd; }
+.share-code b, .code-name { color: var(--text); }
+.link { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.spinner { border-top-color: var(--text); }
+:focus-visible { outline-color: var(--text); }
+@media (max-width: 960px) {
+  .tabs { margin: 0 calc(-1 * clamp(16px, 3vw, 36px)); border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
 }

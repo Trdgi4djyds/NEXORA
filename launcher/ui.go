@@ -18,12 +18,12 @@ type uiSpec struct {
 	width                                 int    // largeur en pixels logiques (96 ppp)
 }
 
-// Tons : couleur de l'icône et de son pastillage.
+// Tons : couleur de l'icône et de son pastillage. #103 : sur fond noir (direction « Horizon ») ; « brand » est blanc.
 var uiTones = map[string][2]string{
-	"danger":  {"#dc2626", "#fef2f2"},
-	"warning": {"#c2410c", "#fff7ed"},
-	"brand":   {"#6d28d9", "#f3eeff"},
-	"success": {"#047857", "#ecfdf5"},
+	"danger":  {"#f87171", "#2a1414"},
+	"warning": {"#fb923c", "#2a1c10"},
+	"brand":   {"#ffffff", "#1f1f1f"},
+	"success": {"#34d399", "#0f2a20"},
 }
 
 // NEXORA #084 : messages fixes et sans détail technique (fichier en cause, signatures, serveurs) ; le détail reste

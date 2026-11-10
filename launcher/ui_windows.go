@@ -859,11 +859,8 @@ func (w *uiWin) paint(hdc uintptr) {
 	foot, fx := int(w.g["footY"]), int(w.g["footX"])
 	c.fillRect(fx, foot, w.W, w.H, colFooter)
 	c.fillRect(fx, foot, w.W, foot+int(math.Max(1, math.Round(w.s))), colLine)
-	if !w.wizard { // filet de la marque en haut de la fenêtre (l'assistant a sa colonne)
-		accent := int(math.Max(2, w.px(3)))
-		for x := 0; x < w.W; x++ {
-			c.fillRect(x, 0, x+1, accent, gradBrand(float64(x)/float64(max(w.W-1, 1))))
-		}
+	if !w.wizard { // filet en haut de la fenêtre (l'assistant a sa colonne) ; #103 : gris, plus de dégradé
+		c.fillRect(0, 0, w.W, int(math.Max(1, math.Round(w.s))), colEdge)
 	}
 	if w.wizard {
 		w.paintWizard(c)
@@ -894,7 +891,7 @@ func (w *uiWin) paintDialog(c *canvas) {
 	isz := int(w.px(24))
 	c.icon(sp.icon, int(pad+w.px(24))-isz/2, int(by+w.px(24))-isz/2, isz, 2, hexc(tone[0]))
 	if ny, ok := w.g["noteY"]; ok {
-		c.roundRect(pad, ny, float64(w.W)-2*pad, w.g["noteH"], w.px(12), solid(hexc("#f7f5fa")), 1)
+		c.roundRect(pad, ny, float64(w.W)-2*pad, w.g["noteH"], w.px(12), solid(colRaised), 1)
 		s := int(w.px(16))
 		c.icon("shieldCheck", int(pad+w.px(12)), int(ny+w.px(12)), s, 2, colGreen)
 	}
@@ -934,7 +931,7 @@ func (w *uiWin) paintProgress(c *canvas) {
 				c.circle(cx, cy, r, colViolet, 1)
 				c.circle(cx, cy, r*0.4, colBg, 1)
 			default:
-				c.circle(cx, cy, r, hexc("#d9d4e2"), 1)
+				c.circle(cx, cy, r, colEdgeHi, 1)
 				c.circle(cx, cy, r-math.Max(1, w.px(1.5)), colBg, 1)
 			}
 		}
@@ -950,7 +947,7 @@ func (w *uiWin) paintControls(c *canvas) []uiText {
 		switch ct.kind {
 		case ctlClose:
 			if hover {
-				c.roundRect(ct.x, ct.y, ct.w, ct.h, w.px(8), solid(hexc("#f1eef6")), 1)
+				c.roundRect(ct.x, ct.y, ct.w, ct.h, ct.h/2, solid(colRaised), 1)
 			}
 			s := int(w.px(16))
 			col := colMuted
@@ -959,7 +956,7 @@ func (w *uiWin) paintControls(c *canvas) []uiText {
 			}
 			c.icon("x", int(ct.x+ct.w/2)-s/2, int(ct.y+ct.h/2)-s/2, s, 2, col)
 		case ctlButton:
-			r := w.px(10)
+			r := ct.h / 2 // #103 : boutons en pilule, comme le site
 			switch ct.style {
 			case "primary":
 				x0, wd := ct.x, ct.w
@@ -969,10 +966,10 @@ func (w *uiWin) paintControls(c *canvas) []uiText {
 			default:
 				bg := colBg
 				if hover {
-					bg = hexc("#f6f4f9")
+					bg = colRaised
 				}
 				c.roundRect(ct.x, ct.y, ct.w, ct.h, r, solid(bg), 1)
-				c.strokeRoundRect(ct.x, ct.y, ct.w, ct.h, r, math.Max(1, math.Round(w.s)), hexc("#dcd6e5"), 1)
+				c.strokeRoundRect(ct.x, ct.y, ct.w, ct.h, r, math.Max(1, math.Round(w.s)), colEdge, 1)
 			}
 			if ct.style != "secondary" && (hover || press) {
 				a := 0.1
@@ -982,7 +979,7 @@ func (w *uiWin) paintControls(c *canvas) []uiText {
 				c.roundRect(ct.x, ct.y, ct.w, ct.h, r, solid(rgb{0, 0, 0}), a)
 			}
 			col := colInk
-			if ct.style != "secondary" {
+			if ct.style == "primary" { // bouton blanc : texte noir
 				col = colBg
 			}
 			texts = append(texts, uiText{int(math.Round(14 * w.s)), 600, col, wRect{int32(ct.x), int32(ct.y), int32(ct.x + ct.w), int32(ct.y + ct.h)}, dtCenter | dtVCenter | dtSingleLine | dtNoPrefix, ct.label})
@@ -990,9 +987,9 @@ func (w *uiWin) paintControls(c *canvas) []uiText {
 			on := w.opts[ct.idx]
 			border, bg := colLine, colBg
 			if on {
-				border, bg = hexc("#c4b5fd"), hexc("#faf7ff")
+				border, bg = colInk, colRaised
 			} else if hover {
-				border = hexc("#d8cdee")
+				border = colEdgeHi
 			}
 			c.roundRect(ct.x, ct.y, ct.w, ct.h, w.px(12), solid(bg), 1)
 			c.strokeRoundRect(ct.x, ct.y, ct.w, ct.h, w.px(12), math.Max(1, math.Round(w.s)), border, 1)
@@ -1002,7 +999,7 @@ func (w *uiWin) paintControls(c *canvas) []uiText {
 				s := int(w.px(14))
 				c.icon("check", int(bx+bs/2)-s/2, int(by+bs/2)-s/2, s, 3, colBg)
 			} else {
-				c.strokeRoundRect(bx, by, bs, bs, w.px(6), math.Max(1.5, w.px(1.5)), hexc("#c9c2d6"), 1)
+				c.strokeRoundRect(bx, by, bs, bs, w.px(6), math.Max(1.5, w.px(1.5)), colEdgeHi, 1)
 			}
 		}
 		if focus {
@@ -1130,14 +1127,14 @@ func (w *uiWin) layoutWizard() {
 	W, H := w.px(wizardW), w.px(wizardH)
 	side := w.px(212)
 	w.ctrls, w.texts, w.g = nil, nil, map[string]float64{"footX": side}
-	soft := hexc("#f1e6ff")
-	// Colonne : marque, étapes, version.
-	w.text(18, 700, colBg, w.px(28), w.px(102), side-w.px(40), w.px(26), dtSingleLine, "NEXORA")
+	soft := colMuted
+	// Colonne : marque, étapes, version (#103 : colonne gris très sombre, texte blanc et gris).
+	w.text(18, 700, colInk, w.px(28), w.px(102), side-w.px(40), w.px(26), dtSingleLine, "NEXORA")
 	w.text(13, 400, soft, w.px(28), w.px(128), side-w.px(40), w.px(20), dtSingleLine, "Devs Toolbox")
 	for i, name := range p.steps {
 		col, wt := soft, 400
 		if i == p.step {
-			col, wt = colBg, 600
+			col, wt = colInk, 600
 		}
 		w.text(13.5, wt, col, w.px(60), w.px(188)+float64(i)*w.px(44), side-w.px(70), w.px(22), dtSingleLine|dtVCenter, name)
 	}
@@ -1227,11 +1224,9 @@ func (w *uiWin) layoutWizard() {
 func (w *uiWin) paintWizard(c *canvas) {
 	p := w.page
 	side := int(w.g["footX"])
-	H := float64(w.H)
-	// Colonne au dégradé de la marque (violet en haut, rose en bas).
-	for y := 0; y < w.H; y++ {
-		c.fillRect(0, y, side, y+1, gradBrand(float64(y)/math.Max(1, H-1)))
-	}
+	// Colonne gris très sombre, filet à droite (#103 : plus de dégradé violet → rose).
+	c.fillRect(0, 0, side, w.H, colSide)
+	c.fillRect(side-int(math.Max(1, math.Round(w.s))), 0, side, w.H, colLine)
 	c.image(logoImage(int(w.px(56))), int(w.px(28)), int(w.px(32)))
 	white := rgb{255, 255, 255}
 	for i := range p.steps {
@@ -1239,23 +1234,23 @@ func (w *uiWin) paintWizard(c *canvas) {
 		if i < len(p.steps)-1 { // trait vers l'étape suivante
 			lx := int(cx)
 			for y := int(cy + r + w.px(4)); y < int(cy+w.px(44)-r-w.px(4)); y++ {
-				c.blend(lx, y, white, 0.45)
+				c.blend(lx, y, white, 0.2)
 				if w.s > 1.25 {
-					c.blend(lx+1, y, white, 0.45)
+					c.blend(lx+1, y, white, 0.2)
 				}
 			}
 		}
-		bg := gradBrand(cy / math.Max(1, H-1))
+		bg := colSide
 		switch {
 		case i < p.step:
 			c.circle(cx, cy, r, white, 1)
 			s := int(w.px(12))
-			c.icon("check", int(cx)-s/2, int(cy)-s/2, s, 3, colViolet)
+			c.icon("check", int(cx)-s/2, int(cy)-s/2, s, 3, colSide)
 		case i == p.step:
 			c.circle(cx, cy, r, white, 1)
-			c.circle(cx, cy, r*0.42, colViolet, 1)
+			c.circle(cx, cy, r*0.42, colSide, 1)
 		default:
-			c.circle(cx, cy, r, white, 0.5)
+			c.circle(cx, cy, r, colEdgeHi, 1)
 			c.circle(cx, cy, r-math.Max(1.5, w.px(1.5)), bg, 1)
 		}
 	}
@@ -1269,7 +1264,7 @@ func (w *uiWin) paintWizard(c *canvas) {
 	x0 := float64(side) + w.px(36)
 	cw := float64(w.W) - x0 - w.px(36)
 	if ry, ok := w.g["rowsY"]; ok {
-		c.roundRect(x0, ry, cw, w.g["rowsH"], w.px(12), solid(hexc("#f7f5fa")), 1)
+		c.roundRect(x0, ry, cw, w.g["rowsH"], w.px(16), solid(colRaised), 1)
 	}
 	if by, ok := w.g["barY"]; ok {
 		bh := w.px(8)

@@ -1023,3 +1023,168 @@ html[data-theme="dark"] .po-plan.po-pro { background: #16161b; }
 .rf-code-cell { font-size: 13.5px; font-weight: 650; letter-spacing: .1em; }
 .rf-kpis-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 1100px) { .rf-bars { height: 170px; gap: 5px; } }
+
+/* =====================================================================================================
+   Direction « Horizon » (NEXORA #103) : le back office suit le site vitrine (#099 à #102), à la demande de
+   l'utilisateur (refonte de toutes les interfaces sur le nouveau motif). Noir #050505 et gris très sombre en
+   thème sombre, blanc et gris clair en thème clair ; monochrome (couleurs des groupes et des cartes neutres) ;
+   police Urbanist ; titres fins ; boutons, champs et onglets en pilule ; menu à onglet plein ; cartes plates à
+   filet fin ; illustration de la connexion en niveaux de gris. Les couleurs d'état (succès, alerte, erreur) et
+   les séries des graphiques gardent leurs teintes : elles servent à lire les données.
+   ===================================================================================================== */
+@font-face {
+  font-family: "Urbanist";
+  src: url("../../nexora/app/renderer/fonts/urbanist-var.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+:root {
+  --font: "Urbanist", "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --brand-grad: var(--ink);
+}
+html[data-theme="dark"] {
+  --window: #050505;
+  --nav: #0c0c0c;
+  --surface: #121212;
+  --surface-2: #171717;
+  --text: #ffffff;
+  --text-2: #a3a3a3;
+  --text-3: #727272;
+  --sep: rgba(255, 255, 255, .08);
+  --sep-strong: rgba(255, 255, 255, .16);
+  --fill: rgba(255, 255, 255, .07);
+  --fill-2: rgba(255, 255, 255, .04);
+  --fill-hover: rgba(255, 255, 255, .11);
+  --btn: transparent;
+  --btn-border: rgba(255, 255, 255, .18);
+  --input: rgba(255, 255, 255, .045);
+  --accent: #ffffff;
+  --accent-ink: #050505;
+  --accent-soft: rgba(255, 255, 255, .12);
+  --ink: #ffffff;
+  --ink-hover: #e6e6e6;
+  --ink-fg: #050505;
+  --on: #ffffff;
+  --on-ink: #050505;
+}
+html[data-theme="light"] {
+  --window: #ececec;
+  --nav: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f6f6f6;
+  --text: #0a0a0a;
+  --text-2: #5c5c5c;
+  --text-3: #8a8a8a;
+  --sep: rgba(0, 0, 0, .08);
+  --sep-strong: rgba(0, 0, 0, .16);
+  --fill: rgba(0, 0, 0, .05);
+  --fill-2: rgba(0, 0, 0, .03);
+  --fill-hover: rgba(0, 0, 0, .08);
+  --btn: transparent;
+  --btn-border: rgba(0, 0, 0, .16);
+  --input: #f3f3f3;
+  --accent: #0a0a0a;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(0, 0, 0, .08);
+  --ink: #0a0a0a;
+  --ink-hover: #262626;
+  --ink-fg: #ffffff;
+  --on: #0a0a0a;
+  --on-ink: #ffffff;
+}
+/* Groupes de sections et cartes : plus de teinte (toile, tuiles, repères en noir et blanc). */
+html[data-theme] body :is(.shell, [data-g], [data-tone], [data-hue]) {
+  --c: var(--ink); --c-ink: var(--text); --c-soft: var(--fill); --c-wash: var(--window);
+  --hc: var(--ink); --h-ink: var(--text); --h-soft: var(--fill);
+}
+html[data-theme="dark"] body [data-nxi-tone] { --nxi-s: #1a1a1a !important; --nxi-m: #333333 !important; --nxi-d: #8c8c8c !important; --nxi-a: #ffffff !important; }
+html[data-theme="light"] body [data-nxi-tone] { --nxi-s: #f1f1f1 !important; --nxi-m: #d6d6d6 !important; --nxi-d: #6b6b6b !important; --nxi-a: #0a0a0a !important; }
+body { font-feature-settings: normal; }
+a { color: var(--text); }
+
+/* Menu : sections au trait, onglet plein pour la section ouverte. */
+.nav { border-radius: 26px; box-shadow: 0 0 0 1px var(--sep); }
+.nav-group { font-weight: 600; letter-spacing: .06em; }
+.nav a { border-radius: 999px; font-weight: 500; }
+.nav-ic { border-radius: 999px; background: transparent; color: var(--text-2); }
+.nav a:hover .nav-ic { transform: none; }
+.nav a.on { background: var(--ink); color: var(--ink-fg); font-weight: 600; }
+.nav a.on .nav-ic { background: transparent; color: inherit; box-shadow: none; }
+.brand img, .auth-logo img { box-shadow: none; }
+.nav-promo { border-radius: 22px; background: var(--fill-2); box-shadow: inset 0 0 0 1px var(--sep); }
+.nav-promo b { color: var(--text); }
+.nav-promo-ic { border-radius: 999px; background: var(--ink); color: var(--ink-fg); }
+.nav-promo:hover .go-chip, button.ring-card:hover .go-chip { background: var(--ink); color: var(--ink-fg); }
+.me { border-radius: 999px; }
+
+/* En-tête : repère « /tag », titre fin. */
+.head-ic { border-radius: 999px; background: var(--fill); color: var(--text); box-shadow: inset 0 0 0 1px var(--sep); }
+.head-kicker {
+  display: inline-flex; align-items: center; gap: 6px; width: fit-content; height: 24px; padding: 0 11px; margin-bottom: 6px;
+  border-radius: 999px; box-shadow: inset 0 0 0 1px var(--sep-strong); font-weight: 500; color: var(--text);
+}
+.head-kicker::before { content: "/"; color: var(--text-3); }
+.head h1 { font-weight: 400; letter-spacing: -.035em; font-size: 28px; }
+
+/* Boutons, champs, segments, onglets : pilules. */
+.btn { border-radius: 999px; padding: 0 16px; font-weight: 600; background: transparent; box-shadow: inset 0 0 0 1px var(--btn-border); }
+.btn:hover:not(:disabled) { transform: none; background: var(--fill); box-shadow: inset 0 0 0 1px var(--sep-strong); }
+.btn.sm { border-radius: 999px; }
+.btn.primary, .btn.ink, html[data-theme="dark"] :is(.btn.primary, .btn.ink) { background: var(--ink); color: var(--ink-fg); box-shadow: none; }
+.btn.primary:hover:not(:disabled), .btn.ink:hover:not(:disabled) { background: var(--ink-hover); box-shadow: none; }
+.btn.ghost { color: var(--text); box-shadow: none; }
+.btn.ghost:hover:not(:disabled) { background: var(--fill); }
+.btn.danger.solid { box-shadow: none; }
+.link-btn { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.input, .input.sm { border-radius: 999px; padding-left: 14px; }
+textarea.input { border-radius: 16px; }
+.input:focus { box-shadow: 0 0 0 3px var(--accent-soft), inset 0 0 0 1px var(--text); }
+.search .input { box-shadow: inset 0 0 0 1px var(--sep); }
+.seg { border-radius: 999px; padding: 4px; }
+.seg button { border-radius: 999px; }
+.seg button.on, html[data-theme="dark"] .seg button.on { background: var(--ink); color: var(--ink-fg); box-shadow: none; }
+.tabs button.on, html[data-theme="dark"] .tabs button.on { border-bottom-color: var(--text); color: var(--text); }
+.check input { accent-color: var(--text); }
+.tag { border-radius: 999px; font-weight: 500; }
+.tag:not(.ok, .warn, .bad) { background: transparent; box-shadow: inset 0 0 0 1px var(--sep-strong); }
+.tag.info { color: var(--text); }
+
+/* Cartes et indicateurs : plats, filet fin, chiffres fins ; la première carte de chiffres en tuile pleine. */
+.card, .kpi, .ring-card { border-radius: 24px; box-shadow: 0 0 0 1px var(--sep); }
+.card-head h3, .card > h3:first-child { font-weight: 600; }
+.kpi b { font-weight: 300; letter-spacing: -.04em; }
+.kpi-ic { border-radius: 999px; background: var(--fill); color: var(--text); }
+button.kpi:hover { transform: none; box-shadow: 0 0 0 1px var(--sep-strong); }
+button.kpi:hover .kpi-ic { background: var(--ink); color: var(--ink-fg); transform: none; }
+.kpis > .kpi:first-child { background: var(--ink); color: var(--ink-fg); box-shadow: none; }
+.kpis > .kpi:first-child :is(small, b .unit, > span:last-child) { color: color-mix(in srgb, var(--ink-fg) 64%, transparent); }
+.kpis > .kpi:first-child b { color: var(--ink-fg) !important; }
+.kpis > .kpi:first-child .kpi-ic { background: color-mix(in srgb, var(--ink-fg) 12%, transparent); color: var(--ink-fg); }
+.kpis > .kpi:first-child [data-nxi] { opacity: .35; }
+.ring-card.soft { background: var(--fill-2); box-shadow: inset 0 0 0 1px var(--sep); }
+.ring-track { stroke: var(--fill-hover); }
+.ring-val { stroke: var(--text); }
+.av { border-radius: 999px; }
+
+/* Fenêtres et notifications. */
+.drawer, .modal { border-radius: 28px; box-shadow: 0 0 0 1px var(--sep-strong); }
+.toast { border-radius: 999px; box-shadow: 0 0 0 1px var(--sep-strong); }
+
+/* Connexion : panneau de marque noir (ou gris clair), illustration en niveaux de gris. */
+.auth { background: var(--window); }
+.auth-brand, html[data-theme="dark"] .auth-brand { background: var(--surface); border-right-color: var(--sep); }
+.auth-art { filter: grayscale(1) contrast(1.05); }
+.auth-badge, .inv-step { background: var(--ink); color: var(--ink-fg); }
+.po-free, .po-pro { --po-medal: var(--ink); }
+.po-top, .po-plan.po-pro .po-top { background: var(--fill-2); }
+html[data-theme="dark"] .po-plan.po-pro { background: var(--surface); }
+.po-plan.po-pro .po-ribbon { background: var(--ink); color: var(--ink-fg); }
+.auth-kicker {
+  display: inline-flex; align-items: center; gap: 6px; width: fit-content; height: 24px; padding: 0 11px;
+  border-radius: 999px; box-shadow: inset 0 0 0 1px var(--sep-strong); font-weight: 500; color: var(--text) !important;
+}
+.auth-kicker::before { content: "/"; color: var(--text-3); }
+.auth-head h1 { font-weight: 400; letter-spacing: -.04em; font-size: 36px; }
+.auth-ic { border-radius: 999px; color: var(--text); box-shadow: inset 0 0 0 1px var(--sep); }
+.inv-totals .total { background: var(--ink); color: var(--ink-fg); border-radius: 18px; }

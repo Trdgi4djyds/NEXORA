@@ -1,12 +1,13 @@
 import { Reveal } from "../lib/motion"
+import { SCREENS } from "../lib/screens"
 import { MainButton, SecondButton } from "./Download"
-import { Screen } from "./Screen"
+import { Device } from "./Screen"
 import { Words } from "./SectionHead"
 
 /**
- * Appel final. #101 : composition de l'image de référence de l'utilisateur (écran fin incliné sur son pied, nom de la
- * marque en lettres géantes derrière, halo) : l'écran montre la vraie Accueil de NEXORA, dessiné en CSS (aucun modèle
- * 3D) ; titre, texte et boutons à gauche.
+ * Appel final. #101 : composition de l'image de référence de l'utilisateur (nom de la marque en lettres géantes derrière,
+ * halo ; titre, texte et boutons à gauche). #103 : un vrai MacBook Pro 16 pouces (cadre photographique « Devices » de
+ * Meta, lib/devices.ts) à la place de l'écran dessiné en CSS, de face, avec la vraie Accueil de NEXORA à l'écran.
  */
 export function CtaBand({
   title = "Ouvre ton premier projet aujourd’hui.",
@@ -33,13 +34,9 @@ export function CtaBand({
             <SecondButton size="lg" />
           </div>
         </Reveal>
-        <Reveal delay={120} className="cta-mon">
-          <div className="cta-screen">
-            <Screen space="home" />
-            <i className="cta-glare" aria-hidden="true" />
-          </div>
-          <i className="cta-neck" aria-hidden="true" />
-          <i className="cta-foot" aria-hidden="true" />
+        <Reveal delay={120} className="cta-mac">
+          <Device kind="macbook" screen={SCREENS.home} alt="L’Accueil de NEXORA sur un MacBook Pro 16 pouces" />
+          <i className="cta-mac-floor" aria-hidden="true" />
         </Reveal>
       </div>
     </section>

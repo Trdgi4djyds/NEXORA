@@ -41,22 +41,29 @@ func clamp01(v float64) float64 {
 	return v
 }
 
-// Couleurs de NEXORA (site « Prisme », interface de NEXORA) ; dégradé des boutons : violet → magenta → rose.
+// Couleurs de NEXORA. #103 : direction « Horizon » du site vitrine (noir, gris très sombre, monochrome) : fenêtre noire,
+// colonne de l'assistant gris très sombre, accent blanc (boutons principaux blancs à texte noir, barre de progression
+// blanche). Les anciens noms (violet, magenta, rose) désignent désormais l'accent blanc ; gradBrand reste pour les
+// appels existants et rend une couleur unie.
 var (
-	colBg      = hexc("#ffffff")
-	colInk     = hexc("#17131f")
-	colBody    = hexc("#4a4458")
-	colMuted   = hexc("#7a7487")
-	colLine    = hexc("#ece8f2")
-	colFooter  = hexc("#faf9fc")
-	colTrack   = hexc("#efebf7")
-	colViolet  = hexc("#6d28d9")
-	colMagenta = hexc("#c026d3")
-	colPink    = hexc("#db2777")
-	colGreen   = hexc("#047857")
+	colBg      = hexc("#0b0b0b")
+	colInk     = hexc("#ffffff")
+	colBody    = hexc("#c4c4c4")
+	colMuted   = hexc("#8c8c8c")
+	colLine    = hexc("#232323")
+	colFooter  = hexc("#111111")
+	colTrack   = hexc("#262626")
+	colSide    = hexc("#151515")
+	colRaised  = hexc("#181818")
+	colEdge    = hexc("#333333")
+	colEdgeHi  = hexc("#4d4d4d")
+	colViolet  = hexc("#ffffff")
+	colMagenta = hexc("#ffffff")
+	colPink    = hexc("#ffffff")
+	colGreen   = hexc("#34d399")
 )
 
-// gradBrand : couleur du dégradé de la marque à la position t (0 à 1).
+// gradBrand : couleur de l'accent à la position t (0 à 1) ; unie depuis #103 (monochrome).
 func gradBrand(t float64) rgb {
 	if t < 0.5 {
 		return mix(colViolet, colMagenta, t*2)
