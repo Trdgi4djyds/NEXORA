@@ -120,7 +120,10 @@ ok(!!NOTES[pkg.version], `nouveautés prévues pour la version ${pkg.version}`)
 const notes = releaseNotes(pkg.version)
 // NEXORA #087 : note 1.2.0 réécrite (2 applications gratuites), installation par le lanceur ; #090 : Pro à 25 $, 30 % de
 // remise avec un parrain.
-ok(/2 applications gratuites/.test(notes) && /Pro à 25 \$/.test(notes) && /30 % de remise/.test(notes) && !/18 \$/.test(notes) && /NEXORA-Devs-Toolbox\.exe/.test(notes) && !/Dev Lab gratuit|Standard|décompresse/.test(notes), "notes de la version publiée", notes)
+// NEXORA #106 : la note 1.2.0 reste affichée (Nouveautés du site) ; la version publiée (1.2.2) a sa propre note.
+const notes120 = releaseNotes("1.2.0")
+ok(/2 applications gratuites/.test(notes120) && /Pro à 25 \$/.test(notes120) && /30 % de remise/.test(notes120) && !/18 \$/.test(notes120) && !/Dev Lab gratuit|Standard|décompresse/.test(notes120), "notes de la version 1.2.0", notes120)
+ok(notes.startsWith(NOTES[pkg.version].intro) && NOTES[pkg.version].items.length > 0 && /NEXORA-Devs-Toolbox\.exe/.test(notes) && !/18 \$|Dev Lab gratuit|Standard|décompresse/.test(notes), `notes de la version publiée (${pkg.version})`, notes)
 
 fs.rmSync(tmp, { recursive: true, force: true })
 console.log(`\n${count} vérifications, ${fails ? `${fails} échec(s)` : "aucun échec"}.`)

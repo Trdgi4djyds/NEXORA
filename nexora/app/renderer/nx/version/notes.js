@@ -2,6 +2,28 @@
 // reprises dans les notes de la version publiée (scripts/release-windows.mjs). Sans navigateur : aussi lu par Node.
 
 export const NOTES = {
+  // NEXORA #106 : interface « Horizon » (#103), appareils réalistes du Studio (#100), formulaires et connexion (#104),
+  // lanceur 1.0.5 ; publiée par-dessus la 1.2.1 (A-063).
+  '1.2.2': {
+    title: 'NEXORA 1.2.2',
+    intro: 'Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.',
+    items: [
+      { icon: 'palette', space: '', title: 'Nouvelle interface', text: 'Noir et gris très sombre, ou blanc et gris clair, sans couleurs superflues ; police plus fine, boutons et champs arrondis. Ta couleur d’accent, le contraste élevé et ta police restent respectés.' },
+      { icon: 'laptop', space: 'studio', title: 'Appareils réalistes dans le Studio', text: '10 modèles détaillés à taille réelle (ordinateurs portables, écran, tablettes, téléphones) : l’écran affiche ta scène, ton image ou une page NEX-DESIGN.' },
+      { icon: 'pen', space: '', title: 'Formulaires plus lisibles', text: 'Champs, cases à cocher et messages d’erreur revus partout ; fenêtre de connexion redessinée.' },
+      { icon: 'key', space: '', title: 'Lanceur 1.0.5', text: 'Le lanceur NEXORA Devs Toolbox prend la même apparence et se met à jour tout seul avant d’installer cette version.' },
+    ],
+  },
+  // NEXORA #106 : note de la 1.2.1, publiée depuis une autre session (A-063), reprise telle quelle du paquet publié.
+  // NEXORA #097 : adresse définitive (l'adresse workers.dev d'origine est désactivée dans Cloudflare), lanceur 1.0.4.
+  '1.2.1': {
+    title: 'NEXORA 1.2.1',
+    intro: 'NEXORA passe à son adresse définitive : nexoradevs.online.',
+    items: [
+      { icon: 'globe', space: '', title: 'Nouvelle adresse', text: 'Licence, sécurité, site et NEXORA web passent par nexoradevs.online ; NEXORA web est à nexoradevs.online/studio.' },
+      { icon: 'key', space: '', title: 'Lanceur 1.0.4', text: 'Le lanceur NEXORA Devs Toolbox se met à jour seul et vérifie chaque démarrage auprès de la nouvelle adresse.' },
+    ],
+  },
   // NEXORA #087 : note réécrite sans changer de numéro (Dev Lab dans Pro depuis le #076, mises à jour par le lanceur
   // NEXORA Devs Toolbox, offre Gratuite à 2 applications, Pro à 18 $). NEXORA #090 : Pro à 25 $, remise du parrainage.
   '1.2.0': {

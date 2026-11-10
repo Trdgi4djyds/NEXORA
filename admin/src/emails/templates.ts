@@ -414,10 +414,10 @@ export function updateEmail(d: UpdateData): Rendered {
 }
 
 const UPDATE_SAMPLE: UpdateData = {
-  version: "1.2.0",
+  version: "1.2.2",
   title: "",
-  intro: "Cette version rend le Dev Lab gratuit, libère l’assistant IA et prépare tes logiciels Windows à la distribution.",
-  highlights: ["Dev Lab gratuit : dossiers, éditeur, terminal, Git et aperçu.", "Assistant IA sans limite avec ta propre clé.", "Desktop Builder : aperçu sur un vrai PC Windows 11 et publication des mises à jour."],
+  intro: "Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.",
+  highlights: ["Nouvelle interface : noir et gris très sombre, ou blanc et gris clair, boutons et champs arrondis.", "Appareils réalistes dans le Studio : 10 modèles à taille réelle, avec ta scène ou ton image à l’écran.", "Formulaires plus lisibles et lanceur 1.0.5, qui se met à jour tout seul."],
   url: NEXORA_WEB_URL,
   greeting: "Bonjour Camille,",
 }

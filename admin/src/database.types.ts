@@ -3417,6 +3417,7 @@ export type Database = {
         }
         Returns: Json
       }
+      nx_email_frame: { Args: { p_html: string }; Returns: string }
       nx_email_norm: { Args: { p_email: string }; Returns: string }
       nx_email_quota: { Args: { p_needed: number }; Returns: number }
       nx_email_render: {
