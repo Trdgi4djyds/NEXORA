@@ -6,7 +6,7 @@ NEXORA regroupe plusieurs espaces : Accueil, Responsive Lab (sites affichés dan
 
 ## À lire en premier (obligatoire)
 
-Avant toute modification, lire `REGLES.md` (règles strictes, procédures, modèle d'entrée) et `SUIVI.md` (état actuel, anomalies, décisions, journal), et les appliquer à chaque demande. Chaque demande menée à bien se termine par les vérifications, des captures d'écran de l'interface montrées dans le chat (`pnpm captures … --upload`), une entrée `#NNN` dans `SUIVI.md` et une version Make `#NNN Titre`.
+Avant toute modification, lire `REGLES.md` (règles strictes, procédures, modèle d'entrée) et `SUIVI.md` (état actuel, anomalies, décisions, journal), et les appliquer à chaque demande. Chaque demande menée à bien se termine par les vérifications, des captures d'écran de l'interface montrées dans le chat (`pnpm captures … --upload`), une entrée `#NNN` dans `SUIVI.md` et une version Make `#NNN Titre`. **Depuis #098 (règle R27, exigence de l'utilisateur), chaque modification, quelle qu'elle soit, se termine aussi par la reconstruction de tout NEXORA (logiciel `pnpm pack:windows`, web `pnpm build` : site, studio web, back office, parrains ; lanceur `pnpm toolbox` et publication avec un nouveau tag ; schémas de base de données rejoués et types régénérés) et par l'envoi obligatoire sur GitHub (`pnpm github:push`).**
 
 ## Structure
 

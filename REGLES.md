@@ -12,7 +12,7 @@ Ces règles s'appliquent à **chaque demande, sans exception**, dans toutes les 
 ## 2. Pendant la modification
 
 - **R5.** Ne changer que ce qui est demandé. Pas de refonte ni de « nettoyage » non demandé : un problème repéré au passage est noté dans « Anomalies relevées », pas corrigé d'office.
-- **R6.** Ne jamais supprimer ni écraser les originaux (`nexora/NEXORA-portable.zip`, `nexora/NEXORA-win32-x64/`, fichiers de `nexora/app/`) sans accord explicite. Seule exception : `pnpm pack:windows` lancé à la demande. L'original 1.0.0 reste disponible dans la version Make 3.
+- **R6.** Ne jamais supprimer ni écraser les originaux (`nexora/NEXORA-portable.zip`, `nexora/NEXORA-win32-x64/`, fichiers de `nexora/app/`) sans accord explicite. Seule exception : `pnpm pack:windows`, lancé à chaque modification (R27). L'original 1.0.0 reste disponible dans la version Make 3.
 - **R7.** Dans `nexora/`, respecter le style de l'auteur (guillemets simples, points-virgules, commentaires et messages en français) et ne jamais reformater.
 - **R8.** Interface : français, tutoiement, système d'icônes de NEXORA, aucun nouvel emoji, cohérence avec le design existant. Tout bloc d'interface suit le thème : blanc en thème clair, noir en thème sombre (exigence de l'utilisateur, #004) ; seuls les contenus (scène 3D, page de document, écrans d'appareils, vignettes, nuanciers) gardent leurs propres couleurs.
 - **R9.** Canal IPC ajouté ou modifié : le déclarer dans le processus principal, l'autoriser dans `preload.js` et, s'il sert au démarrage ou à l'ouverture d'un espace, lui donner une réponse dans `preview/bridge.js` (ou l'ajouter à `DIALOG_CHANNELS` s'il ouvre une boîte de dialogue système).
@@ -24,7 +24,7 @@ Ces règles s'appliquent à **chaque demande, sans exception**, dans toutes les 
 - **R12.** `pnpm check` après toute modification de `main.js`, `preload.js`, `src/` ou `renderer/audit.js` : aucune erreur.
 - **R13.** `pnpm captures <écrans concernés> --label NNN-<sujet> --upload` : aucune exception dans la page ; chaque erreur de console ou requête en échec est examinée et expliquée.
 - **R14.** Regarder chaque capture et confirmer que le résultat visible correspond à la demande ; vérifier aussi le thème sombre (`--theme sombre`) quand l'apparence change.
-- **R15.** `pnpm build` quand `preview/`, `scripts/build-web.mjs` ou la publication sont touchés.
+- **R15.** `pnpm build` à chaque modification (R27), quelle que soit la partie touchée.
 - **R16.** Ce qui ne peut pas être vérifié dans l'aperçu (processus principal, `<webview>`, fenêtres système, Android, fichiers) est signalé comme tel, avec la manière de le tester sur Windows.
 - **R17.** Ne jamais déclarer une vérification réussie sans l'avoir exécutée et sans en avoir lu le résultat.
 
@@ -39,7 +39,17 @@ Ces règles s'appliquent à **chaque demande, sans exception**, dans toutes les 
 - **R21.** Chaque demande menée à bien reçoit une entrée dans le journal de `SUIVI.md`, la plus récente en haut, selon le modèle ci-dessous.
 - **R22.** Mettre à jour « État actuel », « Anomalies relevées » et « Idées et suites » quand ils changent ; toute décision technique durable (méthode, outil, dépendance, contournement) va dans « Décisions et méthodes », datée et justifiée.
 - **R23.** Une seule version Make par demande, avec un message qui commence par le numéro d'entrée : `#NNN Titre`.
-- **R24.** Reconstruction Windows (`pnpm pack:windows`) seulement à la demande. Noter dans l'entrée la version de NEXORA (`nexora/app/package.json`) et la taille du ZIP. Proposer d'augmenter la version de NEXORA à chaque livraison, sans le faire d'office.
+- **R24.** Reconstruction Windows (`pnpm pack:windows`) à chaque modification (R27, depuis #098 ; auparavant seulement à la demande). Noter dans l'entrée la version de NEXORA (`nexora/app/package.json`) et la taille du ZIP. Proposer d'augmenter la version de NEXORA à chaque livraison, sans le faire d'office.
+
+## 5 bis. Reconstruction complète et envoi sur GitHub (exigence de l'utilisateur, #098)
+
+- **R27.** **À chaque modification, quelle qu'elle soit, tout NEXORA est reconstruit, mis à jour et obligatoirement envoyé sur GitHub**, même si la modification ne touche qu'une partie :
+  1. **Logiciel Windows** : `pnpm check`, puis `pnpm pack:windows` (`app.asar` et `NEXORA-portable.zip`).
+  2. **Web** : `pnpm build` : site vitrine (pages pré-générées), NEXORA web (studio web, `/studio/`), back office, espace des parrains, page de statut.
+  3. **Lanceur NEXORA Devs Toolbox** : `pnpm test:launcher`, `pnpm toolbox` (paquet signé, lanceur recompilé, manifeste), puis publication sur le dépôt public avec un **nouveau tag** (`v<version>-rN`, N suivant), par la branche temporaire `publication-v…` et `launcher/publication-workflow.yml` depuis le bac à sable (A-050), branche supprimée ensuite ; `pnpm launcher:ressources` si la version du lanceur change. Go installé hors du dépôt (`/tmp/go`) si absent.
+  4. **Schémas de base de données** : migrations de `supabase/migrations/` rejouées par les essais (`pnpm test:offres`, `test:licences`, `test:parrainage`… sur PGlite), types régénérés (`pnpm supabase types`), `supabase/nexora.json` à jour. Application en ligne : `pnpm supabase migrer` quand l'environnement le permet ; sinon (bac à sable : écritures refusées) l'action « Tout appliquer » du back office est demandée à l'utilisateur dans le compte rendu, après sauvegarde manuelle (R26).
+  5. **Envoi sur GitHub, obligatoire** : `pnpm github:push --essai`, `pnpm github:push`, puis vérification « Workers Builds: nexora » réussie et `pnpm valider --label NNN-en-ligne --sans-build`.
+  Les contrôles de R26 restent faits à chaque fois : un bloquant **introduit** par la modification est corrigé avant l'envoi (jamais d'envoi en laissant une régression, jamais de demande terminée sans envoi) ; un bloquant antérieur dépendant de l'utilisateur ne retarde pas l'envoi. Toute étape impossible dans l'environnement est signalée avec sa cause et la commande à lancer ailleurs (R16, R17). L'entrée du journal donne, pour chaque étape, le résultat (taille du ZIP, nombre de fichiers web, tag du lanceur, commit GitHub).
 
 ## 6. Compte rendu dans le chat
 
@@ -68,10 +78,12 @@ Ces règles s'appliquent à **chaque demande, sans exception**, dans toutes les 
 2. `pnpm pack:windows` : reconstruit `app.asar` et `NEXORA-portable.zip` dans `nexora/`.
 3. Noter la version de NEXORA et la taille du ZIP dans l'entrée, puis version Make et compte rendu.
 
+**Fin de toute modification** (R27) : `pnpm check` → `pnpm pack:windows` → `pnpm build` (par `pnpm valider`) → essais des migrations et `pnpm supabase types` → `pnpm test:launcher` et `pnpm toolbox`, publication du lanceur (nouveau tag) → `pnpm github:push` → Workers Builds → `pnpm valider --sans-build` → journal et version Make.
+
 **Mettre en production** (R26, détail dans `CHECKLIST-PRODUCTION.md`)
 1. Retour arrière prêt : version Make et commit GitHub précédents notés ; sauvegarde manuelle de la base avant toute migration.
 2. `pnpm valider --label NNN-sujet` (avec `--charge` pour une version majeure) et contrôles manuels des rubriques touchées.
-3. Aucun bloquant introduit : `pnpm github:push --essai`, `pnpm github:push`, vérifications « Workers Builds » réussies.
+3. Aucun bloquant introduit : `pnpm github:push --essai`, `pnpm github:push`, vérifications « Workers Builds » réussies (envoi obligatoire à chaque modification, R27).
 4. `pnpm valider --label NNN-en-ligne --sans-build`, puis verdict, rapports et bloquants restants dans l'entrée du journal.
 
 ## Modèle d'entrée du journal
