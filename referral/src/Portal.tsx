@@ -81,7 +81,7 @@ export function Portal({ me, onMe, onSignOut }: { me: Me; onMe: (m: Me) => void;
       </main>
       <footer className="foot">
         <span><Icon name="key" size={13} /> Code d’accès valable jusqu’au {lastDay(me.code_expires_at)} : un nouveau code t’est transmis chaque mois.</span>
-        <a href="../site/">Site de NEXORA</a>
+        <a href="/">Site de NEXORA</a>
       </footer>
     </div>
   )

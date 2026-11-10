@@ -250,13 +250,22 @@ function localChecks() {
   }
   const dist = path.join(ROOT, "dist")
   const need = [
+    // NEXORA #096 : site vitrine pré-généré à la racine, NEXORA web sous studio/.
     "index.html",
+    "tarifs.html",
+    "404.html",
     "admin/index.html",
-    "site/index.html",
     // NEXORA #090 : espace des parrains.
     "referral/index.html",
     "_headers",
-    "nx/boot.js",
+    "_redirects",
+    "robots.txt",
+    "sitemap.xml",
+    "llms.txt",
+    "manifest.webmanifest",
+    "sw.js",
+    "studio/index.html",
+    "studio/nx/boot.js",
   ]
   const missing = need.filter((f) => !fs.existsSync(path.join(dist, f)))
   rec(
@@ -427,16 +436,28 @@ async function siteChecks() {
     admin.status === 200 ? "ok" : "echec",
     `${admin.status} en ${admin.ms} ms`,
   )
-  // NEXORA #060 : site vitrine (alerte et non blocage tant qu'il n'a jamais été publié).
-  const vitrine = await http(`${SITE}site/`)
+  // NEXORA #096 : site vitrine à la racine, NEXORA web à /studio/.
+  const studio = await http(`${SITE}studio/`)
   rec(
     R,
-    "Site vitrine répond",
-    vitrine.status === 200 ? "ok" : "alerte",
-    vitrine.status === 200
-      ? `${vitrine.status} en ${vitrine.ms} ms`
-      : `${vitrine.status} : publier la version qui contient dist/site/ (#060)`,
+    "NEXORA web répond (/studio/)",
+    studio.status === 200 ? "ok" : "echec",
+    `${studio.status} en ${studio.ms} ms`,
   )
+  // NEXORA #096 : référencement (robots.txt ouvert, plan du site, llms.txt, manifeste, pages pré-générées).
+  const SEO = "19. Référencement et PWA"
+  const robots = await fetch(`${SITE}robots.txt`).then(async (r) => ({ status: r.status, text: await r.text() })).catch(() => ({ status: 0, text: "" }))
+  const blocked = /User-agent:\s*\*\s*\nDisallow:\s*\/\s*$/im.test(robots.text) && !/Allow:\s*\/\s*$/im.test(robots.text)
+  rec(SEO, "robots.txt ouvert aux moteurs et aux IA, plan du site déclaré", robots.status === 200 && !blocked && /Sitemap:/i.test(robots.text) ? "ok" : "echec", blocked ? "tout le site est bloqué (Disallow: /)" : `${robots.status}${/Sitemap:/i.test(robots.text) ? "" : ", sans ligne Sitemap"}`)
+  const sitemap = await fetch(`${SITE}sitemap.xml`).then(async (r) => ({ status: r.status, n: ((await r.text()).match(/<loc>/g) || []).length })).catch(() => ({ status: 0, n: 0 }))
+  rec(SEO, "sitemap.xml publié", sitemap.status === 200 && sitemap.n > 5 ? "ok" : "echec", `${sitemap.status}, ${sitemap.n} adresses`)
+  for (const [file, label] of [["llms.txt", "llms.txt (assistants IA)"], ["manifest.webmanifest", "Manifeste de la PWA"], ["sw.js", "Service worker de la PWA"]]) {
+    const r = await http(`${SITE}${file}`)
+    rec(SEO, label, r.status === 200 ? "ok" : "echec", `${r.status}`)
+  }
+  const tarifs = await fetch(`${SITE}tarifs`).then(async (r) => ({ status: r.status, html: await r.text() })).catch(() => ({ status: 0, html: "" }))
+  const ssg = /<title>Tarifs/.test(tarifs.html) && /rel="canonical" href="[^"]*\/tarifs"/.test(tarifs.html) && /application\/ld\+json/.test(tarifs.html)
+  rec(SEO, "Pages pré-générées (titre, canonique et données structurées propres à /tarifs)", tarifs.status === 200 && ssg ? "ok" : "echec", `${tarifs.status}${ssg ? "" : ", HTML commun ou incomplet"}`)
   const missing = await http(`${SITE}introuvable-${Date.now()}`)
   rec(
     "3. API et erreurs",
@@ -446,7 +467,7 @@ async function siteChecks() {
   )
 
   const P = "11. Performance"
-  const assets = ["styles.css", "dist/main.js", "nx/boot.js"]
+  const assets = ["studio/styles.css", "studio/dist/main.js", "studio/nx/boot.js"]
   const rows = []
   for (const a of assets) rows.push([a, await http(`${SITE}${a}`)])
   const enc = [home, ...rows.map((r) => r[1])].map(
@@ -1251,7 +1272,7 @@ async function accountChecks() {
 async function loadChecks() {
   const R = "17. Charge"
   // Fichiers légers (page, script d'entrée, chargeur, back office) : on mesure le site, pas le débit de ce poste.
-  const paths = ["", "dist/main.js", "nx/boot.js", "admin/"]
+  const paths = ["", "studio/dist/main.js", "studio/nx/boot.js", "admin/"]
   for (const level of LOAD) {
     const lat = []
     let ok = 0

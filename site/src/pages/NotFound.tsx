@@ -15,12 +15,12 @@ export function NotFound() {
       <p className="lead mx-auto mt-5 max-w-xl">Le lien est peut-être ancien. Repars de l’accueil ou découvre les espaces de NEXORA.</p>
       <div className="mt-9 flex flex-wrap justify-center gap-3">
         <Button asChild size="lg">
-          <a href="#/">
+          <a href="/">
             <Icon name="home" size={17} /> Retour à l’accueil
           </a>
         </Button>
         <Button asChild size="lg" variant="outline">
-          <a href="#/espaces">Les 9 espaces</a>
+          <a href="/espaces">Les 9 espaces</a>
         </Button>
       </div>
     </PageHero>

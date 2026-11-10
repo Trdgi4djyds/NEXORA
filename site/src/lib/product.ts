@@ -36,7 +36,7 @@ const cmp = (a: string, b: string) => {
 export const RELEASES: [string, Note][] = (Object.entries(NOTES) as [string, Note][]).sort((a, b) => cmp(a[0], b[0]))
 
 /**
- * NEXORA web : la racine du site publié. Dans l'aperçu Figma Make, la racine ouvre le site vitrine (#062) et
- * l'application est à « /?app » ; dans l'aperçu déployé par Make, elle est à app.html (#063).
+ * NEXORA web : /studio/ du domaine depuis le #096 (racine du site publié jusqu'au #095). Dans l'aperçu Figma Make,
+ * l'application est à « /?app ».
  */
-export const WEB_URL: string = import.meta.env.VITE_NEXORA_WEB ?? (import.meta.env.DEV ? "../?app" : "../")
+export const WEB_URL: string = import.meta.env.VITE_NEXORA_WEB ?? (import.meta.env.DEV ? "/?app" : "/studio/")

@@ -59,7 +59,7 @@ export function Download() {
                     </a>
                   </Button>
                   <Button asChild size="lg" variant="outline">
-                    <a href="#/licence">
+                    <a href="/licence">
                       <Icon name="key" size={18} stroke={2} /> Ma licence
                     </a>
                   </Button>
@@ -68,7 +68,7 @@ export function Download() {
                 <>
                   {/* #076 : sans version publiée, l'action possible (créer sa licence) passe avant le bouton inactif. */}
                   <Button asChild size="lg">
-                    <a href="#/licence">
+                    <a href="/licence">
                       <Icon name="key" size={18} stroke={2} /> Créer ma licence gratuite
                     </a>
                   </Button>
@@ -132,7 +132,7 @@ export function Download() {
             <Reveal className="glow surface p-7" delay={80}>
               <h3 className="text-[18px] font-semibold">Désinstallation propre</h3>
               <p className="mt-2 text-[14.5px] leading-relaxed text-muted-foreground">Depuis les Paramètres de Windows : tu choisis de garder ou de supprimer tes documents, projets, réglages et la bibliothèque téléchargée.</p>
-              <a className="link-arrow mt-4" href="#/licence">
+              <a className="link-arrow mt-4" href="/licence">
                 Gérer ma licence <Icon name="nxArrowRight" size={15} stroke={2} />
               </a>
             </Reveal>

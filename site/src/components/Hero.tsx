@@ -73,7 +73,7 @@ export function Hero() {
       <Backdrop variant="hero" />
 
       <div className="wrap-wide relative">
-        <a href="#/licence" className="rise group inline-flex items-center gap-2.5 rounded-full border border-foreground/12 bg-foreground/[0.04] py-1 pr-3.5 pl-1 text-[13px] text-foreground transition hover:border-primary/60">
+        <a href="/licence" className="rise group inline-flex items-center gap-2.5 rounded-full border border-foreground/12 bg-foreground/[0.04] py-1 pr-3.5 pl-1 text-[13px] text-foreground transition hover:border-primary/60">
           <Badge variant="solid">Nouveau</Badge>
           {/* #087 : version courte sur téléphone (la pastille passait sur trois lignes). */}
           <span className="text-muted-foreground sm:hidden">NEXORA Devs Toolbox · 2 applications gratuites</span>

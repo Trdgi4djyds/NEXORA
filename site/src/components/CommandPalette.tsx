@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { SPACES, spaceHref } from "../data/spaces"
+import { navigate } from "../router"
 import { Icon } from "../lib/icons"
 import { cn } from "../lib/utils"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./ui/dialog"
@@ -23,14 +24,14 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
   const items = useMemo<Item[]>(
     () => [
-      { id: "accueil", group: "Pages", label: "Accueil du site", icon: "home", href: "#/" },
-      { id: "espaces", group: "Pages", label: "Les 9 espaces", icon: "grid", href: "#/espaces" },
-      { id: "tarifs", group: "Pages", label: "Tarifs", hint: "Gratuit et Pro", icon: "star", href: "#/tarifs", words: "prix offres abonnement" },
-      { id: "comparatif", group: "Pages", label: "Comparer les offres", icon: "nxTable", href: "#/tarifs/comparatif", words: "fonctions limites" },
-      { id: "telecharger", group: "Pages", label: "Télécharger NEXORA", hint: "Windows 10 et 11", icon: "download", href: "#/telecharger", words: "installer zip portable" },
-      { id: "nouveautes", group: "Pages", label: "Nouveautés", icon: "sparkle", href: "#/nouveautes", words: "version" },
+      { id: "accueil", group: "Pages", label: "Accueil du site", icon: "home", href: "/" },
+      { id: "espaces", group: "Pages", label: "Les 9 espaces", icon: "grid", href: "/espaces" },
+      { id: "tarifs", group: "Pages", label: "Tarifs", hint: "Gratuit et Pro", icon: "star", href: "/tarifs", words: "prix offres abonnement" },
+      { id: "comparatif", group: "Pages", label: "Comparer les offres", icon: "nxTable", href: "/tarifs/comparatif", words: "fonctions limites" },
+      { id: "telecharger", group: "Pages", label: "Télécharger NEXORA", hint: "Windows 10 et 11", icon: "download", href: "/telecharger", words: "installer zip portable" },
+      { id: "nouveautes", group: "Pages", label: "Nouveautés", icon: "sparkle", href: "/nouveautes", words: "version" },
       ...SPACES.map((s) => ({ id: s.id, group: "Espaces", label: s.name, hint: s.subtitle, icon: s.icon, space: s.id, href: spaceHref(s), words: s.tagline })),
-      { id: "licence", group: "Actions", label: "Ma licence", icon: "key", href: "#/licence", words: "licence clé compte connexion abonnement paiement" },
+      { id: "licence", group: "Actions", label: "Ma licence", icon: "key", href: "/licence", words: "licence clé compte connexion abonnement paiement" },
     ],
     [],
   )
@@ -60,7 +61,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const choose = (it: Item | undefined) => {
     if (!it) return
     onClose()
-    if (it.href) location.href = it.href
+    if (it.href) navigate(it.href)
   }
   let lastGroup = ""
   return (

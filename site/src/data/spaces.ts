@@ -336,5 +336,5 @@ export const SPACES: Space[] = [
 
 export const SPACE_BY_ID = Object.fromEntries(SPACES.map((s) => [s.id, s])) as Record<SpaceId, Space>
 export const spaceBySlug = (slug: string) => SPACES.find((s) => s.slug === slug)
-export const spaceHref = (s: Space) => `#/espaces/${s.slug}`
+export const spaceHref = (s: Space) => `/espaces/${s.slug}`
 export const PLAN_LABEL: Record<PlanId, string> = { free: "Gratuit", pro: "Pro" }

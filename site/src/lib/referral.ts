@@ -87,8 +87,10 @@ export async function captureFromUrl(days: () => Promise<number> = async () => R
 }
 
 export function useParrain(): Parrain | null {
-  const [p, setP] = useState<Parrain | null>(savedParrain)
+  // #096 : lu après l'hydratation (la page pré-générée ne connaît pas le stockage du navigateur).
+  const [p, setP] = useState<Parrain | null>(null)
   useEffect(() => {
+    setP(savedParrain())
     listeners.add(setP)
     return () => { listeners.delete(setP) }
   }, [])

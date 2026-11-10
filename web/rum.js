@@ -1,5 +1,5 @@
 // NEXORA — mesure des visiteurs réels (Web Vitals et erreurs JavaScript), moins de 3 Ko.
-// <script src="https://nexora.abrahamtogbonon0.workers.dev/rum.js" data-site="CLÉ" defer></script>
+// <script src="https://nexoradevs.online/rum.js" data-site="CLÉ" defer></script>
 // Aucune donnée personnelle : chemin de la page (sans paramètres), type d'appareil, mesures et erreurs.
 ;(() => {
   const s = document.currentScript

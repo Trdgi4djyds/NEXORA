@@ -526,7 +526,7 @@
     "license:state": () => {
       try {
         const forced = JSON.parse(localStorage.getItem("nexora-preview:licence") || "null")
-        if (forced) return { active: true, site: "https://nexora.abrahamtogbonon0.workers.dev/site/#/licence", ...forced }
+        if (forced) return { active: true, site: "https://nexoradevs.online/licence", ...forced }
       } catch { /* état simulé invalide */ }
       return { status: "ok", active: false, dev: true }
     },

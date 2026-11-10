@@ -31,8 +31,9 @@ const ofs = (() => { try { return require('original-fs'); } catch { return fs; }
 // Clés publiques (les clés privées ne sont jamais dans le dépôt : Worker et poste de publication).
 let LICENSE_KEY = 'MCowBQYDK2VwAyEA5qntAYP+NTzIAelhd3Sm2lUpg2Wi5b+TL0LM8np5sN8=';
 let RELEASE_KEY = 'MCowBQYDK2VwAyEAuylEQNJveeY4JGMR7lmlzN/tsqE/DWeWntYU7n1OxNc=';
-const SERVER = 'https://nexora.abrahamtogbonon0.workers.dev';
-const SITE_LICENCE = `${SERVER}/site/#/licence`;
+// NEXORA #096 : domaine principal (l'adresse workers.dev d'origine est désactivée dans Cloudflare).
+const SERVER = 'https://nexoradevs.online';
+const SITE_LICENCE = `${SERVER}/licence`;
 const CHECK_EVERY = 10 * 60 * 1000;
 const PING_EVERY = 5 * 60 * 1000;
 const pub = (b64) => crypto.createPublicKey({ key: Buffer.from(b64, 'base64'), format: 'der', type: 'spki' });
@@ -341,8 +342,8 @@ function register(o) {
   ipcMain.handle('license:check', () => check('demande'));
   ipcMain.handle('license:key', (_e, key) => { const s = storeKey(key); check('clé'); return s; });
   ipcMain.handle('license:log', (_e, ev) => { if (ev && ev.event) log(ev.level || 'info', ev.event, ev.detail || {}); return true; });
-  ipcMain.handle('license:open-site', (_e, hash = '') => shell.openExternal(hash ? `${SERVER}/site/#/${String(hash).replace(/^#?\/?/, '')}` : SITE_LICENCE));
-  ipcMain.handle('license:repair', () => updateViaLauncher(app) || shell.openExternal(`${SERVER}/site/#/telecharger`));
+  ipcMain.handle('license:open-site', (_e, hash = '') => shell.openExternal(hash ? `${SERVER}/${String(hash).replace(/^#?\/?/, '')}` : SITE_LICENCE));
+  ipcMain.handle('license:repair', () => updateViaLauncher(app) || shell.openExternal(`${SERVER}/telecharger`));
   ipcMain.handle('license:quit', () => { app.quit(); return true; });
   // Lien nexora://licence?key=… reçu pendant que NEXORA est ouvert.
   app.on('second-instance', (_e, argv) => { const key = keyFromArgs(argv); if (key) { try { storeKey(key); check('lien'); } catch { /* */ } } });

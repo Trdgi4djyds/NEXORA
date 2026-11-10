@@ -90,7 +90,7 @@ function Frame({ children, onSignOut }: { children: ReactNode; onSignOut?: () =>
         {onSignOut && <button className="btn ghost sm" onClick={onSignOut}><Icon name="external" size={14} /> Se déconnecter</button>}
       </header>
       <main className="auth-main">{children}</main>
-      <footer className="auth-foot">Espace réservé aux parrains invités par l’équipe NEXORA · <a href="../site/">Site de NEXORA</a></footer>
+      <footer className="auth-foot">Espace réservé aux parrains invités par l’équipe NEXORA · <a href="/">Site de NEXORA</a></footer>
     </div>
   )
 }

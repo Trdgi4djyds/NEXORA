@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Icon } from "../lib/icons"
 import { useRemote } from "../lib/remote"
 
@@ -8,13 +8,15 @@ const MARK = "076-toolbox"
 /** Bandeau du haut : maintenance annoncée par NEXORA, sinon l’annonce de NEXORA Devs Toolbox (#076). */
 export function Announcement({ home = false }: { home?: boolean }) {
   const { maintenance } = useRemote()
-  const [hidden, setHidden] = useState(() => {
+  // #096 : masquée ou non selon le stockage du navigateur, lu après l'hydratation de la page pré-générée.
+  const [hidden, setHidden] = useState(false)
+  useEffect(() => {
     try {
-      return localStorage.getItem(KEY) === MARK
+      setHidden(localStorage.getItem(KEY) === MARK)
     } catch {
-      return false
+      /* stockage indisponible */
     }
-  })
+  }, [])
   if (maintenance)
     return (
       <div className="border-b border-amber-400/30 bg-amber-400/10 text-amber-200" role="status">
@@ -36,7 +38,7 @@ export function Announcement({ home = false }: { home?: boolean }) {
   return (
     <div className="relative border-b border-foreground/[0.08] bg-lime text-ink">
       <div className="wrap-wide flex items-center gap-3 py-2">
-        <a className="group flex min-w-0 flex-1 items-center justify-center gap-3 text-[13px] text-ink/80" href="#/licence">
+        <a className="group flex min-w-0 flex-1 items-center justify-center gap-3 text-[13px] text-ink/80" href="/licence">
           <span className="shrink-0 rounded-full bg-ink px-2 py-0.5 font-mono text-[11px] font-medium tracking-wider text-lime uppercase">Nouveau</span>
           {/* #089 : deux lignes sur téléphone (le texte était coupé après « licence gra… »). */}
           <span className="line-clamp-2 leading-snug sm:line-clamp-none sm:truncate">NEXORA Devs Toolbox : licence gratuite, 2 applications Android ou Windows offertes, 24 h d’essai Pro complet</span>

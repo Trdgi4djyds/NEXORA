@@ -14,11 +14,13 @@ const reduceQuery = () =>
   typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : null
 
 export function useReducedMotion() {
-  const [reduced, setReduced] = useState(() => !!reduceQuery()?.matches)
+  // #096 : premier rendu identique à la page pré-générée (hydratation), réglage du système lu juste après.
+  const [reduced, setReduced] = useState(false)
   useEffect(() => {
     const q = reduceQuery()
     if (!q) return
     const on = () => setReduced(q.matches)
+    on()
     q.addEventListener("change", on)
     return () => q.removeEventListener("change", on)
   }, [])
@@ -121,9 +123,10 @@ export function CountUp({ value, duration = 1400, delay, format }: { value: numb
 
 /** Vrai si l'onglet du navigateur est affiché (les démonstrations se mettent en pause sinon). */
 export function usePageVisible() {
-  const [visible, setVisible] = useState(() => typeof document === "undefined" || !document.hidden)
+  const [visible, setVisible] = useState(true)
   useEffect(() => {
     const on = () => setVisible(!document.hidden)
+    on()
     document.addEventListener("visibilitychange", on)
     return () => document.removeEventListener("visibilitychange", on)
   }, [])
@@ -132,7 +135,8 @@ export function usePageVisible() {
 
 /** Vrai tant que la requête média correspond (mise en page différente sur petit écran). */
 export function useMedia(query: string) {
-  const [match, setMatch] = useState(() => typeof matchMedia === "function" && matchMedia(query).matches)
+  // #096 : faux au premier rendu (comme la page pré-générée), puis la vraie valeur dès l'affichage.
+  const [match, setMatch] = useState(false)
   useEffect(() => {
     const q = matchMedia(query)
     const on = () => setMatch(q.matches)

@@ -1,0 +1,7 @@
+{
+  "$comment": "NEXORA #096 : réglages du référencement du site vitrine, lus par scripts/site-ssg.mjs à la publication. googleSiteVerification et bingSiteVerification : codes des balises de vérification de Google Search Console et de Bing Webmaster Tools (laisser vide si le domaine est vérifié par DNS). indexNowKey : clé publique IndexNow (Bing, Yandex, Seznam, Naver), publiée dans /<clé>.txt. aiTraining : autorise ou non l'entraînement des modèles d'IA dans robots.txt (Content-Signal ai-train) ; la recherche et les réponses des assistants IA restent autorisées.",
+  "googleSiteVerification": "",
+  "bingSiteVerification": "",
+  "indexNowKey": "baf23600a0be374f628c82a004372c2a",
+  "aiTraining": true
+}

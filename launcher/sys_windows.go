@@ -24,7 +24,7 @@ const (
 	protocolKey   = `Software\Classes\nexora`
 	novxExtKey    = `Software\Classes\.novx`
 	novxTypeKey   = `Software\Classes\NEXORA.Projet`
-	siteURL       = "https://nexora.abrahamtogbonon0.workers.dev/site/"
+	siteURL       = "https://nexoradevs.online/"
 	createNoWin   = 0x08000000
 	detachedProc  = 0x00000008
 	newProcGroup  = 0x00000200
@@ -329,7 +329,7 @@ func register(l Layout, st *State, m *Manifest) error {
 		regSZ(uninstallKey, "UninstallString", q+" --uninstall"),
 		regSZ(uninstallKey, "ModifyPath", q+" --repair"),
 		regSZ(uninstallKey, "URLInfoAbout", siteURL),
-		regSZ(uninstallKey, "HelpLink", siteURL+"#/licence"),
+		regSZ(uninstallKey, "HelpLink", siteURL+"licence"),
 		regSZ(uninstallKey, "Comments", "Lanceur et mises à jour vérifiées de NEXORA"),
 		regDWORD(uninstallKey, "NoRepair", 0),
 		regDWORD(uninstallKey, "EstimatedSize", dirSizeKB(l.Root)),

@@ -276,7 +276,7 @@ async function checkout(req, env) {
     mode: "subscription", "line_items[0][price]": year ? env.STRIPE_PRICE_YEAR : env.STRIPE_PRICE_MONTH, "line_items[0][quantity]": "1",
     client_reference_id: user.id, "metadata[nexora_user]": user.id, "subscription_data[metadata][nexora_user]": user.id,
     locale: "fr",
-    success_url: `${SITE}/site/#/licence?paiement=ok`, cancel_url: `${SITE}/site/#/licence?paiement=annule`,
+    success_url: `${SITE}/licence?paiement=ok`, cancel_url: `${SITE}/licence?paiement=annule`,
   }
   // Stripe refuse les codes promo du formulaire quand une remise est déjà appliquée.
   if (pct > 0) {
@@ -294,7 +294,7 @@ async function portal(req, env) {
   if (!user) return json(401, { error: "auth", message: "Connecte-toi d’abord à ton compte NEXORA." })
   const customer = await customerOf(token, user.id)
   if (!customer) return json(404, { error: "no_customer", message: "Aucun abonnement payé pour ce compte." })
-  const s = await stripe(env, "POST", "billing_portal/sessions", { customer, return_url: `${SITE}/site/#/licence`, locale: "fr" })
+  const s = await stripe(env, "POST", "billing_portal/sessions", { customer, return_url: `${SITE}/licence`, locale: "fr" })
   return json(200, { url: s.url })
 }
 

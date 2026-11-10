@@ -111,7 +111,7 @@ export function SpacePage({ space }: { space: Space }) {
       <section className="relative overflow-hidden pt-14 pb-16 md:pt-20 md:pb-24" data-capture="haut" data-light>
         <Backdrop variant="page" />
         <div className="wrap relative">
-          <a href="#/espaces" className="rise inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground transition hover:text-primary">
+          <a href="/espaces" className="rise inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground transition hover:text-primary">
             <Icon name="chevronLeft" size={15} stroke={2} /> Tous les espaces
           </a>
           <div className="mt-8 grid items-end gap-10 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
@@ -131,7 +131,7 @@ export function SpacePage({ space }: { space: Space }) {
               <div className="mt-7 flex flex-wrap gap-3">
                 <MainButton />
                 <Button asChild variant="outline">
-                  <a href="#/tarifs">Voir les tarifs</a>
+                  <a href="/tarifs">Voir les tarifs</a>
                 </Button>
               </div>
               <span className="mt-5 inline-flex items-center gap-2 text-[13px] text-muted-foreground">
@@ -212,7 +212,7 @@ export function SpacePage({ space }: { space: Space }) {
       <section className="section-tight light" data-capture="offres">
         <div className="wrap">
           <SectionHead eyebrow="Dans tes offres" title={["Ce qui est inclus,", "offre par offre."]}>
-            <a className="link-arrow" href="#/tarifs/comparatif">
+            <a className="link-arrow" href="/tarifs/comparatif">
               Voir le comparatif complet <Icon name="nxArrowRight" size={15} stroke={2} />
             </a>
           </SectionHead>

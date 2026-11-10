@@ -2,6 +2,7 @@
 // d'authentification de Supabase et les fonctions de la base sont appelées directement, avec la clé publique.
 // La session (jetons d'accès et de renouvellement) est gardée dans le stockage local du navigateur.
 import { projectRef, publicKey } from "../../../supabase/nexora.json"
+import { BASE } from "../router"
 
 const AUTH = `https://${projectRef}.supabase.co/auth/v1/`
 const REST = `https://${projectRef}.supabase.co/rest/v1/`
@@ -102,13 +103,13 @@ export async function signIn(email: string, password: string) {
 
 /** Inscription : la session arrive tout de suite si la confirmation par e-mail est coupée, sinon après le lien. */
 export async function signUp(email: string, password: string): Promise<Session | null> {
-  const redirect = `${location.origin}${location.pathname}#/licence`
+  const redirect = `${location.origin}${BASE}/licence`
   const b = await call(`${AUTH}signup?redirect_to=${encodeURIComponent(redirect)}`, { method: "POST", body: JSON.stringify({ email, password }) })
   return b && b.access_token ? store(b) : null
 }
 
 export async function recover(email: string) {
-  const redirect = `${location.origin}${location.pathname}#/licence`
+  const redirect = `${location.origin}${BASE}/licence`
   await call(`${AUTH}recover?redirect_to=${encodeURIComponent(redirect)}`, { method: "POST", body: JSON.stringify({ email }) })
 }
 
@@ -139,7 +140,7 @@ export function sessionFromLink(): boolean {
     return false
   }
   store({ access_token: access, refresh_token: refresh, expires_in: Number(p.get("expires_in") || 3600), user })
-  history.replaceState(null, "", `${location.pathname}#/licence`)
+  history.replaceState(null, "", `${location.pathname}${location.search}`)
   return true
 }
 

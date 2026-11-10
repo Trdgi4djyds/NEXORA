@@ -25,7 +25,7 @@ export function DownloadButton({
   const { downloadUrl } = useRemote()
   return (
     <Button asChild size={sz(size)} variant={variant} className={className}>
-      <a href={downloadUrl || "#/telecharger"} rel={downloadUrl ? "noopener" : undefined}>
+      <a href={downloadUrl || "/telecharger"} rel={downloadUrl ? "noopener" : undefined}>
         <Icon name="download" size={size === "sm" ? 15 : 17} stroke={2} />
         <span>{label}</span>
       </a>
@@ -57,7 +57,7 @@ export function MainButton({ size = "md", className = "" }: { size?: "sm" | "md"
 export function SecondButton({ size = "md", className = "" }: { size?: "sm" | "md" | "lg"; className?: string }) {
   return (
     <Button asChild size={sz(size)} variant="outline" className={className}>
-      <a href="#/licence">
+      <a href="/licence">
         <Icon name="key" size={size === "sm" ? 15 : 17} />
         <span>{size === "sm" ? "Ma licence" : "Obtenir ma licence gratuite"}</span>
       </a>

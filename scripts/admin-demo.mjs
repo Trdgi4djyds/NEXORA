@@ -933,7 +933,7 @@ export const nx_private_config = [
       address: "Cotonou, Bénin",
       email: "nexoradevstoolbox@gmail.com",
       phone: "+229 97 00 00 00",
-      website: "https://nexora.abrahamtogbonon0.workers.dev/",
+      website: "https://nexoradevs.online/",
       tax_id: "IFU 0202000000000",
       vat_note: "TVA non applicable",
       currency: "EUR",
@@ -1826,7 +1826,7 @@ const mgmtProject = {
   },
 }
 const mgmtAuth = {
-  site_url: "https://nexora.abrahamtogbonon0.workers.dev/",
+  site_url: "https://nexoradevs.online/",
   uri_allow_list:
     "https://nexora.abrahamtogbonon0.workers.dev/**,http://localhost:5173/**,http://127.0.0.1:5173/**,http://localhost:4173/**,https://nexora.abrahamtogbonon0.workers.dev/admin/**,http://localhost:3000/admin/**",
   disable_signup: false,

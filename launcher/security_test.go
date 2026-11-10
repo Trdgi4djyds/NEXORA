@@ -50,7 +50,7 @@ func newWorld(t *testing.T) *world {
 	t.Cleanup(func() {
 		allowHTTP = false
 		apiBase, webBase = "https://api.github.com", "https://github.com"
-		serverBase = "https://nexora.abrahamtogbonon0.workers.dev"
+		serverBase = "https://nexoradevs.online"
 	})
 	return w
 }

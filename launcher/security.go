@@ -36,7 +36,7 @@ import (
 // Clé publique du service de sécurité (identique à LICENSE_KEY de nexora/app/src/license.js).
 const licensePublicKey = "MCowBQYDK2VwAyEA5qntAYP+NTzIAelhd3Sm2lUpg2Wi5b+TL0LM8np5sN8="
 
-var serverBase = "https://nexora.abrahamtogbonon0.workers.dev"
+var serverBase = "https://nexoradevs.online"
 
 // SecFail : refus de sécurité montré à l'utilisateur (écran dédié) et consigné.
 type SecFail struct {

@@ -1,4 +1,7 @@
-// `pnpm build` : version web de l'interface NEXORA dans dist/ (publiée par .figma/make/deploy).
+// `pnpm build` : publication web de NEXORA dans dist/ (Cloudflare Workers, domaine nexoradevs.online).
+// NEXORA #096 : le site vitrine occupe la racine du domaine, page par page en HTML pré-généré (scripts/site-ssg.mjs :
+// référencement, PWA, robots.txt, sitemap.xml, llms.txt) ; NEXORA web passe à /studio/ ; back office à /admin/,
+// espace des parrains à /referral/, page de statut à /status/. Les anciennes adresses /site/… sont redirigées.
 // Même contenu que l'aperçu : l'interface telle quelle et le pont preview/bridge.js, plus le mode
 // web de NEXORA (preview/web.js, #025) : compte et synchronisation, appareils affichés par iframe.
 // Le back office web (admin/, React) est assemblé par Vite dans dist/admin/, avec des chemins
@@ -8,12 +11,11 @@
 // `--mode development` (passé seulement par .figma/make/deploy-preview, l'aperçu déployé de Figma Make,
 // NEXORA #063) : le site vitrine devient la page d'entrée (dist/index.html) et NEXORA web passe à
 // dist/app.html. La publication (Cloudflare : `pnpm run build`, sans argument) garde NEXORA web à la racine.
-import crypto from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
 import react from "@vitejs/plugin-react"
 import { build } from "vite"
-import { siteTailwind } from "../site/tailwind.mjs"
+import { buildSite } from "./site-ssg.mjs"
 import {
   BRIDGE_FILE,
   BRIDGE_PATH,
@@ -28,6 +30,8 @@ import {
 } from "../preview/server.mjs"
 
 const OUT_DIR = path.join(ROOT, "dist")
+// NEXORA #096 : NEXORA web (interface de l'application, mode web) sous /studio/ ; ses chemins sont relatifs.
+const STUDIO_DIR = path.join(OUT_DIR, "studio")
 
 function readSiteSettings() {
   try {
@@ -39,19 +43,23 @@ function readSiteSettings() {
   }
 }
 
-const noIndex = readSiteSettings().robots?.index === false
 const argv = process.argv.slice(2)
 const previewEntry =
   argv.includes("--mode=development") ||
   argv.some((a, i) => a === "--mode" && argv[i + 1] === "development")
+// NEXORA #096 : le réglage « ne pas indexer » de Figma Make (.figma/make/site.json) ne vaut que pour l'aperçu déployé
+// de Make (--mode development) ou si NEXORA_NOINDEX=1 : la publication sur le domaine (Cloudflare) est indexable.
+// (Jusqu'au #095, il s'appliquait aussi à Cloudflare : robots.txt « Disallow: / » bloquait tout le site.)
+const noIndex = process.env.NEXORA_NOINDEX === "1" || (previewEntry && readSiteSettings().robots?.index === false)
 
 fs.rmSync(OUT_DIR, { recursive: true, force: true })
-fs.cpSync(RENDERER_DIR, OUT_DIR, { recursive: true })
-fs.mkdirSync(path.dirname(path.join(OUT_DIR, BRIDGE_PATH)), { recursive: true })
-fs.copyFileSync(BRIDGE_FILE, path.join(OUT_DIR, BRIDGE_PATH))
-fs.copyFileSync(WEB_FILE, path.join(OUT_DIR, WEB_PATH))
+fs.mkdirSync(OUT_DIR, { recursive: true })
+fs.cpSync(RENDERER_DIR, STUDIO_DIR, { recursive: true })
+fs.mkdirSync(path.dirname(path.join(STUDIO_DIR, BRIDGE_PATH)), { recursive: true })
+fs.copyFileSync(BRIDGE_FILE, path.join(STUDIO_DIR, BRIDGE_PATH))
+fs.copyFileSync(WEB_FILE, path.join(STUDIO_DIR, WEB_PATH))
 for (const [file, data] of Object.entries(PREVIEW_DATA)) {
-  fs.writeFileSync(path.join(OUT_DIR, file), JSON.stringify(data()))
+  fs.writeFileSync(path.join(STUDIO_DIR, file), JSON.stringify(data()))
 }
 
 // NEXORA #048 : page de statut publique (/status/?p=…) et script des visiteurs réels (/rum.js).
@@ -80,7 +88,8 @@ let page = renderPage({
       .slice(1)
       .map((f) => `dist/${f}`)
       .join(",")}"></script>`,
-    ...(noIndex ? ['<meta name="robots" content="noindex, nofollow">'] : []),
+    // NEXORA web est une application : jamais indexée (aussi par l'en-tête X-Robots-Tag de /studio/*).
+    '<meta name="robots" content="noindex, nofollow">',
   ],
 })
 // Version web seulement : les appareils affichent les sites (et leur fond d'écran, page data:) dans
@@ -92,12 +101,7 @@ if (!page.includes(`${csp}">`))
     "index.html : politique de sécurité (worker-src) introuvable.",
   )
 page = page.replace(`${csp}">`, `${csp}; frame-src https: http: data:">`)
-fs.writeFileSync(path.join(OUT_DIR, "index.html"), page)
-if (noIndex)
-  fs.writeFileSync(
-    path.join(OUT_DIR, "robots.txt"),
-    "User-agent: *\nDisallow: /\n",
-  )
+fs.writeFileSync(path.join(STUDIO_DIR, "index.html"), page)
 
 // En-têtes de sécurité (#039), lus par Cloudflare (fichier _headers des ressources statiques) :
 // type des fichiers respecté et adresse d'origine réduite partout ; back office jamais affiché dans le
@@ -109,20 +113,44 @@ fs.writeFileSync(
     "/*",
     "  X-Content-Type-Options: nosniff",
     "  Referrer-Policy: strict-origin-when-cross-origin",
+    // NEXORA #096 : HTTPS imposé au navigateur (le domaine n'est servi qu'en HTTPS par Cloudflare).
+    "  Strict-Transport-Security: max-age=31536000; includeSubDomains",
     "/admin/*",
     "  X-Frame-Options: DENY",
     "  Content-Security-Policy: frame-ancestors 'none'",
+    "  X-Robots-Tag: noindex, nofollow",
     // NEXORA #090 : espace des parrains (NEXORA REFERRAL), même protection que le back office.
     "/referral/*",
     "  X-Frame-Options: DENY",
     "  Content-Security-Policy: frame-ancestors 'none'",
+    "  X-Robots-Tag: noindex, nofollow",
     "/referral/assets/*",
     "  Cache-Control: public, max-age=31536000, immutable",
-    // NEXORA #060 : fichiers du site vitrine nommés avec leur empreinte, gardés en cache un an.
-    "/site/assets/*",
+    // NEXORA #096 : NEXORA web (application) jamais indexée ; fichiers du site à empreinte gardés un an ; service
+    // worker et manifeste toujours relus.
+    "/studio/*",
+    "  X-Robots-Tag: noindex, nofollow",
+    "/assets/*",
     "  Cache-Control: public, max-age=31536000, immutable",
+    "/sw.js",
+    "  Cache-Control: no-cache",
+    "/manifest.webmanifest",
+    "  Content-Type: application/manifest+json; charset=utf-8",
+    "  Cache-Control: public, max-age=3600",
+    "/robots.txt",
+    "  Content-Type: text/plain; charset=utf-8",
+    "/llms.txt",
+    "  Content-Type: text/plain; charset=utf-8",
+    "/llms-full.txt",
+    "  Content-Type: text/plain; charset=utf-8",
     "",
   ].join("\n"),
+)
+// NEXORA #096 : anciennes adresses du site (/site/…, liens de l'application Windows, du lanceur et des e-mails) et de
+// l'aperçu (app.html) redirigées pour de bon ; la partie après # suit la redirection et le site la convertit.
+fs.writeFileSync(
+  path.join(OUT_DIR, "_redirects"),
+  ["/site / 301", "/site/ / 301", "/site/* /:splat 301", "/app.html /studio/ 301", ""].join("\n"),
 )
 
 // L'environnement Figma Make peut définir NODE_ENV=development : le back office publié est assemblé
@@ -145,58 +173,39 @@ await build({
   },
 })
 
-// NEXORA #060 : site vitrine, servi sous /site/ (NEXORA web reste à la racine : liens des e-mails, partages).
-await build({
-  configFile: false,
-  mode: "production",
-  root: path.join(ROOT, "site"),
-  base: "./",
-  publicDir: false,
-  logLevel: "warn",
-  // #085 : Tailwind CSS 4 (site/tailwind.mjs).
-  plugins: [react(), ...siteTailwind()],
-  // Aperçu déployé (#063) : « Ouvrir NEXORA web » mène à app.html, le site occupant la racine.
-  define: previewEntry
-    ? { "import.meta.env.VITE_NEXORA_WEB": JSON.stringify("../app.html") }
-    : {},
-  build: {
-    outDir: path.join(OUT_DIR, "site"),
-    emptyOutDir: true,
-    chunkSizeWarningLimit: 1000,
-  },
-})
-// Politique de sécurité du site vitrine, posée dans la page publiée seulement (Vite en a besoin d'une plus
-// large pendant le développement) : fichiers du site, scripts en ligne éventuels autorisés par leur empreinte
-// (aucun depuis #068 : le site est sombre seulement, sans script de thème), lectures publiques sur le serveur
-// de NEXORA (offres, lien de téléchargement), aucune ressource tierce.
-const sitePage = path.join(OUT_DIR, "site", "index.html")
-let siteHtml = fs.readFileSync(sitePage, "utf8")
-const inline = [...siteHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(
-  (m) => `'sha256-${crypto.createHash("sha256").update(m[1]).digest("base64")}'`,
-)
+// NEXORA #060, #096 : site vitrine à la racine, une page HTML pré-générée par adresse (scripts/site-ssg.mjs).
+// Politique de sécurité posée dans chaque page publiée (Vite en a besoin d'une plus large pendant le développement) :
+// fichiers du site, aucun script en ligne (les données structurées JSON-LD ne s'exécutent pas), lectures publiques sur
+// le serveur de NEXORA (offres, lien de téléchargement), aucune ressource tierce.
 const { projectRef } = statusConfigRef()
 const siteCsp = [
   "default-src 'self'",
-  `script-src 'self' ${inline.join(" ")}`.trim(),
+  "script-src 'self'",
   "style-src 'self'",
+  // #096 : attributs style des pages pré-générées (variables CSS des animations et des couleurs, posées par React) ;
+  // aucune balise <style> ni script en ligne permis pour autant.
+  "style-src-attr 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
   `connect-src 'self' https://${projectRef}.supabase.co`,
+  "worker-src 'self'",
+  "manifest-src 'self'",
   "base-uri 'none'",
   "form-action 'none'",
   "object-src 'none'",
 ].join("; ")
-if (!siteHtml.includes('<meta charset="UTF-8" />'))
-  throw new Error("site/index.html : balise meta charset introuvable.")
-siteHtml = siteHtml.replace(
-  '<meta charset="UTF-8" />',
-  [
-    '<meta charset="UTF-8" />',
-    `    <meta http-equiv="Content-Security-Policy" content="${siteCsp}" />`,
-    ...(noIndex ? ['    <meta name="robots" content="noindex, nofollow" />'] : []),
-  ].join("\n"),
-)
-fs.writeFileSync(sitePage, siteHtml)
+const site = await buildSite({
+  ROOT,
+  OUT_DIR,
+  csp: siteCsp,
+  noIndex,
+  define: { "import.meta.env.VITE_NEXORA_WEB": JSON.stringify("/studio/") },
+})
+for (const file of ["index.html", "tarifs.html", "404.html"]) {
+  const html = fs.readFileSync(path.join(OUT_DIR, file), "utf8")
+  if ([...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].length)
+    throw new Error(`${file} : aucun script en ligne n’est permis (politique de sécurité).`)
+}
 
 // NEXORA #090 : espace des parrains (NEXORA REFERRAL), servi sous /referral/. Politique de sécurité posée dans la page
 // publiée : fichiers de l'espace seulement, connexion à Supabase (session et fonctions nx_partner_*), aucune ressource
@@ -239,16 +248,6 @@ referralHtml = referralHtml.replace(
 )
 fs.writeFileSync(referralPage, referralHtml)
 
-// Aperçu déployé de Figma Make (#063) : le site vitrine à la racine (mêmes fichiers que dist/site/, chemins
-// préfixés), NEXORA web dans app.html (ses chemins relatifs restent valables à la racine).
-if (previewEntry) {
-  fs.renameSync(path.join(OUT_DIR, "index.html"), path.join(OUT_DIR, "app.html"))
-  const rootHtml = siteHtml.replaceAll('"./assets/', '"./site/assets/')
-  if (!rootHtml.includes('"./site/assets/'))
-    throw new Error("site/index.html : chemins des fichiers du site introuvables.")
-  fs.writeFileSync(path.join(OUT_DIR, "index.html"), rootHtml)
-}
-
 let files = 0
 let bytes = 0
 for (const entry of fs.readdirSync(OUT_DIR, {
@@ -260,7 +259,7 @@ for (const entry of fs.readdirSync(OUT_DIR, {
   bytes += fs.statSync(path.join(entry.parentPath, entry.name)).size
 }
 console.log(
-  `Version web de NEXORA construite dans dist/ : ${files} fichiers, ${(bytes / 1048576).toFixed(1)} Mo.`,
+  `Version web de NEXORA construite dans dist/ : ${files} fichiers, ${(bytes / 1048576).toFixed(1)} Mo ; site vitrine : ${site.pages.length} pages pré-générées${noIndex ? " (non indexées)" : ""}.`,
 )
 
 function statusConfigRef() {

@@ -7,7 +7,7 @@ import { b as sb, e as cloud } from '../dist/chunks/chunk-EZKHFSAB.js';
 export const HOURS = { '1h': 1, '24h': 24, '7j': 168, '30j': 720, '90j': 2160 };
 // NEXORA #048 : adresse publique de NEXORA web (signal de vie, page de statut, visiteurs réels, déploiements).
 // Même adresse que chunk-EZKHFSAB.js, admin/src/supabase.ts et supabase/nexora.json : à changer ensemble.
-export const WEB = 'https://nexora.abrahamtogbonon0.workers.dev/';
+export const WEB = 'https://nexoradevs.online/studio/';
 
 // Le serveur n'a pas encore la migration #022 (colonne ou fonction inconnue).
 export const outdated = (err) => /app_site_id|threshold_ms|monitor_series|status_pages|rum_sites|monitor_maintenance|nx_monitor_hook_token|rum_summary|PGRST202|PGRST205|42703|42P01|could not find/i.test(`${(err && err.code) || ''} ${(err && err.message) || err || ''}`);

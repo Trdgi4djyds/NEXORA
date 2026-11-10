@@ -90,7 +90,7 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
   return (
     <header ref={ref} className={cn("hdr", (scrolled || mega || mobile) && "solid")}>
       <div className="wrap-wide flex h-16 items-center gap-6">
-        <a href="#/" className="shrink-0" aria-label="NEXORA, accueil du site">
+        <a href="/" className="shrink-0" aria-label="NEXORA, accueil du site">
           <Brand />
         </a>
         <nav className="relative hidden items-center lg:flex" aria-label="Navigation principale" onMouseLeave={() => setHl((h) => ({ ...h, on: false }))}>
@@ -99,10 +99,10 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
             Espaces
             <Icon name="chevronDown" size={15} stroke={2} className={cn("transition-transform duration-300", mega && "rotate-180 text-primary")} />
           </button>
-          <a className={cn(navLink, at === "tarifs" && "text-primary")} href="#/tarifs" aria-current={current("tarifs")} onMouseEnter={track}>
+          <a className={cn(navLink, at === "tarifs" && "text-primary")} href="/tarifs" aria-current={current("tarifs")} onMouseEnter={track}>
             Tarifs
           </a>
-          <a className={cn(navLink, at === "nouveautes" && "text-primary")} href="#/nouveautes" aria-current={current("nouveautes")} onMouseEnter={track}>
+          <a className={cn(navLink, at === "nouveautes" && "text-primary")} href="/nouveautes" aria-current={current("nouveautes")} onMouseEnter={track}>
             Nouveautés
           </a>
         </nav>
@@ -150,10 +150,10 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
               ))}
             </div>
             <div className="mt-5 flex items-center justify-between border-t border-foreground/[0.06] pt-5">
-              <a href="#/espaces" className="link-arrow">
+              <a href="/espaces" className="link-arrow">
                 Voir les 9 espaces <Icon name="nxArrowRight" size={15} stroke={2} />
               </a>
-              <a href="#/nouveautes" className="inline-flex items-center gap-2 text-[13px] text-muted-foreground transition hover:text-primary">
+              <a href="/nouveautes" className="inline-flex items-center gap-2 text-[13px] text-muted-foreground transition hover:text-primary">
                 <Icon name="sparkle" size={15} /> Nouveautés de la version {APP_VERSION}
               </a>
             </div>
@@ -177,10 +177,10 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
             </div>
             <div className="mt-6 grid grid-cols-2 gap-2 text-[15px]">
               {[
-                ["#/tarifs", "Tarifs"],
-                ["#/nouveautes", "Nouveautés"],
-                ["#/telecharger", "Télécharger"],
-                ["#/licence", "Ma licence"],
+                ["/tarifs", "Tarifs"],
+                ["/nouveautes", "Nouveautés"],
+                ["/telecharger", "Télécharger"],
+                ["/licence", "Ma licence"],
               ].map(([href, label]) => (
                 <a key={href} href={href} className="rounded-xl px-3 py-2.5 text-muted-foreground hover:text-foreground">
                   {label}

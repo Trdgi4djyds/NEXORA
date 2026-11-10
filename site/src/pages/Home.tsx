@@ -51,7 +51,7 @@ export function Home() {
             title={["Ton site sur", "tous les écrans."]}
             lead="Téléphones, pliables, tablettes, ordinateurs, téléviseurs, montres et écrans de voiture : le Responsive Lab affiche ton site dans le cadre de chaque modèle, côte à côte. Ici, c’est ce site que tu vois."
           >
-            <a className="link-arrow" href="#/espaces/responsive">
+            <a className="link-arrow" href="/espaces/responsive">
               Découvrir le Responsive Lab <Icon name="nxArrowRight" size={15} stroke={2} />
             </a>
           </SectionHead>
@@ -78,7 +78,7 @@ export function Home() {
           />
           <PricingCards />
           <Reveal className="mt-10 flex justify-center">
-            <a className="link-arrow" href="#/tarifs/comparatif">
+            <a className="link-arrow" href="/tarifs/comparatif">
               Comparer toutes les fonctions <Icon name="nxArrowRight" size={15} stroke={2} />
             </a>
           </Reveal>
@@ -90,7 +90,7 @@ export function Home() {
             <SectionHead index="09" eyebrow={`Nouveautés ${latest[0]}`} title={[`${latest[1].title} :`, "ce qui change."]} lead={latest[1].intro} />
             <NewsCards items={latest[1].items} limit={6} />
             <Reveal className="mt-10 flex justify-center">
-              <a className="link-arrow" href="#/nouveautes">
+              <a className="link-arrow" href="/nouveautes">
                 Toutes les versions de NEXORA <Icon name="nxArrowRight" size={15} stroke={2} />
               </a>
             </Reveal>

@@ -72,7 +72,7 @@ function PlanCard({ plan, annual, ready, start, parrain, referralPct }: { plan: 
       )}
       <Button asChild size="lg" variant={featured ? "default" : "outline"} className="relative mt-7 w-full">
         {/* #076 : paiement dans le navigateur, page « Ma licence ». */}
-        <a href={free ? start : "#/licence?offre=pro"}>
+        <a href={free ? start : "/licence?offre=pro"}>
           {free ? "Commencer gratuitement" : `Passer à ${plan.name}`}
           <Icon name="nxArrowRight" size={16} stroke={2} />
         </a>
@@ -113,7 +113,7 @@ export function PricingCards() {
       <div className={cn("mx-auto grid gap-8 md:grid-cols-2", plans.length > 2 ? "max-w-6xl lg:grid-cols-3" : "max-w-[940px]")} data-glow>
         {plans.map((p, i) => (
           <Reveal key={p.id} delay={i * 90}>
-            <PlanCard plan={p} annual={annual} ready={ready} start={downloadUrl || "#/telecharger"} parrain={referral.enabled ? parrain : null} referralPct={referral.enabled ? referral.discount_pct : 0} />
+            <PlanCard plan={p} annual={annual} ready={ready} start={downloadUrl || "/telecharger"} parrain={referral.enabled ? parrain : null} referralPct={referral.enabled ? referral.discount_pct : 0} />
           </Reveal>
         ))}
       </div>

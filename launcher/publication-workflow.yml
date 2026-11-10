@@ -47,4 +47,4 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME#publication-}"
           jq -n --arg m "$(base64 -w0 publication/nexora.manifest.json)" --arg s "$(tr -d '\n' < publication/nexora.manifest.sig)" --arg t "$TAG" '{manifest_b64: $m, sig: $s, tag: $t}' > corps.json
-          curl -sS --max-time 60 -X POST -H 'content-type: application/json' --data @corps.json https://nexora.abrahamtogbonon0.workers.dev/security/publication
+          curl -sS --max-time 60 -X POST -H 'content-type: application/json' --data @corps.json https://nexoradevs.online/security/publication

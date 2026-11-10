@@ -7,7 +7,7 @@ import { sb, cloud } from './cloud.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const DECISIONS = { approve: 'Approuvé', changes: 'Changements demandés', comment: 'Commentaire' };
-export const webUrl = () => (window.__NEXORA_WEB__ ? `${location.origin}${location.pathname}` : (cloud.config && cloud.config.web_url) || 'https://nexora.abrahamtogbonon0.workers.dev/');
+export const webUrl = () => (window.__NEXORA_WEB__ ? `${location.origin}${location.pathname}` : (cloud.config && cloud.config.web_url) || 'https://nexoradevs.online/studio/');
 
 // ---------- Page de revue (personne qui reçoit le lien) ----------
 function overlay(html) {

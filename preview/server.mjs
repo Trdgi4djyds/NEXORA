@@ -329,7 +329,18 @@ export function nexoraPreview() {
         // directement sa page (sans redirection, que l'aperçu de Make ne suit pas toujours) ; l'application
         // NEXORA reste servie à « /?app » (lien « Ouvrir NEXORA web » du site, captures). La version publiée
         // n'est pas concernée : NEXORA web y reste à la racine (liens des e-mails, partages).
-        if (rel === "" && !(req.url ?? "").includes("?")) {
+        // NEXORA #096 : adresses réelles du site vitrine (/tarifs, /espaces/dev…, aussi sous /site/) et ses fichiers
+        // publics (site/public : icônes, manifeste, robots.txt…), servis comme à la publication.
+        // Manifeste de la PWA : écrit par la publication (scripts/site-ssg.mjs), repris de dist/ s'il existe.
+        const builtManifest = path.join(ROOT, "dist", "manifest.webmanifest")
+        const sitePublic = rel.replace(/^site\//, "") === "manifest.webmanifest" ? builtManifest : path.join(ROOT, "site", "public", rel.replace(/^site\//, ""))
+        if (rel && !rel.endsWith("/") && rel.split("/").every((x) => x && x !== "..") && fs.existsSync(sitePublic) && fs.statSync(sitePublic).isFile()) {
+          res.writeHead(200, { "Content-Type": sitePublic.endsWith(".webmanifest") ? "application/manifest+json" : MIME[path.extname(sitePublic)] || "application/octet-stream", "Cache-Control": "no-store" })
+          res.end(req.method === "HEAD" ? undefined : fs.readFileSync(sitePublic))
+          return
+        }
+        const siteRoute = /^(site\/)?(espaces|tarifs|telecharger|nouveautes|licence)(\/[a-z-]*)?\/?$/.test(rel) || /^site\/?$/.test(rel)
+        if ((rel === "" && !(req.url ?? "").includes("?")) || siteRoute) {
           const html = fs
             .readFileSync(path.join(ROOT, "site", "index.html"), "utf8")
             .replace('src="./src/main.tsx"', `src="${base}site/src/main.tsx"`)

@@ -30,6 +30,8 @@
     "launcher:ressources": "node scripts/launcher-ressources.mjs",
     "captures:lanceur": "node scripts/captures-lanceur.mjs",
     "captures": "node scripts/captures.mjs",
+    "indexnow": "node scripts/indexnow.mjs",
+    "pwa:assets": "node scripts/pwa-assets.mjs",
     "captures:admin": "node scripts/captures-admin.mjs",
     "format": "oxfmt vite.config.ts preview scripts",
     "supabase": "node scripts/supabase.mjs",

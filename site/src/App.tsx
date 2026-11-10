@@ -16,22 +16,23 @@ import { installGlow } from "./lib/glow"
 import { installDepth } from "./lib/depth"
 import { captureFromUrl } from "./lib/referral"
 import { loadRemote } from "./lib/remote"
-import { scrollToId, useRoute, type Route } from "./router"
+import { installLinks, scrollToId, useRoute, type Route } from "./router"
+import { headFor, SITE_URL } from "./seo"
 
-function page(route: Route): { key: string; title: string; node: ReactNode } {
+function page(route: Route): { key: string; node: ReactNode } {
   const [a, b] = route.parts
-  if (!a) return { key: "accueil", title: "NEXORA — Conçois, code et publie depuis une seule application", node: <Home /> }
-  if (a === "espaces" && !b) return { key: "espaces", title: "Les 9 espaces de NEXORA", node: <SpacesIndex /> }
+  if (!a) return { key: "accueil", node: <Home /> }
+  if (a === "espaces" && !b) return { key: "espaces", node: <SpacesIndex /> }
   if (a === "espaces" && b) {
     const space = spaceBySlug(b)
-    if (space) return { key: `espace-${space.slug}`, title: `${space.name} — NEXORA`, node: <SpacePage space={space} /> }
+    if (space) return { key: `espace-${space.slug}`, node: <SpacePage space={space} /> }
   }
-  if (a === "tarifs") return { key: "tarifs", title: "Tarifs — NEXORA", node: <Pricing /> }
-  if (a === "telecharger") return { key: "telecharger", title: "Télécharger NEXORA pour Windows", node: <Download /> }
+  if (a === "tarifs") return { key: "tarifs", node: <Pricing /> }
+  if (a === "telecharger") return { key: "telecharger", node: <Download /> }
   // NEXORA #076 : licence (compte, clé, appareils, abonnement) et vérification publique d'une clé.
-  if (a === "licence") return { key: "licence", title: "Ma licence — NEXORA Devs Toolbox", node: <Licence query={route.query} /> }
-  if (a === "nouveautes") return { key: "nouveautes", title: "Nouveautés — NEXORA", node: <News /> }
-  return { key: "introuvable", title: "Page introuvable — NEXORA", node: <NotFound /> }
+  if (a === "licence") return { key: "licence", node: <Licence query={route.query} /> }
+  if (a === "nouveautes") return { key: "nouveautes", node: <News /> }
+  return { key: "introuvable", node: <NotFound /> }
 }
 
 export function App() {
@@ -62,10 +63,15 @@ export function App() {
     return () => window.removeEventListener("keydown", on)
   }, [])
 
+  // NEXORA #096 : liens internes sans rechargement (adresses réelles, History API).
+  useEffect(() => installLinks(), [])
+
   useEffect(() => {
-    document.title = current.title
+    applyHead(route.path)
     // Section demandée dans l'adresse (#/tarifs/comparatif) : on y va après l'affichage, sinon en haut de page.
-    const target = route.parts[0] === "tarifs" || route.parts[0] === "licence" ? route.parts[1] : undefined
+    // #096 : ancre dans l'adresse (« /#faq ») au premier affichage.
+    const anchor = first.current && location.hash.length > 1 && !location.hash.includes("=") ? decodeURIComponent(location.hash.slice(1)) : undefined
+    const target = route.parts[0] === "tarifs" || route.parts[0] === "licence" ? route.parts[1] : anchor
     // #074 : sans section, retour en haut tout de suite, avant que la transition 3D ne saisisse la nouvelle page.
     if (!target) {
       window.scrollTo({ top: 0 })
@@ -93,4 +99,34 @@ export function App() {
       <CommandPalette open={palette} onClose={() => setPalette(false)} />
     </>
   )
+}
+
+/** NEXORA #096 : titre, description, adresse canonique, consigne aux robots et partage mis à jour à chaque navigation. */
+function applyHead(path: string) {
+  const h = headFor(path)
+  document.title = h.title
+  const meta = (attr: "name" | "property", key: string, value: string) => {
+    let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`)
+    if (!el) {
+      el = document.createElement("meta")
+      el.setAttribute(attr, key)
+      document.head.appendChild(el)
+    }
+    el.content = value
+  }
+  meta("name", "description", h.description)
+  meta("name", "robots", h.robots)
+  meta("property", "og:title", h.title)
+  meta("property", "og:description", h.description)
+  meta("property", "og:url", h.canonical)
+  meta("property", "og:type", h.ogType)
+  meta("name", "twitter:title", h.title)
+  meta("name", "twitter:description", h.description)
+  let link = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+  if (!link) {
+    link = document.createElement("link")
+    link.rel = "canonical"
+    document.head.appendChild(link)
+  }
+  link.href = h.canonical.startsWith(SITE_URL) ? h.canonical : `${SITE_URL}${path}`
 }
