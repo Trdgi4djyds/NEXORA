@@ -25,6 +25,7 @@ export function WatchFace() {
 /**
  * Disposition de la vitrine (pourcentages de la scène de 1200 × 700). #087 : plus aucun appareil ne se chevauche : le
  * téléviseur est au mur, au-dessus de la rangée posée sur le sol (MacBook, iPad, pliable, Galaxy, iPhone, montre).
+ * #102 : téléviseur posé sur un meuble bas, montre relevée pour que son bracelet touche le sol.
  */
 const LINEUP: { kind: DeviceKind; style: CSSProperties; screen?: ReactNode; z: number }[] = [
   { kind: "tv", style: { left: "28%", width: "44%", bottom: "53%" }, z: 1 },
@@ -33,7 +34,7 @@ const LINEUP: { kind: DeviceKind; style: CSSProperties; screen?: ReactNode; z: n
   { kind: "fold", style: { left: "65%", width: "14.5%", bottom: "2%" }, z: 3 },
   { kind: "galaxy", style: { left: "81.5%", width: "6.4%", bottom: "2%" }, z: 4 },
   { kind: "iphoneBlue", style: { left: "90%", width: "6.6%", bottom: "2%" }, z: 4 },
-  { kind: "watch", style: { left: "0%", width: "5.2%", bottom: "2%" }, z: 5, screen: <WatchFace /> },
+  { kind: "watch", style: { left: "0.6%", width: "4.6%", bottom: "8%" }, z: 5, screen: <WatchFace /> },
 ]
 
 /**
@@ -47,6 +48,8 @@ export function DeviceWall({ compact = false }: { compact?: boolean }) {
         <i className="halo inset-x-[15%] top-[5%] bottom-[25%] opacity-[0.1]" aria-hidden="true" />
         <div className="wall">
           <i className="wall-floor" aria-hidden="true" />
+          {/* #102 : meuble bas sous le pied du téléviseur. */}
+          <i className="wall-console" aria-hidden="true" />
           {LINEUP.map((d) => (
             <div key={d.kind} className="on-floor" style={{ ...d.style, zIndex: d.z }}>
               <Device kind={d.kind} screen={d.screen} low />

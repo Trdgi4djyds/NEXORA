@@ -33,8 +33,9 @@ export function Showcase() {
   const go = (step: number) => setIndex((i) => (i + step + order.length) % order.length)
   const s = order[index]
   const [value, caption] = SPACE_FACTS[s.id]
+  // #102 : overflow-x-clip : la feuille inclinée et l’icône de verre débordaient de 1 à 3 px sur téléphone.
   return (
-    <section className="section" ref={ref} id="vitrine" data-capture="vitrine">
+    <section className="section overflow-x-clip" ref={ref} id="vitrine" data-capture="vitrine">
       <div className="wrap-wide grid items-center gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-20">
         <div className="flex h-full flex-col">
           <Reveal>
