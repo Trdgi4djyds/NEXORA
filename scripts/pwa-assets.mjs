@@ -34,28 +34,28 @@ const page = await browser.newPage()
 // Image de partage (Open Graph, X, LinkedIn, messageries) : composition aux couleurs du site.
 const font = (f) => pathToFileURL(path.join(ROOT, "site", "src", "assets", "fonts", f)).href
 const logo = pathToFileURL(SRC).href
-const dots = ["#3048ff", "#0a9e9b", "#7340f0", "#1f8f52", "#e03c98", "#f5b400", "#e5352f", "#1d86e0", "#ff6a1f"]
+// NEXORA #099 (« Horizon ») : photo du hero voilée, titre fin en Urbanist, repère « /tag » en pilule, monochrome.
+const photo = pathToFileURL(path.join(ROOT, "site", "src", "assets", "photos", "horizon-hero.webp")).href
 await page.setViewport({ width: 1200, height: 630, deviceScaleFactor: 1 })
 const ogFile = path.join(ROOT, "node_modules", ".cache", "nexora-og.html")
 fs.mkdirSync(path.dirname(ogFile), { recursive: true })
 fs.writeFileSync(
   ogFile,
   `<!doctype html><html><head><meta charset="utf-8"><style>
-  @font-face{font-family:T;src:url(${font("inter-tight-var.woff2")});font-weight:400 900}
-  @font-face{font-family:I;src:url(${font("inter-var.woff2")});font-weight:400 700}
-  @font-face{font-family:M;src:url(${font("jetbrains-mono-normal.woff2")})}
-  *{margin:0;box-sizing:border-box}body{width:1200px;height:630px;background:#0b0b0c;color:#f4f4f1;font-family:I;position:relative;overflow:hidden}
-  .band{position:absolute;right:-120px;top:-140px;width:560px;height:560px;border-radius:50%;background:#d4ff3a;opacity:.12;filter:blur(90px)}
-  .wrap{position:absolute;inset:64px 72px}.brand{display:flex;align-items:center;gap:18px}.brand img{width:72px;height:72px}
-  .brand b{font:700 34px T;letter-spacing:-.02em}h1{margin-top:52px;font:700 84px/0.92 T;letter-spacing:-.045em;max-width:900px}
-  h1 span{color:#d4ff3a}.foot{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between}
-  .dots{display:flex;gap:10px}.dots i{width:26px;height:26px;border-radius:50%}.url{font:500 22px M;color:#a09f9a;letter-spacing:.04em}
-  .tag{display:inline-block;margin-top:26px;font:500 18px M;letter-spacing:.08em;text-transform:uppercase;color:#0b0b0c;background:#d4ff3a;padding:8px 14px;border-radius:999px}
-  </style></head><body><i class="band"></i><div class="wrap">
+  @font-face{font-family:U;src:url(${font("urbanist-var.woff2")});font-weight:300 700}
+  *{margin:0;box-sizing:border-box}body{width:1200px;height:630px;background:#050505 url(${photo}) 60% 40%/cover;color:#fff;font-family:U;position:relative;overflow:hidden}
+  body::after{content:"";position:absolute;inset:0;background:linear-gradient(to right,rgba(5,12,18,.88),rgba(5,12,18,.35) 70%),linear-gradient(to top,rgba(5,5,5,.7),transparent 50%)}
+  .wrap{position:absolute;inset:60px 72px;z-index:1}.brand{display:flex;align-items:center;gap:16px}.brand img{width:60px;height:60px;border-radius:50%}
+  .brand b{font:600 28px U;letter-spacing:.14em}.tag{display:inline-flex;margin-top:70px;font:500 20px U;border:1.5px solid rgba(255,255,255,.6);padding:6px 16px;border-radius:999px}
+  h1{margin-top:22px;font:400 78px/1.04 U;letter-spacing:-.03em;max-width:860px}
+  .foot{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between}
+  .url{display:inline-flex;align-items:center;gap:14px;font:500 22px U;background:#fff;color:#0a0a0a;padding:10px 12px 10px 24px;border-radius:999px}
+  .url i{width:34px;height:34px;border-radius:50%;background:#0a0a0a}.meta{font:500 20px U;color:rgba(255,255,255,.7)}
+  </style></head><body><div class="wrap">
   <div class="brand"><img src="${logo}"><b>NEXORA</b></div>
-  <h1>L’atelier complet du web, <span>installé sur ton PC.</span></h1>
-  <span class="tag">Design · Code · Tests · Apps · Windows</span>
-  <div class="foot"><div class="dots">${dots.map((c) => `<i style="background:${c}"></i>`).join("")}</div><span class="url">nexoradevs.online</span></div>
+  <span class="tag">/ NEXORA Devs Toolbox</span>
+  <h1>L’atelier complet du web, installé sur ton PC</h1>
+  <div class="foot"><span class="meta">Design · Code · Tests · Apps · Windows</span><span class="url">nexoradevs.online <i></i></span></div>
   </div></body></html>`,
 )
 // Fichier local (et non setContent) : une page vide ne peut pas lire les polices ni le logo du dépôt.

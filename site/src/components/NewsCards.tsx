@@ -25,7 +25,7 @@ export function NewsCards({ items, limit }: { items: NoteItem[]; limit?: number 
                 </span>
               )}
             </span>
-            <b className="display mt-5 block text-[21px] leading-tight font-bold tracking-[-0.025em]">{it.title}</b>
+            <b className="display mt-5 block text-[21px] leading-tight font-medium tracking-[-0.025em]">{it.title}</b>
             <span className="mt-2 block text-[14px] leading-relaxed text-muted-foreground">{it.text}</span>
           </>
         )

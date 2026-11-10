@@ -47,13 +47,13 @@ function PlanCard({ plan, annual, ready, start, parrain, referralPct }: { plan: 
           <span className={cn("sp-ic", featured && "solid")}>
             <Icon name={LOOK[plan.id] ?? "nxCrown"} size={19} />
           </span>
-          <h3 className="display text-[30px] leading-none font-bold tracking-[-0.04em]">{plan.name}</h3>
+          <h3 className="display text-[30px] leading-none font-medium tracking-[-0.04em]">{plan.name}</h3>
         </span>
         {plan.badge && <Badge variant={featured ? "solid" : "default"}>{honestBadge(plan.badge)}</Badge>}
       </div>
       <p className="relative mt-4 min-h-[48px] text-[14.5px] text-muted-foreground">{plan.description}</p>
       <div className={cn("relative mt-6 flex items-baseline gap-2 transition-opacity", !ready && "opacity-40")} aria-live="polite">
-        <b className={cn("display text-[clamp(60px,6vw,84px)] leading-[0.85] font-bold tracking-[-0.05em] tabular-nums", featured && "text-primary")}>{money(Math.round(shown))}</b>
+        <b className={cn("display text-[clamp(60px,6vw,84px)] leading-[0.85] font-normal tracking-[-0.03em] tabular-nums", featured && "text-primary")}>{money(Math.round(shown))}</b>
         <span className="text-muted-foreground">/ mois</span>
         {refOn && <s className="ml-1 text-[17px] text-muted-foreground/80 tabular-nums">{money(listPerMonth)}</s>}
       </div>
@@ -181,7 +181,7 @@ export function CompareTable() {
               </th>
               {plans.map((p) => (
                 <th scope="col" key={p.id} className={p.id === "pro" ? "featured" : ""}>
-                  <b className="display block text-[22px] font-bold tracking-[-0.03em]">{p.name}</b>
+                  <b className="display block text-[22px] font-medium tracking-[-0.03em]">{p.name}</b>
                   <span className="block text-[12.5px] font-normal text-muted-foreground">{p.price_month_cents ? `${money(p.price_month_cents)} / mois` : "0 $, sans limite de durée"}</span>
                 </th>
               ))}
@@ -226,7 +226,7 @@ function CompareList({ plans }: { plans: Plan[] }) {
       </div>
       {GROUPS.map(([group, rows]) => (
         <section key={group} className="panel overflow-hidden" aria-label={group}>
-          <h3 className="px-5 pt-5 pb-3 font-mono text-[12px] font-medium tracking-[0.08em] uppercase">{group}</h3>
+          <h3 className="px-5 pt-5 pb-3 text-[13px] font-medium">{group}</h3>
           <ul>
             {rows.map((row) => (
               <li key={row.label} className="border-t border-foreground/[0.06] px-5 py-3.5">

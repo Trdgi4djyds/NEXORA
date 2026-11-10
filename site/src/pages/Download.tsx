@@ -119,7 +119,7 @@ export function Download() {
           <ul className="panel divide-y divide-foreground/[0.08]">
             {REQUIREMENTS.map(([title, text], i) => (
               <Reveal as="li" className="grid gap-2 px-6 py-5 md:grid-cols-[220px_1fr] md:px-8" key={title} delay={i * 70}>
-                <span className="font-mono text-[12px] font-medium uppercase tracking-[0.08em] text-primary">{title}</span>
+                <span className="text-[13px] font-medium text-primary">{title}</span>
                 <b className="text-[15.5px] font-medium">{text}</b>
               </Reveal>
             ))}

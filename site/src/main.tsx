@@ -1,12 +1,13 @@
 // NEXORA #060 : site vitrine de NEXORA, servi par Vite sous /site/ dans l'aperçu et publié dans dist/site/
 // (scripts/build-web.mjs). #085 : direction « Néon » (sombre, Poppins, 3D ; Tailwind CSS 4 et
 // shadcn/ui), styles/neon.css ; #088 : couleurs du logo. #092 : direction « Signal », styles/signal.css (sombre et clair alternés,
-// une couleur par espace, accent citron vert, grotesque serrée).
+// une couleur par espace, accent citron vert, grotesque serrée). #099 : direction « Horizon », styles/horizon.css (tout sombre,
+// photo plein cadre, verre dépoli, monochrome, Urbanist fine).
 import { StrictMode } from "react"
 import { createRoot, hydrateRoot } from "react-dom/client"
 import { App } from "./App"
 import { BASE, migrateHashRoute } from "./router"
-import "./styles/signal.css"
+import "./styles/horizon.css"
 
 // NEXORA #096 : anciennes adresses « #/… » converties (ou envoyées vers NEXORA web, /studio/) avant le premier rendu.
 const before = location.pathname

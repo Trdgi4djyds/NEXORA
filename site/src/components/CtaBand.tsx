@@ -1,19 +1,11 @@
+import photo from "../assets/photos/horizon-crepuscule.webp"
 import { Reveal } from "../lib/motion"
 import { MainButton, SecondButton } from "./Download"
-import { CITIES, Globe, type GlobeArc, type GlobeMarker } from "./Globe"
 import { Words } from "./SectionHead"
 
-const MARKERS: GlobeMarker[] = [CITIES.cotonou, CITIES.abidjan, CITIES.dakar, CITIES.lagos, CITIES.paris, CITIES.montreal, CITIES.saopaulo, CITIES.johannesburg].map((at) => ({ at }))
-const ARCS: GlobeArc[] = [
-  { from: CITIES.cotonou, to: CITIES.paris },
-  { from: CITIES.abidjan, to: CITIES.montreal },
-  { from: CITIES.dakar, to: CITIES.saopaulo },
-  { from: CITIES.lagos, to: CITIES.johannesburg },
-]
-
 /**
- * Appel final. #092 (« Signal ») : aplat citron vert (ambiance .lime), titre à l'encre en très grand, boutons à l'encre ;
- * le globe animé et le sol quadrillé sont dessinés à l'encre (--neon de l'ambiance).
+ * Appel final. #099 (« Horizon ») : grande photo de montagnes au crépuscule (Unsplash) dans un cadre aux coins
+ * légèrement arrondis, voile sombre, titre fin et boutons blancs. Remplace l'aplat citron vert et le globe de « Signal ».
  */
 export function CtaBand({
   title = "Ouvre ton premier projet aujourd’hui.",
@@ -23,27 +15,25 @@ export function CtaBand({
   text?: string
 }) {
   return (
-    <section className="lime relative overflow-hidden pt-24 md:pt-32" data-capture="appel" data-light>
-      <div className="floor opacity-60" aria-hidden="true">
-        <i />
-      </div>
-      <div className="wrap-wide relative">
-        <Reveal className="grid items-end gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
-          <h2 className="title-1 words max-w-[14ch]">
-            <Words text={title} />
-          </h2>
-          <div>
-            <p className="lead max-w-md">{text}</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <MainButton size="lg" />
-              <SecondButton size="lg" />
+    <section className="section-tight" data-capture="appel">
+      <div className="wrap-wide">
+        <div className="cta-photo relative overflow-hidden rounded-md">
+          <img src={photo} alt="" loading="lazy" width={2000} height={1125} aria-hidden="true" />
+          <Reveal className="relative z-[1] flex min-h-[460px] flex-col justify-end gap-10 p-7 md:min-h-[520px] md:p-12 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-[640px]">
+              <span className="eyebrow border-white/50 text-white">commencer</span>
+              <h2 className="title-1 words mt-6 text-white">
+                <Words text={title} />
+              </h2>
             </div>
-          </div>
-        </Reveal>
-      </div>
-      <div className="relative left-1/2 mt-14 h-[clamp(200px,26vw,340px)] w-[min(900px,120vw)] -translate-x-1/2 overflow-hidden" aria-hidden="true">
-        <div className="absolute top-0 left-1/2 aspect-square w-full -translate-x-1/2">
-          <Globe markers={MARKERS} arcs={ARCS} tilt={-0.18} start={-0.35} density={20000} />
+            <div className="max-w-sm">
+              <p className="text-[16px] leading-relaxed text-white/75">{text}</p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <MainButton size="lg" />
+                <SecondButton size="lg" className="border-white/30 bg-white/[0.08] text-white hover:bg-white hover:text-black" />
+              </div>
+            </div>
+          </Reveal>
         </div>
       </div>
     </section>

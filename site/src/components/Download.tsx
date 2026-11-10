@@ -9,7 +9,7 @@ const sz = (size: "sm" | "md" | "lg"): Size => (size === "md" ? "default" : size
 /**
  * Bouton de téléchargement : lien direct vers la version Windows publiée (réglage « lien de téléchargement » de
  * NEXORA, lu sur le serveur) ; tant qu'aucune version n'est publiée, il mène à la page Télécharger.
- * #085 : bouton shadcn/ui plein (#088 : rose du logo).
+ * #085 : bouton shadcn/ui plein. #099 (« Horizon ») : pilule blanche, libellé puis pastille noire à flèche.
  */
 export function DownloadButton({
   size = "md",
@@ -26,8 +26,10 @@ export function DownloadButton({
   return (
     <Button asChild size={sz(size)} variant={variant} className={className}>
       <a href={downloadUrl || "/telecharger"} rel={downloadUrl ? "noopener" : undefined}>
-        <Icon name="download" size={size === "sm" ? 15 : 17} stroke={2} />
         <span>{label}</span>
+        <span className="btn-orb" aria-hidden="true">
+          <Icon name="download" size={size === "lg" ? 17 : 14} stroke={2} />
+        </span>
       </a>
     </Button>
   )

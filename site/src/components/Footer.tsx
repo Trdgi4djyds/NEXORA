@@ -17,13 +17,13 @@ function goFaq(e: MouseEvent<HTMLAnchorElement>) {
 }
 
 const col = "flex flex-col gap-2.5 text-[14px]"
-const head = "mb-1.5 font-mono text-[12px] font-medium uppercase tracking-[0.08em] text-foreground"
+const head = "mb-1.5 text-[13px] font-medium text-foreground/60"
 const link = "text-muted-foreground transition-colors hover:text-foreground"
 
 export function Footer() {
   const { supportEmail } = useRemote()
   return (
-    <footer className="relative overflow-hidden pt-20" data-capture="pied">
+    <footer className="relative overflow-hidden border-t border-foreground/[0.08] pt-20" data-capture="pied">
       <div className="wrap-wide grid gap-12 lg:grid-cols-[1.4fr_repeat(4,1fr)]">
         <div className="max-w-sm">
           <a href="/" aria-label="NEXORA, accueil du site">
@@ -34,8 +34,8 @@ export function Footer() {
             <span className="inline-flex items-center gap-2 rounded-full border border-foreground/10 px-3 py-1.5 text-[12.5px] text-muted-foreground">
               <Icon name="display" size={14} /> Windows 10 et 11
             </span>
-            <span className="inline-flex items-center gap-2 rounded-full bg-lime px-3 py-1.5 text-[12.5px] font-medium text-ink">
-              <i className="dot live bg-ink" /> Version {APP_VERSION}
+            <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[12.5px] font-medium text-black">
+              <i className="dot live bg-black" /> Version {APP_VERSION}
             </span>
           </div>
         </div>
@@ -91,7 +91,7 @@ export function Footer() {
         <span>© {new Date().getFullYear()} NEXORA. Tous droits réservés.</span>
         <span>Photos : Unsplash · Cadres d’appareils : Meta (via fastlane) et Android Open Source Project · Logos : SVG Logos, marques de leurs titulaires</span>
       </div>
-      {/* Logotype en très grand, en grotesque serrée, coupé par le bas de la page (décoratif). */}
+      {/* Logotype en très grand et fin (#099), coupé par le bas de la page (décoratif). */}
       <div className="ftr-word" aria-hidden="true">
         NEXORA
       </div>

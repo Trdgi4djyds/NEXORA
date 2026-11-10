@@ -5,9 +5,10 @@ import { APP_VERSION } from "../lib/product"
 import { cn } from "../lib/utils"
 import type { Route } from "../router"
 import { Brand } from "./Brand"
-import { MainButton, SecondButton } from "./Download"
+import { MainButton } from "./Download"
 
-const navLink = "relative z-[1] inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-[14px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+// #099 (« Horizon ») : navigation en pilule de verre au centre, lien de la page ouverte en blanc (.nav-link).
+const navLink = "nav-link"
 
 export function Header({ route, onSearch }: { route: Route; onSearch: () => void }) {
   const [mega, setMega] = useState(false)
@@ -89,39 +90,46 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
 
   return (
     <header ref={ref} className={cn("hdr", (scrolled || mega || mobile) && "solid")}>
-      <div className="wrap-wide flex h-16 items-center gap-6">
-        <a href="/" className="shrink-0" aria-label="NEXORA, accueil du site">
+      <div className="wrap-wide grid h-[76px] grid-cols-[1fr_auto] items-center gap-6 lg:grid-cols-[1fr_auto_1fr]">
+        <a href="/" className="shrink-0 justify-self-start" aria-label="NEXORA, accueil du site">
           <Brand />
         </a>
-        <nav className="relative hidden items-center lg:flex" aria-label="Navigation principale" onMouseLeave={() => setHl((h) => ({ ...h, on: false }))}>
+        <nav className="nav-pill hidden lg:flex" aria-label="Navigation principale" onMouseLeave={() => setHl((h) => ({ ...h, on: false }))}>
           <i className={cn("nav-hl", hl.on && "on")} style={{ transform: `translateX(${hl.x}px)`, width: hl.w }} aria-hidden="true" />
-          <button type="button" className={cn(navLink, (mega || at === "espaces") && "text-foreground")} aria-expanded={mega} aria-controls="mega-espaces" onClick={() => setMega((v) => !v)} onMouseEnter={track}>
+          <a className={navLink} href="/" aria-current={at === "" ? "page" : undefined} onMouseEnter={track}>
+            Accueil
+          </a>
+          <button type="button" className={cn(navLink, (mega || at === "espaces") && "on")} aria-expanded={mega} aria-controls="mega-espaces" onClick={() => setMega((v) => !v)} onMouseEnter={track}>
             Espaces
-            <Icon name="chevronDown" size={15} stroke={2} className={cn("transition-transform duration-300", mega && "rotate-180 text-primary")} />
+            <Icon name="chevronDown" size={14} stroke={2} className={cn("transition-transform duration-300", mega && "rotate-180")} />
           </button>
-          <a className={cn(navLink, at === "tarifs" && "text-primary")} href="/tarifs" aria-current={current("tarifs")} onMouseEnter={track}>
+          <a className={navLink} href="/tarifs" aria-current={current("tarifs")} onMouseEnter={track}>
             Tarifs
           </a>
-          <a className={cn(navLink, at === "nouveautes" && "text-primary")} href="/nouveautes" aria-current={current("nouveautes")} onMouseEnter={track}>
+          <a className={navLink} href="/nouveautes" aria-current={current("nouveautes")} onMouseEnter={track}>
             Nouveautés
           </a>
+          <a className={navLink} href="/telecharger" aria-current={current("telecharger")} onMouseEnter={track}>
+            Télécharger
+          </a>
+          <a className={navLink} href="/licence" aria-current={current("licence")} onMouseEnter={track}>
+            Licence
+          </a>
         </nav>
-        <div className="ml-auto flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 justify-self-end">
           <button
             type="button"
-            className="hidden h-9 items-center gap-2.5 rounded-full border border-foreground/10 bg-foreground/[0.03] pr-1.5 pl-3.5 text-[13px] text-muted-foreground transition hover:border-primary/50 hover:text-foreground md:inline-flex"
+            className="hidden size-10 place-items-center rounded-full border border-white/16 bg-white/[0.07] text-white/85 backdrop-blur-md transition hover:bg-white hover:text-black md:grid"
             onClick={onSearch}
             aria-label="Rechercher dans le site (Ctrl K)"
+            title="Rechercher (Ctrl K)"
           >
-            <Icon name="search" size={15} />
-            <span>Rechercher</span>
-            <kbd className="kbd">Ctrl K</kbd>
+            <Icon name="search" size={16} />
           </button>
-          <SecondButton size="sm" className="hidden xl:inline-flex" />
           <MainButton size="sm" className="hidden sm:inline-flex" />
           <button
             type="button"
-            className="grid size-10 place-items-center rounded-full border border-foreground/10 text-foreground lg:hidden"
+            className="grid size-10 place-items-center rounded-full border border-white/16 bg-white/[0.07] text-white backdrop-blur-md lg:hidden"
             aria-expanded={mobile}
             aria-controls="menu-mobile"
             aria-label={mobile ? "Fermer le menu" : "Ouvrir le menu"}
@@ -138,8 +146,8 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
           <div className="wrap-wide py-7">
             <div className="grid grid-cols-3 gap-2">
               {SPACES.map((s, i) => (
-                <a key={s.id} href={spaceHref(s)} data-space={s.id} className="mega-item group flex items-center gap-4 rounded-2xl border border-transparent p-3.5 transition hover:border-foreground/10 hover:bg-foreground/[0.04]" style={{ animationDelay: `${i * 25}ms` }}>
-                  <span className="sp-ic transition group-hover:bg-u group-hover:text-u-ink">
+                <a key={s.id} href={spaceHref(s)} data-space={s.id} className="mega-item group flex items-center gap-4 rounded-lg border border-transparent p-3.5 transition hover:border-foreground/10 hover:bg-foreground/[0.04]" style={{ animationDelay: `${i * 25}ms` }}>
+                  <span className="sp-ic transition group-hover:bg-foreground group-hover:text-background">
                     <Icon name={s.icon} size={19} />
                   </span>
                   <span className="flex min-w-0 flex-col">
@@ -153,7 +161,7 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
               <a href="/espaces" className="link-arrow">
                 Voir les 9 espaces <Icon name="nxArrowRight" size={15} stroke={2} />
               </a>
-              <a href="/nouveautes" className="inline-flex items-center gap-2 text-[13px] text-muted-foreground transition hover:text-primary">
+              <a href="/nouveautes" className="inline-flex items-center gap-2 text-[13px] text-muted-foreground transition hover:text-foreground">
                 <Icon name="sparkle" size={15} /> Nouveautés de la version {APP_VERSION}
               </a>
             </div>
@@ -167,7 +175,7 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
             <p className="eyebrow mb-3">Espaces</p>
             <div className="grid gap-1.5 sm:grid-cols-2">
               {SPACES.map((s) => (
-                <a key={s.id} href={spaceHref(s)} data-space={s.id} className="flex items-center gap-3 rounded-xl border border-foreground/[0.06] bg-card px-3 py-2.5 text-[15px] font-medium">
+                <a key={s.id} href={spaceHref(s)} data-space={s.id} className="flex items-center gap-3 rounded-lg border border-foreground/[0.08] bg-card px-3 py-2.5 text-[15px] font-medium">
                   <span className="sp-ic sm">
                     <Icon name={s.icon} size={16} />
                   </span>

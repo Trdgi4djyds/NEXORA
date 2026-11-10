@@ -1,7 +1,6 @@
 import type { CSSProperties, ReactNode } from "react"
 import { Reveal } from "../lib/motion"
 import { cn } from "../lib/utils"
-import { Backdrop } from "./Backdrop"
 
 /** Titre découpé en mots qui montent l'un après l'autre quand la section apparaît. */
 export function Words({ text, from = 0 }: { text: string; from?: number }) {
@@ -21,9 +20,8 @@ export function Words({ text, from = 0 }: { text: string; from?: number }) {
 }
 
 /**
- * En-tête de section. #085 (« Néon ») : repère à la couleur d'accent (numéro, nom, filet qui se trace), titre mot à
- * mot dont le second ton est gris pour les h2 et à la couleur d'accent pour les titres de page (h1 ; #088 : rose du logo) ; chapeau à droite (`split`),
- * dessous (`left`) ou centré (`center`).
+ * En-tête de section. #099 (« Horizon ») : repère « /tag » en pilule à contour (le numéro n'est plus affiché), titre
+ * fin mot à mot dont le second ton est gris ; chapeau à droite (`split`), dessous (`left`) ou centré (`center`).
  */
 export function SectionHead({
   index,
@@ -80,11 +78,13 @@ export function SectionHead({
   )
 }
 
-/** En-tête des pages intérieures (#086) : décor technique (quadrillage éclairé, halos qui dérivent, circuit), titre de page. */
+/**
+ * En-tête des pages intérieures. #099 (« Horizon ») : la photo du hero, très voilée, passe sous l'en-tête et se fond
+ * dans le noir (.page-photo) ; remplace le décor technique (quadrillage, halos, circuit) des directions précédentes.
+ */
 export function PageHero({ children, className = "", capture = "haut" }: { children: ReactNode; className?: string; capture?: string }) {
   return (
-    <section className={cn("relative overflow-hidden pt-16 pb-14 md:pt-24 md:pb-20", className)} data-capture={capture} data-light>
-      <Backdrop variant="page" />
+    <section className={cn("page-photo relative overflow-hidden pt-40 pb-14 md:pt-48 md:pb-20", className)} data-capture={capture}>
       <div className="wrap relative">{children}</div>
     </section>
   )

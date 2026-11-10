@@ -37,7 +37,9 @@ function serve(dir, port) {
   const server = http.createServer((req, res) => {
     let rel = decodeURIComponent(new URL(req.url, "http://x").pathname)
     if (rel.endsWith("/")) rel += "index.html"
-    const file = path.join(dir, rel)
+    let file = path.join(dir, rel)
+    // NEXORA #099 : pages pré-générées du site (#096) servies sans « .html », comme par Cloudflare.
+    if ((!fs.existsSync(file) || fs.statSync(file).isDirectory()) && fs.existsSync(`${file}.html`)) file = `${file}.html`
     if (!file.startsWith(dir) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       res.writeHead(404).end()
       return
@@ -80,27 +82,30 @@ async function koraShots() {
 
 // NEXORA #086 : le site vitrine lui-même, affiché dans les maquettes d'appareils du site (« site-<appareil>.webp »).
 // Captures statiques : animations coupées (« Réduire les animations »), bandeau d'annonce masqué.
+// #099 : vraies adresses du site, publié à la racine de dist/ depuis le #096 (« site/#/… » répondait 404).
 const SITE_SHOTS = [
-  ["site-iphone", "#/", 402, 874, 2],
-  ["site-galaxy", "#/espaces/apps", 412, 915, 2],
-  ["site-pixel", "#/espaces/responsive", 427, 952, 2],
-  ["site-pliable", "#/espaces", 692, 717, 2],
-  ["site-ipad", "#/", 1024, 1366, 1],
-  ["site-tablette", "#/nouveautes", 1280, 800, 1],
-  ["site-macbook", "#/", 1536, 960, 1],
-  ["site-tv", "#/", 1920, 1080, 1],
-  ["site-voiture", "#/espaces/securite", 1024, 768, 1],
-  ["site-bureau", "#/", 1440, 900, 1],
+  ["site-iphone", "/", 402, 874, 2],
+  ["site-galaxy", "/espaces/apps", 412, 915, 2],
+  ["site-pixel", "/espaces/responsive", 427, 952, 2],
+  ["site-pliable", "/espaces", 692, 717, 2],
+  ["site-ipad", "/", 1024, 1366, 1],
+  ["site-tablette", "/nouveautes", 1280, 800, 1],
+  ["site-macbook", "/", 1536, 960, 1],
+  ["site-tv", "/", 1920, 1080, 1],
+  ["site-voiture", "/espaces/securite", 1024, 768, 1],
+  ["site-bureau", "/", 1440, 900, 1],
 ]
 async function siteShots() {
   const browser = await puppeteer.launch({ executablePath: CHROMIUM, headless: true, args: ["--no-sandbox", "--disable-gpu"] })
   try {
-    for (const [name, hash, w, h, scale] of SITE_SHOTS) {
+    for (const [name, route, w, h, scale] of SITE_SHOTS) {
       const page = await browser.newPage()
       await page.setViewport({ width: w, height: h, deviceScaleFactor: scale })
       await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }])
       await page.evaluateOnNewDocument(() => localStorage.setItem("nexora-site-annonce", "076-toolbox"))
-      await page.goto(`${WEB}site/${hash}`, { waitUntil: "networkidle0", timeout: 60000 }).catch(() => {})
+      const res = await page.goto(`${WEB}${route.slice(1)}`, { waitUntil: "networkidle0", timeout: 60000 }).catch(() => null)
+      // #099 : une page absente ne doit jamais devenir un écran de la vitrine.
+      if (!res || !res.ok()) throw new Error(`${name} : ${route} a répondu ${res ? res.status() : "sans réponse"}`)
       await page.evaluate(() => document.fonts?.ready)
       await new Promise((r) => setTimeout(r, 1200))
       const png = path.join(os.tmpdir(), `${name}.png`)
@@ -127,7 +132,7 @@ try {
   if (!dark && (!wanted.length || wanted.includes("kora"))) await koraShots()
   if (!dark && (!wanted.length || wanted.includes("site"))) await siteShots()
   for (const step of PLAN.filter((p) => !wanted.length || wanted.includes(p.name ?? p.slug))) {
-    const args = ["scripts/captures.mjs", step.slug, "--compte", "demo", "--taille", "1600x1000", "--sans-notifications", "--label", `vitrine-${step.name ?? step.slug}${dark ? "-sombre" : ""}`, ...(dark ? ["--theme", "sombre"] : []), ...(step.web ? ["--url", WEB] : []), ...step.args]
+    const args = ["scripts/captures.mjs", step.slug, "--compte", "demo", "--taille", "1600x1000", "--sans-notifications", "--label", `vitrine-${step.name ?? step.slug}${dark ? "-sombre" : ""}`, ...(dark ? ["--theme", "sombre"] : []), ...(step.web ? ["--url", `${WEB}studio/`] : []), ...step.args]
     const res = await run("node", args, { ...process.env, NX_DEMO_OFFRE: "pro" })
     const png = /captures\/\S+\.png/.exec(res.stdout || "")?.[0]
     if (res.status !== 0 || !png) {

@@ -4,19 +4,16 @@ import { SPACE_BY_ID } from "../data/spaces"
 import { AI } from "../data/stack"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
-import { Circuit } from "./Backdrop"
 import { Logo } from "./Logo"
 import { Screen, Window } from "./Screen"
 import { SectionHead } from "./SectionHead"
 
-/** Assistant IA (#086) : panneau à liseré rose, logos officiels des fournisseurs, usages par espace, vraie capture du Dev Lab. */
+/** Assistant IA (#086) : panneau noir (#099), logos officiels des fournisseurs, usages par espace, vraie capture du Dev Lab. */
 export function AiSection() {
   return (
-    <section className="section light" data-capture="ia">
+    <section className="section" data-capture="ia">
       <div className="wrap">
-        <div className="panel-hi relative overflow-hidden rounded-[36px] px-6 py-12 md:px-14 md:py-16">
-          <Circuit seed={31} count={12} className="opacity-70" />
-          <i className="halo top-[-200px] right-[-120px] h-[420px] w-[520px] opacity-[0.12]" aria-hidden="true" />
+        <div className="panel-hi relative overflow-hidden px-6 py-12 md:px-14 md:py-16">
           <div className="relative">
             <SectionHead
               index="05"

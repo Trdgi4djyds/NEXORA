@@ -7,7 +7,7 @@ import { SectionHead } from "./SectionHead"
 /** « Pour qui ? » : quatre cartes à photo (noir et blanc, en couleur au survol). */
 export function Personas() {
   return (
-    <section className="section" data-capture="pour-qui">
+    <section className="section light" data-capture="pour-qui">
       <div className="wrap">
         <SectionHead
           index="06"
@@ -22,10 +22,10 @@ export function Personas() {
                 <span className="relative block aspect-[4/3] overflow-hidden">
                   <img src={p.photo} alt={p.alt} loading="lazy" width={960} height={720} className="h-full w-full object-cover grayscale transition duration-700 group-hover:scale-105 group-hover:grayscale-0" />
                   <span className="absolute inset-0 bg-black/30 transition group-hover:bg-transparent" />
-                  <span className="absolute top-3 left-3 rounded-full bg-lime px-2.5 py-1 font-mono text-[11.5px] font-medium tabular-nums text-ink">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="absolute top-3 left-3 rounded-full bg-lime px-2.5 py-1 text-[13px] font-mediumtabular-nums text-ink">{String(i + 1).padStart(2, "0")}</span>
                 </span>
                 <span className="flex flex-1 flex-col p-6">
-                  <b className="display text-[24px] leading-tight font-bold tracking-[-0.03em]">{p.title}</b>
+                  <b className="display text-[24px] leading-tight font-medium tracking-[-0.03em]">{p.title}</b>
                   <span className="mt-2 flex-1 text-[14px] leading-relaxed text-muted-foreground">{p.text}</span>
                   <span className="link-arrow mt-5 text-[14px]">
                     {p.link} <Icon name="nxArrowRight" size={15} stroke={2} />

@@ -146,7 +146,7 @@ function KeyCard({ lic }: { lic: Lic }) {
           </span>
         )}
       </div>
-      <small className="relative mt-6 block font-mono text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Ta clé de licence</small>
+      <small className="relative mt-6 block text-[13px] font-medium text-muted-foreground">Ta clé de licence</small>
       <code className="hud relative mt-3 block px-5 py-4 text-[clamp(16px,2.2vw,24px)] font-semibold tracking-[0.08em] break-all text-primary" aria-label="Clé de licence">
         {lic.key}
       </code>

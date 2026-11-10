@@ -1,29 +1,27 @@
 import { FRAMEWORKS, TOOLS } from "../data/stack"
-import { TechChip } from "./Logo"
+import { Logo } from "./Logo"
 
-/** Bandeau des frameworks et outils reconnus, avec leurs logos officiels (deux rangées en sens contraire, pause au survol). */
+/**
+ * Frameworks et outils reconnus. #099 (« Horizon ») : une seule rangée de logos officiels grisés qui défile lentement
+ * (pause au survol, logo en couleur au survol), comme la rangée de logos de la référence ; légende discrète dessous.
+ */
 export function Marquee() {
+  const row = [...FRAMEWORKS, ...TOOLS]
   return (
-    <section className="relative border-t border-foreground/[0.08] py-16" aria-labelledby="tech-title">
-      <div className="wrap mb-10 flex flex-col items-center gap-3 text-center">
-        <p className="eyebrow" id="tech-title">
-          Ton stack, reconnu
-        </p>
-        <p className="max-w-[640px] text-[15px] text-muted-foreground">NEXORA reconnaît ton framework à l’ouverture du projet et installe les outils qui manquent, depuis leurs sources officielles.</p>
+    <section className="relative pt-36 pb-16 lg:pt-44" aria-labelledby="tech-title" data-capture="stack">
+      <div className="marquee slow">
+        <ul className="marquee-track items-center">
+          {[...row, ...row].map((t, i) => (
+            <li key={i} aria-hidden={i >= row.length || undefined} className="logo-mono mx-7 inline-flex items-center gap-3 text-[17px] font-medium whitespace-nowrap text-white/55 md:mx-10">
+              <Logo name={t.logo} size={24} />
+              <span>{t.name}</span>
+            </li>
+          ))}
+        </ul>
       </div>
-      <div className="flex flex-col gap-4">
-        {[FRAMEWORKS, TOOLS].map((row, r) => (
-          <div className={`marquee${r % 2 ? " rev" : ""}`} key={r}>
-            <ul className="marquee-track">
-              {[...row, ...row].map((t, i) => (
-                <li key={i} aria-hidden={i >= row.length || undefined}>
-                  <TechChip name={t.name} logo={t.logo} />
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+      <p className="wrap mt-10 text-center text-[14px] text-muted-foreground" id="tech-title">
+        Ton stack, reconnu : NEXORA identifie ton framework à l’ouverture du projet et installe les outils qui manquent, depuis leurs sources officielles.
+      </p>
     </section>
   )
 }

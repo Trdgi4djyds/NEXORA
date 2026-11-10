@@ -64,7 +64,7 @@ export async function buildSite({ ROOT, OUT_DIR, csp, noIndex = false, define = 
 
   // Polices du titre et du texte préchargées (premier affichage plus rapide, moins de décalage de mise en page).
   const assets = fs.readdirSync(path.join(OUT_DIR, "assets"))
-  const fonts = ["inter-tight-var", "inter-var"].map((n) => assets.find((f) => f.startsWith(`${n}-`) && f.endsWith(".woff2"))).filter(Boolean)
+  const fonts = ["urbanist-var"].map((n) => assets.find((f) => f.startsWith(`${n}-`) && f.endsWith(".woff2"))).filter(Boolean)
   const preloads = fonts.map((f) => `<link rel="preload" href="/assets/${f}" as="font" type="font/woff2" crossorigin />`)
   const verify = [
     settings.googleSiteVerification && `<meta name="google-site-verification" content="${esc(settings.googleSiteVerification)}" />`,
@@ -139,7 +139,7 @@ export async function buildSite({ ROOT, OUT_DIR, csp, noIndex = false, define = 
     <meta http-equiv="Content-Security-Policy" content="${csp}" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
-    <meta name="theme-color" content="#0b0b0c" />
+    <meta name="theme-color" content="#050505" />
     <title>Hors ligne — NEXORA</title>
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     ${css}
@@ -302,8 +302,8 @@ ${latest[1].items.map((it) => `- ${it.title} : ${it.text}`).join("\n")}
         display: "standalone",
         display_override: ["window-controls-overlay", "standalone", "minimal-ui"],
         orientation: "any",
-        theme_color: "#0b0b0c",
-        background_color: "#0b0b0c",
+        theme_color: "#050505",
+        background_color: "#050505",
         categories: ["developer", "productivity", "utilities"],
         prefer_related_applications: false,
         launch_handler: { client_mode: ["navigate-existing", "auto"] },

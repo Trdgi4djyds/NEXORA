@@ -1,5 +1,4 @@
 import type { CSSProperties } from "react"
-import { Backdrop } from "../components/Backdrop"
 import { CtaBand } from "../components/CtaBand"
 import { DeviceGallery, DeviceWall } from "../components/DeviceWall"
 import { MainButton } from "../components/Download"
@@ -19,8 +18,7 @@ function DeviceCatalog() {
   const names = DEVICE_LIST.map((d) => d.name)
   const half = Math.ceil(names.length / 2)
   return (
-    <section className="section-tight relative overflow-hidden" data-capture="appareils" data-light>
-      <Backdrop variant="soft" />
+    <section className="section-tight relative overflow-hidden" data-capture="appareils">
       <div className="wrap relative">
         <SectionHead
           eyebrow="Le catalogue"
@@ -108,10 +106,10 @@ export function SpacePage({ space }: { space: Space }) {
   const next = SPACES[(idx + 1) % SPACES.length]
   return (
     <div data-space={space.id}>
-      <section className="relative overflow-hidden pt-14 pb-16 md:pt-20 md:pb-24" data-capture="haut" data-light>
-        <Backdrop variant="page" />
+      {/* #099 : haut de page photographique voilé, sous l'en-tête (comme les autres pages intérieures). */}
+      <section className="page-photo relative overflow-hidden pt-36 pb-16 md:pt-44 md:pb-24" data-capture="haut">
         <div className="wrap relative">
-          <a href="/espaces" className="rise inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground transition hover:text-primary">
+          <a href="/espaces" className="rise inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground transition hover:text-foreground">
             <Icon name="chevronLeft" size={15} stroke={2} /> Tous les espaces
           </a>
           <div className="mt-8 grid items-end gap-10 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
@@ -181,7 +179,7 @@ export function SpacePage({ space }: { space: Space }) {
                   </span>
                   {f.plan ? <Badge variant="outline">{PLAN_LABEL[f.plan]}</Badge> : space.trial ? <Badge variant="outline">{space.trial.tag}</Badge> : <span className="text-[12px] font-semibold tabular-nums text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>}
                 </span>
-                <h3 className="display mt-6 text-[23px] leading-tight font-bold tracking-[-0.03em]">{f.title}</h3>
+                <h3 className="display mt-6 text-[23px] leading-tight font-medium tracking-[-0.03em]">{f.title}</h3>
                 <p className="mt-2 text-[14.5px] leading-relaxed text-muted-foreground">{f.text}</p>
               </Reveal>
             ))}
@@ -224,12 +222,12 @@ export function SpacePage({ space }: { space: Space }) {
         <div className="wrap grid gap-6 md:grid-cols-2" data-glow>
           {[prev, next].map((s, i) => (
             <a key={s.id} href={spaceHref(s)} data-space={s.id} className={cn("glow lift tile flex flex-col gap-3 p-7", i && "md:items-end md:text-right")}>
-              <small className="font-mono text-[12px] font-medium tracking-[0.06em] text-muted-foreground uppercase">{i ? "Espace suivant" : "Espace précédent"}</small>
+              <small className="text-[13px] font-medium text-muted-foreground">{i ? "Espace suivant" : "Espace précédent"}</small>
               <span className={cn("flex items-center gap-3", i && "md:flex-row-reverse")}>
                 <span className="sp-ic">
                   <Icon name={s.icon} size={19} />
                 </span>
-                <b className="display text-[28px] font-bold tracking-[-0.035em]">{s.name}</b>
+                <b className="display text-[28px] font-medium tracking-[-0.035em]">{s.name}</b>
                 <span className="go-ring">
                   <Icon name={i ? "nxArrowRight" : "back"} size={16} stroke={2} />
                 </span>

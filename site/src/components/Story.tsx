@@ -1,114 +1,83 @@
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
+import photo from "../assets/photos/horizon-atelier.webp"
 import { STORY } from "../data/content"
 import { SPACE_BY_ID, spaceHref } from "../data/spaces"
 import { Icon } from "../lib/icons"
-import { useMedia } from "../lib/motion"
+import { Reveal } from "../lib/motion"
 import { cn } from "../lib/utils"
-import { Screen, Screens, Window } from "./Screen"
-import { SectionHead } from "./SectionHead"
+import { Words } from "./SectionHead"
 
 /**
- * Récit « De l'idée à la publication » : les étapes défilent à gauche, la fenêtre de NEXORA reste à l'écran à
- * droite (de face, #086) et passe à l'espace de l'étape lue. Sur petit écran, chaque étape a sa
- * propre fenêtre.
+ * Récit « De l'idée à la publication ». #099 (« Horizon ») : section « services » de la référence : en-tête en deux
+ * tons et chapeau à droite, photo d'un poste de travail la nuit (Unsplash) à gauche, étapes dépliables à droite (une
+ * seule ouverte : texte, points, lien vers l'espace). Remplace la frise et la fenêtre collante de « Signal ».
  */
 export function Story() {
-  const [active, setActive] = useState(0)
-  const steps = useRef<(HTMLLIElement | null)[]>([])
-  const narrow = useMedia("(max-width: 959px)")
-
-  useEffect(() => {
-    if (narrow) return
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) if (e.isIntersecting) setActive(Number((e.target as HTMLElement).dataset.i))
-      },
-      { rootMargin: "-45% 0px -45% 0px" },
-    )
-    steps.current.forEach((el) => el && io.observe(el))
-    return () => io.disconnect()
-  }, [narrow])
-
-  const step = STORY[active]
+  const [open, setOpen] = useState(0)
   return (
     <section className="section light" id="parcours" data-capture="parcours">
-      <div className="wrap">
-        <SectionHead
-          index="03"
-          eyebrow="De l’idée à la publication"
-          title={["Du premier écran", "au logiciel installé."]}
-          lead="Conçois, code, teste, sécurise, publie et présente sans changer d’outil : chaque espace reprend là où le précédent s’est arrêté."
-        />
-      </div>
       <div className="wrap-wide">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-          <ol className="relative">
-            {!narrow && (
-              <li className="story-rail" aria-hidden="true">
-                <i style={{ transform: `scaleY(${(active + 1) / STORY.length})` }} />
-              </li>
-            )}
+        <Reveal className="grid items-end gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-16">
+          <div>
+            <span className="eyebrow">de l’idée à la publication</span>
+            <h2 className="title-2 words mt-6 max-w-[18ch]">
+              <Words text="Chaque étape a son espace," /> <span className="tone"><Words text="sans changer d’outil." from={5} /></span>
+            </h2>
+          </div>
+          <p className="lead max-w-[46ch] text-[15px]! lg:justify-self-end">
+            Conçois, code, teste, sécurise, publie et présente : chaque espace reprend ton projet là où le précédent s’est arrêté, sur ton PC.
+          </p>
+        </Reveal>
+        <div className="mt-14 grid gap-10 lg:mt-20 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-16">
+          <Reveal className="relative min-h-[320px] overflow-hidden rounded-md lg:min-h-0">
+            <img src={photo} alt="Poste de travail éclairé la nuit, un écran allumé sur un bureau sombre" loading="lazy" width={1600} height={1096} className="absolute inset-0 h-full w-full object-cover" />
+            <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" aria-hidden="true" />
+            <span className="absolute right-5 bottom-5 left-5 flex items-end justify-between gap-4 text-white">
+              <span className="max-w-[28ch] text-[15px] leading-snug">Tout tourne sur ton ordinateur : tes fichiers ne quittent pas ton PC.</span>
+              <a href="/espaces" className="orb" aria-label="Voir les 9 espaces">
+                <Icon name="nxArrowUpRight" size={18} stroke={2} />
+              </a>
+            </span>
+          </Reveal>
+          <ol className="border-t border-foreground/12">
             {STORY.map((s, i) => {
               const sp = SPACE_BY_ID[s.space]
-              const on = i === active || narrow
+              const on = i === open
               return (
-                <li
-                  key={s.space}
-                  ref={(el) => {
-                    steps.current[i] = el
-                  }}
-                  data-i={i}
-                  className={cn("relative grid grid-cols-[40px_1fr] gap-5 py-10 transition-opacity duration-500 lg:min-h-[52vh] lg:py-14", on ? "opacity-100" : "opacity-35")}
-                >
-                  <span className={cn("relative z-[1] grid size-10 place-items-center rounded-full border text-[13px] font-semibold tabular-nums transition-all duration-500", on ? "border-primary bg-primary text-primary-foreground" : "border-foreground/15 bg-background text-muted-foreground")}>
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div>
-                    <span className="eyebrow bare" data-space={s.space}>
-                      <span className="sp-ic sm solid">
-                        <Icon name={sp.icon} size={14} />
+                <li key={s.space} className="border-b border-foreground/12">
+                  <button type="button" className="flex w-full items-center gap-5 py-5 text-left" aria-expanded={on} aria-controls={`etape-${s.space}`} onClick={() => setOpen(on ? -1 : i)}>
+                    <span className="w-7 shrink-0 text-[13px] text-muted-foreground tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="flex-1">
+                      <span className="block text-[13px] text-muted-foreground">
+                        {s.verb} · {sp.name}
                       </span>
-                      {s.verb} · {sp.name}
+                      <span className="mt-0.5 block text-[clamp(19px,1.6vw,23px)] leading-snug font-medium">{s.title}</span>
                     </span>
-                    <h3 className="display mt-4 text-[clamp(28px,2.6vw,40px)] leading-[0.98] font-bold tracking-[-0.035em]">{s.title}</h3>
-                    <p className="mt-3 max-w-[48ch] text-[15.5px] leading-relaxed text-muted-foreground">{s.text}</p>
-                    <ul className="mt-5 flex flex-wrap gap-2">
-                      {s.points.map((p) => (
-                        <li key={p} className="inline-flex items-center gap-1.5 rounded-full border border-foreground/10 px-3 py-1 text-[13px] text-foreground/85">
-                          <Icon name="check" size={13} stroke={2.6} className="text-primary" />
-                          {p}
-                        </li>
-                      ))}
-                    </ul>
-                    <a className="link-arrow mt-6" href={spaceHref(sp)}>
-                      Découvrir {sp.name} <Icon name="nxArrowRight" size={15} stroke={2} />
-                    </a>
-                    {narrow && (
-                      <div className="mt-8">
-                        <Window compact>
-                          <Screen space={s.space} />
-                        </Window>
+                    <span className={cn("grid size-9 shrink-0 place-items-center rounded-full border border-foreground/25 transition duration-300", on && "rotate-45 border-foreground bg-foreground text-background")} aria-hidden="true">
+                      <Icon name="plus" size={16} stroke={1.8} />
+                    </span>
+                  </button>
+                  <div id={`etape-${s.space}`} className={cn("grid transition-[grid-template-rows] duration-500 ease-out", on ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+                    <div className="overflow-hidden">
+                      <div className="pb-6 pl-12">
+                        <p className="max-w-[52ch] text-[15px] leading-relaxed text-muted-foreground">{s.text}</p>
+                        <ul className="mt-4 flex flex-wrap gap-2">
+                          {s.points.map((p) => (
+                            <li key={p} className="rounded-full border border-foreground/15 px-3 py-1 text-[13px] text-foreground/85">
+                              {p}
+                            </li>
+                          ))}
+                        </ul>
+                        <a className="link-arrow mt-5 text-[14px]" href={spaceHref(sp)} tabIndex={on ? undefined : -1}>
+                          Découvrir {sp.name} <Icon name="nxArrowRight" size={13} stroke={2} />
+                        </a>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </li>
               )
             })}
           </ol>
-          {!narrow && (
-            <div className="relative">
-              <div className="sticky top-[calc(50vh-280px)]">
-                <Window title={`NEXORA — ${SPACE_BY_ID[step.space].name}`}>
-                  <Screens spaces={STORY.map((s) => s.space)} current={step.space} />
-                </Window>
-                <div className="mt-6 flex justify-center gap-2" aria-hidden="true">
-                  {STORY.map((s, i) => (
-                    <i key={s.space} className={cn("h-1.5 rounded-full transition-all duration-500", i === active ? "w-8 bg-primary" : "w-1.5 bg-foreground/20")} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </section>

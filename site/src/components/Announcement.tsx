@@ -39,7 +39,7 @@ export function Announcement({ home = false }: { home?: boolean }) {
     <div className="relative border-b border-foreground/[0.08] bg-lime text-ink">
       <div className="wrap-wide flex items-center gap-3 py-2">
         <a className="group flex min-w-0 flex-1 items-center justify-center gap-3 text-[13px] text-ink/80" href="/licence">
-          <span className="shrink-0 rounded-full bg-ink px-2 py-0.5 font-mono text-[11px] font-medium tracking-wider text-lime uppercase">Nouveau</span>
+          <span className="shrink-0 rounded-full bg-ink px-2 py-0.5 text-[12px] font-medium text-lime">Nouveau</span>
           {/* #089 : deux lignes sur téléphone (le texte était coupé après « licence gra… »). */}
           <span className="line-clamp-2 leading-snug sm:line-clamp-none sm:truncate">NEXORA Devs Toolbox : licence gratuite, 2 applications Android ou Windows offertes, 24 h d’essai Pro complet</span>
           <span className="hidden items-center gap-1.5 font-semibold text-ink transition-[gap] group-hover:gap-2.5 sm:inline-flex">

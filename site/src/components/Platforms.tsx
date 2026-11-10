@@ -108,7 +108,7 @@ export function Platforms() {
   const scene = (i: number) =>
     cn("absolute inset-0 transition-[opacity,transform] duration-700 ease-[cubic-bezier(.2,.7,.2,1)]", i === active ? "opacity-100 [transform:none]" : "pointer-events-none translate-y-4 scale-[0.98] opacity-0")
   return (
-    <section className="section overflow-hidden" id="plateformes" data-capture="plateformes">
+    <section className="section light overflow-hidden" id="plateformes" data-capture="plateformes">
       <div className="wrap">
         <SectionHead
           index="04"
@@ -136,7 +136,7 @@ export function Platforms() {
                       <span className={cn("sp-ic", on && "solid")}>
                         <Icon name={p.icon} size={19} />
                       </span>
-                      <b className="display flex-1 text-[22px] font-bold tracking-[-0.03em]">{p.title}</b>
+                      <b className="display flex-1 text-[22px] font-medium tracking-[-0.03em]">{p.title}</b>
                       <span className="flex items-center gap-2" aria-hidden="true">
                         {p.logos.map((l) => (
                           <Logo key={l} name={l} size={18} className={cn("transition-opacity", on ? "opacity-100" : "opacity-50")} />
@@ -177,7 +177,7 @@ export function Platforms() {
                   </Browser>
                 </div>
                 <span className="chip-glass absolute top-[8%] left-[2%] flex-col items-start gap-2">
-                  <small className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Mise en ligne</small>
+                  <small className="text-[13px] font-medium text-muted-foreground">Mise en ligne</small>
                   <span className="flex items-center gap-3">
                     {HOSTS.map((h) => (
                       <Logo key={h.name} name={h.logo} label={h.name} size={20} />
