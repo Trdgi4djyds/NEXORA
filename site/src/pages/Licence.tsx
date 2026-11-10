@@ -3,6 +3,8 @@
 // Pro (paiement dans le navigateur) et gère son abonnement. #/licence/verifier : vérification publique d'une clé.
 // #085 : mise en forme « Néon » avec les composants shadcn/ui (Tabs, Input, Label, Button, Badge) ; logique inchangée.
 import { useEffect, useState, type FormEvent, type ReactNode } from "react"
+import { StepCards, Watermark } from "../components/Blocks"
+import { CtaBand } from "../components/CtaBand"
 import { PageHero, SectionHead } from "../components/SectionHead"
 import { DownloadButton } from "../components/Download"
 import { Badge } from "../components/ui/badge"
@@ -77,7 +79,8 @@ function AuthCard({ onSession }: { onSession: (s: Session) => void }) {
   }
 
   return (
-    <form className="panel-hi relative flex flex-col gap-5 overflow-hidden p-6 md:p-8" onSubmit={submit} noValidate>
+    <form className="panel-hi has-wm relative flex flex-col gap-5 overflow-hidden p-6 md:p-8" onSubmit={submit} noValidate>
+      <Watermark icon="lock" className="wm-br" size={220} />
       <i className="halo top-[-140px] right-[-80px] h-[240px] w-[280px] opacity-[0.12]" aria-hidden="true" />
       {mode !== "forgot" ? (
         <Tabs
@@ -134,7 +137,8 @@ function KeyCard({ lic }: { lic: Lic }) {
   const [copied, setCopied] = useState(false)
   const pro = lic.plan === "pro" && !lic.trial
   return (
-    <Reveal className="panel-hi relative overflow-hidden p-6 md:p-8 lg:col-span-2">
+    <Reveal className="panel-hi has-wm relative overflow-hidden p-6 md:p-8 lg:col-span-2">
+      <Watermark icon="key" className="wm-br" size={240} />
       <i className="halo top-[-160px] left-[30%] h-[260px] w-[420px] opacity-[0.12]" aria-hidden="true" />
       <div className="relative flex flex-wrap items-center justify-between gap-3">
         <Badge variant={pro || lic.trial ? "solid" : "default"}>{lic.trial ? "Essai Pro" : lic.plan_name || (pro ? "Pro" : "Gratuit")}</Badge>
@@ -420,7 +424,8 @@ function Verifier() {
     }
   }
   return (
-    <form className="hud flex flex-col gap-4 p-6 md:p-8" onSubmit={submit} id="verifier">
+    <form className="hud has-wm flex flex-col gap-4 p-6 md:p-8" onSubmit={submit} id="verifier">
+      <Watermark icon="shield" className="wm-br" size={220} />
       <h3 className="flex items-center gap-2.5 text-[18px] font-semibold">
         <Icon name="shield" size={18} className="text-primary" /> Vérifier une clé
       </h3>
@@ -517,7 +522,8 @@ export function Licence({ query }: { query: string }) {
               <AuthCard onSession={load} />
               <ul className="flex flex-col gap-3" data-glow>
                 {POINTS.map(([icon, title, text]) => (
-                  <li key={title} className="glow surface flex items-start gap-4 p-5">
+                  <li key={title} className="glow surface has-wm flex items-start gap-4 p-5">
+                    <Watermark icon={icon} className="wm-card" size={120} />
                     <span className="sp-ic">
                       <Icon name={icon} size={18} />
                     </span>
@@ -556,11 +562,23 @@ export function Licence({ query }: { query: string }) {
           ) : null}
         </div>
       </PageHero>
-      <section className="section-tight light">
-        <div className="wrap max-w-[860px]">
+      <StepCards
+        className="lime"
+        eyebrow="Comment ça marche"
+        title={["Ta licence,", "en trois temps."]}
+        steps={[
+          { icon: "user", title: "Crée ton compte", text: "Le même compte que dans NEXORA, sur Windows comme sur le web." },
+          { icon: "key", title: "Récupère ta clé", text: "Générée tout de suite, liée à ton adresse e-mail et à tes ordinateurs." },
+          { icon: "shield", title: "NEXORA la vérifie", text: "À chaque démarrage, une connexion signée avec nos serveurs." },
+        ]}
+      />
+      <section className="section-tight light relative overflow-hidden" data-capture="verifier">
+        <Watermark icon="audit" className="wm-tr" size={420} />
+        <div className="wrap relative max-w-[860px]">
           <Verifier />
         </div>
       </section>
+      <CtaBand bright />
     </>
   )
 }

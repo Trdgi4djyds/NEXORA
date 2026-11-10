@@ -28,21 +28,17 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
     setMobile(false)
   }, [route.path])
 
-  // En-tête qui se range quand on descend et revient quand on remonte ; barre de lecture de la page.
+  // Barre de lecture de la page. #105 : en-tête figé à la demande de l'utilisateur : il ne se range plus quand on
+  // descend (l'attribut data-tucked n'est plus posé).
   const bar = useRef<HTMLElement>(null)
-  const open = useRef(false)
-  open.current = mega || mobile
   useEffect(() => {
-    let last = window.scrollY
     let raf = 0
     const update = () => {
       raf = 0
       const y = window.scrollY
       setScrolled(y > 8)
       const el = ref.current
-      if (el && !open.current && y > 320 && y > last + 2) el.dataset.tucked = ""
-      if (el && (open.current || y < last - 2 || y <= 320)) delete el.dataset.tucked
-      last = y
+      if (el) delete el.dataset.tucked
       const max = document.documentElement.scrollHeight - window.innerHeight
       if (bar.current) bar.current.style.transform = `scaleX(${max > 0 ? Math.min(1, y / max) : 0})`
     }

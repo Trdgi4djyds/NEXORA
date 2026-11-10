@@ -1,11 +1,13 @@
 import type { CSSProperties } from "react"
+import { MacBook, NumberRows, Watermark, WordStrip } from "../components/Blocks"
 import { CtaBand } from "../components/CtaBand"
 import { DeviceGallery, DeviceWall } from "../components/DeviceWall"
 import { MainButton } from "../components/Download"
-import { Device, Screen, Window } from "../components/Screen"
+import { Device } from "../components/Screen"
 import { SectionHead } from "../components/SectionHead"
 import { Badge } from "../components/ui/badge"
 import { Button } from "../components/ui/button"
+import { SPACE_FACTS } from "../data/content"
 import { PLAN_LABEL, SPACES, spaceHref, type Feature, type Space } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
@@ -19,6 +21,7 @@ function DeviceCatalog() {
   const half = Math.ceil(names.length / 2)
   return (
     <section className="section-tight relative overflow-hidden" data-capture="appareils">
+      <Watermark icon="tablet" className="wm-tr" size={420} />
       <div className="wrap relative">
         <SectionHead
           eyebrow="Le catalogue"
@@ -70,7 +73,8 @@ function PlanSplit({ space }: { space: Space }) {
   return (
     <div className="grid gap-6 md:grid-cols-2" data-glow>
       {cols.map((c, i) => (
-        <Reveal className={cn("glow p-8", c.id === "pro" ? "panel-hi" : "panel")} key={c.id} delay={i * 80}>
+        <Reveal className={cn("glow has-wm p-8", c.id === "pro" ? "panel-hi" : "panel")} key={c.id} delay={i * 80}>
+          <Watermark icon={c.id === "pro" ? "nxCrown" : "nxSend"} className="wm-br" size={200} />
           <Badge variant={c.id === "pro" ? "solid" : "default"}>{c.title}</Badge>
           <p className="mt-4 text-[15px] text-muted-foreground">{c.lead}</p>
           <ul className="mt-5 flex flex-col gap-3">
@@ -140,13 +144,10 @@ export function SpacePage({ space }: { space: Space }) {
         </div>
         <div className="wrap-wide relative mt-14 md:mt-20">
           {/* #086 : scène de face (aucune rotation), parallaxe légère ; vrais appareils pour l'App Builder. */}
-          {/* #092 : fenêtre posée sur un bandeau à la couleur de l'espace, comme dans le hero de l'accueil. */}
+          {/* #105 : vrai MacBook Pro 16 pouces (cadre photographique) à la place de la fenêtre dessinée en CSS. */}
           <div className="hero-visual stage relative mx-auto max-w-[1360px]" data-capture="apercu" data-tilt data-depth>
-            <i className="stage-band !top-[18%]" aria-hidden="true" />
-            <div className="par relative mx-auto w-[92%] max-w-[1180px]" style={{ "--k": "4px", "--ky": "-12px" } as CSSProperties}>
-              <Window title={`NEXORA — ${space.name}`}>
-                <Screen space={space.id} eager />
-              </Window>
+            <div className="par relative mx-auto w-[88%] max-w-[1100px]" style={{ "--k": "4px", "--ky": "-12px" } as CSSProperties}>
+              <MacBook space={space.id} eager className="!max-w-none" />
             </div>
             {space.id === "android" && (
               <div className="absolute right-[1%] bottom-[-8%] flex w-[30%] items-end gap-[6%]">
@@ -167,12 +168,16 @@ export function SpacePage({ space }: { space: Space }) {
         </div>
       </section>
 
-      <section className="section light" data-capture="fonctions">
-        <div className="wrap">
+      <WordStrip words={space.features.map((f) => f.title)} />
+
+      <section className="section lime relative overflow-hidden" data-capture="fonctions">
+        <Watermark icon={space.icon} className="wm-tr" size={520} />
+        <div className="wrap relative">
           <SectionHead eyebrow="Ce que tu peux faire" title={[space.name, "en détail."]} lead={`${space.features.length} fonctions livrées dans NEXORA ${APP_VERSION}, avec l’offre qui les ouvre.`} />
           <ol className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" data-glow>
             {space.features.map((f, i) => (
-              <Reveal as="li" className="glow surface flex flex-col p-7" key={f.title} delay={(i % 3) * 70}>
+              <Reveal as="li" className="glow surface feat-card flex flex-col p-7" key={f.title} delay={(i % 3) * 70}>
+                <Watermark icon={f.icon} className="wm-card" size={140} />
                 <span className="flex items-center justify-between gap-3">
                   <span className="sp-ic solid">
                     <Icon name={f.icon} size={18} />
@@ -187,12 +192,15 @@ export function SpacePage({ space }: { space: Space }) {
         </div>
       </section>
 
+      <SpaceNumbers space={space} />
+
       {space.id === "preview" && <DeviceCatalog />}
 
       {space.details && (
         <section className="section-tight">
           <div className="wrap">
-            <Reveal className="hud p-8 md:p-10">
+            <Reveal className="hud has-wm p-8 md:p-10">
+              <Watermark icon="layers" className="wm-br" size={220} />
               <h2 className="title-3">{space.details.title}</h2>
               <ul className="mt-6 flex flex-wrap gap-2.5">
                 {space.details.items.map((d) => (
@@ -221,7 +229,8 @@ export function SpacePage({ space }: { space: Space }) {
       <section className="section-tight light pt-0">
         <div className="wrap grid gap-6 md:grid-cols-2" data-glow>
           {[prev, next].map((s, i) => (
-            <a key={s.id} href={spaceHref(s)} data-space={s.id} className={cn("glow lift tile flex flex-col gap-3 p-7", i && "md:items-end md:text-right")}>
+            <a key={s.id} href={spaceHref(s)} data-space={s.id} className={cn("glow lift tile has-wm flex flex-col gap-3 p-7", i && "md:items-end md:text-right")}>
+              <Watermark icon={s.icon} className={i ? "wm-bl" : "wm-br"} size={180} />
               <small className="text-[13px] font-medium text-muted-foreground">{i ? "Espace suivant" : "Espace précédent"}</small>
               <span className={cn("flex items-center gap-3", i && "md:flex-row-reverse")}>
                 <span className="sp-ic">
@@ -237,7 +246,34 @@ export function SpacePage({ space }: { space: Space }) {
           ))}
         </div>
       </section>
-      <CtaBand />
+      <CtaBand bright />
     </div>
+  )
+}
+
+/** #105 : l'espace en chiffres, en rangées géantes (référence « About us in numbers » de l'utilisateur). */
+function SpaceNumbers({ space }: { space: Space }) {
+  const pro = space.features.filter((f) => f.plan === "pro").length
+  const [fact, factLabel] = SPACE_FACTS[space.id]
+  return (
+    <NumberRows
+      eyebrow="En chiffres"
+      title={[space.name, "en trois chiffres."]}
+      icon="nxiChart"
+      rows={[
+        {
+          value: String(space.features.length),
+          label: "fonctions",
+          text: (
+            <>
+              Livrées dans <b>NEXORA {APP_VERSION}</b>
+              {pro ? `, dont ${pro} ouvertes par l’offre Pro.` : ", toutes ouvertes avec l’offre Gratuite."}
+            </>
+          ),
+        },
+        { value: fact, label: factLabel, text: space.card + "." },
+        { value: PLAN_LABEL[space.plan], label: space.plan === "free" ? "pour commencer" : "pour l’ouvrir", text: space.planNote + "." },
+      ]}
+    />
   )
 }

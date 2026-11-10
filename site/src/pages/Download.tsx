@@ -1,3 +1,6 @@
+import { MacBook, SplitPanel, StepCards, Watermark } from "../components/Blocks"
+import { CtaBand } from "../components/CtaBand"
+import { MainButton } from "../components/Download"
 import { Faq } from "../components/Faq"
 import { PageHero, SectionHead } from "../components/SectionHead"
 import { logo } from "../components/Brand"
@@ -87,34 +90,35 @@ export function Download() {
         </Reveal>
       </PageHero>
 
-      <section className="section-tight light" data-capture="etapes">
-        <div className="wrap">
-          {!downloadUrl && ready && <p className="mb-6 text-[14px] text-muted-foreground">Dès sa publication, l’installation se fera en trois étapes :</p>}
-          <ol className="grid gap-6 md:grid-cols-3" data-glow>
-            {STEPS.map(([icon, title, text], i) => (
-              <Reveal as="li" className="glow surface p-7" key={title} delay={i * 110}>
-                <span className="flex items-center justify-between">
-                  <span className="sp-ic">
-                    <Icon name={icon} size={19} />
-                  </span>
-                  <span className="text-[40px] leading-none font-semibold tracking-[-0.04em] text-foreground/10 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-                </span>
-                <h3 className="mt-6 text-[18px] font-semibold">{title}</h3>
-                <p className="mt-2 text-[14.5px] text-muted-foreground">{text}</p>
-              </Reveal>
-            ))}
-          </ol>
-          <Reveal className="hud mt-6 flex items-start gap-4 p-5">
+      {/* #105 : étapes en grandes cartes numérotées (référence de l'utilisateur), filigranes informatiques. */}
+      <StepCards
+        className="light"
+        eyebrow={!downloadUrl && ready ? "Dès sa publication" : "Installer"}
+        title={["Trois étapes,", "et NEXORA est prêt."]}
+        steps={STEPS.map(([icon, title, text]) => ({ icon, title, text }))}
+        note={
+          <div className="hud has-wm flex items-start gap-4 p-5">
+            <Watermark icon="shield" className="wm-br" size={150} />
             <Icon name="shield" size={18} className="mt-0.5 shrink-0 text-primary" />
             <p className="text-[14px] text-muted-foreground">
               Au premier lancement, Windows peut afficher « Windows a protégé votre ordinateur ». Clique sur « Informations complémentaires », puis sur « Exécuter quand même » : c’est le message habituel des logiciels récemment publiés.
             </p>
-          </Reveal>
-        </div>
-      </section>
+          </div>
+        }
+      />
 
-      <section className="section">
-        <div className="wrap">
+      <SplitPanel
+        media={<MacBook space="home" />}
+        eyebrow="Une seule fenêtre"
+        title={["Tout NEXORA,", "sur ton PC."]}
+        text="Neuf espaces autour de tes projets : tester, inspecter, coder, publier sur Android et Windows, présenter en 3D, créer des visuels et surveiller tes sites. Le lanceur garde tout à jour."
+        action={<MainButton />}
+        icon="laptop"
+      />
+
+      <section className="section relative overflow-hidden" data-capture="configuration">
+        <Watermark icon="laptop" className="wm-tr" size={460} />
+        <div className="wrap relative">
           <SectionHead eyebrow="Configuration" title={["Ce qu’il te faut", "pour bien démarrer."]} />
           <ul className="panel divide-y divide-foreground/[0.08]">
             {REQUIREMENTS.map(([title, text], i) => (
@@ -125,11 +129,13 @@ export function Download() {
             ))}
           </ul>
           <div className="mt-6 grid gap-6 md:grid-cols-2" data-glow>
-            <Reveal className="glow surface p-7">
+            <Reveal className="glow surface has-wm p-7">
+              <Watermark icon="sync" className="wm-br" size={170} />
               <h3 className="text-[18px] font-semibold">Des mises à jour vérifiées</h3>
               <p className="mt-2 text-[14.5px] leading-relaxed text-muted-foreground">Le lanceur télécharge chaque nouvelle version depuis nos publications officielles, contrôle sa signature et l’empreinte de chaque fichier, puis l’installe. En cas de souci, il revient à la version précédente.</p>
             </Reveal>
-            <Reveal className="glow surface p-7" delay={80}>
+            <Reveal className="glow surface has-wm p-7" delay={80}>
+              <Watermark icon="trash" className="wm-br" size={170} />
               <h3 className="text-[18px] font-semibold">Désinstallation propre</h3>
               <p className="mt-2 text-[14.5px] leading-relaxed text-muted-foreground">Depuis les Paramètres de Windows : tu choisis de garder ou de supprimer tes documents, projets, réglages et la bibliothèque téléchargée.</p>
               <a className="link-arrow mt-4" href="/licence">
@@ -140,12 +146,14 @@ export function Download() {
         </div>
       </section>
 
-      <section className="section light">
-        <div className="wrap grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+      <section className="section light relative overflow-hidden" data-capture="questions">
+        <Watermark icon="chat" className="wm-bl" size={420} />
+        <div className="wrap relative grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
           <SectionHead align="left" eyebrow="Questions fréquentes" title={["Avant de", "télécharger."]} />
           <Faq items={WEB_FAQ} idPrefix="faq-dl" />
         </div>
       </section>
+      <CtaBand bright />
     </>
   )
 }
