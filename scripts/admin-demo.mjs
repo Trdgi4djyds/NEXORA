@@ -1834,19 +1834,20 @@ const mgmtAuth = {
   mailer_autoconfirm: false,
   password_min_length: 8,
   external_email_enabled: true,
-  // #110 : état relevé en ligne le 2026-11-11 : Brevo branché par l'ancien compte (identifiant et expéditeur d'avant
-  // les consignes), limite des e-mails des comptes à 30 par heure.
+  // #111 : état relevé en ligne le 2026-11-11 après A-067 : Brevo branché par le compte de token_proj_nexora.txt
+  // (identifiant et expéditeur attendus de supabase/nexora.json), limite des e-mails des comptes à 30 par heure.
   smtp_host: "smtp-relay.brevo.com",
   smtp_port: "587",
-  smtp_user: "b58a4a001@smtp-brevo.com",
-  smtp_admin_email: "ippooz.up.2@gmail.com",
-  smtp_sender_name: "NEXORA",
+  smtp_user: "c24e9c001@smtp-brevo.com",
+  smtp_admin_email: "nexoradevstoolbox@gmail.com",
+  smtp_sender_name: "NEXORA Devs Toolbox",
   rate_limit_email_sent: 30,
   jwt_exp: 3600,
 }
+// #111 : clé API des alertes enregistrée dans le coffre (alerte de test remise par Brevo le 2026-11-11).
 const demoEmail = {
-  hasKey: false,
-  cfg: { enabled: false, sender_email: "", sender_name: "NEXORA" },
+  hasKey: true,
+  cfg: { enabled: true, sender_email: "nexoradevstoolbox@gmail.com", sender_name: "NEXORA Devs Toolbox" },
 }
 const mgmtFunctions = [
   "admin-users",
