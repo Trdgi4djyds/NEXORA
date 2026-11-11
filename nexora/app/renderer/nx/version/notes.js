@@ -4,6 +4,7 @@
 export const NOTES = {
   // NEXORA #106 : interface « Horizon » (#103), appareils réalistes du Studio (#100), formulaires et connexion (#104),
   // lanceur 1.0.5 ; publiée par-dessus la 1.2.1 (A-063).
+  // NEXORA #107 : pourcentage de l'interface sans effet sur les sites ni les maquettes (republiée en v1.2.2-r2).
   '1.2.2': {
     title: 'NEXORA 1.2.2',
     intro: 'Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.',
@@ -11,6 +12,7 @@ export const NOTES = {
       { icon: 'palette', space: '', title: 'Nouvelle interface', text: 'Noir et gris très sombre, ou blanc et gris clair, sans couleurs superflues ; police plus fine, boutons et champs arrondis. Ta couleur d’accent, le contraste élevé et ta police restent respectés.' },
       { icon: 'laptop', space: 'studio', title: 'Appareils réalistes dans le Studio', text: '10 modèles détaillés à taille réelle (ordinateurs portables, écran, tablettes, téléphones) : l’écran affiche ta scène, ton image ou une page NEX-DESIGN.' },
       { icon: 'pen', space: '', title: 'Formulaires plus lisibles', text: 'Champs, cases à cocher et messages d’erreur revus partout ; fenêtre de connexion redessinée.' },
+      { icon: 'display', space: 'responsive', title: 'Taille de l’interface sans effet sur les sites', text: 'Changer le pourcentage de l’interface dans les Réglages ne rogne plus les sites dans les appareils et ne change plus les maquettes ; un appareil à 100 % garde sa taille réelle, et chaque appareil reste émulé quand tu changes de projet.' },
       { icon: 'key', space: '', title: 'Lanceur 1.0.5', text: 'Le lanceur NEXORA Devs Toolbox prend la même apparence et se met à jour tout seul avant d’installer cette version.' },
     ],
   },
