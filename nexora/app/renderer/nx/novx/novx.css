@@ -1,0 +1,19 @@
+/* NEXORA #076 : fenêtre « Exporter en .novx ». Couleurs du thème (clair et sombre) par les variables de NEXORA. */
+.nxv-body { display: grid; gap: 18px; }
+.nxv-sec { display: grid; gap: 8px; }
+.nxv-sec h3 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-3); }
+.nxv-opt { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--sep); border-radius: 12px; background: var(--surface); cursor: pointer; }
+.nxv-opt:hover { border-color: var(--sep-strong); }
+.nxv-opt.off { opacity: 0.6; cursor: default; }
+.nxv-opt input { margin-top: 3px; flex: none; accent-color: var(--accent); }
+.nxv-opt span { display: grid; gap: 2px; min-width: 0; }
+.nxv-opt b { font-size: 13.5px; font-weight: 600; }
+.nxv-opt small { color: var(--text-2); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.nxv-docs { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; max-height: 190px; overflow: auto; }
+.nxv-doc { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--sep); border-radius: 10px; cursor: pointer; font-size: 13px; }
+.nxv-doc span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nxv-doc small { color: var(--text-3); font-size: 11.5px; }
+.nxv-doc input { accent-color: var(--accent); }
+.nxv-muted { margin: 0; color: var(--text-3); font-size: 13px; }
+.nxv-hint { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--fill); color: var(--text-2); font-size: 12.5px; line-height: 1.45; }
+.nxv-hint svg { flex: none; margin-top: 2px; }

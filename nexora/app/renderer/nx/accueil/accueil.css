@@ -1,0 +1,33 @@
+/* NEXORA #059 : carte « Par quoi commencer ? » de l'Accueil. Aplats, contours, sans ombre ni dégradé (#045) ;
+   fond de la carte selon le thème (blanc en clair, sombre en sombre), couleur de chaque espace sur sa tuile. */
+#home .nxg { margin: 0 0 22px; padding: 20px; border-radius: 28px; background: var(--surface); border: 1px solid var(--sep); }
+#home .nxg-head { display: flex; align-items: flex-end; gap: 10px; margin-bottom: 14px; }
+#home .nxg-head .grow { flex: 1; }
+#home .nxg-kicker { display: block; font-size: 12px; font-weight: 650; color: var(--accent); letter-spacing: .01em; }
+#home .nxg-head h2 { margin: 3px 0 0; font-size: 20px; font-weight: 750; letter-spacing: -.02em; color: var(--text); }
+#home .nxg-link { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--sep); background: transparent; color: var(--text-2); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+#home .nxg-link:hover { color: var(--text); border-color: var(--sep-strong); background: var(--fill-2); }
+#home .nxg-link:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--accent); }
+#home .nxg-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+#home .nxg-tile { --g: var(--accent); position: relative; display: flex; align-items: flex-start; gap: 12px; min-width: 0; padding: 14px; border-radius: 18px; border: 1px solid var(--sep); background: var(--surface-2); color: var(--text); text-align: left; font: inherit; cursor: pointer; transition: border-color .15s ease, background-color .15s ease; }
+#home .nxg-tile:hover { border-color: var(--g); background: var(--surface); }
+#home .nxg-tile:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--g); }
+#home .nxg-tile[data-space='android'] { --g: var(--spc-android, #1f9d55); }
+#home .nxg-tile[data-space='desktop'] { --g: var(--spc-desktop, #5f9a0c); }
+#home .nxg-tile[data-space='preview'] { --g: var(--spc-preview, #2f6fed); }
+#home .nxg-tile[data-space='dev'] { --g: var(--spc-dev, #e07b00); }
+#home .nxg-tile[data-space='browser'] { --g: var(--spc-browser, #0e9a8e); }
+#home .nxg-tile[data-space='security'] { --g: var(--spc-security, #e5484d); }
+#home .nxg-tile[data-space='design'] { --g: var(--spc-design, #b03fd6); }
+#home .nxg-tile[data-space='studio'] { --g: var(--spc-studio, #e0457b); }
+#home .nxg-ic { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; background: var(--g); color: #fff; }
+#home .nxg-txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding-right: 4px; }
+#home .nxg-txt b { font-size: 13.5px; font-weight: 680; line-height: 1.3; }
+#home .nxg-txt small { font-size: 12px; line-height: 1.4; color: var(--text-2); }
+#home .nxg-tag { position: absolute; top: 10px; right: 10px; height: 20px; padding: 0 8px; border-radius: 999px; display: inline-flex; align-items: center; font-size: 11px; font-weight: 650; color: var(--g); border: 1px solid currentColor; }
+#home .nxg-tile:has(> .nxg-tag) .nxg-txt { padding-right: 58px; }
+/* NEXORA #087 : mention plus longue (« 2 apps gratuites ») sous le texte, jamais par-dessus le titre. */
+#home .nxg-tag.nxg-note { position: static; align-self: flex-start; margin-top: 5px; }
+#home .nxg.nxg-min { display: flex; gap: 8px; padding: 0; border: 0; background: transparent; margin-bottom: 18px; }
+@media (max-width: 1180px) { #home .nxg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { #home .nxg-grid { grid-template-columns: minmax(0, 1fr); } #home .nxg-head { flex-wrap: wrap; } }

@@ -1,0 +1,2 @@
+Cadres d’appareils issus d’Android Studio (AOSP, platform/tools/adt/idea, artwork/resources/device-art-resources).
+Copyright The Android Open Source Project. Licence Apache 2.0 : https://www.apache.org/licenses/LICENSE-2.0

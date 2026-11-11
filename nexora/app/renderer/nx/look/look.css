@@ -1,0 +1,211 @@
+/* NEXORA #040 : finitions de l'interface (cartes, boutons, blocs), d'après les tableaux de bord de référence
+   fournis par l'utilisateur : couleurs franches mais pleines (plus de dégradés appuyés), une couleur par espace
+   (rail, icône de la barre d'outils, toile, repères des panneaux, cartes des espaces), tuiles d'icônes pastel,
+   boutons encre pour les actions phares, pastilles rondes, survols en relief et apparitions en cascade.
+   Règles gardées : blocs blancs en thème clair, noirs en sombre (#004) ; blocs d'information à fond plein (#007) ;
+   « Contraste élevé » garde ses couleurs ; animations coupées par Apparence → Animations « Réduites » ou
+   « Aucune » et par le réglage du système. Feuille chargée en dernier par index.html ; les feuilles injectées
+   plus tard par les modules (offres…) sont visées avec `html` devant. */
+
+/* ------------------------------------------------------------------ couleurs des espaces (pleines) */
+html:root {
+  --spc-home: #6d5cf6;
+  --spc-preview: #2f6fed;
+  --spc-browser: #0e9a8e;
+  --spc-dev: #e07b00;
+  --spc-android: #1f9d55;
+  --spc-studio: #e0457b;
+  --spc-design: #b03fd6;
+  --spc-security: #e5484d;
+  --spc-desktop: #5f9a0c;
+  /* Les anciennes variables « dégradé » deviennent la couleur pleine de l'espace. */
+  --sp-home: var(--spc-home);
+  --sp-preview: var(--spc-preview);
+  --sp-browser: var(--spc-browser);
+  --sp-dev: var(--spc-dev);
+  --sp-android: var(--spc-android);
+  --sp-studio: var(--spc-studio);
+  --sp-design: var(--spc-design);
+  --sp-security: var(--spc-security);
+  --sp-desktop: var(--spc-desktop);
+  /* Marque : violet presque uni au lieu du dégradé rose, magenta et bleu. */
+  --brand-grad: linear-gradient(135deg, #7a62f7, #6a55ee);
+  --brand-glow: 0 8px 18px -8px rgba(106, 85, 238, .6);
+  --nxo-brand: linear-gradient(135deg, #7a62f7, #6a55ee);
+  --pr: 18px;
+}
+html[data-theme='light'] {
+  --card-shadow: 0 0 0 1px rgba(30, 34, 70, .05), 0 1px 2px rgba(25, 28, 60, .04), 0 10px 26px -16px rgba(25, 28, 60, .14);
+  --card-shadow-hover: 0 0 0 1px rgba(30, 34, 70, .07), 0 20px 36px -16px rgba(25, 28, 60, .24);
+  --ink-hover: #2c2e3a;
+}
+html[data-theme='dark'] {
+  --card-shadow: 0 0 0 1px rgba(255, 255, 255, .06), 0 10px 26px -16px rgba(0, 0, 0, .7);
+  --card-shadow-hover: 0 0 0 1px rgba(255, 255, 255, .1), 0 20px 36px -16px rgba(0, 0, 0, .8);
+  --ink-hover: #ffffff;
+}
+
+/* Couleur de l'espace ouvert (--space-c) et toile légèrement teintée de cette couleur. */
+body[data-mode='home'] { --space-c: var(--spc-home); }
+body[data-mode='preview'] { --space-c: var(--spc-preview); }
+body[data-mode='browser'] { --space-c: var(--spc-browser); }
+body[data-mode='dev'] { --space-c: var(--spc-dev); }
+body[data-mode='android'] { --space-c: var(--spc-android); }
+body[data-mode='studio'] { --space-c: var(--spc-studio); }
+body[data-mode='design'] { --space-c: var(--spc-design); }
+body[data-mode='security'] { --space-c: var(--spc-security); }
+body[data-mode='desktop'] { --space-c: var(--spc-desktop); }
+html[data-theme='light']:not([data-contrast='high']) body[data-mode]:not([data-mode='studio']) { --canvas: color-mix(in srgb, var(--space-c, #8a8fa8) 9%, #eceef3); }
+html[data-theme='dark']:not([data-contrast='high']) body[data-mode]:not([data-mode='studio']) { --canvas: color-mix(in srgb, var(--space-c, #8a8fa8) 7%, #0c0d10); }
+body, .app, .space-pane { transition: background-color .45s var(--ease); }
+
+/* ------------------------------------------------------------------ rail : une couleur par espace */
+.rail-spaces > button[data-mode='home'] { --spc: var(--spc-home); }
+.rail-spaces > button[data-mode='preview'] { --spc: var(--spc-preview); }
+.rail-spaces > button[data-mode='browser'] { --spc: var(--spc-browser); }
+.rail-spaces > button[data-mode='dev'] { --spc: var(--spc-dev); }
+.rail-spaces > button[data-mode='android'] { --spc: var(--spc-android); }
+.rail-spaces > button[data-mode='studio'] { --spc: var(--spc-studio); }
+.rail-spaces > button[data-mode='design'] { --spc: var(--spc-design); }
+.rail-spaces > button[data-mode='security'] { --spc: var(--spc-security); }
+.rail-spaces > button[data-mode='desktop'] { --spc: var(--spc-desktop); }
+.rail-spaces > button .rail-ic { transition: background .25s var(--ease), color .2s, box-shadow .25s, transform .35s var(--spring); }
+.rail-spaces > button:hover .rail-ic { color: var(--spc); background: color-mix(in srgb, var(--spc) 13%, transparent); transform: translateY(-1px); }
+.rail-spaces > button.on { background: color-mix(in srgb, var(--spc) 10%, transparent); }
+.rail-spaces > button.on .rail-ic { color: #fff; background: var(--spc); box-shadow: 0 8px 16px -8px var(--spc); transform: scale(1.04); }
+html .rail-spaces > button.on::before { background: var(--spc); }
+.rail-btn .rail-ic { transition: background .2s, color .2s, transform .35s var(--spring); }
+.rail-btn:hover .rail-ic { transform: translateY(-1px); }
+.rail-ai:hover .rail-ic { background: var(--spc-home); box-shadow: 0 8px 16px -8px var(--spc-home); }
+
+/* Icône de l'espace dans la barre d'outils */
+.tb-space-ic { width: 32px; height: 32px; border-radius: 10px; box-shadow: 0 8px 16px -9px var(--space-c, var(--spc-home)); }
+.tb-space-ic[data-space='desktop'] { background: var(--spc-desktop); }
+
+/* ------------------------------------------------------------------ boutons */
+.btn { border-radius: 10px; transition: background .18s, color .15s, box-shadow .2s, transform .18s var(--ease), opacity .15s; }
+.btn.primary { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 8px 16px -10px color-mix(in srgb, var(--accent) 80%, transparent); }
+.btn.primary:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 12px 20px -10px color-mix(in srgb, var(--accent) 85%, transparent); }
+.btn.primary:active { transform: translateY(0) scale(.97); }
+/* Actions phares (« Construire », boutons de marque) : bouton encre, noir en clair, blanc en sombre. */
+html :is(.ab-go, .btn.brand) {
+  background: var(--ink) !important; color: var(--ink-fg) !important; border: 0 !important;
+  box-shadow: 0 10px 20px -10px rgba(10, 12, 25, .6) !important;
+  transition: background .18s, transform .18s var(--ease), box-shadow .2s;
+}
+html :is(.ab-go, .btn.brand):hover { background: var(--ink-hover) !important; transform: translateY(-1px); }
+html :is(.ab-go, .btn.brand):active { transform: scale(.97); }
+.icon-btn, .tb-btn { transition: background .15s, color .15s, transform .2s var(--ease); }
+.icon-btn:active, .tb-btn:active { transform: scale(.92); }
+.seg { border-radius: 11px; padding: 3px; }
+.seg > button { border-radius: 8px; }
+.link-btn { transition: color .15s; }
+
+/* ------------------------------------------------------------------ cartes et panneaux */
+.hm-hello { border-radius: 24px; }
+.hm-qa, .hm-stat, .hm-card, .hm-space, .dk-wel-card, .ab-card { transition: transform .3s var(--ease), box-shadow .3s, background-color .2s; }
+.hm-qa { border-radius: 22px; }
+.hm-qa:hover { transform: translateY(-4px); box-shadow: var(--card-shadow-hover); }
+.hm-qa:active, .hm-stat:active, .hm-space:active, .dk-wel-card:active { transform: translateY(-1px) scale(.985); }
+/* Tuiles d'icônes pastel au lieu des dégradés (actions rapides de l'Accueil). */
+.hm-qa-ic { transition: transform .4s var(--spring), background .25s, color .25s; }
+html .hm-qa-ic.q1 { color: #3a55e8; background: #e4e9ff; box-shadow: none; }
+html .hm-qa-ic.q2 { color: #5b45ea; background: #ebe6ff; box-shadow: none; }
+html .hm-qa-ic.q3 { color: #17864a; background: #dcf3e5; box-shadow: none; }
+html[data-theme='dark'] .hm-qa-ic.q1 { color: #a9b8ff; background: #222a4a; }
+html[data-theme='dark'] .hm-qa-ic.q2 { color: #bcadff; background: #2a2448; }
+html[data-theme='dark'] .hm-qa-ic.q3 { color: #7fdca6; background: #17321f; }
+.hm-qa:hover .hm-qa-ic { transform: rotate(-8deg) scale(1.08); }
+.hm-qa:hover .hm-qa-ic.q1 { color: #fff; background: #3a55e8; }
+.hm-qa:hover .hm-qa-ic.q2 { color: #fff; background: #5b45ea; }
+.hm-qa:hover .hm-qa-ic.q3 { color: #fff; background: #17864a; }
+/* Compteurs pastel : survol en relief ; en sombre, teinte pleine au lieu du dégradé. */
+.hm-stat { border-radius: 22px; }
+.hm-stat:hover { transform: translateY(-4px); box-shadow: 0 18px 30px -16px rgba(20, 20, 40, .28); }
+.hm-stat-ic { transition: transform .4s var(--spring); }
+.hm-stat:hover .hm-stat-ic { transform: rotate(-8deg) scale(1.1); }
+html[data-theme='dark'] .hm-stat.pink { background: #2b1b25; }
+html[data-theme='dark'] .hm-stat.blue { background: #1b2238; }
+html[data-theme='dark'] .hm-stat.yellow { background: #2b2516; }
+html[data-theme='dark'] .hm-stat.mint { background: #15281f; }
+html[data-theme='dark'] .hm-stat.red { background: #2d1a19; }
+/* Champ « Colle le lien » en pilule. */
+.hm-hello .hm-open { border-radius: 999px; transition: box-shadow .2s; }
+.hm-hello .hm-open:focus-within { box-shadow: 0 0 0 3px var(--accent-soft), inset 0 0 0 1px var(--accent); }
+/* Cartes de projets */
+.hm-card:hover { transform: translateY(-3px); box-shadow: var(--card-shadow-hover); }
+.hm-logo { transition: transform .4s var(--spring); }
+.hm-card:hover .hm-logo { transform: rotate(-6deg) scale(1.06); }
+/* Cartes des espaces : chacune à la couleur de son espace (tuile, liseré au survol, flèche). */
+.hm-space[data-space='preview'] { --spc: var(--spc-preview); }
+.hm-space[data-space='browser'] { --spc: var(--spc-browser); }
+.hm-space[data-space='dev'] { --spc: var(--spc-dev); }
+.hm-space[data-space='android'] { --spc: var(--spc-android); }
+.hm-space[data-space='studio'] { --spc: var(--spc-studio); }
+.hm-space[data-space='design'] { --spc: var(--spc-design); }
+.hm-space[data-space='security'] { --spc: var(--spc-security); }
+.hm-space[data-space='desktop'] { --spc: var(--spc-desktop); }
+html .hm-space[data-space='desktop'] .hm-space-ic { background: var(--spc-desktop) !important; color: #fff !important; }
+.hm-space-ic { width: 40px; height: 40px; display: grid; place-items: center; transition: transform .4s var(--spring), box-shadow .3s; }
+html .hm-space:hover { transform: translateY(-4px); box-shadow: var(--card-shadow-hover), 0 0 0 1.5px color-mix(in srgb, var(--spc, var(--accent)) 55%, transparent) !important; }
+.hm-space:hover .hm-space-ic { transform: rotate(-8deg) scale(1.08); box-shadow: 0 10px 18px -10px var(--spc, var(--accent)); }
+.hm-space kbd { padding: 2px 6px; border-radius: 6px; background: var(--info-bg); box-shadow: inset 0 0 0 1px var(--info-edge); }
+/* Barre « Tes projets » : recherche et boutons en pilules. */
+.hm-search { height: 40px !important; border-radius: 999px !important; transition: box-shadow .2s; }
+.hm-search:focus-within { box-shadow: 0 0 0 3px var(--accent-soft), var(--card-shadow) !important; }
+.hm-bar > .btn { height: 40px; padding: 0 16px; border-radius: 999px; background: var(--pane); box-shadow: var(--card-shadow); }
+.hm-bar > .btn:hover { transform: translateY(-1px); box-shadow: var(--card-shadow-hover); }
+html .hm-bar > .rf-btn { width: 40px; height: 40px; border-radius: 50%; }
+.hm-h2 { display: flex; align-items: center; gap: 9px; font-size: 16px; letter-spacing: -.015em; }
+.hm-h2::before { content: ''; width: 10px; height: 10px; border-radius: 4px; background: var(--space-c, var(--spc-home)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--space-c, var(--spc-home)) 16%, transparent); }
+/* Aucun projet : bloc plein (#007), icône dans une tuile pastel qui flotte doucement. */
+html .hm-empty { border: 0; padding: 36px 20px 40px; background: var(--pane); box-shadow: var(--card-shadow); border-radius: 24px; }
+html .hm-empty > svg { width: 64px; height: 64px; padding: 17px; margin-bottom: 6px; border-radius: 20px; color: var(--spc-home); background: color-mix(in srgb, var(--spc-home) 12%, var(--pane)); animation: nx-look-float 3.6s ease-in-out infinite; }
+.hm-empty b { font-size: 15px; color: var(--text); }
+@keyframes nx-look-float { 50% { transform: translateY(-5px) rotate(-3deg); } }
+
+/* Accueil du Dev Lab */
+.dk-wel-card { border-radius: 18px; }
+.dk-wel-card:hover { transform: translateY(-3px); box-shadow: var(--card-shadow-hover); }
+
+/* En-têtes d'espace (Sécurité) : tuile pleine à la couleur de l'espace. */
+html .sec-head { border-radius: 24px; }
+html .sec-head h1 .ico { background: var(--spc-security); box-shadow: 0 8px 16px -8px var(--spc-security); padding: 6px; border-radius: 11px; }
+/* Repères de section des panneaux à la couleur de l'espace ouvert. */
+.ab-card > h3::before, .st-head::before { width: 8px; height: 8px; border-radius: 3px; }
+.ab-card { border-radius: 20px; }
+.ab-sec { transition: background .18s, color .18s; }
+html body[data-mode='android'] .ab-sec.on { background: color-mix(in srgb, var(--spc-android) 13%, transparent); }
+html body[data-mode='android'] .ab-sec.on .ico { color: var(--spc-android); }
+
+/* Fenêtres, menus et notifications : arrondis plus généreux. */
+.sheet { border-radius: 24px; }
+.toast { border-radius: 16px; }
+
+/* ------------------------------------------------------------------ apparitions */
+@keyframes nx-look-rise { from { opacity: 0; transform: translateY(12px); } }
+@keyframes nx-look-fade { from { opacity: 0; } }
+.space-pane:not([hidden]) { animation: nx-look-fade .32s var(--ease) backwards; }
+.hm > * { animation: nx-look-rise .55s var(--ease) backwards; }
+.hm > :nth-child(2) { animation-delay: .05s; }
+.hm > :nth-child(3) { animation-delay: .1s; }
+.hm > :nth-child(4) { animation-delay: .14s; }
+.hm > :nth-child(n + 5) { animation-delay: .18s; }
+.hm-quick > *, .hm-stats > *, .hm-spaces > *, .dk-wel-acts > * { animation: nx-look-rise .55s var(--ease) backwards; }
+:is(.hm-quick, .hm-stats, .hm-spaces, .dk-wel-acts) > :nth-child(2) { animation-delay: .1s; }
+:is(.hm-quick, .hm-stats, .hm-spaces, .dk-wel-acts) > :nth-child(3) { animation-delay: .15s; }
+:is(.hm-quick, .hm-stats, .hm-spaces, .dk-wel-acts) > :nth-child(4) { animation-delay: .2s; }
+:is(.hm-stats, .hm-spaces, .dk-wel-acts) > :nth-child(5) { animation-delay: .25s; }
+:is(.hm-stats, .hm-spaces, .dk-wel-acts) > :nth-child(n + 6) { animation-delay: .3s; }
+.hm-quick > :first-child, .hm-stats > :first-child, .hm-spaces > :first-child, .dk-wel-acts > :first-child { animation-delay: .05s; }
+
+/* Animations réduites ou coupées (Apparence, système) */
+html:is([data-motion='reduced'], [data-motion='none']) :is(.hm-empty > svg, .space-pane, .hm > *, .hm-quick > *, .hm-stats > *, .hm-spaces > *, .dk-wel-acts > *) { animation: none !important; }
+html[data-motion='none'] :is(.hm-qa, .hm-stat, .hm-card, .hm-space, .dk-wel-card, .btn, .ab-go, .rail-ic, .hm-qa-ic, .hm-space-ic, .hm-stat-ic, .hm-logo) { transition: none !important; transform: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  :is(.hm-empty > svg, .space-pane, .hm > *, .hm-quick > *, .hm-stats > *, .hm-spaces > *, .dk-wel-acts > *) { animation: none !important; }
+  :is(.hm-qa, .hm-stat, .hm-card, .hm-space, .dk-wel-card, .btn, .rail-ic, .hm-qa-ic, .hm-space-ic, .hm-stat-ic, .hm-logo) { transform: none !important; }
+}
+
+/* Contraste élevé : pas de teinte de toile ni d'ombres colorées. */
+html[data-contrast='high'] :is(.rail-spaces > button.on .rail-ic, .tb-space-ic, .hm-space-ic) { box-shadow: none !important; }

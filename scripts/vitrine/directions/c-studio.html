@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Direction C — Studio</title>
+<style>
+@font-face{font-family:Bricolage;src:url(../polices/bricolage-normal.woff2) format("woff2");font-weight:200 800}
+@font-face{font-family:Geist;src:url(../polices/geist-normal.woff2) format("woff2");font-weight:300 800}
+@font-face{font-family:"JetBrains Mono";src:url(../polices/jetbrains-mono-normal.woff2) format("woff2");font-weight:400 600}
+:root{--bg:#fff;--soft:#f5f5f7;--ink:#0e0f12;--ink-2:#40424a;--muted:#787b85;--line:#e7e8ec;--violet:#6450f0;--lime:#dcf26a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;background:var(--bg);color:var(--ink);font:16px/1.55 Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.disp{font-family:Bricolage,Geist,sans-serif;font-variation-settings:"opsz" 96;letter-spacing:-.035em}
+.mono{font:500 11.5px/1.3 "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.wrap{padding:0 64px}
+nav{display:flex;align-items:center;height:76px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:650;font-size:18px;letter-spacing:-.02em}.logo img{width:28px;height:28px;border-radius:8px}
+nav .links{display:flex;gap:30px;margin-left:64px}nav .links span{font-size:14.5px;color:var(--ink-2)}
+nav .right{margin-left:auto;display:flex;gap:12px}
+.btn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:999px;background:var(--violet);color:#fff;font-weight:600;font-size:14.5px}
+.btn.line{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.hero{text-align:center;padding:64px 0 0;background:linear-gradient(var(--soft),var(--bg) 70%)}
+.app{width:64px;height:64px;border-radius:18px;margin:0 auto;box-shadow:0 14px 30px -12px rgba(30,20,90,.35)}
+h1{font-size:92px;line-height:.98;font-weight:700;margin:26px auto 0;max-width:1000px}
+h1 mark{background:linear-gradient(transparent 62%,var(--lime) 62%,var(--lime) 92%,transparent 92%);color:inherit;padding:0 4px}
+.sub{font-size:20px;color:var(--ink-2);margin-top:18px}
+.claim{display:flex;justify-content:center;margin-top:30px}
+.field{display:flex;align-items:center;gap:8px;height:56px;padding:6px 6px 6px 20px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:0 16px 40px -18px rgba(14,15,18,.25);width:520px}
+.field .ph{flex:1;text-align:left;color:var(--muted)}.field .btn{flex:none}
+.note{margin-top:14px;font-size:13.5px;color:var(--muted)}
+.row{position:relative;height:640px;margin-top:56px}
+.px{position:absolute;bottom:40px;filter:drop-shadow(0 40px 40px rgba(14,15,18,.22)) drop-shadow(0 10px 14px rgba(14,15,18,.12))}
+.px img.frame{display:block;width:100%;position:relative}
+.px .scr{position:absolute;z-index:2;overflow:hidden;background:#f7f3ee}
+.px .scr img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+.px .cam{position:absolute;z-index:3;left:50%;width:3.2%;aspect-ratio:1;border-radius:50%;background:#0b0b0c;transform:translateX(-50%)}
+.p9a .scr{left:5.637%;top:2.84%;width:88.24%;height:94.32%;border-radius:8.06%/3.59%}.p9a .cam{top:3.9%;width:3.6%}
+.p10 .scr{left:4.896%;top:2.17%;width:89.63%;height:95.62%;border-radius:8.06%/3.59%}.p10 .cam{top:3.4%;width:3.6%}
+.p10p .scr{left:4.184%;top:2.02%;width:90.78%;height:96.23%;border-radius:7.73%/3.47%}.p10p .cam{top:3.2%}
+.d1{left:110px;width:210px;bottom:20px}.d2{left:330px;width:240px;bottom:44px}.d3{left:580px;width:280px;z-index:3}.d4{left:870px;width:240px;bottom:44px}.d5{left:1120px;width:210px;bottom:20px}
+.s2{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;padding:110px 0 90px}
+.s2 h2{font-size:60px;line-height:1;font-weight:700}
+.s2 h2 mark{background:var(--lime);border-radius:10px;padding:0 10px;color:inherit}
+.feats{display:grid;gap:18px;margin-top:30px}
+.feat{display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start}
+.feat i{width:44px;height:44px;border-radius:14px;background:#efedff;color:var(--violet);display:grid;place-items:center;font-style:normal;font-weight:700}
+.feat b{display:block;font-size:17px}.feat span{color:var(--ink-2);font-size:15px}
+.tab{position:relative;filter:drop-shadow(0 44px 50px rgba(14,15,18,.22))}
+.tab img.frame{display:block;width:100%}
+.tab .scr{position:absolute;left:4.253%;top:6.369%;width:91.49%;height:87.1%;overflow:hidden;border-radius:1.5%}
+.tab .scr img{width:100%;height:100%;object-fit:cover;object-position:top}
+.card{position:absolute;z-index:3;background:#fff;border-radius:18px;padding:14px 18px;box-shadow:0 24px 50px -18px rgba(14,15,18,.3),0 4px 12px -4px rgba(14,15,18,.1)}
+.card b{display:block;font-family:Bricolage,sans-serif;font-size:30px;letter-spacing:-.03em}.card small{color:var(--muted);font-size:12.5px}
+.c1{left:-30px;bottom:40px}.c2{right:-24px;top:30px}
+.spec{display:grid;grid-template-columns:1.3fr 1fr 1fr;border-top:1px solid var(--line);padding:28px 0 64px}
+.big{font-size:88px;font-weight:700;line-height:1}
+.chips{display:flex;gap:10px;margin-top:14px}.c{width:62px;height:62px;border-radius:50%;border:1px solid var(--line)}
+</style></head><body>
+<section class="hero"><div class="wrap">
+  <nav><span class="logo"><img src="../../../nexora/app/renderer/logo.png" alt="">NEXORA</span><span class="links"><span>Espaces</span><span>Tarifs</span><span>Nouveautés</span><span>Télécharger</span></span>
+    <span class="right"><span class="btn line">Ouvrir NEXORA web</span><span class="btn">Télécharger</span></span></nav>
+  <img class="app" src="../../../nexora/app/renderer/logo.png" alt="" style="margin-top:40px">
+  <h1 class="disp">Ton site, sur <mark>tous les écrans.</mark></h1>
+  <p class="sub">Teste-le sur 181 appareils réels, puis publie-le sur le web, Android et Windows.</p>
+  <div class="claim"><div class="field"><span class="ph">https://ton-site.com</span><span class="btn">Afficher</span></div></div>
+  <p class="note">Gratuit pour commencer · Windows 10 et 11 · Interface en français</p>
+  <div class="row">
+    <div class="px p9a d1"><img class="frame" src="../../../nexora/app/renderer/vendor/skins/pixel_9a/back.webp" alt=""><div class="scr"><img src="ecrans/kora-mobile-3.webp" alt=""></div><i class="cam"></i></div>
+    <div class="px p10 d2"><img class="frame" src="../../../nexora/app/renderer/vendor/skins/pixel_10/back.webp" alt=""><div class="scr"><img src="ecrans/kora-mobile-2.webp" alt=""></div><i class="cam"></i></div>
+    <div class="px p10p d3"><img class="frame" src="../../../nexora/app/renderer/vendor/skins/pixel_10_pro/back.webp" alt=""><div class="scr"><img src="ecrans/kora-mobile-1.webp" alt=""></div><i class="cam"></i></div>
+    <div class="px p10 d4"><img class="frame" src="../../../nexora/app/renderer/vendor/skins/pixel_10/back.webp" alt=""><div class="scr"><img src="ecrans/kora-mobile-2.webp" alt="" style="object-position:0 40%"></div><i class="cam"></i></div>
+    <div class="px p9a d5"><img class="frame" src="../../../nexora/app/renderer/vendor/skins/pixel_9a/back.webp" alt=""><div class="scr"><img src="ecrans/kora-mobile-3.webp" alt="" style="object-position:0 70%"></div><i class="cam"></i></div>
+  </div></div></section>
+<div class="wrap">
+  <section class="s2"><div><span class="mono">Responsive Lab · App Builder · Desktop Builder</span><h2 class="disp" style="margin-top:16px">Un projet. <mark>Trois plateformes.</mark></h2>
+    <div class="feats"><div class="feat"><i>1</i><div><b>Sur le web</b><span>Partage par une adresse publique, puis mise en ligne chez les principaux hébergeurs.</span></div></div>
+      <div class="feat"><i>2</i><div><b>Sur Android</b><span>APK et AAB signés, notifications push, fiche Play Store.</span></div></div>
+      <div class="feat"><i>3</i><div><b>Sur Windows</b><span>Installateur, portable, ZIP ou MSI, avec mises à jour automatiques.</span></div></div></div></div>
+    <div class="tab"><img class="frame" src="../../../nexora/app/renderer/vendor/skins/pixel_tablet/back.webp" alt=""><div class="scr"><img src="ecrans/kora-tablette.webp" alt=""></div>
+      <div class="card c1"><b>181</b><small>appareils réels à l’écran</small></div><div class="card c2"><b>4 formats</b><small>installateur, portable, ZIP, MSI</small></div></div></section>
+  <div class="spec"><div><span class="mono">Titrage — Bricolage Grotesque</span><div class="big disp" style="margin-top:12px">Aa <mark style="background:var(--lime);padding:0 8px;border-radius:10px">Aa</mark></div></div>
+    <div><span class="mono">Texte — Geist</span><p style="font-size:22px;margin-top:14px">Ton site, partout.</p></div>
+    <div><span class="mono">Palette</span><div class="chips"><span class="c" style="background:#fff"></span><span class="c" style="background:#0e0f12"></span><span class="c" style="background:#6450f0"></span><span class="c" style="background:#dcf26a"></span></div></div></div>
+</div></body></html>

@@ -1,0 +1,880 @@
+{
+ "pixel_10": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_10",
+    "canvas": [
+     1198,
+     2531
+    ],
+    "display": {
+     "w": 1080,
+     "h": 2424,
+     "x": 59,
+     "y": 55,
+     "r": 87
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   }
+  }
+ },
+ "pixel_10_pro": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_10_pro",
+    "canvas": [
+     1408,
+     2965
+    ],
+    "display": {
+     "w": 1280,
+     "h": 2856,
+     "x": 59,
+     "y": 60,
+     "r": 99
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   }
+  }
+ },
+ "pixel_10_pro_xl": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_10_pro_xl",
+    "canvas": [
+     1466,
+     3101
+    ],
+    "display": {
+     "w": 1344,
+     "h": 2992,
+     "x": 60,
+     "y": 55,
+     "r": 108
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   }
+  }
+ },
+ "pixel_10a": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_10a",
+    "canvas": [
+     1218,
+     2553
+    ],
+    "display": {
+     "w": 1080,
+     "h": 2424,
+     "x": 65,
+     "y": 64,
+     "r": 87
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   }
+  }
+ },
+ "pixel_10_pro_fold": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "closed": {
+    "path": "pixel_10_pro_fold/closed",
+    "canvas": [
+     1236,
+     2554
+    ],
+    "display": {
+     "w": 1080,
+     "h": 2364,
+     "x": 84,
+     "y": 66,
+     "r": 75
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   },
+   "default": {
+    "path": "pixel_10_pro_fold/default",
+    "canvas": [
+     2204,
+     2274
+    ],
+    "display": {
+     "w": 2076,
+     "h": 2152,
+     "x": 62,
+     "y": 58,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": null
+   }
+  }
+ },
+ "pixel_9": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_9",
+    "canvas": [
+     1198,
+     2531
+    ],
+    "display": {
+     "w": 1080,
+     "h": 2424,
+     "x": 55,
+     "y": 58,
+     "r": 87
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   }
+  }
+ },
+ "pixel_9_pro": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_9_pro",
+    "canvas": [
+     1408,
+     2974
+    ],
+    "display": {
+     "w": 1280,
+     "h": 2856,
+     "x": 60,
+     "y": 61,
+     "r": 109
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   }
+  }
+ },
+ "pixel_9_pro_xl": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_9_pro_xl",
+    "canvas": [
+     1466,
+     3101
+    ],
+    "display": {
+     "w": 1344,
+     "h": 2992,
+     "x": 57,
+     "y": 56,
+     "r": 108
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   }
+  }
+ },
+ "pixel_9a": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_9a",
+    "canvas": [
+     1224,
+     2570
+    ],
+    "display": {
+     "w": 1080,
+     "h": 2424,
+     "x": 69,
+     "y": 73,
+     "r": 87
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   }
+  }
+ },
+ "pixel_9_pro_fold": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "closed": {
+    "path": "pixel_9_pro_fold/closed",
+    "canvas": [
+     1236,
+     2554
+    ],
+    "display": {
+     "w": 1080,
+     "h": 2424,
+     "x": 94,
+     "y": 70,
+     "r": 75
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   },
+   "default": {
+    "path": "pixel_9_pro_fold/default",
+    "canvas": [
+     2204,
+     2274
+    ],
+    "display": {
+     "w": 2076,
+     "h": 2152,
+     "x": 62,
+     "y": 62,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": null
+   }
+  }
+ },
+ "pixel_8": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_8",
+    "canvas": [
+     1187,
+     2513
+    ],
+    "display": {
+     "w": 1080,
+     "h": 2400,
+     "x": 49,
+     "y": 55,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   }
+  }
+ },
+ "pixel_8_pro": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_8_pro",
+    "canvas": [
+     1469,
+     3104
+    ],
+    "display": {
+     "w": 1344,
+     "h": 2992,
+     "x": 58,
+     "y": 58,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   }
+  }
+ },
+ "pixel_8a": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_8a",
+    "canvas": [
+     1198,
+     2539
+    ],
+    "display": {
+     "w": 1080,
+     "h": 2400,
+     "x": 57,
+     "y": 57,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   }
+  }
+ },
+ "pixel_7": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_7",
+    "canvas": [
+     1200,
+     2541
+    ],
+    "display": {
+     "w": 1080,
+     "h": 2400,
+     "x": 59,
+     "y": 58,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   }
+  }
+ },
+ "pixel_7_pro": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_7_pro",
+    "canvas": [
+     1547,
+     3272
+    ],
+    "display": {
+     "w": 1440,
+     "h": 3120,
+     "x": 48,
+     "y": 66,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   }
+  }
+ },
+ "pixel_7a": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_7a",
+    "canvas": [
+     1226,
+     2559
+    ],
+    "display": {
+     "w": 1080,
+     "h": 2400,
+     "x": 69,
+     "y": 69,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   }
+  }
+ },
+ "pixel_fold": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "closed": {
+    "path": "pixel_fold/closed",
+    "canvas": [
+     1268,
+     2233
+    ],
+    "display": {
+     "w": 1080,
+     "h": 2092,
+     "x": 116,
+     "y": 73,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": "hole"
+   },
+   "default": {
+    "path": "pixel_fold/default",
+    "canvas": [
+     2368,
+     2087
+    ],
+    "display": {
+     "w": 2208,
+     "h": 1840,
+     "x": 77,
+     "y": 126,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": null
+   }
+  }
+ },
+ "pixel_tablet": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "pixel_tablet",
+    "canvas": [
+     2798,
+     1837
+    ],
+    "display": {
+     "w": 2560,
+     "h": 1600,
+     "x": 119,
+     "y": 117,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.webp",
+    "fore": null,
+    "mask": "mask.webp",
+    "cutout": null
+   }
+  }
+ },
+ "wearos_large_round": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "wearos_large_round",
+    "canvas": [
+     539,
+     539
+    ],
+    "display": {
+     "w": 454,
+     "h": 454,
+     "x": 42,
+     "y": 42,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "device_bezel.png",
+    "fore": null,
+    "mask": "device_mask.png",
+    "cutout": null
+   }
+  }
+ },
+ "wearos_small_round": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "wearos_small_round",
+    "canvas": [
+     456,
+     456
+    ],
+    "display": {
+     "w": 384,
+     "h": 384,
+     "x": 36,
+     "y": 36,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "device_bezel.png",
+    "fore": null,
+    "mask": "device_mask.png",
+    "cutout": null
+   }
+  }
+ },
+ "wearos_xl_round": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "wearos_xl_round",
+    "canvas": [
+     530,
+     530
+    ],
+    "display": {
+     "w": 480,
+     "h": 480,
+     "x": 25,
+     "y": 25,
+     "r": 210
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "device_bezel.png",
+    "fore": null,
+    "mask": "device_mask.png",
+    "cutout": null
+   }
+  }
+ },
+ "wearos_rect": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "wearos_rect",
+    "canvas": [
+     466,
+     540
+    ],
+    "display": {
+     "w": 402,
+     "h": 476,
+     "x": 32,
+     "y": 32,
+     "r": 0
+    },
+    "bg": {
+     "x": 16,
+     "y": 16
+    },
+    "back": "device_bezel.png",
+    "fore": null,
+    "mask": null,
+    "cutout": null
+   }
+  }
+ },
+ "wearos_square": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "wearos_square",
+    "canvas": [
+     432,
+     432
+    ],
+    "display": {
+     "w": 360,
+     "h": 360,
+     "x": 36,
+     "y": 36,
+     "r": 0
+    },
+    "bg": {
+     "x": 18,
+     "y": 18
+    },
+    "back": "device_bezel.png",
+    "fore": null,
+    "mask": null,
+    "cutout": null
+   }
+  }
+ },
+ "automotive_1024": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "automotive_1024",
+    "canvas": [
+     1461,
+     1481
+    ],
+    "display": {
+     "w": 1024,
+     "h": 768,
+     "x": 218,
+     "y": 124,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.png",
+    "fore": null,
+    "mask": null,
+    "cutout": null
+   }
+  }
+ },
+ "automotive_landscape": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "automotive_landscape",
+    "canvas": [
+     1180,
+     700
+    ],
+    "display": {
+     "w": 1080,
+     "h": 600,
+     "x": 50,
+     "y": 50,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.png",
+    "fore": null,
+    "mask": null,
+    "cutout": null
+   }
+  }
+ },
+ "automotive_large_portrait": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "automotive_large_portrait",
+    "canvas": [
+     1380,
+     1706
+    ],
+    "display": {
+     "w": 1280,
+     "h": 1606,
+     "x": 50,
+     "y": 50,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.png",
+    "fore": null,
+    "mask": null,
+    "cutout": null
+   }
+  }
+ },
+ "automotive_ultrawide_cutout": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "automotive_ultrawide_cutout",
+    "canvas": [
+     4004,
+     1420
+    ],
+    "display": {
+     "w": 3904,
+     "h": 1320,
+     "x": 50,
+     "y": 50,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.png",
+    "fore": null,
+    "mask": null,
+    "cutout": null
+   }
+  }
+ },
+ "tv_1080p": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "tv_1080p",
+    "canvas": [
+     2090,
+     1255
+    ],
+    "display": {
+     "w": 1920,
+     "h": 1080,
+     "x": 85,
+     "y": 59,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.png",
+    "fore": null,
+    "mask": null,
+    "cutout": null
+   }
+  }
+ },
+ "tv_4k": {
+  "vendor": "google",
+  "license": "Apache-2.0",
+  "variants": {
+   "default": {
+    "path": "tv_4k",
+    "canvas": [
+     4180,
+     2510
+    ],
+    "display": {
+     "w": 3840,
+     "h": 2160,
+     "x": 170,
+     "y": 118,
+     "r": 0
+    },
+    "bg": {
+     "x": 0,
+     "y": 0
+    },
+    "back": "back.png",
+    "fore": null,
+    "mask": null,
+    "cutout": null
+   }
+  }
+ }
+}

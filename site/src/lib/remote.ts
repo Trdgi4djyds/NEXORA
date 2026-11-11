@@ -1,0 +1,155 @@
+// Informations publiques lues sur le serveur de NEXORA avec la clé publique, comme l'application : offres et
+// prix (modifiables depuis l'administration), lien de téléchargement de la version Windows, adresse du support,
+// maintenance annoncée. Sans réponse, le site garde le catalogue livré avec NEXORA (nx/offres/catalog.js).
+import { useEffect, useState } from "react"
+import { projectRef, publicKey } from "../../../supabase/nexora.json"
+import { paymentsOpen } from "./account"
+import { CONTACT_EMAIL, FALLBACK, PLAN_ORDER, REFERRAL, discounted, limitText, money, percent } from "../../../nexora/app/renderer/nx/offres/catalog.js"
+
+export { CONTACT_EMAIL, REFERRAL, discounted, limitText, money, percent }
+
+export type PlanId = "free" | "pro"
+export type Plan = {
+  id: PlanId
+  name: string
+  description: string
+  price_month_cents: number
+  price_year_cents: number
+  currency: string
+  badge: string
+  features: string[]
+  limits: Record<string, number>
+  perms: Record<string, boolean>
+}
+export type Remote = {
+  ready: boolean
+  plans: Plan[]
+  downloadUrl: string
+  supportEmail: string
+  maintenance: string
+  /** NEXORA #090 : parrainage (app_config.referral) : programme ouvert, remise du filleul, lien mémorisé (jours). */
+  referral: { enabled: boolean; discount_pct: number; cookie_days: number }
+}
+
+const FB = FALLBACK as unknown as Record<PlanId, Plan>
+const ORDER = PLAN_ORDER as PlanId[]
+const BASE = `https://${projectRef}.supabase.co/rest/v1/`
+
+export const INITIAL: Remote = {
+  ready: false,
+  plans: ORDER.map((id) => FB[id]),
+  downloadUrl: "",
+  // NEXORA #087 : adresse de contact de NEXORA Devs Toolbox, remplacée par app_config.support_email si elle est renseignée.
+  supportEmail: CONTACT_EMAIL,
+  maintenance: "",
+  referral: { enabled: true, discount_pct: REFERRAL.discount_pct, cookie_days: REFERRAL.cookie_days },
+}
+
+type Row = Record<string, unknown>
+const text = (v: unknown) => (typeof v === "string" ? v.trim() : "")
+const cents = (v: unknown, fb: number) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : fb)
+const record = <T,>(v: unknown) => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, T>) : {})
+
+async function rest(path: string): Promise<unknown> {
+  const ctrl = new AbortController()
+  const timer = window.setTimeout(() => ctrl.abort(), 8000)
+  try {
+    const res = await fetch(BASE + path, {
+      headers: { apikey: publicKey, Authorization: `Bearer ${publicKey}` },
+      signal: ctrl.signal,
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return await res.json()
+  } finally {
+    window.clearTimeout(timer)
+  }
+}
+
+function mergePlans(rows: unknown): Plan[] {
+  const list = (Array.isArray(rows) ? rows : []) as Row[]
+  const plans = ORDER.filter((id) => list.some((r) => r.id === id)).map((id) => {
+    const fb = FB[id]
+    const row = list.find((r) => r.id === id) as Row
+    const features = Array.isArray(row.features) ? row.features.map(String).filter(Boolean) : []
+    return {
+      ...fb,
+      name: text(row.name) || fb.name,
+      description: text(row.description) || fb.description,
+      price_month_cents: cents(row.price_month_cents, fb.price_month_cents),
+      price_year_cents: cents(row.price_year_cents, fb.price_year_cents),
+      currency: text(row.currency) || fb.currency,
+      badge: typeof row.badge === "string" ? row.badge : fb.badge,
+      features: features.length ? features : fb.features,
+      limits: { ...fb.limits, ...record<number>(row.limits) },
+      perms: { ...fb.perms, ...record<boolean>(row.perms) },
+    }
+  })
+  return plans.length ? plans : INITIAL.plans
+}
+
+async function fetchAll(): Promise<Remote> {
+  const [plans, config] = await Promise.allSettled([
+    rest(
+      "plans?select=id,name,description,price_month_cents,price_year_cents,currency,badge,features,limits,perms&active=eq.true&order=sort",
+    ),
+    rest("app_config?select=key,value&key=in.(desktop_download_url,support_email,maintenance,referral)"),
+  ])
+  const cfg: Record<string, unknown> = {}
+  if (config.status === "fulfilled" && Array.isArray(config.value))
+    for (const row of config.value as Row[]) cfg[String(row.key)] = row.value
+  const url = text(cfg.desktop_download_url)
+  const mail = text(cfg.support_email)
+  const maintenance = record<unknown>(cfg.maintenance)
+  const ref = record<unknown>(cfg.referral)
+  const num = (v: unknown, fb: number, max: number) => (typeof v === "number" && v >= 0 && v <= max ? v : fb)
+  return {
+    ready: true,
+    plans: plans.status === "fulfilled" ? mergePlans(plans.value) : INITIAL.plans,
+    downloadUrl: /^https:\/\/\S+$/.test(url) ? url : "",
+    supportEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail) ? mail : CONTACT_EMAIL,
+    maintenance: maintenance.enabled === true ? text(maintenance.message) || "NEXORA est en maintenance." : "",
+    referral: {
+      enabled: ref.enabled !== false,
+      discount_pct: num(ref.discount_pct, REFERRAL.discount_pct, 90),
+      cookie_days: num(ref.cookie_days, REFERRAL.cookie_days, 365),
+    },
+  }
+}
+
+let pending: Promise<Remote> | null = null
+let cached: Remote | null = null
+export function loadRemote() {
+  pending ??= fetchAll().then((r) => (cached = r))
+  return pending
+}
+
+/** #087 : paiement en ligne ouvert (null tant que le Worker n'a pas répondu). */
+export function usePayments(): boolean | null {
+  const [open, setOpen] = useState<boolean | null>(null)
+  useEffect(() => {
+    let alive = true
+    paymentsOpen().then((v) => alive && setOpen(v))
+    return () => {
+      alive = false
+    }
+  }, [])
+  return open
+}
+
+export function useRemote(): Remote {
+  const [state, setState] = useState<Remote>(cached ?? INITIAL)
+  useEffect(() => {
+    let alive = true
+    loadRemote().then((r) => alive && setState(r))
+    return () => {
+      alive = false
+    }
+  }, [])
+  return state
+}
+
+/** Mois offerts par le paiement annuel (2 pour 120 $ au lieu de 12 × 12 $). */
+export function monthsOffered(plan: Plan) {
+  if (!plan.price_month_cents || !plan.price_year_cents) return 0
+  return Math.max(0, Math.round(12 - plan.price_year_cents / plan.price_month_cents))
+}

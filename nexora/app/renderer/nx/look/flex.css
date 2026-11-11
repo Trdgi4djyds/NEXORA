@@ -1,0 +1,264 @@
+/* NEXORA #042 : couche « Flex », par-dessus les finitions du #040 (look.css), d'après les références de
+   l'utilisateur (tuiles de services colorées, icônes Streamline Flex sur carré pastel, tableau de bord à blocs
+   colorés). Une palette par espace (aplat, pastel, encre, tuile sombre) ; l'accent de l'espace ouvert colore
+   boutons, sélections et focus (sauf couleur d'accent choisie dans les Réglages) ; compteurs et espaces de
+   l'Accueil en tuiles pleines ; icônes sur carré pastel au pictogramme de la même teinte ; boutons à reflet ;
+   cartes qui se soulèvent avec une lumière qui suit le pointeur (nx/look/index.js), compteurs qui défilent.
+   Aucun dégradé au repos. Tout suit le thème (clair : pastels, encres foncées ; sombre : tuiles soutenues, texte
+   blanc), Apparence → Animations (data-motion), le réglage du système et « Contraste élevé ». Les contenus (scène
+   3D, pages, écrans d'appareils, maquettes) ne changent pas. Chargée par index.html après look.css. */
+
+@property --nxu-spot { syntax: '<number>'; inherits: false; initial-value: 0; }
+
+/* ---------- Palette par espace (générée, contrastes vérifiés) ----------
+   --u aplat · --u-soft pastel (fonds légers) · --u-tile tuile claire (texte foncé AAA) · --u-ink encre (AA sur blanc
+   et sur le pastel) · --u-deep tuile sombre (AA avec du blanc) · --u-dsoft fond teinté sombre · --u-dink encre sombre
+   (AA sur fond sombre) · --u-acc accent du thème sombre (texte blanc et fond sombre à 4,2:1, mieux que le bleu
+   d'origine) · --u-alt teinte d'appoint des illustrations. */
+:is([data-mode='home'], [data-space='home'], .hm-qa:has(.hm-qa-ic.q1)) { --u: #7b6cf6; --u-soft: #edeafe; --u-tile: #dfdcfd; --u-ink: #4b3fd6; --u-deep: #5446c9; --u-dsoft: #26253f; --u-dink: #ada4f9; --u-acc: #7668ec; --u-alt: #ff7aa8; }
+:is([data-mode='preview'], [data-space='preview'], .hm-stat.blue) { --u: #3d8bfd; --u-soft: #e4efff; --u-tile: #d0e3ff; --u-ink: #145fd6; --u-deep: #2c62cf; --u-dsoft: #1c2a40; --u-dink: #87b7fe; --u-acc: #367adf; --u-alt: #19c3e6; }
+:is([data-mode='browser'], [data-space='browser']) { --u: #19b5a5; --u-soft: #dff5f2; --u-tile: #c8ede9; --u-ink: #0a6f66; --u-deep: #13786e; --u-dsoft: #163032; --u-dink: #70d1c7; --u-acc: #138a7d; --u-alt: #3d8bfd; }
+:is([data-mode='dev'], [data-space='dev']) { --u: #ff8a34; --u-soft: #ffefe3; --u-tile: #ffe3ce; --u-ink: #b04708; --u-deep: #b45716; --u-dsoft: #3b2920; --u-dink: #ffb681; --u-acc: #ba6526; --u-alt: #ff5c8a; }
+:is([data-mode='android'], [data-space='android'], .hm-stat.mint, .hm-qa:has(.hm-qa-ic.q3)) { --u: #35c46a; --u-soft: #e3f7ea; --u-tile: #cff1db; --u-ink: #137537; --u-deep: #1f7a45; --u-dsoft: #1b3328; --u-dink: #82daa3; --u-acc: #268d4c; --u-alt: #19b5a5; }
+:is([data-mode='studio'], [data-space='studio'], .hm-stat.pink, .hm-qa:has(.hm-qa-ic.q2)) { --u: #f05a9b; --u-soft: #fde8f1; --u-tile: #fbd7e7; --u-ink: #c21d68; --u-deep: #b0396f; --u-dsoft: #392230; --u-dink: #f699c1; --u-acc: #cc4c84; --u-alt: #ff9a3d; }
+:is([data-mode='design'], [data-space='design']) { --u: #9b6bff; --u-soft: #f1eaff; --u-tile: #e7dbff; --u-ink: #6d3fe0; --u-deep: #6b45c8; --u-dsoft: #2b2440; --u-dink: #c1a3ff; --u-acc: #8c60e6; --u-alt: #ff6bb5; }
+:is([data-mode='security'], [data-space='security'], .hm-stat.red) { --u: #ff6b5b; --u-soft: #ffeae8; --u-tile: #ffdbd8; --u-ink: #bf2a1b; --u-deep: #b93c2f; --u-dsoft: #3b2426; --u-dink: #ffa399; --u-acc: #cc5649; --u-alt: #ffb02e; }
+:is([data-mode='desktop'], [data-space='desktop'], .hm-stat.yellow) { --u: #ffbe2e; --u-soft: #fff6e2; --u-tile: #ffefcd; --u-ink: #8f5d00; --u-deep: #8a650f; --u-dsoft: #3b321f; --u-dink: #ffd77d; --u-acc: #9c741c; --u-alt: #ff7a3d; }
+
+/* Teintes des illustrations (nx/cards) sur les tuiles : un cran plus soutenues que le fond de la tuile. */
+html[data-theme='light'] body :is(.hm-space[data-space='home'], .hm-qa:has(.hm-qa-ic.q1)) { --nxi-s: #c5befb; --nxi-m: #a59bf9; --nxi-d: #7b6cf6; --nxi-a: #ff7aa8; }
+html[data-theme='dark'] body :is(.hm-space[data-space='home'], .hm-qa:has(.hm-qa-ic.q1)) { --nxi-s: #6558ce; --nxi-m: #7d72d6; --nxi-d: #ada6e5; --nxi-a: #ffa2c2; }
+html[data-theme='light'] body :is(.hm-space[data-space='preview'], .hm-stat.blue) { --nxi-s: #aaccfe; --nxi-m: #7bb0fe; --nxi-d: #3d8bfd; --nxi-a: #19c3e6; }
+html[data-theme='dark'] body :is(.hm-space[data-space='preview'], .hm-stat.blue) { --nxi-s: #4172d4; --nxi-m: #5f88db; --nxi-d: #9ab4e8; --nxi-a: #5ed5ee; }
+html[data-theme='light'] body :is(.hm-space[data-space='browser']) { --nxi-s: #9aded7; --nxi-m: #63cdc2; --nxi-d: #19b5a5; --nxi-a: #3d8bfd; }
+html[data-theme='dark'] body :is(.hm-space[data-space='browser']) { --nxi-s: #2b867c; --nxi-m: #4c9891; --nxi-d: #8ebeb9; --nxi-a: #77aefe; }
+html[data-theme='light'] body :is(.hm-space[data-space='dev']) { --nxi-s: #ffcca6; --nxi-m: #ffaf75; --nxi-d: #ff8a34; --nxi-a: #ff5c8a; }
+html[data-theme='dark'] body :is(.hm-space[data-space='dev']) { --nxi-s: #bc682d; --nxi-m: #c67f4e; --nxi-d: #dbae8f; --nxi-a: #ff8dad; }
+html[data-theme='light'] body :is(.hm-space[data-space='android'], .hm-stat.mint, .hm-qa:has(.hm-qa-ic.q3)) { --nxi-s: #a6e5bd; --nxi-m: #76d79a; --nxi-d: #35c46a; --nxi-a: #19b5a5; }
+html[data-theme='dark'] body :is(.hm-space[data-space='android'], .hm-stat.mint, .hm-qa:has(.hm-qa-ic.q3)) { --nxi-s: #358758; --nxi-m: #559a72; --nxi-d: #93bfa6; --nxi-a: #5ecbc0; }
+html[data-theme='light'] body :is(.hm-space[data-space='studio'], .hm-stat.pink, .hm-qa:has(.hm-qa-ic.q2)) { --nxi-s: #f8b6d3; --nxi-m: #f58fbb; --nxi-d: #f05a9b; --nxi-a: #ff9a3d; }
+html[data-theme='dark'] body :is(.hm-space[data-space='studio'], .hm-stat.pink, .hm-qa:has(.hm-qa-ic.q2)) { --nxi-s: #b84d7d; --nxi-m: #c36992; --nxi-d: #d9a0ba; --nxi-a: #ffb877; }
+html[data-theme='light'] body :is(.hm-space[data-space='design']) { --nxi-s: #d3beff; --nxi-m: #bb9aff; --nxi-d: #9b6bff; --nxi-a: #ff6bb5; }
+html[data-theme='dark'] body :is(.hm-space[data-space='design']) { --nxi-s: #7a58ce; --nxi-m: #8f72d5; --nxi-d: #b8a6e5; --nxi-a: #ff97cb; }
+html[data-theme='light'] body :is(.hm-space[data-space='security'], .hm-stat.red) { --nxi-s: #ffbeb7; --nxi-m: #ff9a8f; --nxi-d: #ff6b5b; --nxi-a: #ffb02e; }
+html[data-theme='dark'] body :is(.hm-space[data-space='security'], .hm-stat.red) { --nxi-s: #c05044; --nxi-m: #ca6b61; --nxi-d: #dda19b; --nxi-a: #ffc86d; }
+html[data-theme='light'] body :is(.hm-space[data-space='desktop'], .hm-stat.yellow) { --nxi-s: #ffe2a3; --nxi-m: #ffd371; --nxi-d: #ffbe2e; --nxi-a: #ff7a3d; }
+html[data-theme='dark'] body :is(.hm-space[data-space='desktop'], .hm-stat.yellow) { --nxi-s: #967427; --nxi-m: #a68a49; --nxi-d: #c7b58c; --nxi-a: #ffa277; }
+
+/* ---------- Plus de dégradés : les variables d'origine deviennent des aplats ---------- */
+:root, html:root {
+  --sp-home: #7668ec; --sp-preview: #367adf; --sp-browser: #138a7d; --sp-dev: #ba6526; --sp-android: #268d4c;
+  --sp-studio: #cc4c84; --sp-design: #8c60e6; --sp-security: #cc5649; --sp-desktop: #9c741c;
+  /* Couleurs pleines du #040 (look.css) alignées sur la même palette : rail, toile teintée, repères. */
+  --spc-home: #7668ec; --spc-preview: #367adf; --spc-browser: #138a7d; --spc-dev: #ba6526; --spc-android: #268d4c;
+  --spc-studio: #cc4c84; --spc-design: #8c60e6; --spc-security: #cc5649; --spc-desktop: #9c741c;
+  --brand-grad: #7668ec; --brand-glow: 0 8px 20px rgba(118, 104, 236, .3);
+  --nxu-lift: 0 14px 32px -12px rgba(22, 24, 48, .28);
+}
+html[data-theme='dark'] { --nxu-lift: 0 16px 34px -12px rgba(0, 0, 0, .6); }
+
+/* Espace ouvert : l'accent (boutons, sélections, liens, focus) prend la couleur de l'espace, seulement quand la
+   couleur d'accent des Réglages est celle par défaut (« NEXORA ») : un autre choix de l'utilisateur est gardé
+   (data-nx-accent posé par nx/look/index.js). Le Studio garde ses sélections (#004, règles de .studio). */
+html[data-nx-accent='espace'][data-theme='light'] body[data-mode] {
+  --accent: var(--u-ink); --accent-ink: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--u) 18%, transparent); --accent-softer: color-mix(in srgb, var(--u) 10%, transparent);
+  --brand-grad: var(--u-ink); --brand-glow: 0 8px 20px color-mix(in srgb, var(--u) 34%, transparent);
+}
+html[data-nx-accent='espace'][data-theme='dark'] body[data-mode] {
+  --accent: var(--u-acc); --accent-ink: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--u) 22%, transparent); --accent-softer: color-mix(in srgb, var(--u) 12%, transparent);
+  --brand-grad: var(--u-acc); --brand-glow: 0 8px 22px color-mix(in srgb, var(--u) 30%, transparent);
+}
+
+/* ---------- Rail : tuile pleine pour l'espace ouvert, pastel au survol ---------- */
+html .rail-spaces > button .rail-ic { border-radius: 11px; transition: background-color .2s, color .2s, box-shadow .25s, transform .4s var(--spring); }
+html[data-theme='light'] .rail-spaces > button:hover:not(.on) .rail-ic { background: var(--u-soft); color: var(--u-ink); }
+html[data-theme='dark'] .rail-spaces > button:hover:not(.on) .rail-ic { background: var(--u-dsoft); color: var(--u-dink); }
+html .rail-spaces > button:hover:not(.on) { background: transparent; }
+html .rail-spaces > button:hover .rail-ic { transform: translateY(-1px) scale(1.06); }
+html .rail-spaces > button.on .rail-ic {
+  background: var(--u-acc); color: #fff;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .22) inset, 0 6px 14px color-mix(in srgb, var(--u) 42%, transparent);
+  animation: nxu-pop .5s var(--spring);
+}
+html .rail-spaces > button.on::before { background: var(--u-acc); opacity: 1; height: 26px; margin-top: -13px; }
+html .rail-spaces > button.on .rail-lb { color: var(--text); font-weight: 680; }
+html[data-theme='dark'] .rail-spaces > button.on .rail-lb { color: #fff; }
+html .rail-ai:hover .rail-ic { background: var(--accent); box-shadow: 0 6px 14px var(--accent-soft); color: #fff; }
+
+/* Barre du haut : icône de l'espace en carré pastel, pictogramme de la même teinte (Streamline Flex). */
+html .tb-space-ic { border-radius: 10px; box-shadow: none; }
+html[data-theme='light'] .tb-space-ic[data-space], html[data-theme='light'] .tb-space-ic { background: var(--u-soft, #edeafe); color: var(--u-ink, #4b3fd6); }
+html[data-theme='dark'] .tb-space-ic[data-space], html[data-theme='dark'] .tb-space-ic { background: var(--u-dsoft, #26253f); color: var(--u-dink, #ada4f9); }
+.tb-space-ic:not([data-space]) { --u-soft: #edeafe; --u-ink: #4b3fd6; --u-dsoft: #26253f; --u-dink: #ada4f9; }
+
+/* ---------- Boutons ---------- */
+.btn { border-radius: 10px; transition: background-color .18s, color .18s, box-shadow .22s, transform .35s var(--spring), opacity .15s; }
+.btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: inset 0 0 0 1px var(--btn-border), 0 6px 14px -6px rgba(22, 24, 48, .22); }
+.btn:active:not(:disabled) { transform: scale(.96); transition-duration: .08s; }
+.btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accent-soft), inset 0 0 0 1px var(--accent); }
+.btn.small { border-radius: 9px; }
+/* Bouton principal : aplat de l'accent (reflet au survol retiré au #045). */
+.btn.primary {
+  background-color: var(--accent);
+  background-image: none;
+  color: var(--accent-ink);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .2) inset, 0 6px 16px -4px color-mix(in srgb, var(--accent) 45%, transparent);
+  transition: background-position .9s var(--ease), background-color .18s, box-shadow .22s, transform .35s var(--spring);
+}
+.btn.primary:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--accent) 88%, #000);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .2) inset, 0 12px 24px -8px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+/* Actions phares (« Construire », boutons de marque) : bouton encre du #040, à plat (reflet retiré au #045). */
+html .ab-go, html .btn.brand {
+  background: var(--ink) !important;
+  transition: background-position .9s var(--ease), transform .35s var(--spring), box-shadow .22s;
+}
+html[data-theme='dark'] :is(.ab-go, .btn.brand) { background: var(--ink) !important; }
+html .ab-go:hover, html .btn.brand:hover { background: var(--ink-hover, var(--ink)) !important; }
+.icon-btn, .tb-btn, .rf-btn { transition: background-color .15s, color .15s, transform .3s var(--spring); }
+.icon-btn:active, .tb-btn:active, .rf-btn:active { transform: scale(.9); }
+.tb-go { transition: background-color .15s, box-shadow .2s; }
+.tb-go:hover { box-shadow: 0 0 0 1px var(--sep-strong); }
+
+/* Commande segmentée : pastille blanche bien posée, libellé à la couleur de l'espace. */
+.seg { padding: 3px; border-radius: 12px; }
+.seg > button { border-radius: 9px; transition: background-color .18s, color .18s, box-shadow .2s; }
+html[data-theme='light'] .seg > button.on { color: var(--u-ink, var(--text)); box-shadow: 0 1px 2px rgba(22, 24, 48, .1), 0 4px 10px -4px rgba(22, 24, 48, .16); }
+html[data-theme='dark'] .seg > button.on { color: var(--u-dink, var(--text)); }
+
+/* ---------- Accueil : tuiles colorées ---------- */
+.hm { gap: 20px; }
+.hm-hello { border-radius: 26px; }
+.hm-hello::after { display: none; }
+.hm-hello h1 { font-size: 32px; letter-spacing: -.03em; }
+html .hm-hello .hm-open { border-radius: 16px; height: 46px; }
+
+/* Actions rapides : tuile pastel, icône pleine qui bascule au survol. */
+html .hm-qa { border-radius: 24px; padding: 18px; box-shadow: none; }
+html[data-theme='light'] .hm-qa { background: var(--u-soft); color: var(--text); }
+html[data-theme='dark'] .hm-qa { background: var(--u-dsoft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--u) 18%, transparent); }
+html .hm-qa small { color: var(--text-2); }
+html .hm-qa .hm-qa-ic, html .hm-qa .hm-qa-ic.q1, html .hm-qa .hm-qa-ic.q2, html .hm-qa .hm-qa-ic.q3 {
+  width: 48px; height: 48px; border-radius: 15px; background: var(--u-acc); color: #fff;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .22) inset, 0 8px 18px -6px color-mix(in srgb, var(--u) 60%, transparent);
+  transition: transform .45s var(--spring);
+}
+
+/* Compteurs : tuiles pleines (pastel soutenu en clair, couleur franche en sombre), gros chiffres. */
+html body :is(.hm-stat.pink, .hm-stat.blue, .hm-stat.mint, .hm-stat.yellow, .hm-stat.red) { border-radius: 24px; padding: 18px 20px; box-shadow: none; }
+html[data-theme='light'] body :is(.hm-stat.pink, .hm-stat.blue, .hm-stat.mint, .hm-stat.yellow, .hm-stat.red) { background: var(--u-tile); color: #15161d; }
+html[data-theme='dark'] body :is(.hm-stat.pink, .hm-stat.blue, .hm-stat.mint, .hm-stat.yellow, .hm-stat.red) { background: var(--u-deep); color: #ffffff; }
+html .hm-stat b { font-size: 40px; font-weight: 760; letter-spacing: -.04em; }
+html .hm-stat small { opacity: .86; }
+html[data-theme='light'] .hm-stat .hm-stat-ic { background: rgba(255, 255, 255, .72); color: var(--u-ink); border-radius: 10px; }
+html[data-theme='dark'] body .hm-stat .hm-stat-ic { background: rgba(255, 255, 255, .16); color: #fff; border-radius: 10px; }
+html .hm-stat-top > .ico:last-child { transition: transform .35s var(--spring), opacity .2s; }
+html .hm-stat:hover .hm-stat-top > .ico:last-child { transform: translateX(3px); opacity: .9; }
+
+/* Espaces de NEXORA : une tuile de la couleur de chaque espace. */
+html .hm-spaces { gap: 14px; }
+html .hm-space[data-space] { border-radius: 22px !important; padding: 16px; box-shadow: none !important; min-height: 128px; }
+html[data-theme='light'] .hm-space[data-space] { background: var(--u-tile) !important; color: #15161d; }
+html[data-theme='dark'] .hm-space[data-space] { background: var(--u-deep) !important; color: #fff; }
+html[data-theme='light'] .hm-space[data-space] small { color: #3d3f4d; }
+html[data-theme='dark'] .hm-space[data-space] small { color: rgba(255, 255, 255, .9); }
+html .hm-space[data-space] .hm-space-ic {
+  width: 40px; height: 40px; border-radius: 13px; color: #fff !important;
+  background: var(--u-acc) !important; box-shadow: 0 1px 0 rgba(255, 255, 255, .22) inset, 0 6px 14px -5px color-mix(in srgb, var(--u) 60%, transparent);
+  transition: transform .45s var(--spring);
+}
+html[data-theme='dark'] .hm-space[data-space] .hm-space-ic { background: rgba(255, 255, 255, .17) !important; box-shadow: none; }
+html .hm-space[data-space] kbd { top: 14px; right: 14px; padding: 3px 8px; border-radius: 99px; font-weight: 650; }
+html[data-theme='light'] .hm-space[data-space] kbd { background: rgba(255, 255, 255, .75); color: var(--u-ink); }
+html[data-theme='dark'] .hm-space[data-space] kbd { background: rgba(255, 255, 255, .16); color: #fff; }
+
+/* Projets, recherche, liste vide */
+html .hm-card { border-radius: 22px; }
+html .hm-search { border-radius: 14px !important; }
+html .hm-empty { border-radius: 24px; }
+
+/* ---------- Cartes interactives : soulèvement à ressort, icône qui bascule, lumière qui suit le pointeur ---------- */
+html body :is(.hm-qa, .hm-stat, .hm-space, .hm-card, .dk-wel-card, .nx-tpl) {
+  /* NEXORA #045 : lumière qui suivait le pointeur retirée (aucun effet lumineux). */
+  transition: transform .45s var(--spring), box-shadow .3s var(--ease), background-color .25s, --nxu-spot .35s var(--ease);
+}
+html body :is(.hm-qa, .hm-stat, .hm-space, .hm-card, .dk-wel-card, .nx-tpl):hover { --nxu-spot: 1; transform: translateY(-4px); box-shadow: var(--nxu-lift) !important; }
+html body :is(.hm-qa, .hm-stat, .hm-space, .hm-card, .dk-wel-card, .nx-tpl):active { transform: translateY(-1px) scale(.985); transition-duration: .12s; }
+html :is(.hm-qa:hover .hm-qa-ic, .hm-space:hover .hm-space-ic) { transform: rotate(-7deg) scale(1.1); }
+html :is(.hm-qa, .hm-stat, .hm-space, .hm-card) .nxi > svg { transition: transform .6s var(--spring); transform-origin: 85% 70%; }
+html :is(.hm-qa, .hm-stat, .hm-space, .hm-card):hover .nxi > svg { transform: scale(1.045) rotate(-1.2deg); }
+
+/* ---------- Blocs des espaces ---------- */
+html .ab-card { border-radius: 18px; padding: 16px 18px; }
+html .ab-card > h3::before, html .st-head::before { width: 8px; height: 8px; border-radius: 3px; background: var(--u, var(--accent)); }
+html .ab-sec { position: relative; border-radius: 12px; transition: background-color .15s, color .15s; }
+html[data-theme='light'] .ab-sec.on { background: var(--u-soft); color: var(--u-ink); }
+html[data-theme='dark'] .ab-sec.on { background: var(--u-dsoft); color: var(--u-dink); }
+html[data-theme='light'] .ab-sec.on b { color: var(--u-ink); }
+html[data-theme='dark'] .ab-sec.on b { color: var(--u-dink); }
+html .ab-sec.on::before { content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: var(--u); animation: nxu-bar .35s var(--spring); }
+html .ab-chip { border-radius: 99px; transition: background-color .15s, box-shadow .15s; }
+html[data-theme='light'] .ab-chip:has(input:checked) { background: var(--u-soft); color: var(--u-ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--u) 35%, transparent); }
+html[data-theme='dark'] .ab-chip:has(input:checked) { background: var(--u-dsoft); color: var(--u-dink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--u) 35%, transparent); }
+
+/* Accueil du Dev Lab : tuiles pastel de l'espace. */
+html .dk-wel-card { border-radius: 20px; padding: 16px; box-shadow: none; }
+html[data-theme='light'] .dk-wel-card { background-color: var(--u-soft); }
+html[data-theme='dark'] .dk-wel-card { background-color: var(--u-dsoft); }
+html .dk-wel-card .ico { color: var(--u-ink); }
+html[data-theme='dark'] .dk-wel-card .ico { color: var(--u-dink); }
+
+/* NEX-DESIGN : modèles de la page de démarrage. */
+html .nx-tpl { border-radius: 16px; }
+
+/* États vides : pictogramme posé sur une tuile pastel de l'espace. */
+html :is(.sec-empty, .bl-empty) > svg { box-sizing: content-box; padding: 16px; border-radius: 20px; opacity: 1; }
+html[data-theme='light'] :is(.sec-empty, .bl-empty) > svg { background: var(--u-soft); color: var(--u-ink); }
+html[data-theme='dark'] :is(.sec-empty, .bl-empty) > svg { background: var(--u-dsoft); color: var(--u-dink); }
+html .sec-chips span { padding: 5px 11px; font-weight: 600; transition: transform .3s var(--spring); }
+html .sec-chips span:hover { transform: translateY(-2px); }
+
+/* Responsive Lab et pages d'accueil des espaces : champ d'adresse arrondi, focus à la couleur de l'espace. */
+html .hero-link { border-radius: 18px; }
+
+
+/* ---------- Animations ---------- */
+@keyframes nxu-pop { 0% { transform: scale(.78); } 55% { transform: scale(1.1); } 100% { transform: scale(1); } }
+@keyframes nxu-bar { from { transform: scaleY(0); } }
+/* Apparitions du #040 (look.css) : même déroulé, avec un léger zoom et un ressort ; étendues aux blocs des espaces. */
+@keyframes nx-look-rise { from { opacity: 0; transform: translateY(16px) scale(.975); } }
+.hm > *, .hm-quick > *, .hm-stats > *, .hm-spaces > *, .dk-wel-acts > * { animation-duration: .62s; animation-timing-function: var(--spring); }
+:is(.sec-empty, .bl-empty) > *, .nx-tpls > * { animation: nx-look-rise .62s var(--spring) backwards; }
+:is(.sec-empty, .bl-empty) > :nth-child(2), .nx-tpls > :nth-child(2) { animation-delay: .06s; }
+:is(.sec-empty, .bl-empty) > :nth-child(3), .nx-tpls > :nth-child(3) { animation-delay: .12s; }
+:is(.sec-empty, .bl-empty) > :nth-child(n + 4), .nx-tpls > :nth-child(n + 4) { animation-delay: .18s; }
+html:is([data-motion='reduced'], [data-motion='none']) :is(:is(.sec-empty, .bl-empty) > *, .nx-tpls > *, .rail-spaces > button.on .rail-ic, .ab-sec.on::before) { animation: none !important; }
+
+/* Réglages d'accessibilité : contraste élevé sans lumière ni reflet ; animations réduites ou coupées. */
+html[data-contrast='high'] body :is(.hm-qa, .hm-stat, .hm-space, .hm-card, .dk-wel-card, .nx-tpl) { background-image: none !important; }
+html[data-motion='none'] body :is(.hm-qa, .hm-stat, .hm-space, .hm-card, .dk-wel-card, .nx-tpl):hover { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  :is(.sec-empty, .bl-empty) > *, .nx-tpls > *, .rail-spaces > button.on .rail-ic, .ab-sec.on::before { animation: none !important; }
+  html body :is(.hm-qa, .hm-stat, .hm-space, .hm-card, .dk-wel-card, .nx-tpl):hover, .btn:hover { transform: none !important; }
+}
+
+/* Pastilles des points contrôlés (Sécurité) : une couleur chacune, comme les badges des références. */
+html[data-theme='light'] .sec-chips span:nth-child(8n+1) { background: #e4efff; color: #145fd6; }
+html[data-theme='dark'] .sec-chips span:nth-child(8n+1) { background: #1c2a40; color: #87b7fe; }
+html[data-theme='light'] .sec-chips span:nth-child(8n+2) { background: #e3f7ea; color: #137537; }
+html[data-theme='dark'] .sec-chips span:nth-child(8n+2) { background: #1b3328; color: #82daa3; }
+html[data-theme='light'] .sec-chips span:nth-child(8n+3) { background: #ffefe3; color: #b04708; }
+html[data-theme='dark'] .sec-chips span:nth-child(8n+3) { background: #3b2920; color: #ffb681; }
+html[data-theme='light'] .sec-chips span:nth-child(8n+4) { background: #fde8f1; color: #c21d68; }
+html[data-theme='dark'] .sec-chips span:nth-child(8n+4) { background: #392230; color: #f699c1; }
+html[data-theme='light'] .sec-chips span:nth-child(8n+5) { background: #f1eaff; color: #6d3fe0; }
+html[data-theme='dark'] .sec-chips span:nth-child(8n+5) { background: #2b2440; color: #c1a3ff; }
+html[data-theme='light'] .sec-chips span:nth-child(8n+6) { background: #dff5f2; color: #0a6f66; }
+html[data-theme='dark'] .sec-chips span:nth-child(8n+6) { background: #163032; color: #70d1c7; }
+html[data-theme='light'] .sec-chips span:nth-child(8n+7) { background: #fff6e2; color: #8f5d00; }
+html[data-theme='dark'] .sec-chips span:nth-child(8n+7) { background: #3b321f; color: #ffd77d; }
+html[data-theme='light'] .sec-chips span:nth-child(8n+8) { background: #ffeae8; color: #bf2a1b; }
+html[data-theme='dark'] .sec-chips span:nth-child(8n+8) { background: #3b2426; color: #ffa399; }

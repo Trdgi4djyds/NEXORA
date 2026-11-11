@@ -1,0 +1,27 @@
+/* Page d'état de l'application (hors connexion, connexion non sécurisée, affichage arrêté). */
+:root { color-scheme: light dark; --accent: #2563eb; --bg: #f5f6f8; --card: #ffffff; --text: #1d1d1f; --text2: #5d6070; --edge: rgba(0, 0, 0, .08); }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #111214; --card: #1c1d21; --text: #f5f5f7; --text2: #a3a6b4; --edge: rgba(255, 255, 255, .1); }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  display: grid; place-items: center; padding: 24px; background: var(--bg); color: var(--text);
+  font: 15px/1.5 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+.card {
+  width: min(460px, 100%); padding: 36px 32px 28px; border-radius: 16px; background: var(--card); text-align: center;
+  box-shadow: 0 0 0 1px var(--edge), 0 18px 50px rgba(0, 0, 0, .12);
+}
+.logo { width: 72px; height: 72px; object-fit: contain; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .18)); }
+.app { margin: 14px 0 2px; font-size: 13px; font-weight: 600; color: var(--text2); letter-spacing: .01em; }
+h1 { margin: 0 0 8px; font-size: 21px; font-weight: 650; letter-spacing: -.01em; }
+.text { margin: 0 auto 22px; max-width: 360px; color: var(--text2); }
+.actions { display: flex; justify-content: center; gap: 10px; }
+button {
+  min-width: 140px; height: 38px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--accent); color: #fff;
+  font: inherit; font-weight: 600; cursor: pointer;
+}
+button:hover { filter: brightness(1.08); }
+button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 2px; }
+.hint { min-height: 20px; margin: 14px 0 0; font-size: 12.5px; color: var(--text2); }

@@ -1,0 +1,12 @@
+{
+  "title": "NEXORA",
+  "description": "Responsive Lab, Browser Lab, Dev Lab, App Builder et Studio 3D : affiche, teste, développe, emballe en app Android et met en scène tes sites dans le cadre de vrais appareils.",
+  "language": "fr",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

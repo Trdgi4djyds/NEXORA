@@ -1,0 +1,52 @@
+/* NEXORA #033 : illustrations de fond des cartes (nx/cards/illu.js), partagées par l'application,
+   la version web et le back office. Le calque .nxi est peint sous le contenu de la carte (z-index -1
+   dans le contexte d'empilement de la carte) : textes, icônes et boutons restent au-dessus. */
+.nxi-host { isolation: isolate; }
+.nxi-host.nxi-rel { position: relative; }
+.nxi { position: absolute; inset: 0; z-index: -1; border-radius: inherit; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity .7s cubic-bezier(.32, .72, 0, 1); }
+.nxi.on { opacity: 1; }
+.nxi.now { transition: none; }
+.nxi > svg { display: block; width: 100%; height: 100%; }
+html[data-contrast='high'] .nxi { display: none; }
+html[data-motion='reduced'] .nxi, html[data-motion='none'] .nxi { transition: none; }
+@media (prefers-reduced-motion: reduce) { .nxi { transition: none; } }
+
+/* Teintes : s douce (fond des grands aplats), m moyenne, d vive, a vive d'une autre couleur.
+   Le contraste avec les textes est vérifié par illu.js, qui baisse la teinte au besoin. */
+[data-nxi-tone='bleu'] { --nxi-s: #e6eeff; --nxi-m: #a9c5ff; --nxi-d: #2f6bff; --nxi-a: #12bde3; }
+[data-nxi-tone='violet'] { --nxi-s: #eeebff; --nxi-m: #c5baff; --nxi-d: #6247ff; --nxi-a: #c94fe0; }
+[data-nxi-tone='rose'] { --nxi-s: #ffe8f2; --nxi-m: #f8abcd; --nxi-d: #e23d88; --nxi-a: #ff8549; }
+[data-nxi-tone='corail'] { --nxi-s: #ffe9e5; --nxi-m: #ffaea4; --nxi-d: #ef4237; --nxi-a: #ffab1f; }
+[data-nxi-tone='orange'] { --nxi-s: #fff1e2; --nxi-m: #ffc58e; --nxi-d: #fb7412; --nxi-a: #f2468c; }
+[data-nxi-tone='jaune'] { --nxi-s: #fff6d8; --nxi-m: #f7d56e; --nxi-d: #e39b00; --nxi-a: #ff6a3d; }
+[data-nxi-tone='menthe'] { --nxi-s: #e0f7ec; --nxi-m: #94e2bc; --nxi-d: #0ea463; --nxi-a: #10bfc0; }
+[data-nxi-tone='turquoise'] { --nxi-s: #e0f6fb; --nxi-m: #93e0ef; --nxi-d: #079fc4; --nxi-a: #3d6cff; }
+
+html[data-theme='dark'] [data-nxi-tone='bleu'] { --nxi-s: #232c47; --nxi-m: #2a4891; --nxi-d: #5088ff; --nxi-a: #2cc4e6; }
+html[data-theme='dark'] [data-nxi-tone='violet'] { --nxi-s: #2b2648; --nxi-m: #4a3c9e; --nxi-d: #8d78ff; --nxi-a: #d266dc; }
+html[data-theme='dark'] [data-nxi-tone='rose'] { --nxi-s: #3a2232; --nxi-m: #823059; --nxi-d: #f2619f; --nxi-a: #ff9b66; }
+html[data-theme='dark'] [data-nxi-tone='corail'] { --nxi-s: #3b2523; --nxi-m: #86372f; --nxi-d: #ff6b5f; --nxi-a: #ffb648; }
+html[data-theme='dark'] [data-nxi-tone='orange'] { --nxi-s: #3a2b1c; --nxi-m: #87501f; --nxi-d: #ff993d; --nxi-a: #ff649b; }
+html[data-theme='dark'] [data-nxi-tone='jaune'] { --nxi-s: #363019; --nxi-m: #7a6219; --nxi-d: #f0c131; --nxi-a: #ff8a4c; }
+html[data-theme='dark'] [data-nxi-tone='menthe'] { --nxi-s: #1d3329; --nxi-m: #1e6c4b; --nxi-d: #35d39a; --nxi-a: #2fd1cd; }
+html[data-theme='dark'] [data-nxi-tone='turquoise'] { --nxi-s: #1b3238; --nxi-m: #1b6476; --nxi-d: #2fc7e4; --nxi-a: #7090ff; }
+
+/* Compteurs de l'Accueil : fond déjà teinté en thème clair, teintes un cran plus soutenues. */
+html[data-theme='light'] .hm-stat.pink { --nxi-s: #f4bdd6; --nxi-m: #ee9bc2; --nxi-d: #dc4a8c; --nxi-a: #ff8a5c; }
+html[data-theme='light'] .hm-stat.blue { --nxi-s: #b9ccf8; --nxi-m: #95b3f5; --nxi-d: #2f68f0; --nxi-a: #13b8de; }
+html[data-theme='light'] .hm-stat.mint { --nxi-s: #b1e4ca; --nxi-m: #87d6ae; --nxi-d: #0d9c5d; --nxi-a: #12b3b4; }
+html[data-theme='light'] .hm-stat.yellow { --nxi-s: #f6d97d; --nxi-m: #f0c64f; --nxi-d: #d68f00; --nxi-a: #ff6a3d; }
+html[data-theme='light'] .hm-stat.red { --nxi-s: #fab7af; --nxi-m: #f6968b; --nxi-d: #e5392e; --nxi-a: #ff9f1a; }
+
+/* Carte d'accueil : l'illustration remplace le halo d'origine (gardé si la carte reste sans objet). */
+.hm-hello.nxi-host:not(.nxi-empty)::after { display: none; }
+
+/* NEXORA #038 : zone d'illustration réservée à droite des cartes de présentation, pour que l'objet ait sa
+   place sans passer sous les textes. */
+.hm-hello.nxi-host > p { max-width: 74%; }
+.hm-stat.nxi-host > small { max-width: 58%; }
+.hm-space.nxi-host > small { max-width: 60%; }
+
+/* NEXORA #037 : carte de l'équipe active (Mon compte → Équipe) : nom, offre et bouton à gauche, objet à droite. */
+.nxc-body > .nx-org-head.nxi-host { min-height: 118px; flex-direction: column; align-items: flex-start; justify-content: center; padding-right: 34%; }
+.nxc-body > .nx-org-head.nxi-host > div:first-child { min-width: 0; }

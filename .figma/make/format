@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# The NEXORA sources (nexora/) keep their author's code style: never reformat them,
+# even when they are passed explicitly. Without paths, format the workspace tooling only.
+flags=()
+paths=()
+for arg in "$@"; do
+  case "$arg" in
+    -*) flags+=("$arg") ;;
+    nexora | nexora/* | ./nexora | ./nexora/* | "$PWD"/nexora | "$PWD"/nexora/*) ;;
+    *) paths+=("$arg") ;;
+  esac
+done
+
+if [ "$#" -eq 0 ] || { [ "${#paths[@]}" -eq 0 ] && [ "${#flags[@]}" -eq "$#" ]; }; then
+  exec pnpm run format "${flags[@]}"
+fi
+if [ "${#paths[@]}" -eq 0 ]; then
+  exit 0
+fi
+exec pnpm exec oxfmt "${flags[@]}" "${paths[@]}"

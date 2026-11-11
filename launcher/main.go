@@ -1,0 +1,286 @@
+// NEXORA Devs Toolbox (#076) : lanceur léger de NEXORA pour Windows, seul élément visible du logiciel.
+// Il télécharge NEXORA depuis la publication GitHub publique, vérifie le manifeste signé (Ed25519) et l'empreinte
+// SHA-256 de chaque fichier, installe sans droits d'administrateur, met à jour, répare, revient en arrière, pose
+// les raccourcis, le lien nexora:// et l'entrée « Applications installées » de Windows, puis lance NEXORA
+// seulement après validation. NEXORA vérifie ensuite lui-même sa licence auprès du serveur.
+//
+// Arguments : (aucun) contrôler, installer ou mettre à jour puis lancer · --update · --repair · --uninstall ·
+// --version · tout autre argument (lien nexora://…, fichier) est transmis à NEXORA.
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+)
+
+var version = "1.0.5" // remplacé à la construction : -ldflags "-X main.version=…" (1.0.3 : assistants d’installation et de désinstallation, #084 ; 1.0.5 : fenêtres « Horizon » du #103, publié au-dessus du 1.0.4 de la v1.2.1, #106)
+
+func main() {
+	args := os.Args[1:]
+	// NEXORA #084 : fin de la désinstallation, par une copie temporaire du lanceur (voir scheduleRemoval).
+	if len(args) == 3 && args[0] == "--cleanup" {
+		cleanupAfter(args[1], args[2])
+		return
+	}
+	mode := "run"
+	var pass []string
+	for _, a := range args {
+		switch a {
+		case "--update", "--repair", "--rollback", "--uninstall", "--version":
+			mode = strings.TrimPrefix(a, "--")
+		default:
+			pass = append(pass, a)
+		}
+	}
+	if mode == "version" {
+		fmt.Println(productName, version)
+		return
+	}
+	release, ok := singleInstance()
+	if !ok {
+		// Une installation est déjà en cours : elle lancera NEXORA. Les liens reçus entre-temps seront rouverts.
+		return
+	}
+	releaseInstance = release
+	defer func() { releaseInstance() }()
+	var err error
+	switch mode {
+	case "uninstall":
+		err = uninstall()
+	case "rollback":
+		// NEXORA #077 : retours en arrière refusés ; une version défectueuse est remplacée par une publication plus récente.
+		showInfo("Le retour à une version précédente est désactivé par la politique de sécurité de NEXORA : seule une publication plus récente, signée et autorisée par le serveur, peut remplacer la version installée.")
+	default:
+		err = run(mode == "update", mode == "repair", pass)
+	}
+	if err != nil && !errors.Is(err, errCancelled) {
+		showError(err)
+		os.Exit(1)
+	}
+}
+
+func layout() Layout { return newLayout(installRoot()) }
+
+// releaseInstance libère le verrou d'instance unique (avant de relancer le nouveau lanceur, qui le reprend).
+var releaseInstance = func() {}
+
+func repo() string {
+	if r := strings.TrimSpace(os.Getenv("NEXORA_TOOLBOX_REPO")); r != "" && strings.Count(r, "/") == 1 {
+		return r
+	}
+	return defaultRepo
+}
+
+func run(update, repair bool, pass []string) error {
+	l := layout()
+	relKey, err := releaseKey()
+	if err != nil {
+		return err
+	}
+	licKey, err := licenseKey()
+	if err != nil {
+		return err
+	}
+	// NEXORA #084 : exécutable téléchargé (hors de son dossier d'installation) : assistant d'installation.
+	if !update && !repair && !runningInstalled(l) {
+		return runInstaller(installEnv{
+			layout: l, client: httpClient(), relKey: relKey, licKey: licKey, repo: repo(), wizard: newWizard(),
+			selfInstall: selfInstall, register: register,
+			launch: func(l Layout, st State, m *Manifest) error { return launch(l, st, m, pass) },
+			updateLauncher: func(rel *Release) error {
+				if err := updateSelf(l, rel); err != nil {
+					return fmt.Errorf("mise à jour du lanceur impossible : %v", err)
+				}
+				releaseInstance()
+				releaseInstance = func() {}
+				return relaunchSelf(l, os.Args[1:])
+			},
+		})
+	}
+	if err := selfInstall(l); err != nil {
+		return fmt.Errorf("installation du lanceur impossible : %v", err)
+	}
+	if update {
+		time.Sleep(1500 * time.Millisecond) // NEXORA se ferme avant la mise à jour
+	}
+	c := httpClient()
+	for {
+		st := loadState(l)
+		// NEXORA #083 : fenêtre ouverte dès le double-clic (aucun temps mort), gardée pendant le téléchargement et
+		// l'installation, fermée quand NEXORA démarre ; la fermer annule.
+		win := newProgress(productName)
+		win.Set(-1, "Vérification de la licence…")
+		cur, err := StartupCheck(context.Background(), c, l, &st, relKey, licKey, repo(), repair, func() Progress {
+			return keepOpen{win}
+		})
+		if err == nil && win.Cancelled() {
+			win.Close()
+			return errCancelled
+		}
+		if err == nil {
+			if rerr := register(l, &st, cur); rerr != nil {
+				win.Close()
+				showWarning("Les raccourcis ou l’entrée de désinstallation n’ont pas pu être créés : " + rerr.Error())
+			} else {
+				win.Set(-1, "Chargement de votre espace…")
+			}
+			lerr := launch(l, st, cur, pass)
+			win.Close()
+			return lerr
+		}
+		var lu *LauncherUpdate
+		if errors.As(err, &lu) {
+			win.Set(-1, "Mise à jour de NEXORA Devs Toolbox…")
+			uerr := updateSelf(l, lu.Release)
+			win.Close()
+			if uerr != nil {
+				return fmt.Errorf("mise à jour du lanceur impossible : %v", uerr)
+			}
+			releaseInstance()
+			releaseInstance = func() {}
+			return relaunchSelf(l, os.Args[1:])
+		}
+		win.Close()
+		var f *SecFail
+		if !errors.As(err, &f) {
+			return err
+		}
+		journal(l, f.Kind, f.Message+" "+f.Detail)
+		Report(c, f, st.Current)
+		switch securityScreen(f.Kind, secTitle(f.Kind), f.Message, secActions(f.Kind)) {
+		case "retry", "update":
+			repair = false
+		case "repair":
+			repair = true
+		default:
+			return errCancelled
+		}
+	}
+}
+
+// keepOpen : la fenêtre de démarrage sert aussi de fenêtre d'installation ; seule run() la ferme.
+type keepOpen struct{ Progress }
+
+func (keepOpen) Close() {}
+
+func launch(l Layout, st State, m *Manifest, pass []string) error {
+	cmd := LaunchCommand(l, m, pass)
+	detach(cmd)
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("NEXORA n’a pas pu démarrer : %v", err)
+	}
+	_ = cmd.Process.Release()
+	return nil
+}
+
+// selfInstall copie le lanceur dans son dossier d'installation (premier lancement depuis Téléchargements).
+func selfInstall(l Layout) error {
+	self, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	self, _ = filepath.EvalSymlinks(self)
+	if strings.EqualFold(filepath.Clean(self), filepath.Clean(l.Launcher)) {
+		return nil
+	}
+	if err := os.MkdirAll(l.Root, 0o755); err != nil {
+		return err
+	}
+	sum, _, err := FileSHA256(self)
+	if err != nil {
+		return err
+	}
+	if have, _, err := FileSHA256(l.Launcher); err == nil && have == sum {
+		return nil
+	}
+	b, err := os.ReadFile(self)
+	if err != nil {
+		return err
+	}
+	old := l.Launcher + ".old"
+	os.Remove(old)
+	if _, err := os.Stat(l.Launcher); err == nil {
+		if err := os.Rename(l.Launcher, old); err != nil {
+			return err
+		}
+	}
+	if err := os.WriteFile(l.Launcher, b, 0o755); err != nil {
+		return err
+	}
+	st := loadState(l)
+	st.Registered = "" // raccourcis et registre reposés avec le nouveau lanceur
+	return saveState(l, st)
+}
+
+// updateSelf : nouveau lanceur exigé par la publication (min_launcher), vérifié par le manifeste signé.
+func updateSelf(l Layout, rel *Release) error {
+	hc := httpClient()
+	a := rel.gh.asset(rel.Manifest.Launcher.Name)
+	if a == nil {
+		return errors.New("lanceur absent de la publication")
+	}
+	if err := os.MkdirAll(l.Downloads, 0o755); err != nil {
+		return err
+	}
+	tmp := filepath.Join(l.Downloads, "launcher.new")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	if err := Download(ctx, hc, a.URL, tmp, *rel.Manifest.Launcher, nil, nil); err != nil {
+		return err
+	}
+	old := l.Launcher + ".old"
+	os.Remove(old)
+	if err := os.Rename(l.Launcher, old); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	if err := os.Rename(tmp, l.Launcher); err != nil {
+		_ = os.Rename(old, l.Launcher)
+		return err
+	}
+	st := loadState(l)
+	st.Registered = ""
+	return saveState(l, st)
+}
+
+func relaunchSelf(l Layout, args []string) error {
+	cmd := commandFor(l.Launcher, args...)
+	detach(cmd)
+	return cmd.Start()
+}
+
+func uninstall() error {
+	l := layout()
+	err := runUninstaller(uninstallEnv{layout: l, wizard: newWizard(), dataDirs: userDataDirs(), unregister: unregister})
+	if err == nil {
+		// Après la fermeture de l'assistant (le lanceur ne peut pas se supprimer lui-même pendant qu'il tourne).
+		scheduleRemoval(l.Root)
+	}
+	return err
+}
+
+// cleanupAfter : attend la fin du lanceur (pid) puis supprime le dossier d'installation. Refuse tout autre dossier
+// que celui de NEXORA Devs Toolbox (un lien ou un argument détourné ne peut rien effacer d'autre).
+func cleanupAfter(root, pid string) {
+	if !strings.EqualFold(filepath.Clean(root), filepath.Clean(installRoot())) || filepath.Base(root) != productName {
+		return
+	}
+	_ = os.Chdir(os.TempDir()) // hors du dossier à supprimer
+	if n, err := strconv.Atoi(pid); err == nil {
+		waitProcess(n, 30*time.Second)
+	}
+	for i := 0; i < 20; i++ {
+		if os.RemoveAll(root) == nil {
+			if _, err := os.Stat(root); os.IsNotExist(err) {
+				break
+			}
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	selfDelete()
+}

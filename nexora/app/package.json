@@ -1,0 +1,15 @@
+{
+  "name": "nexora",
+  "productName": "NEXORA",
+  "version": "1.2.2",
+  "description": "Responsive Lab, Browser Lab, Dev Lab, App Builder et Studio 3D : affiche, teste, développe, emballe en app Android et met en scène tes sites dans le cadre de vrais appareils.",
+  "main": "main.js",
+  "author": "NEXORA",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@zxing/library": "^0.23.0",
+    "isomorphic-git": "^1.29.0",
+    "yauzl": "^3.4.0",
+    "yazl": "^3.3.1"
+  }
+}

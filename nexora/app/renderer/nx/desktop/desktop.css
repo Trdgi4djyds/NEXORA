@@ -1,0 +1,317 @@
+/* NEXORA #023 : Desktop Builder. Mise en page et cartes de l'App Builder (.ab-*), compléments propres à l'espace.
+   Les aperçus (fenêtre Windows, installateur, bureau) sont des contenus : ils gardent les couleurs du logiciel
+   simulé (clair ou sombre selon son réglage), comme l'application simulée de l'App Builder. */
+:root { --sp-desktop: linear-gradient(135deg, #7c3aed, #2563eb); --spc-desktop: #6d28d9; }
+.rail-spaces > button[data-mode='desktop'] { --sp: var(--sp-desktop); --spc: var(--spc-desktop); }
+.tb-space-ic[data-space='desktop'] { background: var(--sp-desktop); }
+.hm-space[data-space='desktop'] .hm-space-ic { background: var(--sp-desktop) !important; }
+body[data-mode='desktop'] { --space-c: var(--spc-desktop); }
+
+.desktop-pane { display: flex; min-height: 0; min-width: 0; }
+.desktop-pane[hidden] { display: none !important; }
+.dsk .ab-tools { padding: 0; }
+.dsk .ab-tools .ab-banner { margin: 14px 28px 0; }
+.dsk .ab-form .ab-banner { margin: 0 0 14px; }
+.dsk .icon-btn.small { width: 30px; height: 30px; border-radius: var(--r-sm); display: grid; place-items: center; color: var(--text-2); }
+.dsk .icon-btn.small:hover { background: var(--fill); color: var(--text); }
+.dsk .seg > button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.dsk .ab-card .seg + .ab-hint { margin-top: -2px; }
+.dsk .tog-row.dsk-off { opacity: .5; }
+.dsk textarea.input { resize: vertical; min-height: 72px; padding: 8px 10px; line-height: 1.45; height: auto; font: inherit; }
+.dsk input[type=range] { width: 100%; accent-color: var(--accent); }
+.dsk .ab-pick .ab-row { flex-wrap: nowrap; flex-shrink: 0; }
+
+/* Puces : domaines, connexions, langues */
+.dsk-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.dsk-domain { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 4px 0 10px; border-radius: var(--r-lg); background: var(--info-bg, var(--surface)); box-shadow: inset 0 0 0 .5px var(--info-edge, var(--sep)); font: 12px/1 var(--font-code); }
+.dsk-domain.fixed { padding-right: 10px; color: var(--text-2); }
+.dsk-domain button { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; color: var(--text-2); }
+.dsk-domain button:hover { background: var(--fill); color: var(--bad); }
+.dsk-inspect { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 8px 10px; border-radius: var(--r); background: var(--info-bg, var(--input)); box-shadow: inset 0 0 0 .5px var(--info-edge, var(--sep)); font-size: 12px; }
+.dsk-inspect span { display: inline-flex; align-items: center; gap: 5px; }
+.dsk-inspect small { color: var(--text-2); flex-basis: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsk-pre { font: 12px var(--font-code); color: var(--text-2); white-space: nowrap; }
+
+/* Icône */
+.dsk-icon-edit { display: grid; grid-template-columns: 132px 1fr; gap: 18px; align-items: start; }
+.dsk-icon-big { width: 132px; height: 132px; border-radius: var(--r-lg); display: grid; place-items: center;
+  background: repeating-conic-gradient(var(--fill) 0 25%, transparent 0 50%) 50% / 16px 16px; box-shadow: inset 0 0 0 .5px var(--sep); }
+.dsk-icon-big img { width: 112px; height: 112px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.18)); }
+.dsk-icon-ctl { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.dsk-logos { display: flex; flex-wrap: wrap; gap: 6px; }
+.dsk-logo { width: 44px; height: 44px; border-radius: var(--r); display: grid; place-items: center; background: var(--info-bg, var(--input)); box-shadow: inset 0 0 0 .5px var(--info-edge, var(--sep)); color: var(--text-2); }
+.dsk-logo:hover { box-shadow: inset 0 0 0 2px var(--accent); }
+.dsk-logo img { max-width: 32px; max-height: 32px; }
+.dsk-icon-sizes { display: flex; gap: 14px; flex-wrap: wrap; }
+.dsk-icon-sizes figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.dsk-sz { width: 64px; height: 58px; display: grid; place-items: center; border-radius: var(--r-sm); }
+.dsk-sz.light { background: #f3f3f3; box-shadow: inset 0 0 0 .5px rgba(0,0,0,.08); }
+.dsk-sz.dark { background: #202020; }
+.dsk-sz img { image-rendering: auto; }
+.dsk-icon-sizes figcaption { font-size: 10.5px; color: var(--text-2); }
+
+/* Autorisations et formats */
+.dsk-perm { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 7px 0; }
+.dsk-perm + .dsk-perm { border-top: .5px solid var(--sep); }
+.dsk-perm b { font-weight: 560; font-size: 12.5px; display: block; }
+.dsk-perm small { color: var(--text-2); font-size: 11px; line-height: 1.35; display: block; }
+.dsk-perm .seg > button { padding: 0 10px; font-size: 11.5px; }
+.dsk-formats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.dsk-format { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r); background: var(--info-bg, var(--input)); box-shadow: inset 0 0 0 .5px var(--info-edge, var(--sep)); cursor: pointer; }
+.dsk-format:has(input:checked) { box-shadow: inset 0 0 0 2px var(--accent); }
+.dsk-format input { accent-color: var(--accent); margin: 2px 0 0; }
+.dsk-format b { display: block; font-size: 12.5px; font-weight: 600; }
+.dsk-format small { display: block; color: var(--text-2); font-size: 11px; line-height: 1.35; }
+
+/* Construction */
+.dsk-env, .dsk-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.dsk-env li, .dsk-steps li { display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; }
+.dsk-env li span, .dsk-steps li span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.dsk-env li small, .dsk-steps li small { color: var(--text-2); font-size: 11px; }
+.dsk-env li.ok > .ico, .dsk-steps li.done > .ico { color: var(--ok); }
+.dsk-env li.todo > .ico { color: var(--accent); }
+.dsk-steps li { color: var(--text-2); }
+.dsk-steps li.done, .dsk-steps li.now { color: var(--text); }
+.dsk-steps li.now > .ico { color: var(--accent); animation: dsk-spin 1.2s linear infinite; }
+.dsk-steps li.bad > .ico { color: var(--bad); }
+@keyframes dsk-spin { to { transform: rotate(360deg); } }
+.dsk-summary { margin: 0; font-size: 12.5px; color: var(--text-2); }
+.dsk-summary b { color: var(--text); }
+.dsk-files { display: flex; flex-direction: column; gap: 6px; }
+.dsk-file { display: flex; gap: 8px; align-items: center; padding: 7px 8px 7px 10px; border-radius: var(--r); background: var(--info-bg, var(--input)); box-shadow: inset 0 0 0 .5px var(--info-edge, var(--sep)); }
+.dsk-file > .ico { color: var(--accent); flex-shrink: 0; }
+.dsk-file > span { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.dsk-file b { font-size: 12px; font-weight: 560; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsk-file small { font-size: 11px; color: var(--text-2); }
+.dsk-hist { display: flex; flex-direction: column; }
+.dsk-hist > div { display: grid; grid-template-columns: 70px 1fr auto; gap: 8px; align-items: center; padding: 6px 0; font-size: 12px; }
+.dsk-hist > div + div { border-top: .5px solid var(--sep); }
+.dsk-hist small { color: var(--text-2); font-size: 11px; }
+.dsk-build .ab-result .dsk-file { padding: 5px 6px 5px 8px; }
+.dsk-build .ab-result p { margin: 0; font-size: 12px; }
+.dsk-build-formats { flex-wrap: wrap; }
+.dsk-build-sum { font-size: 11.5px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* Aperçu (NEXORA #058) : un vrai PC Windows 11. L'écran mesure 1536 × 960 points, mis à l'échelle du panneau par
+   index.js (--k) ; tout ce qui est dessiné dedans (fenêtres, barre des tâches, menus) est du contenu : ombres et
+   dégradés y sont gardés (plat.js : classe dsk-pc). */
+.dsk-prev-seg { display: block; }
+.dsk-stage { flex: 1; min-height: 0; overflow: auto; padding: 18px 16px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+.dsk-dim { margin: 0; max-width: 520px; font-size: 11.5px; color: var(--text-2); text-align: center; line-height: 1.45; }
+.dsk-pc { width: 100%; display: flex; flex-direction: column; align-items: center; }
+.pc-monitor { width: 100%; padding: 7px; border-radius: 12px; background: #0e0f12; box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset, 0 1px 0 rgba(255,255,255,.08) inset, 0 18px 40px -12px rgba(15,23,42,.45); }
+.pc-screen { position: relative; width: 100%; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 5px; background: #0b1a3a; }
+.pc-stand { width: 100%; display: flex; flex-direction: column; align-items: center; }
+.pc-stand i { display: block; width: 15%; height: 22px; background: linear-gradient(180deg, #bfc3cb, #9ea3ad); clip-path: polygon(12% 0, 88% 0, 100% 100%, 0 100%); }
+.pc-stand b { display: block; width: 34%; height: 7px; border-radius: 7px 7px 3px 3px; background: linear-gradient(180deg, #c9ccd3, #a3a8b2); box-shadow: 0 6px 12px -6px rgba(15,23,42,.45); }
+[data-theme="dark"] .pc-stand i { background: linear-gradient(180deg, #4a4d55, #34363c); }
+[data-theme="dark"] .pc-stand b { background: linear-gradient(180deg, #55585f, #3a3c42); }
+
+.pc-os { position: absolute; left: 0; top: 0; transform-origin: 0 0; overflow: hidden; color: #1b1b1b; font: 14px/1.35 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  background:
+    radial-gradient(38% 52% at 50% 62%, rgba(255,255,255,.55), transparent 70%),
+    radial-gradient(30% 46% at 38% 66%, #6ea8ff 0%, transparent 72%),
+    radial-gradient(30% 46% at 62% 66%, #4d8ef7 0%, transparent 72%),
+    radial-gradient(26% 40% at 50% 44%, #8fbcff 0%, transparent 72%),
+    radial-gradient(70% 70% at 50% 120%, #1c5fd0 0%, transparent 70%),
+    linear-gradient(180deg, #e3ecfb 0%, #c4d6f6 55%, #a9c3f1 100%); }
+.pc-os.pc-dark { color: #f3f3f3;
+  background:
+    radial-gradient(38% 52% at 50% 62%, rgba(140,180,255,.28), transparent 70%),
+    radial-gradient(30% 46% at 38% 66%, #2a5fd0 0%, transparent 72%),
+    radial-gradient(30% 46% at 62% 66%, #1f4fb8 0%, transparent 72%),
+    radial-gradient(26% 40% at 50% 44%, #3a6fe0 0%, transparent 72%),
+    radial-gradient(70% 70% at 50% 120%, #0f2f7a 0%, transparent 70%),
+    linear-gradient(180deg, #0a1022 0%, #0c1733 55%, #0b1a3a 100%); }
+.pc-ico { display: inline-grid; place-items: center; width: 24px; height: 24px; flex: none; font-style: normal; }
+.pc-ico svg { width: 100%; height: 100%; }
+.pc-ico.pc-small { width: 16px; height: 16px; }
+.pc-ico.pc-mono { color: inherit; }
+
+/* Icônes du bureau */
+.pc-icons { position: absolute; left: 14px; top: 14px; display: flex; flex-direction: column; gap: 14px; }
+.pc-dicon { position: relative; width: 78px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; color: #fff; }
+.pc-dicon .pc-ico, .pc-dicon img { width: 44px; height: 44px; filter: drop-shadow(0 2px 3px rgba(0,0,0,.3)); }
+.pc-dicon small { font-size: 12px; line-height: 1.25; text-shadow: 0 1px 2px rgba(0,0,0,.95), 0 0 3px rgba(0,0,0,.8), 0 0 8px rgba(0,0,0,.45); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pc-arrow { position: absolute; left: 17px; top: 28px; width: 14px; height: 14px; border-radius: 2px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+.pc-arrow::after { content: ""; position: absolute; left: 3px; top: 3px; width: 7px; height: 7px; border-top: 2px solid #0067c0; border-right: 2px solid #0067c0; transform: rotate(0deg); }
+
+/* Fenêtres */
+.pc-win { position: absolute; display: flex; flex-direction: column; border-radius: 8px; overflow: hidden; background: #f3f3f3; color: #1b1b1b;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.22), 0 32px 64px rgba(0,0,0,.28), 0 2px 21px rgba(0,0,0,.22); }
+.pc-win.pc-dark { background: #202020; color: #f3f3f3; box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 32px 64px rgba(0,0,0,.5), 0 2px 21px rgba(0,0,0,.4); }
+.pc-win.pc-maxd, .pc-win.pc-full { border-radius: 0; box-shadow: none; }
+.pc-title { height: 32px; flex: none; display: flex; align-items: center; gap: 10px; padding-left: 12px; font-size: 12px; background: #f3f3f3; color: #1b1b1b; }
+.pc-title.pc-dark { background: #202020; color: #f3f3f3; }
+.pc-title img { width: 16px; height: 16px; }
+.pc-title span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-cap { width: 46px; height: 32px; display: grid; place-items: center; font-style: normal; }
+.pc-cap svg { width: 10px; height: 10px; }
+.pc-cap.pc-close { color: inherit; }
+.pc-menu { height: 26px; flex: none; display: flex; align-items: center; gap: 2px; padding: 0 6px; font-size: 12px; background: #f3f3f3; border-bottom: 1px solid rgba(0,0,0,.06); }
+.pc-menu.pc-dark { background: #202020; border-bottom-color: rgba(255,255,255,.06); }
+.pc-menu span { padding: 3px 9px; border-radius: 4px; }
+.pc-content { position: relative; flex: none; overflow: hidden; }
+.pc-wv { position: absolute; left: 0; top: 0; transform-origin: 0 0; border: 0; z-index: 1; }
+
+/* Gabarit d'un site aux couleurs du logiciel */
+.pc-site { position: absolute; inset: 0; background: var(--sbg); color: rgb(var(--sink)); display: flex; flex-direction: column; gap: 4%; padding: 0 0 4%; overflow: hidden; }
+.pc-site-head { height: 60px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 4%; border-bottom: 1px solid rgba(var(--sink), .08); }
+.pc-site-head img { width: 28px; height: 28px; border-radius: 6px; }
+.pc-site-head b { font-size: 16px; font-weight: 650; margin-right: auto; }
+.pc-site-head span { width: 64px; height: 9px; border-radius: 9px; background: rgba(var(--sink), .14); }
+.pc-site-head i { width: 96px; height: 32px; border-radius: 16px; background: var(--sac); }
+.pc-site-hero { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.1fr 1fr; gap: 5%; align-items: center; padding: 0 6%; }
+.pc-site-hero div { display: flex; flex-direction: column; gap: 16px; }
+.pc-site-hero b { height: 30px; width: 92%; border-radius: 8px; background: rgba(var(--sink), .82); }
+.pc-site-hero b.pc-short { width: 64%; }
+.pc-site-hero p { margin: 0; height: 11px; width: 96%; border-radius: 11px; background: rgba(var(--sink), .16); }
+.pc-site-hero p.pc-short { width: 70%; }
+.pc-site-hero div i { margin-top: 6px; width: 170px; height: 44px; border-radius: 22px; background: var(--sac); }
+.pc-site-hero figure { margin: 0; height: 78%; border-radius: 18px; background: color-mix(in srgb, var(--sac) 18%, var(--sbg)); box-shadow: inset 0 0 0 1px rgba(var(--sink), .06); position: relative; }
+.pc-site-hero figure::after { content: ""; position: absolute; left: 18%; top: 22%; width: 64%; height: 56%; border-radius: 14px; background: color-mix(in srgb, var(--sac) 45%, var(--sbg)); }
+.pc-site-cards { flex: none; height: 22%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3%; padding: 0 6%; }
+.pc-site-cards span { border-radius: 14px; background: rgba(var(--sink), .05); box-shadow: inset 0 0 0 1px rgba(var(--sink), .07); }
+.pc-site-url { position: absolute; right: 14px; bottom: 12px; padding: 4px 10px; border-radius: 12px; font-size: 12px; background: rgba(var(--sink), .07); color: rgba(var(--sink), .7); }
+
+/* Barre des tâches */
+.pc-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 48px; display: flex; align-items: center; background: rgba(238,242,250,.86); backdrop-filter: blur(30px) saturate(1.6); border-top: 1px solid rgba(0,0,0,.06); color: #1b1b1b; }
+.pc-os.pc-dark .pc-bar { background: rgba(28,30,36,.86); border-top-color: rgba(255,255,255,.07); color: #f3f3f3; }
+.pc-bar-mid { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; }
+.pc-tb { position: relative; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 5px; }
+.pc-tb.pc-on, .pc-tb.pc-run { background: rgba(255,255,255,.62); box-shadow: inset 0 0 0 1px rgba(0,0,0,.05); }
+.pc-os.pc-dark .pc-tb.pc-on, .pc-os.pc-dark .pc-tb.pc-run { background: rgba(255,255,255,.09); box-shadow: inset 0 0 0 1px rgba(255,255,255,.05); }
+.pc-tb img { width: 24px; height: 24px; }
+.pc-tb.pc-app::after { content: ""; position: absolute; bottom: 2px; left: 50%; width: 6px; height: 3px; border-radius: 3px; transform: translateX(-50%); background: #868686; opacity: 0; }
+.pc-tb.pc-app.pc-run::after { opacity: 1; width: 16px; background: #005fb8; }
+.pc-os.pc-dark .pc-tb.pc-app.pc-run::after { background: #60cdff; }
+.pc-badge { position: absolute; right: 2px; top: 3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: #c42b1c; color: #fff; font: 600 10px/16px "Segoe UI", system-ui, sans-serif; font-style: normal; text-align: center; box-shadow: 0 0 0 2px rgba(238,242,250,.9); }
+.pc-search { height: 32px; width: 170px; display: flex; align-items: center; gap: 8px; padding: 0 12px; margin: 0 4px; border-radius: 16px; background: rgba(255,255,255,.72); box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); color: #5d5d5d; font-size: 13px; }
+.pc-search .pc-ico { width: 16px; height: 16px; }
+.pc-os.pc-dark .pc-search { background: rgba(255,255,255,.07); color: #c5c5c5; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+.pc-bar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; padding-right: 12px; }
+.pc-sys { display: flex; gap: 6px; padding: 6px 8px; border-radius: 5px; }
+.pc-tray-app img { width: 16px; height: 16px; display: block; }
+.pc-clock { display: flex; flex-direction: column; align-items: flex-end; font-size: 12px; line-height: 1.25; }
+.pc-clock b { font-weight: 400; }
+
+/* Assistant d'installation (NSIS) */
+.pc-setup { background: #fff; color: #000; box-shadow: 0 0 0 1px rgba(0,0,0,.28), 0 32px 64px rgba(0,0,0,.3), 0 2px 21px rgba(0,0,0,.22); }
+.pc-setup .pc-title { background: #fff; }
+.pc-setup-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 164px 1fr; background: #fff; border-top: 1px solid #e5e5e5; }
+.dsk-sidebar { width: 164px; height: 314px; display: block; }
+.pc-setup-text { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; font-size: 12px; }
+.pc-setup-text b { font-size: 16px; line-height: 1.3; font-weight: 600; }
+.pc-setup-text p { margin: 0; color: #1b1b1b; }
+.pc-setup-foot { height: 52px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #f0f0f0; border-top: 1px solid #dfdfdf; font-size: 12px; }
+.pc-setup-foot span { flex: 1; color: #6d6d6d; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-setup-foot i { font-style: normal; min-width: 86px; padding: 5px 12px; text-align: center; border-radius: 4px; background: #fdfdfd; box-shadow: inset 0 0 0 1px #c9c9c9; }
+.pc-setup-foot i.pc-def { box-shadow: inset 0 0 0 2px #0067c0; }
+.pc-one { flex: 1; display: flex; align-items: center; gap: 16px; padding: 0 22px; background: #fff; border-top: 1px solid #e5e5e5; }
+.pc-one img { width: 56px; height: 56px; }
+.pc-one div { flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+.pc-one b { font-size: 15px; font-weight: 600; }
+.pc-prog { height: 4px; border-radius: 4px; background: #e2e2e2; overflow: hidden; margin-top: 4px; }
+.pc-prog i { display: block; height: 100%; background: #005fb8; border-radius: 4px; }
+
+/* Menu Démarrer */
+.pc-start { position: absolute; left: 50%; bottom: 60px; width: 642px; transform: translateX(-50%); padding: 26px 32px 0; border-radius: 8px; background: rgba(242,244,249,.94); backdrop-filter: blur(40px) saturate(1.6); color: #1b1b1b; box-shadow: 0 0 0 1px rgba(0,0,0,.1), 0 32px 64px rgba(0,0,0,.28); display: flex; flex-direction: column; gap: 14px; }
+.pc-start.pc-dark { background: rgba(36,38,44,.95); color: #f3f3f3; box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 32px 64px rgba(0,0,0,.5); }
+.pc-start-search { height: 34px; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-radius: 17px; background: #fff; box-shadow: inset 0 0 0 1px rgba(0,0,0,.07), inset 0 -2px 0 #005fb8; color: #5d5d5d; font-size: 13px; }
+.pc-start.pc-dark .pc-start-search { background: #2c2e33; color: #c5c5c5; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), inset 0 -2px 0 #60cdff; }
+.pc-start-sec { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 0; }
+.pc-start-sec b { font-size: 14px; font-weight: 600; }
+.pc-start-sec small { font-size: 12px; padding: 3px 9px; border-radius: 4px; background: rgba(255,255,255,.7); box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+.pc-start.pc-dark .pc-start-sec small { background: rgba(255,255,255,.07); }
+.pc-pins { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px 4px; }
+.pc-pins span { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0; border-radius: 6px; font-size: 12px; }
+.pc-pins .pc-ico { width: 32px; height: 32px; }
+.pc-rec { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pc-rec-item { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 6px; }
+.pc-rec-item:first-child { background: rgba(255,255,255,.6); box-shadow: inset 0 0 0 1px rgba(0,0,0,.05); }
+.pc-start.pc-dark .pc-rec-item:first-child { background: rgba(255,255,255,.06); }
+.pc-rec-item img, .pc-rec-item .pc-ico { width: 32px; height: 32px; }
+.pc-rec-item span { display: flex; flex-direction: column; min-width: 0; }
+.pc-rec-item b { font-size: 13px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-rec-item small { font-size: 12px; opacity: .7; }
+.pc-start-foot { margin: 10px -32px 0; height: 62px; display: flex; align-items: center; justify-content: space-between; padding: 0 44px; border-top: 1px solid rgba(0,0,0,.07); background: rgba(0,0,0,.025); border-radius: 0 0 8px 8px; font-size: 13px; }
+.pc-start.pc-dark .pc-start-foot { border-top-color: rgba(255,255,255,.07); background: rgba(255,255,255,.025); }
+.pc-user { display: flex; align-items: center; gap: 10px; }
+.pc-user i { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #a5b4fc, #6366f1); }
+
+/* Liste d'actions de l'icône et notification */
+.pc-jump { position: absolute; bottom: 58px; width: 300px; padding: 6px; border-radius: 8px; background: rgba(249,249,251,.96); backdrop-filter: blur(30px); color: #1b1b1b; box-shadow: 0 0 0 1px rgba(0,0,0,.1), 0 16px 32px rgba(0,0,0,.22); display: flex; flex-direction: column; font-size: 13px; }
+.pc-jump.pc-dark { background: rgba(44,46,52,.97); color: #f3f3f3; box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 16px 32px rgba(0,0,0,.5); }
+.pc-jump-h { padding: 8px 10px 4px; font-size: 12px; font-weight: 600; opacity: .75; }
+.pc-jump span { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 5px; }
+.pc-jump span:first-of-type { background: rgba(0,0,0,.04); }
+.pc-jump.pc-dark span:first-of-type { background: rgba(255,255,255,.06); }
+.pc-jump img, .pc-jump .pc-ico { width: 16px; height: 16px; }
+.pc-jump hr { width: 100%; margin: 4px 0; border: 0; border-top: 1px solid rgba(0,0,0,.08); }
+.pc-jump.pc-dark hr { border-top-color: rgba(255,255,255,.08); }
+.pc-toast { position: absolute; right: 12px; bottom: 60px; width: 364px; padding: 12px 16px 16px; border-radius: 8px; background: rgba(249,249,251,.96); backdrop-filter: blur(30px); color: #1b1b1b; box-shadow: 0 0 0 1px rgba(0,0,0,.1), 0 16px 32px rgba(0,0,0,.22); display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.pc-toast.pc-dark { background: rgba(44,46,52,.97); color: #f3f3f3; box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 16px 32px rgba(0,0,0,.5); }
+.pc-toast-h { display: flex; align-items: center; gap: 8px; font-size: 12px; opacity: .85; margin-bottom: 4px; }
+.pc-toast-h img { width: 16px; height: 16px; }
+.pc-toast-h span { flex: 1; }
+.pc-toast-h i { width: 12px; height: 12px; }
+.pc-toast b { font-size: 14px; font-weight: 600; }
+.pc-toast p { margin: 0; opacity: .85; }
+
+@media (max-width: 1180px) { .dsk-icon-edit { grid-template-columns: 1fr; } }
+
+/* Ligne des paramètres de Windows, sous l'écran (vue Démarrer) */
+.dsk-apps-row { width: 100%; max-width: 520px; display: flex; gap: 10px; align-items: center; padding: 9px 12px; border-radius: 8px; background: var(--surface, #fff); color: var(--text); box-shadow: 0 0 0 1px var(--info-edge, var(--border)); font-size: 12px; }
+.dsk-apps-row img { width: 24px; height: 24px; }
+.dsk-apps-row span { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.dsk-apps-row small { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsk-apps-row i { font-style: normal; padding: 4px 10px; border-radius: 6px; box-shadow: 0 0 0 1px var(--info-edge, var(--border)); }
+
+/* NEXORA #058 : prêt pour la distribution (.dskr-*), listes éditables, étapes, extrait de code. Aplats, contours. */
+.dskr-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: center; }
+.dskr-score { width: 88px; height: 88px; border-radius: 50%; border: 6px solid var(--info-edge, var(--border)); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.dskr-score b { font-size: 21px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.dskr-score small { font-size: 10.5px; color: var(--text-3, var(--text-2)); }
+.dskr-ok .dskr-score { border-color: var(--ok, #30d158); }
+.dskr-bad .dskr-score { border-color: var(--bad, #ff453a); }
+.dskr-verdict { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.dskr-verdict b { font-size: 16px; font-weight: 700; }
+.dskr-verdict span { color: var(--text-2); font-size: 12.5px; }
+.dskr-meter { height: 6px; border-radius: 99px; background: var(--info-bg, var(--fill)); border: 1px solid var(--info-edge, var(--border)); overflow: hidden; margin-top: 6px; }
+.dskr-meter i { display: block; height: 100%; background: var(--accent); }
+.dskr-ok .dskr-meter i { background: var(--ok, #30d158); }
+.dskr-list { list-style: none; margin: 0; padding: 0; }
+.dskr-list li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--info-edge, var(--border)); }
+.dskr-list li:first-child { border-top: 0; padding-top: 2px; }
+.dskr-ic { display: grid; place-items: center; }
+.dskr-list .dskr-ok .dskr-ic { color: var(--ok, #30d158); }
+.dskr-list .dskr-warn .dskr-ic { color: var(--warn, #ff9f0a); }
+.dskr-list .dskr-bad .dskr-ic { color: var(--bad, #ff453a); }
+.dskr-list .dskr-info .dskr-ic { color: var(--text-3, var(--text-2)); }
+.dskr-list div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dskr-list b { font-size: 12.5px; font-weight: 600; overflow-wrap: anywhere; }
+.dskr-list small { font-size: 11.5px; color: var(--text-2); line-height: 1.4; overflow-wrap: anywhere; }
+.dskr-insh { justify-content: space-between; }
+.dsk-list { display: flex; flex-direction: column; border: 1px solid var(--info-edge, var(--border)); border-radius: var(--r-md, 10px); overflow: hidden; }
+.dsk-li { display: flex; align-items: center; gap: 10px; padding: 7px 8px 7px 12px; border-top: 1px solid var(--info-edge, var(--border)); }
+.dsk-li:first-child { border-top: 0; }
+.dsk-li span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.dsk-li b { font-size: 12.5px; }
+.dsk-li small { font-size: 11.5px; color: var(--text-2); font-family: var(--mono, ui-monospace, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsk-add2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; }
+.dsk-code { margin: 0; padding: 10px 12px; border-radius: var(--r-md, 10px); background: var(--info-bg, var(--fill)); border: 1px solid var(--info-edge, var(--border)); font: 11.5px/1.5 var(--mono, ui-monospace, monospace); white-space: pre-wrap; overflow-wrap: anywhere; }
+.dsk-howto { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-2); line-height: 1.45; }
+.dsk-howto b { color: var(--text); font-weight: 600; }
+@media (max-width: 1100px) { .dsk-add2 { grid-template-columns: minmax(0, 1fr); } .dskr-head { grid-template-columns: auto minmax(0, 1fr); } .dskr-head > .icon-btn { grid-column: 2; justify-self: end; } }
+
+/* Aperçu en grand (NEXORA #058) : fenêtre au thème de NEXORA, le PC simulé au centre. */
+.dsk-prev-seg { display: flex; align-items: center; gap: 6px; }
+.dsk-prev-seg .seg { flex: 1; min-width: 0; }
+.dsk-zoom { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; padding: 3vh 3vw; background: rgba(10, 12, 18, .55); }
+.dsk-zoom-box { width: min(1400px, 100%); height: 100%; display: flex; flex-direction: column; border-radius: 16px; background: var(--surface, #fff); color: var(--text); box-shadow: 0 0 0 1px var(--info-edge, var(--border)); overflow: hidden; }
+.dsk-zoom-head { display: flex; align-items: center; gap: 12px; padding: 12px 14px 12px 20px; border-bottom: 1px solid var(--info-edge, var(--border)); }
+.dsk-zoom-head b { flex: 1; min-width: 0; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsk-zoom-stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px 24px; overflow: auto; }
+
+/* NEXORA #058 : adresses et chemins longs dans les aides (adresse winget déduite, dossiers). */
+.dsk .ab-hint { overflow-wrap: anywhere; }

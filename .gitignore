@@ -1,0 +1,30 @@
+node_modules/
+dist/
+build/
+.cache/
+.env*
+.vite/
+# Cloudflare Wrangler : état local (wrangler dev, deploy)
+.wrangler/
+.dev.vars*
+vite.config.*.timestamp-*
+*.tsbuildinfo
+*-debug.log*
+logs/
+*.log
+.claude-replay.*
+.tmp-*
+/.tmp/
+/.figma/design-context/
+
+# Platform-managed agentplat state, not project source. In the
+# client-initiated single-repo workspace layout (make's `Path: "."` spec) the
+# repo root IS the workspace root, so these land inside this repo rather than
+# beside it.
+/.plugins/
+/.opencode-skills/
+
+# NEXORA: imported application kept in full, including its own dist/, build/,
+# node_modules/ and log folders that the generic rules above would exclude.
+!/nexora/**/
+!/nexora/**

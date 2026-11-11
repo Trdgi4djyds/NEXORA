@@ -1,0 +1,40 @@
+# Construction des installateurs pour Windows, macOS et Linux sur GitHub Actions (généré par NEXORA).
+# Lancement : onglet « Actions » du dépôt → « Construire les installateurs » → « Run workflow »,
+# ou automatiquement à chaque étiquette de version (git tag v1.2.0, puis git push --tags).
+name: Construire les installateurs
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+      - run: npm install
+      - run: npx electron-builder --publish never
+        env:
+          # Pas de signature automatique sans certificat configuré dans les secrets du dépôt.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - uses: actions/upload-artifact@v7
+        with:
+          name: installateurs-${{ matrix.os }}
+          path: |
+            dist/*.exe
+            dist/*.msi
+            dist/*.zip
+            dist/*.dmg
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.yml
+            dist/*.blockmap
+          if-no-files-found: ignore

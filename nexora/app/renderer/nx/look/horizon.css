@@ -1,0 +1,382 @@
+/* NEXORA #103 : couche « Horizon », la direction du site vitrine (#099 à #102) appliquée au logiciel et à NEXORA web.
+   Demande de l'utilisateur : refonte complète de toutes les interfaces sur le nouveau motif du site.
+   Langage : noir #050505 et gris très sombre #111/#151515 en thème sombre (blanc #fff et gris #f3f3f3 en clair),
+   monochrome (plus de couleur par espace : la palette --u* devient neutre), police Urbanist, titres fins en deux tons,
+   repères en pilule à contour précédés d'une barre oblique, boutons en pilule (principal blanc à encre en sombre,
+   encre à texte blanc en clair), commandes segmentées en pilule à onglet plein, cartes plates à filet fin, grands
+   rayons, rail à onglet plein. Les couleurs d'état (succès, alerte, erreur) restent : elles ont une fonction.
+   Règles gardées : blocs sombres en thème sombre et blancs en clair (#004), blocs d'information pleins (#007),
+   couleur d'accent choisie dans les Réglages (data-nx-accent='reglages' : son accent est conservé), « Contraste
+   élevé » (aucune règle de couleur ici ne s'y applique), Apparence → Animations. Chargée en dernier par index.html ;
+   les feuilles injectées plus tard par les modules (Accueil…) sont visées avec html body devant. */
+
+@font-face {
+  font-family: 'Urbanist';
+  src: url('../../fonts/urbanist-var.woff2') format('woff2');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ------------------------------------------------------------------ police, rayons */
+html:root {
+  --font: 'Urbanist', 'Inter', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --nx2-r: 999px;
+  --nx2-r-sm: 999px;
+  --nx2-r-card: 22px;
+  --nx2-r-pop: 22px;
+  --nx2-r-sheet: 28px;
+  --hz-pill: 999px;
+}
+html body { font-family: var(--font); font-feature-settings: 'ss01' 0; }
+
+/* ------------------------------------------------------------------ jetons sombres (site : noir et gris très sombre) */
+html:not([data-contrast='high'])[data-theme='dark'] {
+  --canvas: #050505;
+  --window: #0c0c0c;
+  --pane: #0c0c0c;
+  --side: #0c0c0c;
+  --side-solid: #0c0c0c;
+  --rail-bg: #0c0c0c;
+  --stage-a: #080808;
+  --stage-b: #050505;
+  --surface: #121212;
+  --surface-2: #161616;
+  --text: #ffffff;
+  --text-2: #a3a3a3;
+  --text-3: #6f6f6f;
+  --sep: rgba(255, 255, 255, .08);
+  --sep-strong: rgba(255, 255, 255, .16);
+  --panel-edge: rgba(255, 255, 255, .07);
+  --fill: rgba(255, 255, 255, .06);
+  --fill-2: rgba(255, 255, 255, .035);
+  --fill-hover: rgba(255, 255, 255, .1);
+  --dot: rgba(255, 255, 255, .06);
+  --seg-on: #ffffff;
+  --btn: transparent;
+  --btn-border: rgba(255, 255, 255, .18);
+  --input: rgba(255, 255, 255, .045);
+  --glass: rgba(18, 18, 18, .76);
+  --glass-strong: rgba(18, 18, 18, .94);
+  --glass-edge: rgba(255, 255, 255, .1);
+  --code-bg: #0a0a0a;
+  --ink: #ffffff;
+  --ink-fg: #050505;
+  --info-edge: rgba(255, 255, 255, .1);
+  --nx2-btn: transparent;
+  --nx2-edge: rgba(255, 255, 255, .16);
+  --nx2-edge-2: rgba(255, 255, 255, .3);
+  --nx2-lip: transparent;
+  --nx2-tile: rgba(255, 255, 255, .07);
+  --nx2-tray: transparent;
+  --hz-ink: #050505;
+  --hz-on: #ffffff;
+  --hz-tile: #161616;
+}
+html:not([data-contrast='high'])[data-theme='light'] {
+  --canvas: #ececec;
+  --window: #ffffff;
+  --pane: #ffffff;
+  --side: #ffffff;
+  --side-solid: #ffffff;
+  --rail-bg: #ffffff;
+  --stage-a: #f6f6f6;
+  --stage-b: #efefef;
+  --surface: #ffffff;
+  --surface-2: #f7f7f7;
+  --text: #0a0a0a;
+  --text-2: #5c5c5c;
+  --text-3: #8e8e8e;
+  --sep: rgba(0, 0, 0, .08);
+  --sep-strong: rgba(0, 0, 0, .16);
+  --panel-edge: rgba(0, 0, 0, .06);
+  --fill: rgba(0, 0, 0, .05);
+  --fill-2: rgba(0, 0, 0, .03);
+  --fill-hover: rgba(0, 0, 0, .08);
+  --dot: rgba(0, 0, 0, .09);
+  --seg-on: #0a0a0a;
+  --btn: transparent;
+  --btn-border: rgba(0, 0, 0, .16);
+  --input: #f3f3f3;
+  --code-bg: #fbfbfb;
+  --ink: #0a0a0a;
+  --ink-fg: #ffffff;
+  --info-edge: rgba(0, 0, 0, .1);
+  --nx2-btn: transparent;
+  --nx2-edge: rgba(0, 0, 0, .14);
+  --nx2-edge-2: rgba(0, 0, 0, .28);
+  --nx2-lip: transparent;
+  --nx2-tile: rgba(0, 0, 0, .05);
+  --nx2-tray: transparent;
+  --hz-ink: #ffffff;
+  --hz-on: #0a0a0a;
+  --hz-tile: #ffffff;
+}
+
+/* Toile derrière les panneaux : noire (sombre) ou gris clair (clair), sans la teinte de l'espace (look.css). */
+html[data-theme='dark']:not([data-contrast='high']) body[data-mode]:not(#nx-hz) { --canvas: #050505; --space-c: var(--text); }
+html[data-theme='light']:not([data-contrast='high']) body[data-mode]:not(#nx-hz) { --canvas: #ececec; --space-c: var(--text); }
+
+/* Palette des espaces neutre (monochrome) : mêmes variables que flex.css, sans teinte. */
+html:not([data-contrast='high']) body :is([data-mode], [data-space], .hm-qa, .hm-stat, .hm-space, .nxg-tile) {
+  --u: var(--text) !important;
+  --u-soft: var(--fill) !important;
+  --u-tile: var(--hz-tile) !important;
+  --u-ink: var(--hz-on) !important;
+  --u-deep: #151515 !important;
+  --u-dsoft: #111111 !important;
+  --u-dink: #ffffff !important;
+  --u-acc: var(--hz-on) !important;
+  --u-alt: var(--text-3) !important;
+}
+html:not([data-contrast='high']):root {
+  --spc-home: var(--text); --spc-preview: var(--text); --spc-browser: var(--text); --spc-dev: var(--text); --spc-android: var(--text);
+  --spc-studio: var(--text); --spc-design: var(--text); --spc-security: var(--text); --spc-desktop: var(--text);
+  --sp-home: var(--text); --sp-preview: var(--text); --sp-browser: var(--text); --sp-dev: var(--text); --sp-android: var(--text);
+  --sp-studio: var(--text); --sp-design: var(--text); --sp-security: var(--text); --sp-desktop: var(--text);
+  --brand-grad: var(--hz-on); --nxo-brand: var(--hz-on) !important; --brand-glow: none;
+}
+/* Accent par défaut (« NEXORA ») : blanc à encre en sombre, encre à texte blanc en clair. */
+html:root:not([data-contrast='high'])[data-nx-accent='espace'] body[data-mode],
+html:root:not([data-contrast='high'])[data-nx-accent='espace'] {
+  --accent: var(--hz-on); --accent-ink: var(--hz-ink);
+  --accent-soft: color-mix(in srgb, var(--hz-on) 12%, transparent);
+  --accent-softer: color-mix(in srgb, var(--hz-on) 6%, transparent);
+  --brand-grad: var(--hz-on); --brand-glow: none;
+}
+
+/* ------------------------------------------------------------------ titres fins en deux tons */
+html body :is(h1, .tb-title b, .sheet-head h2) { font-weight: 500; letter-spacing: -.02em; }
+html body .hm-hello h1 { font-size: 42px; font-weight: 400; letter-spacing: -.035em; line-height: 1.05; }
+html body .hm-hello h1::first-line { color: var(--text); }
+html body .sheet-head h2 { font-size: 20px; }
+html body #home .nxg-head h2 { font-size: 22px; font-weight: 500; letter-spacing: -.025em; }
+html body .card h3 { font-weight: 600; }
+
+/* Repères « /tag » : pilule à contour, barre oblique devant (comme .eyebrow du site). */
+html body :is(#home .nxg-kicker, .hm-hello > small, .pop-sub) {
+  display: inline-flex; align-items: center; gap: 6px; width: auto; height: 26px; padding: 0 12px;
+  border: 1px solid var(--sep-strong); border-radius: var(--hz-pill); background: transparent;
+  font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--text);
+}
+html body :is(#home .nxg-kicker, .hm-hello > small)::before {
+  content: '/'; width: auto; height: auto; border-radius: 0; background: none; box-shadow: none; color: var(--text-3);
+}
+html body .pop-sub { height: 22px; padding: 0 10px; font-size: 11px; margin-bottom: 4px; }
+html body .pop-sub::before { content: '/'; color: var(--text-3); }
+
+/* ------------------------------------------------------------------ boutons en pilule */
+html body .btn {
+  border-radius: var(--hz-pill); padding: 0 16px; font-weight: 600; background-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--nx2-edge); transform: none;
+}
+html body .btn:hover:not(:disabled) { background-color: var(--fill); box-shadow: inset 0 0 0 1px var(--nx2-edge-2); transform: none; }
+html body .btn:active:not(:disabled) { transform: scale(.98); box-shadow: inset 0 0 0 1px var(--nx2-edge-2); }
+html body .btn.small { border-radius: var(--hz-pill); padding: 0 12px; }
+html body :is(.btn.primary, .btn.brand, .ab-go) {
+  background: var(--accent) !important; color: var(--accent-ink) !important; box-shadow: none !important;
+}
+html body :is(.btn.primary, .btn.brand, .ab-go):hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 86%, var(--window)) !important; }
+html body .btn:focus-visible { box-shadow: 0 0 0 2px var(--window), 0 0 0 4px var(--accent) !important; }
+html body :is(.icon-btn, .tb-btn, .rf-btn, .dock-btn) { border-radius: var(--hz-pill); }
+html body .tb-btn.on { background: var(--accent); color: var(--accent-ink); }
+html body .tb-go { border-radius: var(--hz-pill); background: var(--input); color: var(--text-2); box-shadow: inset 0 0 0 1px var(--sep); }
+html body .tb-go:hover { background: var(--fill); color: var(--text); }
+
+/* ------------------------------------------------------------------ champs */
+html body .input:not(textarea) { border-radius: var(--hz-pill); padding: 0 16px; }
+html body textarea.input { border-radius: 16px; }
+html body select.input { padding-right: 34px; }
+html body .input:focus { background: var(--surface); box-shadow: inset 0 0 0 1px var(--text), 0 0 0 4px var(--accent-softer); }
+html body .side-search input { border-radius: var(--hz-pill); }
+
+/* ------------------------------------------------------------------ commandes segmentées : pilule, onglet plein */
+html body .seg { border-radius: var(--hz-pill); padding: 4px; background: var(--fill-2); box-shadow: inset 0 0 0 1px var(--sep); }
+html body .seg > button { border-radius: var(--hz-pill); font-weight: 500; }
+html body .seg > button.on { background: var(--seg-on) !important; color: var(--hz-ink) !important; box-shadow: none !important; }
+html[data-contrast='high'] body .seg > button.on { color: inherit !important; }
+
+/* ------------------------------------------------------------------ interrupteurs et cases */
+html:not([data-contrast='high']) body .tog-row input:checked + .tog { background: var(--accent); }
+html:not([data-contrast='high'])[data-nx-accent='espace'] body .tog-row input:checked + .tog::after { background: var(--accent-ink); }
+html:not([data-contrast='high'])[data-nx-accent='espace'] body .check-row input:checked + .box { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+
+/* ------------------------------------------------------------------ cartes, puces, blocs */
+html body .card { border-radius: 22px; background: var(--surface); box-shadow: 0 0 0 1px var(--sep); }
+html body .chip { border-radius: var(--hz-pill); background: transparent; box-shadow: inset 0 0 0 1px var(--sep-strong); font-weight: 500; }
+html body .check { border-radius: 18px; box-shadow: 0 0 0 1px var(--sep); }
+
+/* ------------------------------------------------------------------ menus, fenêtres, notifications */
+html body .popover { border-radius: 22px; background: var(--surface); box-shadow: 0 0 0 1px var(--sep-strong), 0 30px 60px -20px rgba(0, 0, 0, .55); }
+html body .menu-item { border-radius: 14px; }
+html body .menu-item > .ico { border-radius: var(--hz-pill); background: var(--fill); color: var(--text-2); }
+html body .menu-item:hover:not(:disabled) { background: var(--fill); }
+html body .menu-item:hover:not(:disabled) > .ico { background: var(--accent); color: var(--accent-ink); transform: none; }
+html body .sheet { border-radius: 28px; background: var(--surface); box-shadow: 0 0 0 1px var(--sep-strong), 0 40px 80px -24px rgba(0, 0, 0, .6); }
+html body .sheet-icon { border-radius: var(--hz-pill); background: var(--fill); color: var(--text); box-shadow: inset 0 0 0 1px var(--sep); }
+html body .sheet-foot { background: transparent; }
+html body .toast { border-radius: 20px; background: var(--surface); box-shadow: 0 0 0 1px var(--sep-strong), 0 20px 40px -18px rgba(0, 0, 0, .5); }
+html body .toast-act { border-radius: var(--hz-pill); }
+html body .nw-tile { border-radius: 20px; }
+html body .nw-tile > .ico { border-radius: var(--hz-pill); background: var(--fill); color: var(--text); box-shadow: none; }
+html body .nw-tile.on > .ico { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+html body .nw-tile.on { box-shadow: inset 0 0 0 1px var(--text); }
+
+/* ------------------------------------------------------------------ rail : icônes au trait, onglet plein */
+html body .rail { background: var(--side); box-shadow: inset -1px 0 0 var(--sep); }
+html body .rail-spaces > button .rail-ic, html body .rail-btn .rail-ic { width: 40px; height: 30px; border-radius: var(--hz-pill); }
+html:not([data-contrast='high']) body .rail-spaces > button:not(.on) .rail-ic,
+html:not([data-contrast='high']) body .rail-btn:not(.rail-ai) .rail-ic,
+html:not([data-contrast='high']) body .rail-ai .rail-ic { background: transparent; color: var(--text-2); box-shadow: none; }
+html:not([data-contrast='high']) body .rail-spaces > button:not(.on):hover .rail-ic,
+html:not([data-contrast='high']) body .rail-btn:hover .rail-ic { background: var(--fill); color: var(--text); box-shadow: none; }
+html:not([data-contrast='high']) body .rail-spaces > button.on .rail-ic { background: var(--hz-on); color: var(--hz-ink); box-shadow: none; }
+html body .rail-spaces > button.on::before { background: var(--text); }
+html body .rail-lb { font-weight: 500; color: var(--text-2); }
+html body .rail-spaces > button.on .rail-lb { color: var(--text); font-weight: 600; }
+
+/* Barre d'outils : pilule pleine largeur, icône de l'espace en rond neutre. */
+html body .toolbar { border-radius: var(--hz-pill); background: var(--surface); box-shadow: 0 0 0 1px var(--sep); }
+html:not([data-contrast='high']) body .tb-space-ic { border-radius: var(--hz-pill); background: var(--fill) !important; color: var(--text) !important; box-shadow: inset 0 0 0 1px var(--sep) !important; }
+html body .tb-title small { color: var(--text-3); }
+
+/* ------------------------------------------------------------------ Accueil */
+html body .hm-hello { border-radius: 28px; background: var(--surface); box-shadow: 0 0 0 1px var(--sep); }
+html body .hm-hello .hm-open { border-radius: var(--hz-pill); background: var(--input); box-shadow: inset 0 0 0 1px var(--sep-strong); }
+html body .hm-hello .hm-open .btn { border-radius: var(--hz-pill); }
+/* Actions rapides (« Nouveau » = q2) : « Nouveau » en tuile pleine (blanche en sombre, encre en clair), les autres en cartes à filet. */
+html:not([data-contrast='high']) body .hm-qa { background: var(--surface) !important; color: var(--text); box-shadow: 0 0 0 1px var(--sep) !important; border-radius: 26px; }
+html:not([data-contrast='high']) body .hm-qa:has(.hm-qa-ic.q2) { background: var(--hz-on) !important; color: var(--hz-ink); box-shadow: none !important; }
+html:not([data-contrast='high']) body .hm-qa:has(.hm-qa-ic.q2) :is(b, small, h3, span) { color: var(--hz-ink) !important; }
+html body .hm-qa .hm-qa-ic { background: var(--fill) !important; color: var(--text) !important; border-radius: var(--hz-pill); }
+/* Compteurs : damier du site (le premier en tuile pleine, les autres en tuiles sombres ou blanches à filet). */
+html:not([data-contrast='high']) body .hm-stat { background: var(--surface) !important; color: var(--text) !important; box-shadow: 0 0 0 1px var(--sep) !important; border-radius: 26px !important; }
+html:not([data-contrast='high']) body .hm-stat:first-child { background: var(--hz-on) !important; color: var(--hz-ink) !important; box-shadow: none !important; }
+html body .hm-stat b { font-weight: 300; letter-spacing: -.04em; }
+html:not([data-contrast='high']) body .hm-stat .hm-stat-ic { background: var(--fill) !important; color: inherit !important; border-radius: var(--hz-pill) !important; box-shadow: inset 0 0 0 1px var(--sep) !important; }
+html:not([data-contrast='high']) body .hm-stat:first-child .hm-stat-ic { background: color-mix(in srgb, var(--hz-ink) 10%, transparent) !important; box-shadow: none !important; }
+/* Espaces de NEXORA (mosaïque) : tuiles sombres ou blanches à filet. */
+html:not([data-contrast='high']) body .hm-space[data-space] { background: var(--surface) !important; color: var(--text); box-shadow: 0 0 0 1px var(--sep) !important; }
+html:not([data-contrast='high']) body .hm-space[data-space] small { color: var(--text-2); }
+html:not([data-contrast='high']) body .hm-space[data-space] .hm-space-ic { background: var(--fill); color: var(--text); border-radius: var(--hz-pill); }
+html body :is(.hm-card, .hm-empty, .dk-wel-card) { border-radius: 26px; }
+html:not([data-contrast='high']) body .dk-wel-card { background: var(--surface) !important; box-shadow: 0 0 0 1px var(--sep) !important; color: var(--text); }
+html:not([data-contrast='high']) body .dk-wel-card .ico { background: var(--fill); color: var(--text); }
+/* Bouton rond fléché des cartes : blanc à flèche noire en sombre, encre à flèche blanche en clair. */
+html:not([data-contrast='high'])[data-theme='dark'] body :is(.hm-qa, .hm-stat, .hm-space[data-space], .dk-wel-card)::after { background-color: #ffffff; background-image: var(--nx3-go-k); }
+html:not([data-contrast='high'])[data-theme='light'] body :is(.hm-qa, .hm-stat, .hm-space[data-space], .dk-wel-card)::after { background-color: #0a0a0a; background-image: var(--nx3-go-w); }
+html:not([data-contrast='high'])[data-theme='dark'] body :is(.hm-qa:has(.hm-qa-ic.q2), .hm-stat:first-child)::after { background-color: #050505; background-image: var(--nx3-go-w); }
+html:not([data-contrast='high'])[data-theme='light'] body :is(.hm-qa:has(.hm-qa-ic.q2), .hm-stat:first-child)::after { background-color: #ffffff; background-image: var(--nx3-go-k); }
+/* « Par quoi commencer ? » : tuiles à filet, pictogramme en rond neutre, mention en pilule à contour. */
+html body #home .nxg { border-radius: 28px; background: var(--surface); border-color: var(--sep); }
+html body #home .nxg-tile { --g: var(--text); border-radius: 20px; background: transparent; }
+html body #home .nxg-tile:hover { border-color: var(--sep-strong); background: var(--fill-2); }
+html body #home .nxg-ic { border-radius: var(--hz-pill); background: var(--fill); color: var(--text); box-shadow: inset 0 0 0 1px var(--sep); }
+html body #home .nxg-tile:hover .nxg-ic { background: var(--hz-on); color: var(--hz-ink); }
+html body #home .nxg-tag { color: var(--text-2); border-color: var(--sep-strong); font-weight: 500; }
+html body #home .nxg-txt b { font-weight: 600; }
+html body .hero-link { border-radius: var(--hz-pill); }
+
+/* Chips de la Sécurité et listes à couleurs tournantes : neutres. */
+html:not([data-contrast='high']) body .sec-chips span { background: transparent !important; color: var(--text-2) !important; box-shadow: inset 0 0 0 1px var(--sep-strong) !important; border-radius: var(--hz-pill); }
+html:not([data-contrast='high']) body :is(.sec-empty, .bl-empty) > svg { color: var(--text-3) !important; background: var(--fill) !important; }
+html:not([data-contrast='high']) body .ab-chip:has(input:checked) { background: var(--accent) !important; color: var(--accent-ink) !important; }
+html:not([data-contrast='high']) body .ab-sec.on { background: var(--fill) !important; }
+html:not([data-contrast='high']) body .ab-sec.on b { color: var(--text) !important; }
+html:not([data-contrast='high']) body .ab-sec.on::before { background: var(--text) !important; }
+
+/* ------------------------------------------------------------------ défilement */
+html ::-webkit-scrollbar-thumb { background-color: var(--fill-hover); }
+
+/* ------------------------------------------------------------------ teintes restantes, neutralisées */
+/* Illustrations des cartes (nx/cards : tons par couleur) : niveaux de gris. */
+html:not([data-contrast='high'])[data-theme='dark'] body [data-nxi-tone] { --nxi-s: #1a1a1a !important; --nxi-m: #333333 !important; --nxi-d: #8c8c8c !important; --nxi-a: #ffffff !important; }
+html:not([data-contrast='high'])[data-theme='light'] body [data-nxi-tone] { --nxi-s: #f1f1f1 !important; --nxi-m: #d6d6d6 !important; --nxi-d: #6b6b6b !important; --nxi-a: #0a0a0a !important; }
+/* Groupes d'appareils du Responsive Lab et sources : pastille neutre. */
+html:not([data-contrast='high']) body :is(.grp-icon, .src-icon, .src-icon.globe) { background: var(--fill) !important; color: var(--text) !important; box-shadow: inset 0 0 0 1px var(--sep); }
+/* Offres (nx/offres) : marque et or en blanc (sombre) ou encre (clair), texte posé dessus à l'inverse. */
+html:not([data-contrast='high']) body {
+  --nxo-brand: var(--hz-on) !important; --nxo-gold: var(--hz-on); --nxo-pro-bg: var(--surface); --nxo-pro-card: var(--surface-2);
+}
+html:not([data-contrast='high']) body :is(.nxo-ribbon, .nxo-yes, .nxo-ab-ic, .nxo-medal) { color: var(--hz-ink) !important; background: var(--hz-on) !important; box-shadow: none !important; }
+html:not([data-contrast='high']) body .nxo-medal { border-radius: var(--hz-pill) !important; }
+html:not([data-contrast='high']) body .nxo-kicker { color: var(--text-2); }
+html:not([data-contrast='high']) body .nxo-btn { border-radius: var(--hz-pill); background: transparent; box-shadow: inset 0 0 0 1px var(--sep-strong); }
+html:not([data-contrast='high']) body .nxo-btn.primary { background: var(--hz-on) !important; color: var(--hz-ink) !important; box-shadow: none !important; }
+html:not([data-contrast='high']) body .nxo-feats .ico, html:not([data-contrast='high']) body .nxo-feats svg { color: var(--text) !important; }
+html:not([data-contrast='high'])[data-theme='dark'] body .nxo-plan.nxo-pro .nxo-name { background-image: none !important; -webkit-text-fill-color: currentColor; }
+html:not([data-contrast='high']) body .nxo-bar em, html:not([data-contrast='high']) body .nxo-meter.hot .nxo-bar em { background: var(--hz-on) !important; }
+
+/* Repères des panneaux (pastille devant les titres de section) et en-têtes d'espace : neutres. */
+html:not([data-contrast='high']) body :is(.ab-card > h3, .st-head)::before { background: var(--text) !important; border-radius: 50% !important; width: 6px !important; height: 6px !important; }
+html:not([data-contrast='high']) body .sec-head h1 > .ico { background: var(--fill) !important; color: var(--text) !important; box-shadow: inset 0 0 0 1px var(--sep); border-radius: var(--hz-pill); }
+/* NEX-DESIGN : outil actif et export en blanc (sombre) ou encre (clair). */
+html:not([data-contrast='high']) body .dz-tool.on { background: var(--hz-on) !important; color: var(--hz-ink) !important; box-shadow: none !important; }
+html body .dz-tool { border-radius: var(--hz-pill); }
+
+/* Commandes posées sur l'accent avec un texte blanc écrit en dur (styles.css, nx/) : avec l'accent par défaut (blanc
+   en sombre, encre en clair), le texte passe à l'encre de l'accent. Avec un accent choisi dans les Réglages, rien ne
+   change. Relevé par recherche des règles « background: var(--accent…) ; color: #fff ». */
+html:not([data-contrast='high'])[data-nx-accent='espace'] body :is(.sm-btn, .tl-btn.play, .dk-badge, .dk-menu button:hover, .ps-pose.on, .ai-badge, .ai-msg-b.user, .ai-code-bar button.pri, .pal-item.on, #nxTrialChip em, .rail-ai:hover .rail-ic, .dzp-new, .nx-pin.client, .nx-hrow.on, .nxv-ic) {
+  color: var(--accent-ink) !important;
+}
+/* Couleurs d'espace écrites en dur sous un texte blanc : toujours neutres (les couleurs d'espace n'existent plus). */
+html:not([data-contrast='high']) body :is(.dz-export, .dz-ph-ic, .dz-ib.on, .hm-space[data-space='desktop'] .hm-space-ic) {
+  background: var(--hz-on) !important; color: var(--hz-ink) !important; box-shadow: none !important;
+}
+html body .dz-export { border-radius: var(--hz-pill); }
+/* NEX-DESIGN : carte « Commence avec un modèle » (grise bleutée) sur le fond des surfaces. */
+html:not([data-contrast='high']) body .nx-start-card { background: var(--surface) !important; border-radius: 24px; box-shadow: 0 0 0 1px var(--sep-strong) !important; }
+
+/* ------------------------------------------------------------------ #104 : formulaires (même système que le site,
+   le back office et l'espace des parrains) : libellé lisible au-dessus, champ plein à filet fin et coins de 12 px
+   (les champs de recherche restent en pilule), survol, focus à filet d'encre et halo, lecture seule en pointillés,
+   erreur en rouge, cases et interrupteurs à l'encre de l'accent, bouton désactivé lisible (au lieu d'un voile). */
+html body :is(.field > span, .field-label) { font-size: 12.5px; font-weight: 600; color: var(--text); letter-spacing: 0; }
+html body .field small, html body .field .hint { color: var(--text-3); line-height: 1.45; }
+html body .input:not(textarea) { border-radius: 12px; padding: 0 13px; }
+html body :is(.side-search input, .hm-open, .tb-go) { border-radius: var(--hz-pill); }
+html body .input { background: var(--input); box-shadow: inset 0 0 0 1px var(--sep); transition: box-shadow .16s, background-color .16s; }
+html body .input::placeholder { color: var(--text-3); }
+html body .input:hover:not(:focus):not(:disabled) { box-shadow: inset 0 0 0 1px var(--sep-strong); }
+html body .input:focus { background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--text), 0 0 0 4px var(--accent-softer); }
+html body textarea.input { border-radius: 14px; padding: 10px 13px; line-height: 1.55; }
+html body .input:is(:disabled, [readonly]) { background: transparent; color: var(--text-2); box-shadow: none; outline: 1px dashed var(--sep-strong); outline-offset: -1px; cursor: not-allowed; }
+html body .input:is([aria-invalid='true'], :user-invalid) { box-shadow: inset 0 0 0 1.5px var(--bad-dot), 0 0 0 4px color-mix(in srgb, var(--bad-dot) 16%, transparent); }
+/* Cases à cocher : coche à l'encre de l'accent (blanche sur une case blanche avec l'accent par défaut au #103). */
+html body .check-row .box { border-radius: 6px; box-shadow: inset 0 0 0 1.5px var(--sep-strong); background: transparent; }
+html:not([data-contrast='high']) body .check-row input:checked + .box { background: var(--accent); box-shadow: none; transform: none; }
+html:not([data-contrast='high']) body .check-row input:checked + .box::after { border-color: var(--accent-ink); }
+html body .check-row input:focus-visible + .box { outline: 2px solid var(--text); outline-offset: 2px; }
+/* Bouton désactivé : fond discret et texte gris, plus de voile qui rendait le bouton blanc gris sale. */
+html body .btn:disabled { opacity: 1; background: var(--fill-2) !important; color: var(--text-3) !important; box-shadow: inset 0 0 0 1px var(--sep) !important; }
+/* Tuiles de choix (« Nouveau ») : surfaces de la direction au lieu du gris bleuté des jetons d'origine. */
+html:not([data-contrast='high']) body .nw-tile { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--sep); }
+html:not([data-contrast='high']) body .nw-tile:hover { background: var(--fill); box-shadow: inset 0 0 0 1px var(--sep-strong); transform: none; }
+html:not([data-contrast='high']) body .nw-tile.on { background: var(--surface-2); box-shadow: inset 0 0 0 1.5px var(--text); }
+
+/* Connexion et inscription (nx/auth/auth.css, chargée après cette feuille : sélecteurs plus précis) : panneau de la
+   marque noir comme le site (titre fin, illustration en niveaux de gris), onglets en pilule, champs de 46 px,
+   bouton principal en pilule pleine. */
+html body .sheet:has(> .nxl) { border-radius: 28px; overflow: hidden; }
+html:not([data-contrast='high']) body .nxl-brand { background: #0a0a0a; border-right: 0; color: #fff; }
+html body .nxl-logo b, html body .nxl-pitch h3, html body .nxl-pitch li b { color: #fff; }
+html body .nxl-logo img { box-shadow: none; }
+html body .nxl-pitch h3 { font-size: 26px; font-weight: 300; letter-spacing: -0.03em; }
+html body .nxl-pitch li small, html body .nxl-trust { color: #a3a3a3; }
+html body .nxl-ic { border-radius: var(--hz-pill); color: #fff; background: transparent; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); }
+html body .nxl-art { filter: grayscale(1); opacity: .9; }
+html body .nxl-art-svg .nxl-card { fill: #161616; }
+html body .nxl-art-svg .nxl-soft { fill: #2a2a2a; }
+html body .nxl-art-svg .nxl-line { fill: #262626; }
+html body .nxl-tabs { border-radius: var(--hz-pill); padding: 4px; }
+html body .nxl-tabs button { border-radius: var(--hz-pill); }
+html body .nxl-tabs button.on { background: var(--seg-on); color: var(--hz-ink); box-shadow: none; }
+html body .nxl-head h2 { font-size: 30px; font-weight: 400; letter-spacing: -0.035em; }
+html:not([data-contrast='high']) body :is(.nxl-badge, .nxl-form .nx-sent > svg) { background: var(--hz-on); color: var(--hz-ink); border-radius: var(--hz-pill); box-shadow: none; }
+html body .nxl-field .nxl-input .input { height: 46px; border-radius: 14px; }
+html body .nxl-close { border-radius: var(--hz-pill); }
+html body .nxl-submit.btn { height: 48px; border-radius: var(--hz-pill); box-shadow: none; }
+html body .nxl-alt.btn { height: 46px; border-radius: var(--hz-pill); }
+html body .nxl-form .nx-msg:is(.ok, .bad) { border-radius: 14px; }
+html body .nxl-input:focus-within > svg { color: var(--text); }

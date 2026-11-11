@@ -1,0 +1,34 @@
+{
+  "android": {
+    "current": "nx-demo-chat",
+    "section": "messaging",
+    "apps": [
+      {
+        "id": "nx-demo-chat",
+        "appName": "Kora Chat",
+        "appId": "fr.kora.chat",
+        "source": { "kind": "url", "url": "https://kora.example/" },
+        "permissions": ["vibrate", "notifications", "microphone", "camera"],
+        "push": {
+          "enabled": true,
+          "googleServices": "{}",
+          "project": { "id": "kora-chat", "sender": "123456789", "app": "fr.kora.chat" },
+          "registerUrl": "https://kora.example/api/appareils",
+          "topics": ["all", "annonces"],
+          "topicsText": "all, annonces",
+          "showWhenOpen": true,
+          "channels": [
+            { "name": "Messages", "importance": "high" },
+            { "name": "Commandes", "importance": "default" },
+            { "name": "Rappels", "importance": "low" }
+          ],
+          "messaging": true,
+          "actionUrl": "https://kora.example/api/notifications/actions",
+          "calls": true,
+          "callTimeout": 45,
+          "msgTest": { "kind": "message", "sender": "Awa", "conversation": "", "tag": "conv_42", "body": "Salut ! Tu es dispo ce soir ?", "avatar": "", "channel": "Messages", "url": "/conversations/42", "target": "topic", "topic": "all", "token": "" }
+        }
+      }
+    ]
+  }
+}

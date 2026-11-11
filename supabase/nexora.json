@@ -1,0 +1,50 @@
+{
+  "$comment": "Configuration attendue du projet Supabase de NEXORA. Lue par le back office (section Supabase) et par scripts/supabase.mjs.",
+  "projectRef": "dcwfgnwaxsrtuvomttbp",
+  "publicKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjd2ZnbndheHNydHV2b210dGJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0MjE1NzcsImV4cCI6MjEwODk5NzU3N30.k-LmO2wJecDAi_LJIT7103vDVOAds4-2JFjcv6SStcY",
+  "$publicKey": "#048 : clé publique (anon) du projet, la même que celle de l’application et du back office ; lue par le Worker de NEXORA web (signal de vie, déploiements, visiteurs réels, deuxième région).",
+  "siteUrl": "https://nexoradevs.online/",
+  "$siteUrl": "#096 : domaine principal (site vitrine à la racine, NEXORA web à /studio/, back office à /admin/). Les liens de connexion de Supabase qui arrivent à la racine sont envoyés vers /studio/ par le site.",
+  "$redirectUrls": "#109 : l'adresse workers.dev (désactivée dans Cloudflare, A-060) n'est plus attendue : un lien qui la demanderait revient à l'adresse du site (siteUrl).",
+  "redirectUrls": [
+    "https://nexoradevs.online/**",
+    "http://localhost:5173/**",
+    "http://127.0.0.1:5173/**",
+    "http://localhost:4173/**"
+  ],
+  "realtimeTables": [
+    "announcements",
+    "app_config",
+    "design_documents",
+    "feature_flags",
+    "monitors",
+    "notifications",
+    "organization_members",
+    "profiles",
+    "projects",
+    "studio_items",
+    "subscriptions",
+    "ticket_messages"
+  ],
+  "functions": ["admin-users", "org-invite", "security-scan", "site-info"],
+  "buckets": [
+    { "id": "avatars", "public": true },
+    { "id": "design-files", "public": false },
+    { "id": "assets", "public": false },
+    { "id": "exports", "public": false },
+    { "id": "studio-reviews", "public": true }
+  ],
+  "email": {
+    "$comment": "Brevo (#029) : relais SMTP des e-mails des comptes et expéditeur des alertes de supervision. Les clés (SMTP xsmtpsib-…, API xkeysib-…) ne sont jamais dans le dépôt : elles se saisissent dans le back office.",
+    "smtpHost": "smtp-relay.brevo.com",
+    "smtpPort": 587,
+    "smtpUser": "c24e9c001@smtp-brevo.com",
+    "$smtpUser": "#110 : identifiant SMTP du compte Brevo de nexoradevstoolbox@gmail.com (celui des clés de token_proj_nexora.txt, lu par l'API de Brevo) ; b58a4a001@… était celui de l'ancien compte.",
+    "senderEmail": "nexoradevstoolbox@gmail.com",
+    "$senderEmail": "#087 : adresse de contact et expéditeur de NEXORA Devs Toolbox. À valider d’abord dans Brevo (Expéditeurs), puis appliquer depuis le back office (Supabase → E-mails), sinon Brevo refuse les envois.",
+    "senderName": "NEXORA Devs Toolbox",
+    "authRateLimitPerHour": 30,
+    "$authRateLimitPerHour": "#039 : limite horaire des e-mails des comptes (confirmation, mot de passe oublié) une fois le SMTP Brevo branché ; Supabase la laisse à 2 par heure sinon. Appliquée par le back office (section Supabase)."
+  },
+  "cronFunctions": ["run_monitor_checks", "collect_monitor_results", "cleanup_old_data", "nx_monitor_rollup", "nx_monitor_cleanup", "nx_monitor_monthly_report", "nx_rum_cleanup"]
+}
