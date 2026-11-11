@@ -532,6 +532,12 @@
     },
     "license:check": () => handlers["license:state"](),
     "license:log": () => true,
+    // NEXORA #112 : « Passer à Pro » (nx/offres/upsell.js, nx/licence) : page « Ma licence » du site dans un nouvel
+    // onglet, comme src/license.js dans le navigateur du PC (aperçu et NEXORA web, sans demande au support).
+    "license:open-site": (hash = "") => {
+      window.open(`https://nexoradevs.online/${String(hash || "licence").replace(/^#?\/?/, "")}`, "_blank", "noopener")
+      return true
+    },
     // NEXORA #076 : fichiers .novx : aucun fichier reçu au lancement, Google Drive pour ordinateur absent.
     "novx:pending": () => null,
     "novx:drive": () => ({ folders: [], web: "https://drive.google.com/drive/my-drive" }),

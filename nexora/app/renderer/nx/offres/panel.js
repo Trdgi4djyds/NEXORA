@@ -6,6 +6,8 @@
 // comptées par application, chiffres clés des cartes (planKeys) et adresse de contact.
 // NEXORA #090 : parrainage (NEXORA REFERRAL) : carte « Un parrain t'a invité ? » (code promo du parrain, rattachement
 // définitif) ou « Parrainage actif », et prix de Pro avec la remise (prix sans remise barré).
+// NEXORA #112 : « Passer à Pro » ouvre le paiement en ligne (data-nxo-ask, upsell.js : page « Ma licence » du site,
+// SasPay depuis le #107) au lieu d'envoyer une demande au support (data-plan-ask, gardé pour « Revenir à »).
 import { ico, esc, toast } from '../core.js';
 import { cloud, status, plans, appTrials, referral, attachReferral, missing } from './status.js';
 import { COMPARE, CONTACT_EMAIL, METERS, PLAN_LOOK, PLAN_ORDER, REFERRAL, discounted, limitText, money, count, percent, normPlan, planKeys } from './catalog.js';
@@ -78,7 +80,7 @@ function planCard(p, s, ref) {
   if (lim.app_trial_days > 0) keys[1] += ` · essai ${lim.app_trial_days} j`;
   const cta = cur ? `<span class="nxo-btn current">${ico('check', 13)}Ton offre actuelle</span>`
     : !cloud.user ? `<button type="button" class="nxo-btn ${rec ? 'primary' : 'soft'}" data-nxo-login>Se connecter pour choisir</button>`
-    : rank > mine ? `<button type="button" class="nxo-btn primary" data-plan-ask="${esc(p.id)}">Passer à ${esc(p.name)}${ico('nxArrowRight', 14)}</button>`
+    : rank > mine ? `<button type="button" class="nxo-btn primary" data-nxo-ask="${esc(p.id)}">Passer à ${esc(p.name)}${ico('nxArrowRight', 14)}</button>`
     : `<button type="button" class="nxo-btn soft" data-plan-ask="${esc(p.id)}">Revenir à ${esc(p.name)}</button>`;
   const amt = (c) => esc(money(c).replace(' $', ''));
   const billM = m ? 'facturé chaque mois' : 'pour toujours';
@@ -194,7 +196,7 @@ export async function panel() {
         ${s.admin ? `<div class="nxo-chips"><span class="nxo-chip">${ico('lock', 12)}Administrateur NEXORA : aucune limite</span></div>` : ''}
       </div>
       <div class="nxo-now-acts">
-        ${next && cloud.user ? `<button type="button" class="nxo-btn light" data-plan-ask="${esc(next.id)}">Passer à ${esc(next.name)}${ico('nxArrowRight', 14)}</button>` : ''}
+        ${next && cloud.user ? `<button type="button" class="nxo-btn light" data-nxo-ask="${esc(next.id)}">Passer à ${esc(next.name)}${ico('nxArrowRight', 14)}</button>` : ''}
         ${!cloud.user ? '<button type="button" class="nxo-btn light" data-nxo-login>Se connecter</button>' : ''}
         <button type="button" class="nxo-link on-color" data-nxo-scroll="#nxoCompare">Comparer les offres<span class="nxo-round">${ico('nxArrowUpRight', 13)}</span></button>
       </div>
@@ -217,7 +219,7 @@ export async function panel() {
     <div class="nxo-plans">${list.map((p) => planCard(p, s, ref)).join('')}</div>
     ${referralCard(ref)}
     ${compare(list, s)}
-    <p class="nxo-foot">${ico('chat', 12)} Change d’offre à tout moment : ta demande est traitée par l’équipe NEXORA et ta nouvelle offre est activée sous 24 h${ref && ref.referred ? ', remise du parrainage comprise' : ''}. Une question : ${esc(CONTACT_EMAIL)}.</p>
+    <p class="nxo-foot">${ico('chat', 12)} Pro se paie en ligne sur la page « Ma licence », ouverte dans ton navigateur : Mobile Money ou carte bancaire, en une seule fois, rien n’est prélevé automatiquement${ref && ref.referred ? ', remise du parrainage comprise' : ''}. Connecte-toi avec ce même compte : NEXORA passe en Pro dès le paiement confirmé. Une question : ${esc(CONTACT_EMAIL)}.</p>
   </div>`;
 }
 

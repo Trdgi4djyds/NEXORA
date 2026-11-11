@@ -68,7 +68,8 @@ export async function onClick(e) {
     // NEXORA #076 : l'abonnement se prend dans le navigateur (site de NEXORA, page « Ma licence ») ; le logiciel passe
     // en Pro au contrôle de licence suivant. Sans le canal (aperçu), demande à l'équipe comme avant.
     // NEXORA #087 : tant que le paiement en ligne n'est pas ouvert, la page indique comment l'équipe active Pro.
-    try { await window.vitrine.invoke('license:open-site', 'licence?offre=pro'); closeSheet(); toast('Page « Ma licence » ouverte dans ton navigateur : suis les indications pour passer à Pro.'); return true; } catch { /* aperçu : demande à l'équipe */ }
+    // NEXORA #112 : aussi depuis Mon compte → Offre et usage (panel.js) ; même compte à reprendre sur la page.
+    try { await window.vitrine.invoke('license:open-site', 'licence?offre=pro'); closeSheet(); toast('Page « Ma licence » ouverte dans ton navigateur : connecte-toi avec ce même compte, puis choisis « Passer à Pro » pour payer.'); return true; } catch { /* sans le canal : demande à l'équipe */ }
     ask.disabled = true;
     try {
       const t = await askPlan(ask.dataset.nxoAsk);
