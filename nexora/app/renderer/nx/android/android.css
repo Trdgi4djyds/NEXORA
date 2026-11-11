@@ -331,3 +331,40 @@
 .ab-dev .nxm-call-btns .no svg { transform: rotate(135deg); }
 .ab-dev .nxm-call-btns .yes i { background: #2fb36d; }
 .ab-dev .nxm-call-btns small { font: 500 12px/1 var(--font); color: #d6d7dd; }
+/* NEXORA #114 : créateurs de logo et d'écran de démarrage. Blocs d'interface au thème ; aperçus (logo, fonds,
+   téléphone) avec leurs propres couleurs. */
+.nxb .ab-card { display: flex; flex-direction: column; gap: 12px; }
+.nxb-logo-stage { display: grid; grid-template-columns: minmax(160px, 220px) 1fr; gap: 20px; align-items: center; }
+.nxb-logo-big { aspect-ratio: 1; border-radius: 18px; display: grid; place-items: center; background: var(--fill, rgba(127, 127, 127, .1)); background-image: conic-gradient(rgba(127, 127, 127, .14) 25%, transparent 0 50%, rgba(127, 127, 127, .14) 0 75%, transparent 0); background-size: 18px 18px; }
+.nxb-logo-big img { width: 78%; height: 78%; object-fit: contain; }
+.nxb-ctx { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.nxb-ctx figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.nxb-ctx figcaption { font-size: 11.5px; color: var(--text-2); text-align: center; }
+.nxb-ic { width: 64px; height: 64px; overflow: hidden; display: block; box-shadow: 0 0 0 1px rgba(127, 127, 127, .25); }
+.nxb-ic.round { border-radius: 50%; }
+.nxb-ic.squircle { border-radius: 22%; }
+.nxb-ic img { width: 100%; height: 100%; display: block; }
+.nxb-sp { width: 64px; height: 110px; border-radius: 12px; display: grid; place-items: center; box-shadow: 0 0 0 1px rgba(127, 127, 127, .25); }
+.nxb-sp.light { background: #ffffff; }
+.nxb-sp.dark { background: #0b0c10; }
+.nxb-sp img { width: 34px; height: 34px; object-fit: contain; }
+.nxb-actions { flex-wrap: wrap; }
+.nxb-presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 10px; }
+.nxb-preset { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 6px; border-radius: 12px; border: 1px solid var(--border, rgba(127, 127, 127, .25)); background: var(--surface, transparent); color: var(--text); font-size: 12px; cursor: pointer; }
+.nxb-preset:hover { border-color: var(--text-2); }
+.nxb-preset img { width: 60px; height: 60px; object-fit: contain; }
+.nxb-presets.tall .nxb-preset img { width: 54px; height: 117px; border-radius: 9px; object-fit: cover; box-shadow: 0 0 0 1px rgba(127, 127, 127, .25); }
+.nxb-symbols { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 6px; }
+.nxb-sym { height: 40px; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--border, rgba(127, 127, 127, .25)); background: var(--surface, transparent); color: var(--text); cursor: pointer; }
+.nxb-sym.on { background: var(--text); color: var(--window, #fff); border-color: var(--text); }
+.nxb-swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.nxb-sw { width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(127, 127, 127, .35); font: 700 13px/1 var(--font); cursor: pointer; }
+.nxb-sp-stage { display: grid; grid-template-columns: 170px 1fr; gap: 20px; align-items: center; }
+.nxb-phone { width: 170px; aspect-ratio: 9 / 19.5; border-radius: 28px; padding: 6px; background: #111214; box-shadow: 0 0 0 1px rgba(127, 127, 127, .35); }
+.nxb-phone-screen { width: 100%; height: 100%; border-radius: 23px; overflow: hidden; display: grid; place-items: center; container-type: inline-size; }
+.nxb-sp-col { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; padding: 0 10px; }
+.nxb-sp-col img { width: var(--lg, 40cqw); height: var(--lg, 40cqw); object-fit: contain; }
+.nxb-sp-col b { font: 650 10.5cqw/1.15 var(--font); }
+.nxb-sp-col small { font: 450 6.5cqw/1.3 var(--font); opacity: .75; }
+.nxb-sp-side { display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 1100px) { .nxb-logo-stage, .nxb-sp-stage { grid-template-columns: 1fr; } .nxb-ctx { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

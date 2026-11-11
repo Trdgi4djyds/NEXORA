@@ -1,0 +1,49 @@
+{
+  "android": {
+    "current": "nx-demo-kora",
+    "section": "splashmaker",
+    "apps": [
+      {
+        "id": "nx-demo-kora",
+        "appName": "Kora",
+        "appId": "fr.kora.boulangerie",
+        "source": {
+          "kind": "url",
+          "url": "https://kora.example/"
+        },
+        "accent": "#C8553D",
+        "logoMaker": {
+          "kind": "symbol",
+          "symbol": "nxMug",
+          "shape": "squircle",
+          "bg": "#C8553D",
+          "bg2": "#7A2E1F",
+          "gradient": true,
+          "fg": "#FFF6EA",
+          "font": "serif"
+        },
+        "splashMaker": {
+          "bg": "gradient",
+          "grad": "linear",
+          "c1": "#2B1B6E",
+          "c2": "#FF6A88",
+          "angle": 160,
+          "logo": "maker"
+        },
+        "splash": {
+          "image": null,
+          "bg": "#2B1B6E",
+          "anim": "fade",
+          "intro": "pop",
+          "showName": true,
+          "tagline": "Le pain chaud, livré chez vous",
+          "textColor": "",
+          "logoSize": 150,
+          "hideOn": "load",
+          "min": 400,
+          "max": 6000
+        }
+      }
+    ]
+  }
+}

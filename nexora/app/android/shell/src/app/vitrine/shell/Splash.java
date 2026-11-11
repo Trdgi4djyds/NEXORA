@@ -100,6 +100,16 @@ final class Splash {
         FrameLayout f = new FrameLayout(a);
         f.setBackgroundColor(cfg.splashBg);
         f.setClickable(true);
+        // NEXORA #114 : fond composé dans le créateur d'écran de démarrage (dégradé, motif ou photo), recadré pour
+        // remplir l'écran derrière le logo ; la couleur de fond reste dessous (bords, chargement de l'image).
+        int bgId = a.getResources().getIdentifier("vt_splash_bg", "drawable", a.getPackageName());
+        if (bgId != 0) {
+            ImageView bg = new ImageView(a);
+            bg.setTag("background");
+            bg.setImageResource(bgId);
+            bg.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            f.addView(bg, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        }
         LinearLayout col = new LinearLayout(a);
         col.setOrientation(LinearLayout.VERTICAL);
         col.setGravity(Gravity.CENTER_HORIZONTAL);

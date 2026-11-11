@@ -1,0 +1,28 @@
+{
+  "android": {
+    "current": "nx-demo-kora",
+    "section": "logomaker",
+    "apps": [
+      {
+        "id": "nx-demo-kora",
+        "appName": "Kora",
+        "appId": "fr.kora.boulangerie",
+        "source": {
+          "kind": "url",
+          "url": "https://kora.example/"
+        },
+        "accent": "#C8553D",
+        "logoMaker": {
+          "kind": "symbol",
+          "symbol": "nxMug",
+          "shape": "squircle",
+          "bg": "#C8553D",
+          "bg2": "#7A2E1F",
+          "gradient": true,
+          "fg": "#FFF6EA",
+          "font": "serif"
+        }
+      }
+    ]
+  }
+}
