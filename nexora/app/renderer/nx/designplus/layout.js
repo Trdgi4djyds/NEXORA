@@ -34,6 +34,7 @@ function toolbar(D) {
   const end = el('<div class="nx-tb-end"><span class="dz-sep"></span></div>');
   if (zoom) end.append(zoom);
   end.insertAdjacentHTML('beforeend', `<span class="dz-sep"></span>
+    <button class="dz-tool" data-nx2="motion" title="Animation : frise, images clés, animations toutes faites" aria-pressed="false">${ico('wave', 16)}</button>
     <button class="dz-tool" data-nx2="ai" title="IA de design : textes, images, palettes, maquettes" aria-haspopup="true">${ico('sparkle', 16)}</button>
     <button class="dz-tool" data-nx2="share" title="Partager : validation client, lien, coédition, commentaires, bibliothèques" aria-haspopup="true">${ico('nxShare', 16)}</button>
     <button class="dz-tool" data-nx2="present" title="Présenter et tester (F5)" aria-haspopup="true">${ico('play', 16)}</button>`);
@@ -63,6 +64,7 @@ function toolbar(D) {
     if (k === 'ai') aiMenu(D, b);
     if (k === 'share') shareMenu(D, b);
     if (k === 'present') presentMenu(D, b);
+    if (k === 'motion') CTX.action('motion-toggle');
   });
 }
 
@@ -138,11 +140,13 @@ async function presentMenu(D, anchor) {
   const a = await menu(anchor, 'Présenter et tester', [
     { id: 'present', icon: 'nxPresent', label: 'Présenter en plein écran', kbd: 'F5' },
     { id: 'proto', icon: 'play', label: 'Tester le prototype', sub: `Liens et actions au clic${has(STD) ? '' : ' · offre Pro'}` },
-    { id: 'anim', icon: 'nxAnimate', label: D.nxPlaying ? 'Arrêter l’animation' : 'Lire l’animation de la page' }
+    { id: 'anim', icon: 'nxAnimate', label: D.nxPlaying ? 'Arrêter l’animation' : 'Lire l’animation de la page' },
+    { id: 'timeline', icon: 'wave', label: D.nxMotionUi && D.nxMotionUi.isOpen() ? 'Fermer la frise de l’animation' : 'Frise de l’animation', sub: 'Images clés, 41 animations toutes faites, courbes' }
   ], { width: 300, align: 'end' });
   if (a === 'present') PG.present(D, D.pageIdx);
   if (a === 'proto' && allowed(STD, 'Le prototype')) await CTX.action('proto-play');
   if (a === 'anim') PG.playPage(D);
+  if (a === 'timeline') await CTX.action('motion-toggle');
 }
 
 // ---------- Menu du document = « Fichier » ; menu du zoom = affichage ----------
@@ -303,17 +307,19 @@ async function gallery(D) {
 }
 
 // ---------- Panneau de droite : onglets, ordre par tâche, sections repliables ----------
-const PTABS = [['design', 'Design'], ['proto', 'Prototype'], ['code', 'Code']];
+// NEXORA #113 : onglet « Animation » (Motion, entrée rapide du #011).
+const PTABS = [['design', 'Design'], ['proto', 'Prototype'], ['motion', 'Animation'], ['code', 'Code']];
 const ORDER = [
   'Page', 'Déclinaisons', 'Style des nouvelles formes', 'Kit de marque',
   'Disposition', 'Contraintes', 'Mise en page automatique', 'Composant', 'Variantes', 'Cadre photo', 'Graphique', 'Tableau', 'Code QR', 'Répétition circulaire', 'Répétition en grille',
-  'Remplissage', 'Couleur du texte', 'Texte', 'Styles de texte', 'Contour', 'Extrémités', 'Motif', 'Vectoriel',
-  'Effets', 'Effets avancés', 'Calque',
+  'Pense-bête', 'Connecteur', 'Tableau blanc',
+  'Remplissage', 'Couleur du texte', 'Texte', 'Styles de texte', 'Contour', 'Extrémités', 'Couleurs de la sélection', 'Motif', 'Vectoriel',
+  'Effets', 'Effets avancés', 'Calque', 'Lissage des coins',
   'Retouche', 'Retouche avancée', 'Retouche intelligente', 'Réglages non destructifs', 'Variables',
-  'Prototype', 'Animation', 'Animation de la page', 'Prototype de la page',
-  'Inspection', 'Texte de remplacement'
+  'Prototype', 'Mouvement', 'Animations toutes faites', 'Entrée rapide', 'Animation de la page', 'Notes de présentation', 'Prototype de la page', 'Couleurs de la page',
+  'Inspection', 'Pour le développement', 'Code de l’animation', 'Texte de remplacement'
 ];
-const TAB_OF = { Prototype: 'proto', Animation: 'proto', 'Animation de la page': 'proto', Inspection: 'code', 'Texte de remplacement': 'code' };
+const TAB_OF = { Prototype: 'proto', Mouvement: 'motion', 'Animations toutes faites': 'motion', 'Entrée rapide': 'motion', 'Animation de la page': 'proto', Inspection: 'code', 'Pour le développement': 'code', 'Code de l’animation': 'code', 'Texte de remplacement': 'code' };
 const FOLD_DEFAULT = ['Styles de texte', 'Motif', 'Extrémités', 'Variables', 'Réglages non destructifs'];
 const titleOf = (c) => { const h = c.querySelector(':scope > .dz-card-h > span'); return h ? h.textContent.trim() : ''; };
 const rank = (t) => (/^(Outil :|Édition des points|Lissage du crayon)/.test(t) ? -1 : ORDER.includes(t) ? ORDER.indexOf(t) : 400);

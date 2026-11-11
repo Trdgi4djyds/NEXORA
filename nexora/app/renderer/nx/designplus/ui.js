@@ -7,7 +7,8 @@ import { FALLBACK, normPlan, money } from '../offres/catalog.js';
 export { api, esc, ico, toast, busy, sheet, closeSheet, sheetHtml, menu, prompt, state, settings, saveSettings, uid, pickFile, saveBytes, zip, dataUrlBytes, bytesB64, hexRgb, rgbHex, luminance, FabricObject, util, Group, Rect, Textbox };
 
 // Propriétés des calques ajoutées par #053, enregistrées avec le document (copie, annulation, cloud).
-export const DZX_PROPS = ['nxAuto', 'nxAutoBg', 'nxAutoFill', 'nxVar', 'nxVariant', 'nxProto', 'nxAlt', 'nxBulk', 'nxCons'];
+// NEXORA #113 : nxDev (statut de développement), nxSmooth (lissage des coins).
+export const DZX_PROPS = ['nxAuto', 'nxAutoBg', 'nxAutoFill', 'nxVar', 'nxVariant', 'nxProto', 'nxAlt', 'nxBulk', 'nxCons', 'nxDev', 'nxSmooth'];
 for (const p of DZX_PROPS) if (!FabricObject.customProperties.includes(p)) FabricObject.customProperties.push(p);
 
 // Offres : NEX-DESIGN limité (Gratuit), étendu (Standard), complet (Pro).

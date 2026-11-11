@@ -30,6 +30,9 @@
 //                         montre les fonctions réservées aux comptes connectés (supervision 24 h/24, #022)
 //   --demo                supervision de démonstration : sites fictifs et un mois de mesures simulées,
 //                         servis par le vrai code du processus principal (preview/demo-main.mjs)
+//   --motion <état>       NEXORA #113 : avec « design » (après un modèle) : animation de démonstration (« Éclat » sur le
+//                         titre, « Pulsation » sur l'autocollant, images clés sur le sous-titre), frise ouverte à 0,45 s,
+//                         onglet Animation ; état : frise, bibliotheque, courbe ou code
 //   --demo-dev            Dev Lab de démonstration (#052) : projet de preview/demo-dev.mjs ouvert, canaux dev:,
 //                         git: et devx: servis par le vrai code du processus principal
 // Le script signale aussi les erreurs de la page (exceptions, console, requêtes en échec) et se termine
@@ -155,6 +158,11 @@ function parseArgs(argv) {
       if (!["ouvert", "retour"].includes(opts.payment)) throw new Error("--paiement attend « ouvert » ou « retour ».")
     }
     else if (arg === "--demo-dev") opts.demoDev = true
+    else if (arg === "--motion") {
+      const mode = value()
+      if (!["frise", "bibliotheque", "courbe", "code"].includes(mode)) throw new Error("--motion attend frise, bibliotheque, courbe ou code.")
+      opts.actions.push({ kind: "motion", mode })
+    }
     else if (arg === "--compte") {
       if (value() !== "demo") throw new Error("--compte attend « demo ».")
       opts.account = true
@@ -187,7 +195,7 @@ function parseArgs(argv) {
       ? SPACES
       : SPACES.filter((space) => opts.screens.includes(space.slug))
   if (opts.actions.length && opts.spaces.length !== 1)
-    throw new Error("--click, --saisir et --compte-onglet demandent un seul espace.")
+    throw new Error("--click, --saisir, --compte-onglet et --motion demandent un seul espace.")
   return opts
 }
 
@@ -491,6 +499,40 @@ async function main() {
         if (action.kind === "type") {
           if (!(await typeInto(page, action.field, action.text)))
             throw new Error(`Champ « ${action.field}… » introuvable dans ${space.label}.`)
+        } else if (action.kind === "motion") {
+          // NEXORA #113 : animation de démonstration posée par le modèle Motion, frise ouverte comme par le bouton.
+          const done = await page.evaluate(async (mode) => {
+            const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+            const { state } = await import(new URL("nx/core.js", location.href).href)
+            const D = state.design
+            if (!D || !D.nxMotionUi) return false
+            const M = await import(new URL("nx/designplus/motion-model.js", location.href).href)
+            const objs = D.canvas.getObjects().filter((o) => o.id !== "__board")
+            const texts = objs.filter((o) => o.type === "textbox")
+            const title = texts.find((o) => /Nouvelle|Titre/i.test(o.text || "")) || texts[0]
+            const sub = texts.find((o) => o !== title && (o.text || "").length > 12) || texts.find((o) => o !== title)
+            const sticker = objs.find((o) => o.type === "group") || objs.find((o) => o !== title && o !== sub)
+            const add = (o, id) => { if (!o) return; const m = M.normalizeMotion(o.nxMotion); M.applyPreset(m, id, 0); o.nxMotion = M.normalizeMotion(m) }
+            add(title, "burst"); add(sticker, "pulse")
+            if (sub) {
+              const m = M.normalizeMotion(sub.nxMotion); const c = sub.getCenterPoint()
+              M.setKey(m, "position", 200, { x: c.x - 160, y: c.y }, "outback"); M.setKey(m, "position", 900, { x: c.x, y: c.y })
+              M.setKey(m, "opacity", 200, 0, "out"); M.setKey(m, "opacity", 700, 1)
+              sub.nxMotion = m
+            }
+            D.page.nxAnim = { ...(D.page.nxAnim || {}), dur: 2, fps: 30 }
+            D.canvas.setActiveObject(sub || title)
+            D.changed()
+            D.nxMotionUi.open(); D.nxMotionUi.seek(450); await wait(300)
+            const tab = [...document.querySelectorAll("[data-ptab-go]")].find((b) => b.dataset.ptabGo === "motion"); if (tab) tab.click()
+            await wait(200)
+            if (mode === "bibliotheque") document.querySelector('.nxm [data-mo="lib"]').click()
+            if (mode === "courbe") { const k = document.querySelector('.nxm-key[data-prop="position"]'); if (k) k.dispatchEvent(new MouseEvent("dblclick", { bubbles: true })) }
+            if (mode === "code") document.querySelector('.nxm [data-mo="code"]').click()
+            await wait(300)
+            return true
+          }, action.mode)
+          if (!done) throw new Error("NEX-DESIGN n'est pas prêt pour --motion (ouvre d'abord un modèle avec --click).")
         } else if (action.kind === "account") {
           // #090 : fenêtre Mon compte ouverte comme par NEXORA (nx/offres/upsell.js, openAccount).
           const opened = await page.evaluate(async (tab) => {

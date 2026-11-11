@@ -642,7 +642,8 @@ function pageProps(D) {
   h += '<!--nx-split-->';
   if (t === 'pencil') h += sec('Lissage du crayon', range('pencilSmooth', 'Lissage', Number(settings.nxPencilSmooth || 0), 0, 1, 0.05, Number(settings.nxPencilSmooth || 0) ? `${Math.round(settings.nxPencilSmooth * 100)} %` : 'Aucun'), '', true);
   const pa = PG.pageAnim(D.page);
-  h += sec('Animation de la page', `${range('pageDur', 'Durée', pa.dur, 1, 30, 0.5, `${fmt(pa.dur)} s`)}<div class="st-field"><span>Transition vers cette page</span>${sel('pageTrans', pa.trans, PG.TRANS)}</div><div class="nx-btns">${btn('play', 'play', 'Lire')}${btn('anim-export', 'film', 'Exporter…')}${btn('present', 'nxPresent', 'Présenter')}</div>`);
+  // NEXORA #113 : bouton « Frise » (Motion : images clés, animations toutes faites).
+  h += sec('Animation de la page', `${range('pageDur', 'Durée', pa.dur, 1, 30, 0.5, `${fmt(pa.dur)} s`)}<div class="st-field"><span>Transition vers cette page</span>${sel('pageTrans', pa.trans, PG.TRANS)}</div><div class="nx-btns">${btn('play', 'play', 'Lire')}${btn('motion-open', 'wave', 'Frise')}${btn('anim-export', 'film', 'Exporter…')}${btn('present', 'nxPresent', 'Présenter')}</div>`);
   const b = getBrand();
   const kits = brandList();
   h += sec('Kit de marque', `${kits.length > 1 ? `<div class="st-field"><span>Kit de ce document</span>${sel('brandKit', activeBrandId(), Object.fromEntries(kits.map((k) => [k.id, k.name || 'Sans nom'])))}</div>` : ''}<div class="nx-chips">${b.colors.map((c) => `<span class="nx-chip" style="--c:${esc(c)}" title="${esc(c)}"></span>`).join('')}<b class="nx-brandname">${esc(b.name || 'Sans nom')}</b></div><div class="nx-btns">${btn('brand-apply', 'nxPalette', 'Appliquer à la page')}${btn('brand-edit', 'nxBrand', 'Modifier…')}</div>`, '', true);
@@ -721,7 +722,8 @@ function fxCard(o) {
 }
 function animCard(o) {
   const a = o.nxAnim || { in: 'none', dur: 0.8, delay: 0, loop: 'none' };
-  return sec('Animation', `<div class="st-field"><span>Entrée</span>${sel('animIn', a.in || 'none', PG.ANIMS)}</div>${a.in && a.in !== 'none' ? `${range('animDur', 'Durée', a.dur || 0.8, 0.1, 4, 0.1, `${fmt(a.dur || 0.8)} s`)}${range('animDelay', 'Délai', a.delay || 0, 0, 10, 0.1, `${fmt(a.delay || 0)} s`)}` : ''}<div class="st-field"><span>En boucle</span>${sel('animLoop', a.loop || 'none', PG.LOOPS)}</div><div class="nx-btns">${btn('play', 'play', 'Lire l’animation de la page')}</div>`);
+  // NEXORA #113 : « Entrée rapide » (l'onglet Animation réunit cette section et Motion).
+  return sec('Entrée rapide', `<div class="st-field"><span>Entrée</span>${sel('animIn', a.in || 'none', PG.ANIMS)}</div>${a.in && a.in !== 'none' ? `${range('animDur', 'Durée', a.dur || 0.8, 0.1, 4, 0.1, `${fmt(a.dur || 0.8)} s`)}${range('animDelay', 'Délai', a.delay || 0, 0, 10, 0.1, `${fmt(a.delay || 0)} s`)}` : ''}<div class="st-field"><span>En boucle</span>${sel('animLoop', a.loop || 'none', PG.LOOPS)}</div><div class="nx-btns">${btn('play', 'play', 'Lire l’animation de la page')}</div>`);
 }
 
 // ---------- Événements du panneau de droite ----------
@@ -826,6 +828,7 @@ async function action(D, a, btnEl) {
   try {
     switch (name) {
       case 'play': PG.playPage(D); return;
+      case 'motion-open': if (D.nxMotionUi) D.nxMotionUi.toggle(); return;
       case 'present': PG.present(D, D.pageIdx); return;
       case 'anim-export': PG.animExportSheet(D); return;
       case 'resize': PG.resizeSheet(D); return;

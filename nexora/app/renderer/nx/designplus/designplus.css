@@ -142,7 +142,11 @@ html body .dzx-player .dzx-player-bar .seg button.on { background: #fff; color: 
 .nx-ptabs[hidden], .nx-ptabs button[hidden] { display: none; }
 #dzProps[data-ptab='design'] > .dz-card:not([data-ptab='design']),
 #dzProps[data-ptab='proto'] > .dz-card:not([data-ptab='proto']),
+#dzProps[data-ptab='motion'] > .dz-card:not([data-ptab='motion']),
 #dzProps[data-ptab='code'] > .dz-card:not([data-ptab='code']) { display: none; }
+/* NEXORA #113 : quatre onglets (Design, Prototype, Animation, Code) sur une seule ligne. */
+.nx-ptabs { flex-wrap: nowrap; }
+.nx-ptabs button { flex: 1 1 auto; min-width: 0; padding-left: 4px; padding-right: 4px; font-size: 11.5px; white-space: nowrap; }
 #dzProps > .dz-card > .dz-card-h { cursor: pointer; user-select: none; }
 #dzProps > .dz-card > .dz-card-h:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
 .nx-fold { margin-left: auto; display: inline-flex; color: var(--text-3); transition: transform .15s; }

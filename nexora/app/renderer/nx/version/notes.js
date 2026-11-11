@@ -6,6 +6,7 @@ export const NOTES = {
   // lanceur 1.0.5 ; publiée par-dessus la 1.2.1 (A-063).
   // NEXORA #107 : pourcentage de l'interface sans effet sur les sites ni les maquettes (republiée en v1.2.2-r2).
   // NEXORA #112 : « Passer à Pro » de Mon compte ouvre le paiement en ligne (republiée en v1.2.2-r3).
+  // NEXORA #113 : Motion et fonctions reprises de desigma dans NEX-DESIGN (republiée en v1.2.2-r4).
   '1.2.2': {
     title: 'NEXORA 1.2.2',
     intro: 'Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.',
@@ -14,6 +15,7 @@ export const NOTES = {
       { icon: 'laptop', space: 'studio', title: 'Appareils réalistes dans le Studio', text: '10 modèles détaillés à taille réelle (ordinateurs portables, écran, tablettes, téléphones) : l’écran affiche ta scène, ton image ou une page NEX-DESIGN.' },
       { icon: 'pen', space: '', title: 'Formulaires plus lisibles', text: 'Champs, cases à cocher et messages d’erreur revus partout ; fenêtre de connexion redessinée.' },
       { icon: 'display', space: 'responsive', title: 'Taille de l’interface sans effet sur les sites', text: 'Changer le pourcentage de l’interface dans les Réglages ne rogne plus les sites dans les appareils et ne change plus les maquettes ; un appareil à 100 % garde sa taille réelle, et chaque appareil reste émulé quand tu changes de projet.' },
+      { icon: 'nxAnimate', space: 'design', title: 'Animation dans NEX-DESIGN', text: 'Frise sous la page avec images clés, courbes et ressorts, 41 animations toutes faites, Smart Animate et animation dans le prototype, code CSS, SwiftUI et Compose ; aussi : couleurs de la sélection, coins lissés, pense-bêtes et connecteurs, notes de présentation.' },
       { icon: 'star', space: '', title: 'Passer à Pro depuis NEXORA', text: 'Dans Mon compte → Offre et usage, « Passer à Pro » ouvre maintenant le paiement en ligne (Mobile Money ou carte bancaire) sur la page « Ma licence », au lieu d’envoyer une demande à l’équipe.' },
       { icon: 'key', space: '', title: 'Lanceur 1.0.5', text: 'Le lanceur NEXORA Devs Toolbox prend la même apparence et se met à jour tout seul avant d’installer cette version.' },
     ],

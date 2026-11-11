@@ -91,7 +91,7 @@ export const COMPARE = [
     { label: 'Création et transformation étendues', perm: 'transform_extended' },
     { label: 'Studio 3D avancé', perm: 'studio_advanced' },
     { label: 'NEX-DESIGN : mise en page automatique, accessibilité, mesures, polices', text: { free: 'Inclus', pro: 'Inclus' } },
-    { label: 'NEX-DESIGN : variables, variantes, prototype, code, série, impression, PSD, icônes, versions', perm: 'design_extended' },
+    { label: 'NEX-DESIGN : animation (Motion), variables, variantes, prototype, code, série, impression, PSD, icônes, versions', perm: 'design_extended' },
     { label: 'NEX-DESIGN : IA, code vers le Dev Lab, validation client, bibliothèques d’équipe, import Figma', perm: 'design_full' },
   ]],
   // NEXORA #087 : 2 applications au total avec l'offre Gratuite (App Builder et Desktop Builder confondus).

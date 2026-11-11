@@ -7,6 +7,9 @@ import { aiChat, aiJson, aiImage, needAi, getBrand, CollabRoom, collabSheet } fr
 import { restorePatterns, fxActive } from './fx.js';
 import { applyTemplate, applyBrand } from './content.js';
 import { TEMPLATES } from '../library.js';
+// NEXORA #113 : animations Motion (images clés, préréglages) calculées par le même moteur que celles du #011.
+import * as ML from '../designplus/motion-live.js';
+import { timeline as motionTimeline } from '../designplus/motion-model.js';
 
 // ---------- Redimensionnement automatique ----------
 export function resizeSheet(D) {
@@ -196,7 +199,8 @@ export const LOOPS = { none: 'Aucune', pulse: 'Pulsation', float: 'Flottement', 
 export const TRANS = { none: 'Coupe franche', fade: 'Fondu', slide: 'Glissement', zoom: 'Zoom', wipe: 'Volet' };
 export const pageAnim = (pg) => ({ dur: 4, trans: 'fade', ...(pg.nxAnim || {}) });
 const easeOut = (t) => 1 - (1 - t) ** 3; const back = (t) => 1 + 2.7 * (t - 1) ** 3 + 1.7 * (t - 1) ** 2;
-function stateAt(o, t) {
+// NEXORA #113 : exportée pour le moteur Motion (nx/designplus/motion-live.js), qui la pose par-dessus l'animation Motion.
+export function stateAt(o, t) {
   const a = o.nxAnim; if (!a) return null;
   const st = { alpha: 1, dx: 0, dy: 0, k: 1, rot: 0, blur: 0, chars: null };
   const p = clamp((t - (a.delay || 0)) / Math.max(0.05, a.dur || 0.8), 0, 1); const e = easeOut(p);
@@ -223,30 +227,32 @@ function stateAt(o, t) {
   }
   return st;
 }
+// NEXORA #113 : état de chaque calque animé au temps t (s), calculé depuis son état de base (animation Motion, puis
+// entrée et boucle du #011) ; la fonction rendue remet les calques comme avant.
 function applyStates(D, t) {
   const saved = [];
-  for (const o of D.canvas.getObjects()) {
-    const st = stateAt(o, t); if (!st) continue;
-    saved.push([o, { opacity: o.opacity, left: o.left, top: o.top, scaleX: o.scaleX, scaleY: o.scaleY, angle: o.angle, text: o.text, shadow: o.shadow }]);
-    const c = o.getCenterPoint();
-    o.set({ opacity: (o.opacity ?? 1) * st.alpha, scaleX: o.scaleX * st.k, scaleY: o.scaleY * st.k, angle: (o.angle || 0) + st.rot });
-    o.setPositionByOrigin({ x: c.x + st.dx, y: c.y + st.dy }, 'center', 'center');
-    if (st.chars !== null && typeof o.text === 'string') o.set('text', o.text.slice(0, Math.round(o.text.length * st.chars)));
-    if (st.blur) o.set('shadow', { color: 'rgba(0,0,0,0)', blur: 0 });
-    o.dirty = true;
+  for (const o of ML.objs(D)) {
+    if (!ML.animated(o) || (o.group && o.group.type === 'activeselection')) continue;
+    saved.push([o, ML.snap(o)]);
+    ML.applyAt(o, t * 1000);
   }
-  return () => { for (const [o, v] of saved) { o.set(v); o.setCoords(); o.dirty = true; } };
+  return () => { for (const [o, v] of saved) ML.put(o, v); };
 }
-export const hasAnim = (D) => D.canvas.getObjects().some((o) => o.nxAnim && o.nxAnim.in && o.nxAnim.in !== 'none');
+export const hasAnim = (D) => D.canvas.getObjects().some((o) => ML.animated(o));
+// NEXORA #113 : frise de la page (durée, images par seconde, boucle).
+export const pageTimeline = (pg) => motionTimeline(pageAnim(pg));
 export async function playPage(D) {
+  // NEXORA #113 : frise ouverte : la lecture passe par elle (tête de lecture, boucle).
+  if (D.nxMotionUi && D.nxMotionUi.isOpen()) { D.nxMotionUi.togglePlay(); return; }
   if (D.nxPlaying) { D.nxPlaying = false; return; }
-  if (!hasAnim(D)) { toast('Aucune animation sur cette page : sélectionne un calque et choisis son animation d’entrée dans le panneau de droite.'); return; }
+  if (!hasAnim(D)) { toast('Aucune animation sur cette page : sélectionne un calque, puis ajoute une animation (bouton Animation de la barre d’outils, ou onglet Animation du panneau de droite).'); return; }
   D.canvas.discardActiveObject(); D.nxPlaying = true;
-  const dur = pageAnim(D.page).dur; const t0 = performance.now();
+  const tl = pageTimeline(D.page); const dur = tl.ms / 1000; const t0 = performance.now();
   await new Promise((resolve) => {
     const step = () => {
-      const t = (performance.now() - t0) / 1000;
-      if (!D.nxPlaying || t > dur) { D.nxPlaying = false; D.canvas.requestRenderAll(); resolve(); return; }
+      const el = (performance.now() - t0) / 1000;
+      if (!D.nxPlaying || (!tl.loop && el > dur)) { D.nxPlaying = false; D.canvas.requestRenderAll(); resolve(); return; }
+      const t = tl.loop ? el % dur : el;
       const undo = applyStates(D, t); D.canvas.renderAll(); undo();
       requestAnimationFrame(step);
     };
@@ -255,6 +261,8 @@ export async function playPage(D) {
 }
 // Image d'une page à l'instant t (page déjà ouverte).
 function frameAt(D, t, scale, transparent = false) { const undo = applyStates(D, t); try { return D.renderPage(scale, { transparent }); } finally { undo(); } }
+// NEXORA #113 : même rendu pour le prototype (pages animées jouées à l'arrivée).
+export const renderAt = (D, t, scale, transparent = false) => frameAt(D, t, scale, transparent);
 function drawTrans(x, W, H, a, b, k, kind) {
   x.clearRect(0, 0, W, H);
   if (kind === 'fade') { x.globalAlpha = 1; x.drawImage(a, 0, 0, W, H); x.globalAlpha = k; x.drawImage(b, 0, 0, W, H); x.globalAlpha = 1; return; }
@@ -265,12 +273,14 @@ function drawTrans(x, W, H, a, b, k, kind) {
 }
 export function animExportSheet(D) {
   const pa = pageAnim(D.page);
+  const tl = pageTimeline(D.page);
   const s = sheet('nx-anim', sheetHtml({ icon: 'nxAnimate', title: 'Exporter l’animation', sub: 'Les pages s’enchaînent avec leurs animations et leurs transitions. Durée et transition se règlent pour chaque page (panneau de droite, sans calque sélectionné).', body: `
-    <div class="field-label">Format</div><div class="seg wide" data-nx-seg="fmt"><button class="on" data-v="mp4">MP4 (H.264)</button><button data-v="webm">WebM (VP9)</button><button data-v="gif">GIF animé</button></div>
+    <div class="field-label">Format</div><div class="seg wide" data-nx-seg="fmt"><button class="on" data-v="mp4">MP4 (H.264)</button><button data-v="webm">WebM (VP9)</button><button data-v="gif">GIF animé</button><button data-v="png">Images PNG (ZIP)</button></div>
     <div class="field-label">Pages</div><div class="seg wide" data-nx-seg="pages"><button class="on" data-v="all">Toutes (${D.doc.pages.length})</button><button data-v="cur">Page actuelle</button></div>
     <div class="field-label">Largeur</div><div class="seg wide" data-nx-seg="w"><button data-v="480">480 px</button><button class="on" data-v="1080">1080 px</button><button data-v="1920">1920 px</button></div>
-    <p class="sheet-note">Page actuelle : ${pa.dur} s, transition « ${TRANS[pa.trans]} ». Le GIF est limité à 15 images par seconde et 720 px de large.</p>`, go: 'Exporter', goIcon: 'film' }));
-  const v = { fmt: 'mp4', pages: 'all', w: '1080' };
+    <div class="field-label">Images par seconde</div><div class="seg wide" data-nx-seg="fps">${[12, 24, 30, 60].map((f) => `<button class="${f === (tl.fps > 45 ? 60 : tl.fps > 27 ? 30 : tl.fps > 18 ? 24 : 12) ? 'on' : ''}" data-v="${f}">${f}</button>`).join('')}</div>
+    <p class="sheet-note">Page actuelle : ${String(pa.dur).replace('.', ',')} s, transition « ${TRANS[pa.trans]} »${tl.loop ? ', en boucle' : ''}. Le GIF est limité à 15 images par seconde et 720 px de large ; les images PNG gardent la transparence du fond.</p>`, go: 'Exporter', goIcon: 'film' }));
+  const v = { fmt: 'mp4', pages: 'all', w: '1080', fps: String(tl.fps > 45 ? 60 : tl.fps > 27 ? 30 : tl.fps > 18 ? 24 : 12) };
   s.onclick = async (e) => {
     const b = e.target.closest('[data-nx-seg] [data-v]');
     if (b) { v[b.parentElement.dataset.nxSeg] = b.dataset.v; for (const x of b.parentElement.children) x.classList.toggle('on', x === b); return; }
@@ -278,15 +288,18 @@ export function animExportSheet(D) {
   };
 }
 async function exportAnim(D, v) {
-  const gif = v.fmt === 'gif'; const fps = gif ? 15 : 30;
+  // NEXORA #113 : images par seconde au choix, suite d'images PNG (ZIP).
+  const gif = v.fmt === 'gif'; const seq = v.fmt === 'png'; const fps = gif ? Math.min(15, Number(v.fps) || 15) : Number(v.fps) || 30;
   const idx = v.pages === 'all' ? D.doc.pages.map((_, i) => i) : [D.pageIdx];
   const first = D.doc.pages[idx[0]];
   let W = Math.min(Number(v.w), gif ? 720 : 3840); W -= W % 2; let H = Math.round(W * first.h / first.w); H -= H % 2;
   const out = makeCanvas(W, H); const x = out.getContext('2d', { willReadFrequently: gif });
   const cur = D.pageIdx; const t = busy('Rendu de l’animation…');
-  let enc = null; let src = null; const frames = [];
+  let enc = null; let src = null; const frames = []; const pngs = [];
+  const liveT = D.nxMotionUi && D.nxMotionUi.isOpen() ? D.nxMotionUi.time() : null;
   try {
-    if (!gif) {
+    if (liveT !== null) ML.stopLive(D);
+    if (!gif && !seq) {
       const o = await import('../../dist/chunks/encoder-HG7L4JDQ.js');
       let codec = v.fmt === 'webm' ? 'vp9' : 'avc';
       if (!(await o.canEncodeVideo(codec, { width: W, height: H }))) codec = codec === 'avc' ? 'vp9' : 'avc';
@@ -302,9 +315,11 @@ async function exportAnim(D, v) {
       const pa = pageAnim(D.page); const total = Math.max(0.5, pa.dur); const count = Math.round(total * fps);
       const scale = W / D.page.w; const transN = prevLast && pa.trans !== 'none' ? Math.round(0.5 * fps) : 0;
       for (let f = 0; f < count; f++) {
-        const fr = frameAt(D, f / fps, scale);
-        if (f < transN) drawTrans(x, W, H, prevLast, fr, (f + 1) / transN, pa.trans); else { x.clearRect(0, 0, W, H); x.fillStyle = D.page.bg || '#ffffff'; x.fillRect(0, 0, W, H); x.drawImage(fr, 0, 0, W, H); }
-        if (gif) frames.push(x.getImageData(0, 0, W, H)); else await src.add(time, 1 / fps);
+        const fr = frameAt(D, f / fps, scale, seq);
+        if (f < transN) drawTrans(x, W, H, prevLast, fr, (f + 1) / transN, pa.trans); else { x.clearRect(0, 0, W, H); if (!seq) { x.fillStyle = D.page.bg || '#ffffff'; x.fillRect(0, 0, W, H); } x.drawImage(fr, 0, 0, W, H); }
+        if (gif) frames.push(x.getImageData(0, 0, W, H));
+        else if (seq) pngs.push({ name: `${safeName(D.doc.name)} ${String(pngs.length + 1).padStart(4, '0')}.png`, data: await canvasBytes(out, 'image/png') });
+        else await src.add(time, 1 / fps);
         time += 1 / fps;
         if (f % 6 === 0) { t.update && t.update(`Rendu de l’animation : page ${n + 1} / ${idx.length}, ${Math.round(f / count * 100)} %`); await sleep(0); }
       }
@@ -312,49 +327,88 @@ async function exportAnim(D, v) {
     }
     if (D.pageIdx !== cur) await D.openPage(cur);
     let bytes; let ext;
-    if (gif) { t.update && t.update('Compression du GIF…'); await sleep(20); bytes = encodeGif(frames, { delay: Math.round(1000 / fps) }); ext = 'gif'; } else { src.close(); await enc.finalize(); bytes = new Uint8Array(enc.target.buffer); ext = enc.nxCodec === 'avc' ? 'mp4' : 'webm'; }
-    await saveBytes(bytes, { name: `${safeName(D.doc.name)} (animation)`, ext, kind: gif ? 'photo' : 'video', project: 'NEX-DESIGN' });
+    if (gif) { t.update && t.update('Compression du GIF…'); await sleep(20); bytes = encodeGif(frames, { delay: Math.round(1000 / fps) }); ext = 'gif'; } else if (seq) { t.update && t.update(`Archive de ${pngs.length} images…`); await sleep(20); bytes = zip(pngs); ext = 'zip'; } else { src.close(); await enc.finalize(); bytes = new Uint8Array(enc.target.buffer); ext = enc.nxCodec === 'avc' ? 'mp4' : 'webm'; }
+    await saveBytes(bytes, { name: `${safeName(D.doc.name)} (animation${seq ? `, ${fps} images par seconde` : ''})`, ext, kind: gif ? 'photo' : seq ? 'document' : 'video', project: 'NEX-DESIGN' });
   } catch (e) {
     console.error(e); toast(`L’export de l’animation a échoué : ${e.message || e}`, { kind: 'bad' });
     if (enc) { try { await enc.cancel(); } catch { /* déjà fermé */ } }
-  } finally { t.close(); if (D.pageIdx !== cur) await D.openPage(cur); }
+  } finally { t.close(); if (D.pageIdx !== cur) await D.openPage(cur); if (liveT !== null && D.nxMotionUi) D.nxMotionUi.seek(liveT); }
 }
 
 // ---------- Présentation plein écran ----------
 export async function present(D, start = 0) {
   D.capturePage(); D.canvas.discardActiveObject();
   const back = D.pageIdx;
-  const ov = el(`<div class="nx-present" tabindex="0"><canvas></canvas><div class="nx-present-bar"><button class="btn small" data-p="prev" title="Page précédente">${ico('chevronLeft', 14)}</button><span data-p="n"></span><button class="btn small" data-p="next" title="Page suivante">${ico('chevronRight', 14)}</button><button class="btn small" data-p="close">${ico('close', 14)}<span>Quitter (Échap)</span></button></div></div>`);
+  // NEXORA #113 : notes de présentation (N) et vue d'ensemble des pages (G).
+  const ov = el(`<div class="nx-present" tabindex="0"><canvas></canvas><div class="nx-present-notes" hidden></div><div class="nx-present-bar"><button class="btn small" data-p="prev" title="Page précédente">${ico('chevronLeft', 14)}</button><span data-p="n"></span><button class="btn small" data-p="next" title="Page suivante">${ico('chevronRight', 14)}</button><button class="btn small" data-p="notes" title="Notes de présentation (N)">${ico('nxComment', 14)}<span>Notes</span></button><button class="btn small" data-p="grid" title="Vue d’ensemble (G)">${ico('layers', 14)}<span>Pages</span></button><button class="btn small" data-p="close">${ico('close', 14)}<span>Quitter (Échap)</span></button></div></div>`);
   document.body.append(ov);
   const cv = ov.querySelector('canvas'); const cx = cv.getContext('2d');
   let i = start; let anim = 0; let closed = false;
   const size = () => { cv.width = Math.round(window.innerWidth * (window.devicePixelRatio || 1)); cv.height = Math.round(window.innerHeight * (window.devicePixelRatio || 1)); };
   size();
+  let notesOn = false;
+  const notes = () => {
+    const box = ov.querySelector('.nx-present-notes'); const pg = D.doc.pages[i]; const next = D.doc.pages[i + 1];
+    box.hidden = !notesOn;
+    box.innerHTML = `<small>${esc(pg.name || `Page ${i + 1}`)}${next ? ` · ensuite : ${esc(next.name || `Page ${i + 2}`)}` : ' · dernière page'}</small>${pg.nxNotes ? esc(pg.nxNotes) : 'Aucune note pour cette page (panneau de droite, sans calque sélectionné : « Notes de présentation »).'}`;
+  };
+  const grid = async () => {
+    const old = ov.querySelector('.nx-present-grid'); if (old) { old.remove(); return; }
+    const g = el('<div class="nx-present-grid" role="dialog" aria-label="Vue d’ensemble des pages"></div>'); ov.append(g);
+    const keep = i;
+    for (let j = 0; j < D.doc.pages.length; j += 1) {
+      if (j !== D.pageIdx) await D.openPage(j, { save: false });
+      D.canvas.discardActiveObject();
+      const src = D.renderPage(Math.min(1, 360 / Math.max(D.page.w, D.page.h))).toDataURL('image/jpeg', 0.8);
+      if (!g.isConnected) break;
+      g.insertAdjacentHTML('beforeend', `<button class="${j === keep ? 'on' : ''}" data-p-go="${j}"><img src="${src}" alt=""><span>${j + 1}. ${esc(D.doc.pages[j].name || `Page ${j + 1}`)}</span></button>`);
+    }
+    if (D.pageIdx !== keep) await D.openPage(keep, { save: false });
+  };
   const show = async (k, prev) => {
     i = clamp(k, 0, D.doc.pages.length - 1);
     ov.querySelector('[data-p="n"]').textContent = `${i + 1} / ${D.doc.pages.length}`;
+    notes();
     if (i !== D.pageIdx) await D.openPage(i);
     D.canvas.discardActiveObject();
     const pg = D.page; const s = Math.min(cv.width / pg.w, cv.height / pg.h); const W = Math.round(pg.w * s); const H = Math.round(pg.h * s); const ox = (cv.width - W) / 2; const oy = (cv.height - H) / 2;
-    const pa = pageAnim(pg); const t0 = performance.now(); const my = ++anim;
+    const pa = pageAnim(pg); const loop = pageTimeline(pg).loop; const t0 = performance.now(); const my = ++anim;
     const tick = () => {
       if (closed || my !== anim) return;
       const t = (performance.now() - t0) / 1000;
-      const fr = frameAt(D, Math.min(t, pa.dur), s);
+      // NEXORA #113 : page en boucle (frise) : l'animation recommence tant que la page est affichée.
+      const fr = frameAt(D, loop ? t % pa.dur : Math.min(t, pa.dur), s);
       cx.fillStyle = '#000'; cx.fillRect(0, 0, cv.width, cv.height);
       if (prev && t < 0.5 && pa.trans !== 'none') { const tmp = makeCanvas(W, H); drawTrans(tmp.getContext('2d'), W, H, prev, fr, t / 0.5, pa.trans); cx.drawImage(tmp, ox, oy); } else cx.drawImage(fr, ox, oy, W, H);
       ov.nxLast = fr;
-      if (t < pa.dur + 0.1) requestAnimationFrame(tick);
+      if (loop || t < pa.dur + 0.1) requestAnimationFrame(tick);
     };
     tick();
   };
   const go = (d) => { if (i + d < 0 || i + d >= D.doc.pages.length) return; const prev = ov.nxLast || null; show(i + d, prev); };
-  const key = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } else if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); go(1); } else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); go(-1); } e.stopPropagation(); };
+  const key = (e) => {
+    const g = ov.querySelector('.nx-present-grid');
+    if (e.key === 'Escape') { e.preventDefault(); if (g) g.remove(); else close(); }
+    else if (e.key === 'n' || e.key === 'N') { e.preventDefault(); notesOn = !notesOn; notes(); }
+    else if (e.key === 'g' || e.key === 'G') { e.preventDefault(); grid(); }
+    else if (e.key === 'Home') { e.preventDefault(); show(0, ov.nxLast || null); }
+    else if (e.key === 'End') { e.preventDefault(); show(D.doc.pages.length - 1, ov.nxLast || null); }
+    else if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); go(1); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); go(-1); }
+    e.stopPropagation();
+  };
   const onResize = () => { if (!closed) { size(); show(i); } };
   const close = async () => { closed = true; ov.remove(); document.removeEventListener('keydown', key, true); window.removeEventListener('resize', onResize); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); if (D.pageIdx !== back) await D.openPage(back); };
   document.addEventListener('keydown', key, true);
   window.addEventListener('resize', onResize);
-  ov.onclick = (e) => { const b = e.target.closest('[data-p]'); if (b) { if (b.dataset.p === 'close') close(); if (b.dataset.p === 'prev') go(-1); if (b.dataset.p === 'next') go(1); return; } go(1); };
+  ov.onclick = (e) => {
+    const pick = e.target.closest('[data-p-go]');
+    if (pick) { const g = ov.querySelector('.nx-present-grid'); if (g) g.remove(); show(Number(pick.dataset.pGo), null); return; }
+    if (e.target.closest('.nx-present-grid, .nx-present-notes')) return;
+    const b = e.target.closest('[data-p]');
+    if (b) { if (b.dataset.p === 'close') close(); if (b.dataset.p === 'prev') go(-1); if (b.dataset.p === 'next') go(1); if (b.dataset.p === 'notes') { notesOn = !notesOn; notes(); } if (b.dataset.p === 'grid') grid(); return; }
+    go(1);
+  };
   try { await ov.requestFullscreen(); } catch { /* fenêtre seulement */ }
   ov.focus();
   show(i);

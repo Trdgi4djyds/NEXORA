@@ -16,6 +16,7 @@
     "test:novx": "node scripts/test-novx.mjs",
     "test:devlab": "node scripts/test-devlab.mjs",
     "test:design": "node scripts/test-design.mjs",
+    "test:motion": "node scripts/test-motion.mjs",
     "test:studio": "node scripts/test-studio.mjs",
     "test:appbuilder": "node scripts/test-appbuilder.mjs",
     "test:push": "node scripts/test-push.mjs",

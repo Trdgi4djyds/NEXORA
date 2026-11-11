@@ -19,6 +19,10 @@ import * as FONTS from './fonts.js';
 import * as RESP from './responsive.js';
 import * as LIB from './library.js';
 import * as LAYOUT from './layout.js';
+// NEXORA #113 : Motion (frise, images clés, animations toutes faites, code de l'animation), d'après desigma.
+import * as MOTION from './motion-ui.js';
+// NEXORA #113 : couleurs de la sélection, lissage des coins, pense-bêtes, connecteurs, notes de présentation.
+import * as EXTRAS from './extras.js';
 
 const TABS = [
   ['variables', 'Variables', 'nxPalette', STD, () => VAR],
@@ -216,11 +220,12 @@ async function news(D, { announce = false } = {}) {
 function propsHtml(D) {
   const s = D.sel();
   // NEXORA #075 : sans sélection, réglage du prototype de la page (passage automatique).
-  if (!s.length) return has(STD) && D.doc.pages.length > 1 ? PROTO.pageProps(D) : '';
+  if (!s.length) return (has(STD) && D.doc.pages.length > 1 ? PROTO.pageProps(D) : '') + EXTRAS.props(D);
   const o = s.length === 1 ? s[0] : null;
   let h = AL.props(D, o || s[0]);
-  if (!o) return h;
+  if (!o) return h + EXTRAS.props(D) + MOTION.props(D, null);
   if (has(STD)) h += VNT.props(D, o) + VAR.props(D, o) + RESP.props(D, o) + PROTO.props(D, o) + CODE.inspect(D, o);
+  h += EXTRAS.props(D) + MOTION.props(D, o) + MOTION.codeProps(D, o);
   h += A11Y.altProps(D, o) + AI.imageProps(D, o, has(PRO));
   return h;
 }
@@ -233,6 +238,7 @@ async function onField(D, k, v) {
   if (RESP.onField(D, o, k, v)) { D.renderProps(); return; }
   if (VAR.onField(D, o, k, v)) { D.renderProps(); return; }
   if (await VNT.onField(D, o, k, v)) { D.renderProps(); return; }
+  if (CODE.onField(D, o, k, v)) return;
   PROTO.onField(D, o, k, v);
 }
 async function onAction(D, a) {
@@ -244,7 +250,9 @@ async function onAction(D, a) {
   if (a === 'open-code') { open(D, 'code'); return; }
   if (a === 'open-responsive') { open(D, 'responsive'); return; }
   if (a === 'proto-play') { PROTO.play(D); return; }
+  if (a === 'motion-toggle') { MOTION.toggle(D); return; }
   if (a === 'css-copy' && o) { await navigator.clipboard.writeText(CODE.cssLines(D, o).join('\n')).catch(() => {}); toast('CSS copié.'); return; }
+  if (a === 'svg-copy' && o) { await CODE.copySvg(D, o); return; }
   if (a === 'alt-ai' && o) { await A11Y.altAi(D, o); return; }
   if (o && await VNT.onAction(D, o, a)) { D.renderProps(); return; }
   if (a === 'ai-upscale' && o) { await AI.retouch(D, o, 'upscale'); return; }
@@ -298,6 +306,8 @@ export async function install(D) {
   f.addEventListener('click', (e) => { const b = e.target.closest('[data-dzx]'); if (!b || b.disabled) return; e.stopPropagation(); onAction(D, b.dataset.dzx).catch((er) => toast(clean(er), { kind: 'bad' })); });
   // NEXORA #075 : plus de bouton « Fonctions de design » : barre d'outils, menus et panneau rangés par layout.js.
   LAYOUT.install(D, { open: (tab) => open(D, tab), action: (a) => onAction(D, a), reviews: () => st('review').links, loadReviews: async () => { const SH = await import('./share.js'); st('review').links = await SH.links(D); return st('review').links; }, news: () => ({ libs: newsState.libs.length, reviews: newsState.reviews }), close: () => { const el = D.$.stage.querySelector('.dzp'); if (el) el.hidden = true; } });
+  MOTION.install(D);
+  EXTRAS.install(D);
   RESP.track(D);
   import('./versions.js').then((V) => V.startAuto(D)).catch((e) => console.warn('[NEXORA #075]', e));
   AL.bind(D);
