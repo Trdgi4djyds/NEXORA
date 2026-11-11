@@ -2010,6 +2010,60 @@ export type Database = {
         }
         Relationships: []
       }
+      nx_pay_sessions: {
+        Row: {
+          amount_cents: number
+          charged: string | null
+          checkout_url: string
+          created_at: string
+          currency: string
+          id: string
+          net_amount: string | null
+          paid_at: string | null
+          paid_currency: string | null
+          period: string
+          ref: string
+          referral_code: string | null
+          status: string
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          charged?: string | null
+          checkout_url?: string
+          created_at?: string
+          currency?: string
+          id: string
+          net_amount?: string | null
+          paid_at?: string | null
+          paid_currency?: string | null
+          period?: string
+          ref: string
+          referral_code?: string | null
+          status?: string
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          charged?: string | null
+          checkout_url?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          net_amount?: string | null
+          paid_at?: string | null
+          paid_currency?: string | null
+          period?: string
+          ref?: string
+          referral_code?: string | null
+          status?: string
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       nx_payments: {
         Row: {
           amount_cents: number
@@ -3695,6 +3749,43 @@ export type Database = {
         Returns: boolean
       }
       nx_partner_unlock: { Args: { p_code: string }; Returns: Json }
+      nx_pay_apply: {
+        Args: {
+          p_charged?: string
+          p_currency?: string
+          p_id: string
+          p_net?: string
+          p_secret: string
+          p_transaction: string
+        }
+        Returns: Json
+      }
+      nx_pay_session_fail: {
+        Args: { p_id: string; p_secret: string; p_transaction?: string }
+        Returns: boolean
+      }
+      nx_pay_session_find: {
+        Args: { p_ref: string; p_secret: string }
+        Returns: Json
+      }
+      nx_pay_session_open: {
+        Args: {
+          p_amount: number
+          p_currency?: string
+          p_id: string
+          p_period: string
+          p_ref: string
+          p_referral?: string
+          p_secret: string
+          p_url?: string
+          p_user: string
+        }
+        Returns: Json
+      }
+      nx_pay_sessions_pending: {
+        Args: { p_secret: string; p_transaction: string }
+        Returns: Json
+      }
       nx_period: { Args: { p_per: string }; Returns: string }
       nx_perm: { Args: { p_key: string; p_plan: string }; Returns: boolean }
       nx_plan_label: { Args: { p_plan: string }; Returns: string }

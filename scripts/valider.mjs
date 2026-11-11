@@ -836,6 +836,13 @@ async function supabaseChecks() {
         "nx_release_policy",
         "nx_license_verify",
         "nx_release_seen", // #084 : secret partagé avec le Worker
+        // NEXORA #107/#109 : paiement SasPay, appelé par le Worker avec la clé publique et le secret partagé
+        // (nx_worker_secret_ok vérifié en tête de chaque fonction, refus essayé par pnpm test:parrainage).
+        "nx_pay_session_open",
+        "nx_pay_session_find",
+        "nx_pay_sessions_pending",
+        "nx_pay_session_fail",
+        "nx_pay_apply",
       ])
       const anon = lints.filter(
         (l) =>

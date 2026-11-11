@@ -1828,7 +1828,8 @@ const mgmtProject = {
 const mgmtAuth = {
   site_url: "https://nexoradevs.online/",
   uri_allow_list:
-    "https://nexora.abrahamtogbonon0.workers.dev/**,http://localhost:5173/**,http://127.0.0.1:5173/**,http://localhost:4173/**,https://nexora.abrahamtogbonon0.workers.dev/admin/**,http://localhost:3000/admin/**",
+    // #109 : liste relevée en ligne le 2026-11-11 (sans l'adresse workers.dev, désactivée), plus le back office de l'aperçu.
+    "http://localhost:5173/**,http://127.0.0.1:5173/**,http://localhost:4173/**,https://nexoradevs.online/**,https://nexoradevs.online/admin/**,http://localhost:3000/admin/**",
   disable_signup: false,
   mailer_autoconfirm: false,
   password_min_length: 8,

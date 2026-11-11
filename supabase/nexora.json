@@ -5,9 +5,9 @@
   "$publicKey": "#048 : clé publique (anon) du projet, la même que celle de l’application et du back office ; lue par le Worker de NEXORA web (signal de vie, déploiements, visiteurs réels, deuxième région).",
   "siteUrl": "https://nexoradevs.online/",
   "$siteUrl": "#096 : domaine principal (site vitrine à la racine, NEXORA web à /studio/, back office à /admin/). Les liens de connexion de Supabase qui arrivent à la racine sont envoyés vers /studio/ par le site.",
+  "$redirectUrls": "#109 : l'adresse workers.dev (désactivée dans Cloudflare, A-060) n'est plus attendue : un lien qui la demanderait revient à l'adresse du site (siteUrl).",
   "redirectUrls": [
     "https://nexoradevs.online/**",
-    "https://nexora.abrahamtogbonon0.workers.dev/**",
     "http://localhost:5173/**",
     "http://127.0.0.1:5173/**",
     "http://localhost:4173/**"
