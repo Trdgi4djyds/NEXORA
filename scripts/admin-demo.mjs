@@ -386,7 +386,7 @@ export const subscriptions = orgDefs.map(([, , , plan], i) => ({
   status: i === 6 ? "trialing" : "active",
   seats: i === 4 ? 6 : 1,
   current_period_end: plan === "free" ? null : ago(-18 + i),
-  provider: plan === "free" ? "manual" : "stripe",
+  provider: plan === "free" ? "manual" : "saspay",
   provider_ref: plan === "free" ? null : `sub_demo${i}`,
   created_at: O(i).created_at,
   updated_at: ago(3),

@@ -15,16 +15,6 @@ const still = () => root.dataset.motion === 'none' || root.dataset.motion === 'r
   || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const URBANIST = "'Urbanist', 'Inter', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif";
-
-// NEXORA #107 : zoom réellement appliqué à l'interface (Réglages → échelle, canal window:zoom du processus principal,
-// borné entre 70 et 150 %). Il vaut 1 hors de l'application de bureau (NEXORA web, aperçu), où ce canal ne zoome rien.
-// Le Responsive Lab s'en sert pour que ses zooms d'appareil restent en taille réelle (100 % = taille réelle), quel que
-// soit le pourcentage de l'interface.
-globalThis.nxUiZoom = () => {
-  if (window.__NEXORA_WEB__ || !/\bElectron\//.test(navigator.userAgent)) return 1;
-  const s = Number(settings.ui && settings.ui.scale) || 1;
-  return Math.max(0.7, Math.min(1.5, s));
-};
 function font() {
   const v = root.style.getPropertyValue('--font').trim();
   if ((!v || v.startsWith("'Inter'")) && v !== URBANIST) root.style.setProperty('--font', URBANIST);

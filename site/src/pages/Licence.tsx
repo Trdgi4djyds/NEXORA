@@ -1,8 +1,10 @@
 // NEXORA #076 : « Ma licence ». NEXORA Devs Toolbox ne démarre qu'avec une licence validée par le serveur : ici,
 // l'utilisateur crée son compte ou s'y connecte, obtient sa clé gratuite, voit ses appareils et son essai, passe à
 // Pro (paiement dans le navigateur) et gère son abonnement. #/licence/verifier : vérification publique d'une clé.
+// #107 : paiement par SasPay (Mobile Money ou carte), en une fois pour un mois ou un an, prolongeable ; au retour de la
+// page de paiement (?paiement=retour&ref=…), le statut réel est vérifié par le Worker avant d'annoncer Pro.
 // #085 : mise en forme « Néon » avec les composants shadcn/ui (Tabs, Input, Label, Button, Badge) ; logique inchangée.
-import { useEffect, useState, type FormEvent, type ReactNode } from "react"
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react"
 import { StepCards, Watermark } from "../components/Blocks"
 import { CtaBand } from "../components/CtaBand"
 import { PageHero, SectionHead } from "../components/SectionHead"
@@ -19,8 +21,8 @@ import { discounted, money, percent, usePayments, useRemote } from "../lib/remot
 import { CODE_RE, useParrain } from "../lib/referral"
 import { cn } from "../lib/utils"
 import {
-  KEY_RE, myLicence, pay, recover, referralAttach, referralMine, releaseDevice, session, sessionFromLink, signIn, signOut, signUp, verifyKey,
-  type Licence as Lic, type ReferralMine, type Session, type Verify,
+  KEY_RE, confirmPayment, myLicence, pay, recover, referralAttach, referralMine, releaseDevice, session, sessionFromLink, signIn, signOut, signUp, verifyKey,
+  type Licence as Lic, type PayStatus, type ReferralMine, type Session, type Verify,
 } from "../lib/account"
 
 const date = (iso?: string | null, time = false) =>
@@ -200,6 +202,8 @@ function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
   const [err, setErr] = useState("")
   const paid = lic.paid_plan === "pro"
   const b = lic.billing
+  // #107 : Pro payé en ligne (paiement unique) : la même carte sert à prolonger d'un mois ou d'un an.
+  const prolong = paid && !lic.granted && b?.provider === "saspay"
   // NEXORA #090 : parrainage du compte. Le lien d'un parrain gardé par le site est rattaché au compte (avant un premier
   // abonnement) ; sinon, le client peut saisir le code promo d'un parrain.
   const parrain = useParrain()
@@ -242,20 +246,20 @@ function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
   }
   const refOn = Boolean(mine && mine.referred)
 
-  async function go(kind: "checkout" | "portal") {
+  async function go() {
     setBusy(true)
     setErr("")
     try {
-      location.href = await pay(kind, s, period)
+      location.href = await pay(s, period)
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
       setBusy(false)
     }
   }
 
-  if (paid) {
+  if (paid && !prolong) {
     return (
-      <Reveal className={cn(card, "flex flex-col gap-4")} delay={80}>
+      <Reveal className={cn(card, "flex flex-col gap-4")} delay={80} data-capture="offre">
         <span className="sp-ic solid">
           <Icon name="nxCrown" size={20} />
         </span>
@@ -264,16 +268,9 @@ function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
           {lic.granted
             ? `Offerte par l’équipe NEXORA${lic.granted_until ? ` jusqu’au ${date(lic.granted_until)}` : ", sans date de fin"}.`
             : b && b.current_period_end
-              ? b.cancel_at_period_end
-                ? `Résiliée : Pro reste ouvert jusqu’au ${date(b.current_period_end)}, puis l’offre Gratuite s’applique.`
-                : `Abonnement ${b.period === "year" ? "annuel" : "mensuel"} renouvelé le ${date(b.current_period_end)}.`
+              ? `Pro reste ouvert jusqu’au ${date(b.current_period_end)}, puis l’offre Gratuite s’applique.`
               : "Abonnement attribué par l’équipe NEXORA."}
-          {b && b.status === "past_due" ? " Le dernier paiement a échoué : mets à jour ton moyen de paiement." : ""}
         </p>
-        {err && <Msg kind="bad">{err}</Msg>}
-        <Button type="button" variant="outline" className="w-fit" disabled={busy} onClick={() => go("portal")}>
-          <Icon name="external" size={16} /> Gérer mon abonnement
-        </Button>
       </Reveal>
     )
   }
@@ -283,12 +280,16 @@ function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
   const month = refOn ? discounted(listMonth, pct) : listMonth
   const year = refOn ? discounted(listYear, pct) : listYear
   return (
-    <Reveal className={cn(card, "flex flex-col gap-4")} delay={80}>
+    <Reveal className={cn(card, "flex flex-col gap-4")} delay={80} data-capture="offre">
       <span className="sp-ic solid">
         <Icon name="nxCrown" size={20} />
       </span>
-      <h3 className="text-[20px] font-semibold">Passe à Pro</h3>
-      <p className="text-[14.5px] text-muted-foreground">Dev Lab complet, jusqu’à 50 applications sans limite par application, Studio et NEX-DESIGN complets, et des limites larges.</p>
+      <h3 className="text-[20px] font-semibold">{prolong ? "Offre Pro active" : "Passe à Pro"}</h3>
+      <p className="text-[14.5px] text-muted-foreground">
+        {prolong && b?.current_period_end
+          ? `Payée jusqu’au ${date(b.current_period_end)}. Prolonge d’un mois ou d’un an quand tu veux : la durée s’ajoute à cette date.`
+          : "Dev Lab complet, jusqu’à 50 applications sans limite par application, Studio et NEX-DESIGN complets, et des limites larges."}
+      </p>
       <ToggleGroup type="single" value={period} onValueChange={(v) => v && setPeriod(v as "month" | "year")} aria-label="Périodicité" className="w-fit">
         <ToggleGroupItem value="month" className="h-9 px-4">
           Mensuel
@@ -305,9 +306,9 @@ function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
       {refOn && mine ? (
         <Msg kind="ok">
           Parrainage actif : code {mine.code}
-          {mine.partner ? ` de ${mine.partner}` : ""}, −{percent(pct)} % à chaque paiement, tant que ton abonnement continue.
+          {mine.partner ? ` de ${mine.partner}` : ""}, −{percent(pct)} % à chaque paiement de Pro.
         </Msg>
-      ) : mine?.eligible && referral.enabled ? (
+      ) : mine?.eligible && referral.enabled && !prolong ? (
         <form className="flex flex-col gap-2" onSubmit={applyCode}>
           <Label htmlFor="ref-code">Code promo d’un parrain (−{percent(pct)} % à chaque paiement)</Label>
           <div className="flex gap-2">
@@ -338,10 +339,12 @@ function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
         </>
       ) : (
         <>
-          <Button type="button" size="lg" disabled={busy || payments === null} onClick={() => go("checkout")}>
-            {busy ? "Ouverture du paiement…" : "Passer à Pro"}
+          <Button type="button" size="lg" disabled={busy || payments === null} onClick={go}>
+            {busy ? "Ouverture du paiement…" : prolong ? (period === "year" ? "Prolonger d’un an" : "Prolonger d’un mois") : "Passer à Pro"}
           </Button>
-          <small className="text-[12.5px] text-muted-foreground">Paiement sécurisé dans ton navigateur, sans engagement. NEXORA passe en Pro au contrôle de licence suivant.</small>
+          <small className="text-[12.5px] text-muted-foreground">
+            Paiement sécurisé par Mobile Money ou carte bancaire, en une seule fois : rien n’est prélevé automatiquement. Montant en dollars, converti au paiement si besoin. NEXORA passe en Pro au contrôle de licence suivant.
+          </small>
         </>
       )}
     </Reveal>
@@ -453,6 +456,36 @@ function Verifier() {
   )
 }
 
+function PayNotice({ state, err, onRetry }: { state: PayStatus | null; err: string; onRetry: () => void }) {
+  const ok = !err && state?.status === "paid"
+  const wait = !err && state?.status === "pending"
+  return (
+    <div
+      className={cn(
+        "mb-6 flex flex-wrap items-center gap-2.5 rounded-2xl border px-4 py-3 text-[14px]",
+        ok ? "border-brand-blue/35 bg-brand-blue/[0.08] text-brand-blue" : wait ? "border-foreground/10 bg-foreground/[0.03] text-muted-foreground" : "border-destructive/40 bg-destructive/10 text-[#ff9c9c]",
+      )}
+      role="status"
+    >
+      <Icon name={ok ? "pass" : wait ? "info" : "warn"} size={16} />
+      <span className="min-w-0 flex-1">
+        {err
+          ? err
+          : ok
+            ? `Paiement confirmé. Pro est ouvert${state?.period_end ? ` jusqu’au ${date(state.period_end)}` : ""} ; NEXORA le prend en compte au prochain contrôle de licence.`
+            : wait
+              ? "Vérification de ton paiement… Si tu dois encore le valider sur ton téléphone, fais-le : Pro s’active dès la confirmation."
+              : "Le paiement n’a pas abouti : rien n’a été activé. Tu peux réessayer ci-dessous."}
+      </span>
+      {(err || wait) && (
+        <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+          Vérifier à nouveau
+        </Button>
+      )}
+    </div>
+  )
+}
+
 const POINTS: [string, string, string][] = [
   ["key", "Une licence gratuite par compte", "Générée tout de suite, liée à ton adresse e-mail."],
   ["star", "24 h d’essai complet", "Le premier jour, tout Pro est ouvert. Ensuite, Responsive Lab, Browser Lab et 2 applications restent gratuits."],
@@ -467,6 +500,12 @@ export function Licence({ query }: { query: string }) {
   const [err, setErr] = useState("")
   const params = new URLSearchParams(query)
   const paiement = params.get("paiement")
+  const payRef = params.get("ref") || ""
+  // #107 : retour de la page de paiement : statut vérifié par le Worker (quelques essais pendant la confirmation).
+  const [payState, setPayState] = useState<PayStatus | null>(null)
+  const [payErr, setPayErr] = useState("")
+  const [payTry, setPayTry] = useState(0)
+  const payKey = useRef("")
 
   async function load(sess: Session | null) {
     setS(sess)
@@ -491,6 +530,34 @@ export function Licence({ query }: { query: string }) {
     session().then(load)
   }, [])
 
+  useEffect(() => {
+    if (paiement !== "retour" || !payRef || !s) return
+    const key = `${payRef}:${payTry}`
+    if (payKey.current === key) return
+    payKey.current = key
+    let alive = true
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let tries = 0
+    setPayErr("")
+    setPayState({ status: "pending" })
+    const tick = async () => {
+      try {
+        const r = await confirmPayment(s, payRef)
+        if (!alive) return
+        setPayState(r)
+        if (r.status === "pending" && ++tries < 8) timer = setTimeout(tick, 4000)
+        else if (r.status === "paid") load(s)
+      } catch (e) {
+        if (alive) setPayErr(e instanceof Error ? e.message : String(e))
+      }
+    }
+    tick()
+    return () => {
+      alive = false
+      if (timer) clearTimeout(timer)
+    }
+  }, [paiement, payRef, s, payTry])
+
   return (
     <>
       <PageHero capture="haut">
@@ -502,15 +569,8 @@ export function Licence({ query }: { query: string }) {
           lead="NEXORA Devs Toolbox démarre avec une licence vérifiée par nos serveurs. Elle est gratuite : crée ton compte, récupère ta clé, puis passe à Pro quand tu en as besoin."
           className="mb-10 md:mb-12"
         />
-        {paiement === "ok" && (
-          <p className="mb-6 flex items-center gap-2.5 rounded-2xl border border-brand-blue/35 bg-brand-blue/[0.08] px-4 py-3 text-[14px] text-brand-blue">
-            <Icon name="pass" size={16} /> Paiement reçu. Ton offre Pro s’active dans quelques secondes ; NEXORA la prend en compte au prochain contrôle.
-          </p>
-        )}
-        {paiement === "annule" && (
-          <p className="mb-6 flex items-center gap-2.5 rounded-2xl border border-foreground/10 bg-foreground/[0.03] px-4 py-3 text-[14px] text-muted-foreground">
-            <Icon name="info" size={16} /> Paiement annulé : rien n’a été débité.
-          </p>
+        {paiement === "retour" && payRef && s && (payErr || payState) && (
+          <PayNotice state={payState} err={payErr} onRetry={() => setPayTry((n) => n + 1)} />
         )}
         <div className="grid gap-5 lg:grid-cols-2">
           {loading ? (

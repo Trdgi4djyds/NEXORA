@@ -274,7 +274,7 @@ ok(denied && rep2.ok && lrow.reason === "modified" && lrow.detail.file === "NEXO
     .replace(/^import setup from .*$/m, `const setup = ${fs.readFileSync(path.join(ROOT, "supabase/nexora.json"), "utf8")}`)
   const W = await import(`data:text/javascript,${encodeURIComponent(src)}`)
   const { publicKey, privateKey } = crypto.generateKeyPairSync("ed25519")
-  const env = { NX_LICENSE_SIGNING_KEY: privateKey.export({ type: "pkcs8", format: "der" }).toString("base64"), NX_PROBE_SECRET: "secret-du-worker", STRIPE_WEBHOOK_SECRET: "whsec_essai" }
+  const env = { NX_LICENSE_SIGNING_KEY: privateKey.export({ type: "pkcs8", format: "der" }).toString("base64"), NX_PROBE_SECRET: "secret-du-worker", SASPAY_API_KEY: "sk_test_essai", SASPAY_WEBHOOK_SECRET: "whsec_essai" }
   const calls = []
   const realFetch = globalThis.fetch
   globalThis.fetch = async (u, o = {}) => {
@@ -297,15 +297,17 @@ ok(denied && rep2.ok && lrow.reason === "modified" && lrow.detail.file === "NEXO
     ok(noAuth.ok === false && noAuth.reason === "auth", "Worker : sans session, réponse signée « connexion requise »")
     const off = await W.handleLicences(req({ device: "d".repeat(64) }), {})
     ok(off.status === 503, "Worker : sans clé de signature, aucun contrôle accepté (503)")
-    const raw = JSON.stringify({ id: "evt_9", type: "customer.subscription.deleted", data: { object: { id: "sub_1", customer: "cus_1", status: "canceled", items: { data: [{ current_period_end: 1900000000, price: { recurring: { interval: "year" } } }] } } } })
+    // #107 : webhook SasPay (X-Webhook-Signature = HMAC SHA-256 de « horodatage.corps brut », 300 secondes au plus).
+    const raw = JSON.stringify({ event: "webhook.test", data: {} })
     const t = Math.floor(Date.now() / 1000)
     const v1 = crypto.createHmac("sha256", "whsec_essai").update(`${t}.${raw}`).digest("hex")
-    const hook = (sig) => new Request("https://x/pay/webhook", { method: "POST", headers: { "stripe-signature": sig }, body: raw })
-    const bad = await W.handleLicences(hook(`t=${t},v1=${"0".repeat(64)}`), env)
-    const good = await W.handleLicences(hook(`t=${t},v1=${v1}`), env)
-    const applied = JSON.parse(calls.filter((c) => c.u.endsWith("/rpc/nx_billing_apply")).at(-1).o.body)
-    ok(bad.status === 400 && good.status === 200 && applied.p_status === "canceled" && applied.p_customer === "cus_1" && applied.p_period === "year" && applied.p_event_id === "evt_9", "Worker : webhook Stripe vérifié (signature) puis transmis à nx_billing_apply", applied)
-    ok(!(await W.stripeSignatureOk("whsec_essai", `t=${t - 600},v1=${v1}`, raw)), "Worker : signature trop ancienne refusée (rejeu)")
+    const hook = (sig, ts = t) => new Request("https://x/pay/webhook", { method: "POST", headers: { "x-webhook-signature": sig, "x-webhook-timestamp": String(ts), "x-webhook-event": "webhook.test" }, body: raw })
+    const bad = await W.handleLicences(hook("0".repeat(64)), env)
+    const good = await W.handleLicences(hook(v1), env)
+    ok(bad.status === 400 && good.status === 200 && (await good.json()).test === true, "Worker : webhook SasPay vérifié (signature sur le corps brut)")
+    ok(!(await W.saspaySignatureOk("whsec_essai", v1, String(t - 600), raw)) && (await W.handleLicences(hook(v1, t - 600), env)).status === 400, "Worker : signature trop ancienne refusée (rejeu)")
+    const conf = await (await W.handleLicences(new Request("https://x/license/config"), env)).json()
+    ok(conf.payments === true && conf.webhook === true && conf.provider === "saspay" && !JSON.stringify(conf).includes("sk_test"), "Worker : réglages publics du paiement, sans aucun secret", conf)
     // #077 : intégrité transmise ; déclaration de publication signée (24 h) ; anomalies du lanceur.
     await W.handleLicences(req({ device: "d".repeat(64), nonce: "i", integrity: { ok: false, reason: "modified", file: "resources/app.asar", extra: "x" } }), env)
     const sentI = JSON.parse(calls.filter((c) => c.u.endsWith("/rpc/nx_license_check")).at(-1).o.body)
