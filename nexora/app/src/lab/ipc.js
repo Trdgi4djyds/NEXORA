@@ -24,7 +24,7 @@ const THROTTLE = {
 };
 
 function register({
-  ipcMain, app, dialog, shell, send, getWin, forgetEmulation,
+  ipcMain, app, dialog, shell, send, getWin,
 }) {
   const { session: elSession } = require('electron');
   // NEXORA #005 : avec une adresse, seules les données de ce site sont effacées (cookies, stockage, cache) ;
@@ -107,8 +107,6 @@ function register({
   });
   ipcMain.handle('lab:emu-clear', async (_e, { wcId }) => {
     const wc = wcOf(wcId);
-    // NEXORA #107 : émulation retirée (aperçu pleine largeur du Dev Lab) : elle n'est plus rejouée au changement de zoom.
-    if (forgetEmulation) forgetEmulation(wc.id);
     for (const [m, p] of [['Emulation.clearDeviceMetricsOverride', {}], ['Emulation.setTouchEmulationEnabled', { enabled: false }], ['Emulation.setUserAgentOverride', { userAgent: wc.session.getUserAgent() }], ['Emulation.setScrollbarsHidden', { hidden: false }]]) {
       try { await cdp.send(wc, m, p); } catch { /* ignore */ }
     }
