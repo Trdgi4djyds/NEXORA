@@ -166,13 +166,13 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Comment changer d’offre ?",
-    // #087 (A-056) : le paiement en ligne n'est pas encore ouvert ; l'équipe active Pro sur demande.
-    a: `Depuis la page Ma licence du site, ou dans NEXORA : Mon compte puis Offre et usage. Tant que le paiement en ligne n’est pas ouvert, écris à ${CONTACT_EMAIL} ou depuis Mon compte → Support : l’équipe NEXORA active ton offre Pro, en général sous 24 h. Le paiement annuel t’offre deux mois.`,
+    // #087 (A-056) : le paiement en ligne n'est pas encore ouvert ; l'équipe active Pro sur demande. #107 : paiement unique (SasPay).
+    a: `Depuis la page Ma licence du site, ou dans NEXORA : Mon compte puis Offre et usage. Le paiement se fait en une fois, par Mobile Money ou carte bancaire, pour un mois ou un an : rien n’est prélevé automatiquement, et tu prolonges depuis Ma licence quand tu veux. Tant que le paiement en ligne n’est pas ouvert, écris à ${CONTACT_EMAIL} ou depuis Mon compte → Support : l’équipe NEXORA active ton offre Pro, en général sous 24 h. Le paiement annuel t’offre deux mois.`,
   },
   {
     // #090 : NEXORA REFERRAL, remise du filleul sur chaque paiement Pro ; parrains invités par l'équipe.
     q: "J’ai le code d’un parrain : comment en profiter ?",
-    a: "Ouvre son lien de parrainage, ou saisis son code promo sur la page Ma licence ou dans NEXORA (Mon compte → Offre et usage) avant ton premier abonnement. Tu as 30 % de remise sur l’offre Pro à chaque paiement, tant que ton abonnement continue : 17,50 $ par mois au lieu de 25 $, ou 175 $ par an au lieu de 250 $. Un seul parrain par compte. Le programme de parrainage est ouvert sur invitation de l’équipe NEXORA.",
+    a: "Ouvre son lien de parrainage, ou saisis son code promo sur la page Ma licence ou dans NEXORA (Mon compte → Offre et usage) avant ton premier abonnement. Tu as 30 % de remise sur l’offre Pro à chaque paiement : 17,50 $ par mois au lieu de 25 $, ou 175 $ par an au lieu de 250 $. Un seul parrain par compte. Le programme de parrainage est ouvert sur invitation de l’équipe NEXORA.",
   },
   {
     q: "Comment se passent les mises à jour ?",

@@ -3,11 +3,12 @@
 //                         adresse IP vue par Cloudflare) puis SIGNE la réponse (Ed25519). Le logiciel refuse
 //                         toute réponse non signée par la clé de NEXORA : il ne s'ouvre pas sans ce contrôle.
 //   GET  /license/config  ce qui est réglé (signature, paiements), sans jamais renvoyer un secret.
-//   POST /pay/checkout    page de paiement de l'abonnement Pro (mensuel ou annuel) dans le navigateur. NEXORA #090 :
-//                         code ou lien d'un parrain (champ ref) rattaché au compte (nx_referral_attach), puis remise du
-//                         parrainage appliquée à chaque paiement (coupon Stripe « nexora-parrainage-<pourcentage> »).
-//   POST /pay/portal      espace de gestion de l'abonnement (moyen de paiement, factures, résiliation).
-//   POST /pay/webhook     événements du prestataire (signature vérifiée) → nx_billing_apply.
+//   POST /pay/checkout    NEXORA #107 : paiement de Pro (un mois ou un an) par SasPay, Mobile Money ou carte : session de
+//                         checkout hébergé gardée dans la base, adresse de paiement renvoyée au site. #090 : code ou lien
+//                         d'un parrain (champ ref) rattaché au compte (nx_referral_attach), remise du parrainage déduite
+//                         du montant demandé.
+//   POST /pay/confirm     retour du client : paiement retrouvé puis vérifié auprès de SasPay → nx_pay_apply.
+//   POST /pay/webhook     événements SasPay (signature et horodatage vérifiés sur le corps brut) → nx_pay_apply.
 //   GET  /security/manifest  NEXORA #077 : déclaration de publication SIGNÉE par le service de sécurité, valable
 //                         24 h (comme le « timestamp » de TUF) : dernière publication du dépôt officiel (manifeste
 //                         vérifié avec la clé de publication, empreinte SHA-256, numéro de manifeste) et versions
@@ -19,8 +20,8 @@
 //                         de la disponibilité de GitHub pour les adresses de Cloudflare.
 // Variables du Worker (Cloudflare → Workers & Pages → nexora → Settings → Variables and Secrets), jamais dans
 // le dépôt : NX_LICENSE_SIGNING_KEY (clé privée Ed25519, PKCS8 en base64), NX_PROBE_SECRET (secret partagé avec la
-// base, déjà utilisé par la deuxième région), STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_MONTH,
-// STRIPE_PRICE_YEAR. Prestataire : Stripe ; un autre (Mobile Money) s'ajouterait ici avec ses propres routes.
+// base, déjà utilisé par la deuxième région), SASPAY_API_KEY (clé secrète SasPay), SASPAY_WEBHOOK_SECRET (secret de
+// signature du webhook, affiché une seule fois par le tableau de bord SasPay). Prestataire unique : SasPay (#107).
 import setup from "../supabase/nexora.json"
 
 const SUPA = `https://${setup.projectRef}.supabase.co`
@@ -221,35 +222,47 @@ async function licenseCheck(req, env) {
   return json(200, await signPayload(env, payload))
 }
 
-// ---------- Stripe ----------
-async function stripe(env, method, path, form) {
-  const r = await fetch(`https://api.stripe.com/v1/${path}`, {
-    method,
-    headers: { authorization: `Bearer ${env.STRIPE_SECRET_KEY}`, "content-type": "application/x-www-form-urlencoded" },
-    body: form ? new URLSearchParams(form).toString() : undefined,
-  })
-  const body = await r.json().catch(() => ({}))
-  if (!r.ok) throw new Error((body.error && body.error.message) || `Stripe ${r.status}`)
-  return body
-}
-const payReady = (env) => Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_PRICE_MONTH)
-async function customerOf(token, uid) {
-  const r = await fetch(`${SUPA}/rest/v1/nx_billing?select=customer_id&user_id=eq.${uid}`, { headers: { apikey: setup.publicKey, authorization: `Bearer ${token}` } })
-  const rows = await r.json().catch(() => [])
-  return Array.isArray(rows) && rows[0] && rows[0].customer_id ? rows[0].customer_id : null
-}
-// NEXORA #090 : coupon de la remise du parrainage, créé une fois dans Stripe (durée « forever » : chaque paiement de
-// l'abonnement garde la remise). Son identifiant suit le pourcentage réglé dans le back office.
-export async function referralCoupon(env, pct) {
-  const id = `nexora-parrainage-${String(pct).replace(/[^0-9]+/g, "-")}`
-  try {
-    await stripe(env, "GET", `coupons/${id}`)
-    return id
-  } catch (e) {
-    if (!/no such coupon|resource_missing/i.test(String((e && e.message) || e))) throw e
+// ---------- SasPay (NEXORA #107, à la place de Stripe) ----------
+// Spécification : https://api.saspay.me/api/v1, décrite par /api-reference/openapi.json (aucune route, aucun champ
+// hors de cette spécification). Clé lue dans SASPAY_API_KEY (sk_test_… en essai, sk_live_… en production), jamais
+// renvoyée ni écrite dans un journal. Montants en chaînes décimales (« 25.00 »).
+// Parcours : /pay/checkout ouvre une session de checkout hébergé (POST /checkout-sessions/) et la garde dans la base
+// (nx_pay_session_open) ; le client paie sur checkout_url ; au retour, /pay/confirm, et le webhook signé
+// « transaction.success », retrouvent la transaction (GET /checkout-sessions/{id}/status/) puis la VÉRIFIENT
+// (GET /payments/{id}/verify/) : seul SUCCESS ouvre Pro (nx_pay_apply, une seule fois par transaction).
+const SASPAY = "https://api.saspay.me/api/v1"
+export class SasPayError extends Error {
+  constructor(status, code, message) {
+    super(message)
+    this.status = status
+    this.code = code
   }
-  await stripe(env, "POST", "coupons", { id, percent_off: String(pct), duration: "forever", name: `Parrainage NEXORA (-${pct} %)`, "metadata[nexora]": "referral" })
-  return id
+}
+async function saspay(env, method, path, body) {
+  const headers = { authorization: `Bearer ${env.SASPAY_API_KEY}`, accept: "application/json" }
+  if (body) headers["content-type"] = "application/json"
+  const r = await fetch(`${SASPAY}${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined })
+  const b = await r.json().catch(() => null)
+  if (!r.ok || (b && b.success === false)) {
+    const e = b && b.error && typeof b.error === "object" ? b.error : b || {}
+    throw new SasPayError(r.status, String(e.code || ""), String(e.message || `SasPay ${r.status}`).slice(0, 200))
+  }
+  // Enveloppe { success, data, code } ; certaines réponses d'exemple sont données sans enveloppe.
+  return b && b.success === true && b.data && typeof b.data === "object" ? b.data : b || {}
+}
+const payReady = (env) => Boolean(env.SASPAY_API_KEY && env.NX_PROBE_SECRET)
+const NOT_READY = "Le paiement en ligne arrive très bientôt. En attendant, écris à nexoradevstoolbox@gmail.com ou depuis Mon compte → Support : l’équipe NEXORA active ton offre Pro."
+export const decimal = (cents) => `${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`
+// Erreurs de SasPay traduites pour le client, sans détail interne (clé, compte).
+function payError(e) {
+  if (!(e instanceof SasPayError)) throw e
+  if (e.status === 429) return new Response(JSON.stringify({ error: "busy", message: "Le service de paiement est très sollicité : réessaie dans une minute." }), { status: 503, headers: { "content-type": "application/json", "cache-control": "no-store", "retry-after": "60" } })
+  // 401 : clé absente, invalide ou expirée ; 403 : compte suspendu, portée de la clé : à corriger par l'équipe, ne pas réessayer.
+  if (e.status === 401 || e.status === 403) return json(503, { error: "not_configured", message: "Le paiement en ligne est momentanément indisponible. Écris à nexoradevstoolbox@gmail.com : l’équipe NEXORA active ton offre Pro." })
+  if (e.status === 404 || e.status === 410) return json(404, { error: "not_found", message: "Ce paiement est introuvable ou a expiré : relance un nouveau paiement." })
+  if (e.status === 409) return json(409, { error: "conflict", message: "Ce paiement est déjà en cours de traitement : patiente quelques secondes, puis actualise la page." })
+  if (e.status === 400 || e.status === 422) return json(422, { error: "refused", message: "Le service de paiement a refusé la demande. Réessaie, ou écris à l’équipe NEXORA si le problème continue." })
+  return json(502, { error: "provider", message: "Le service de paiement n’a pas répondu. Réessaie dans un instant." })
 }
 const REFERRAL_REFUSED = {
   unknown: "Ce code de parrainage n’existe pas ou n’est plus actif.",
@@ -257,118 +270,148 @@ const REFERRAL_REFUSED = {
   customer: "Le parrainage s’applique à un premier abonnement Pro.",
 }
 async function checkout(req, env) {
-  if (!payReady(env)) return json(503, { error: "not_configured", message: "Le paiement en ligne arrive très bientôt. En attendant, écris à nexoradevstoolbox@gmail.com ou depuis Mon compte → Support : l’équipe NEXORA active ton offre Pro." })
+  if (!payReady(env)) return json(503, { error: "not_configured", message: NOT_READY })
   const token = bearer(req)
   const user = await userOf(token)
   if (!user) return json(401, { error: "auth", message: "Connecte-toi d’abord à ton compte NEXORA." })
+  if (!user.email) return json(400, { error: "email", message: "Ajoute une adresse e-mail à ton compte NEXORA pour payer en ligne." })
   const a = await req.json().catch(() => ({}))
-  const year = a.period === "year" && env.STRIPE_PRICE_YEAR
+  const period = a.period === "year" ? "year" : "month"
   // #090 : code ou lien d'un parrain, rattaché au compte avant le paiement (refus expliqué : code inconnu, le sien…).
-  const ref = typeof a.ref === "string" ? a.ref.trim().slice(0, 24) : ""
-  if (ref) {
-    const att = await rpc("nx_referral_attach", { p_code: ref, p_source: a.ref_source === "link" ? "link" : "code" }, token)
+  const code = typeof a.ref === "string" ? a.ref.trim().slice(0, 24) : ""
+  if (code) {
+    const att = await rpc("nx_referral_attach", { p_code: code, p_source: a.ref_source === "link" ? "link" : "code" }, token)
     if (att.ok && att.body && att.body.ok === false) return json(400, { error: "referral", message: REFERRAL_REFUSED[att.body.reason] || REFERRAL_REFUSED.unknown })
   }
+  // Prix de Pro lu dans la base (offres du back office), remise du parrainage comprise pour un filleul.
   const mine = await rpc("nx_referral_mine", {}, token)
-  const pct = mine.ok && mine.body && mine.body.referred ? Number(mine.body.discount_pct) || 0 : 0
-  const customer = await customerOf(token, user.id)
-  const form = {
-    mode: "subscription", "line_items[0][price]": year ? env.STRIPE_PRICE_YEAR : env.STRIPE_PRICE_MONTH, "line_items[0][quantity]": "1",
-    client_reference_id: user.id, "metadata[nexora_user]": user.id, "subscription_data[metadata][nexora_user]": user.id,
-    locale: "fr",
-    success_url: `${SITE}/licence?paiement=ok`, cancel_url: `${SITE}/licence?paiement=annule`,
+  const m = mine.ok && mine.body && typeof mine.body === "object" ? mine.body : null
+  const cents = m ? Number(m.referred ? m[`${period}_cents`] : m[`list_${period}_cents`]) : NaN
+  if (!Number.isInteger(cents) || cents <= 0) return json(502, { error: "server", message: "Le prix de Pro n’a pas pu être lu. Réessaie dans un instant." })
+  const referral = m.referred ? String(m.code || "") : ""
+  const ref = crypto.randomUUID()
+  const meta = user.user_metadata || {}
+  const name = String(meta.full_name || meta.name || "").trim() || String(user.email).split("@")[0]
+  let s
+  try {
+    s = await saspay(env, "POST", "/checkout-sessions/", {
+      amount: decimal(cents), currency: "USD",
+      description: `NEXORA Pro, ${period === "year" ? "1 an" : "1 mois"}${referral ? ` (parrainage ${referral})` : ""}`,
+      customer_email: user.email, customer_name: name.slice(0, 120),
+      return_url: `${SITE}/licence?paiement=retour&ref=${ref}`,
+      metadata: { nexora_user: user.id, nexora_ref: ref, period, referral },
+    })
+  } catch (e) {
+    return payError(e)
   }
-  // Stripe refuse les codes promo du formulaire quand une remise est déjà appliquée.
-  if (pct > 0) {
-    form["discounts[0][coupon]"] = await referralCoupon(env, pct)
-    form["subscription_data[metadata][nexora_referral]"] = String(mine.body.code || "")
-  } else form.allow_promotion_codes = "true"
-  if (customer) form.customer = customer; else form.customer_email = user.email
-  const s = await stripe(env, "POST", "checkout/sessions", form)
-  return json(200, { url: s.url })
-}
-async function portal(req, env) {
-  if (!payReady(env)) return json(503, { error: "not_configured", message: "La gestion de l’abonnement en ligne arrive très bientôt." })
-  const token = bearer(req)
-  const user = await userOf(token)
-  if (!user) return json(401, { error: "auth", message: "Connecte-toi d’abord à ton compte NEXORA." })
-  const customer = await customerOf(token, user.id)
-  if (!customer) return json(404, { error: "no_customer", message: "Aucun abonnement payé pour ce compte." })
-  const s = await stripe(env, "POST", "billing_portal/sessions", { customer, return_url: `${SITE}/licence`, locale: "fr" })
-  return json(200, { url: s.url })
+  if (!s.id || !s.checkout_url) return json(502, { error: "provider", message: "Le service de paiement n’a pas renvoyé de page de paiement. Réessaie dans un instant." })
+  const saved = await rpc("nx_pay_session_open", {
+    p_secret: env.NX_PROBE_SECRET, p_id: String(s.id), p_ref: ref, p_user: user.id, p_period: period, p_amount: cents, p_currency: "usd",
+    p_referral: referral || null, p_url: String(s.checkout_url),
+  })
+  if (!saved.ok || !saved.body || saved.body.ok === false) {
+    // Session impossible à rattacher au compte : annulée plutôt que d'encaisser un paiement sans Pro.
+    await saspay(env, "POST", `/checkout-sessions/${encodeURIComponent(s.id)}/cancel/`).catch(() => null)
+    return json(502, { error: "server", message: "Le paiement n’a pas pu être préparé. Réessaie dans un instant." })
+  }
+  return json(200, { url: s.checkout_url, ref })
 }
 
-// Signature Stripe : en-tête « t=…,v1=… », HMAC SHA-256 de « t.corps » avec le secret du webhook, 5 minutes au plus.
-export async function stripeSignatureOk(secret, header, raw, now = Date.now()) {
-  const parts = Object.fromEntries(String(header || "").split(",").map((x) => x.split("=")).filter((x) => x.length === 2).map(([k, v]) => [k.trim(), v.trim()]))
-  const sigs = String(header || "").split(",").filter((x) => x.trim().startsWith("v1=")).map((x) => x.trim().slice(3))
-  if (!parts.t || !sigs.length || Math.abs(now / 1000 - Number(parts.t)) > 300) return false
+// Transaction d'une session vérifiée auprès de SasPay : SUCCESS → Pro (nx_pay_apply) ; FAILED → session échouée.
+async function settleTransaction(env, sess, tx) {
+  const v = await saspay(env, "GET", `/payments/${encodeURIComponent(tx)}/verify/`)
+  const status = String(v.status || "").toUpperCase()
+  if (status === "SUCCESS") {
+    const r = await rpc("nx_pay_apply", {
+      p_secret: env.NX_PROBE_SECRET, p_id: sess.id, p_transaction: tx,
+      // Comptabilité : ce que le payeur a déboursé (debited_amount) et ce qui revient à NEXORA (net_amount).
+      p_net: v.net_amount != null ? String(v.net_amount) : null, p_charged: v.debited_amount != null ? String(v.debited_amount) : null,
+      p_currency: v.currency ? String(v.currency) : null,
+    })
+    if (!r.ok || !r.body || r.body.ok === false) return { status: "error", reason: (r.body && r.body.reason) || "server" }
+    return { status: "paid", period: r.body.period || sess.period || null, period_end: r.body.period_end || null }
+  }
+  // Aucun statut CANCELLED n'est documenté sur le paiement : traité, s'il arrive, comme un échec définitif.
+  if (status === "FAILED" || status === "CANCELLED") {
+    await rpc("nx_pay_session_fail", { p_secret: env.NX_PROBE_SECRET, p_id: sess.id, p_transaction: tx })
+    return { status: "failed" }
+  }
+  return { status: "pending" }
+}
+async function sessionTransaction(env, id) {
+  const st = await saspay(env, "GET", `/checkout-sessions/${encodeURIComponent(id)}/status/`)
+  return st.transaction_id ? String(st.transaction_id) : ""
+}
+// Retour du client sur « Ma licence » : statut réel du paiement (jamais la seule redirection).
+async function confirm(req, env) {
+  if (!payReady(env)) return json(503, { error: "not_configured", message: NOT_READY })
+  const user = await userOf(bearer(req))
+  if (!user) return json(401, { error: "auth", message: "Connecte-toi d’abord à ton compte NEXORA." })
+  const a = await req.json().catch(() => ({}))
+  const ref = String(a.ref || "")
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref)) return json(400, { error: "bad_request" })
+  const f = await rpc("nx_pay_session_find", { p_secret: env.NX_PROBE_SECRET, p_ref: ref })
+  const sess = f.ok && f.body && f.body.id ? f.body : null
+  if (!sess || sess.user_id !== user.id) return json(404, { error: "not_found", message: "Ce paiement est introuvable pour ce compte." })
+  if (sess.status === "paid") return json(200, { status: "paid", period: sess.period, period_end: sess.period_end || null })
+  if (sess.status === "failed") return json(200, { status: "failed" })
+  try {
+    const tx = await sessionTransaction(env, sess.id)
+    return json(200, tx ? await settleTransaction(env, sess, tx) : { status: "pending" })
+  } catch (e) {
+    return payError(e)
+  }
+}
+
+// Signature SasPay : HMAC SHA-256 hexadécimal (minuscules) de « horodatage.corps brut » avec le secret du webhook ;
+// horodatage à 300 secondes au plus de l'horloge du Worker (rejeu). Comparaison en temps constant.
+export async function saspaySignatureOk(secret, signature, timestamp, raw, now = Date.now()) {
+  const sig = String(signature || "").trim().toLowerCase()
+  const ts = String(timestamp || "").trim()
+  if (!secret || !/^[0-9a-f]{64}$/.test(sig) || !/^\d{1,12}$/.test(ts) || Math.abs(now / 1000 - Number(ts)) > 300) return false
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
-  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${parts.t}.${raw}`))
-  const hex = [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, "0")).join("")
-  return sigs.some((s) => s.length === hex.length && [...s].reduce((d, c, i) => d | (c.charCodeAt(0) ^ hex.charCodeAt(i)), 0) === 0)
-}
-const iso = (t) => (t ? new Date(Number(t) * 1000).toISOString() : null)
-function fromSubscription(sub) {
-  const item = sub.items && sub.items.data && sub.items.data[0]
-  return {
-    status: sub.status, customer: sub.customer, subscription: sub.id, cancel: Boolean(sub.cancel_at_period_end),
-    end: iso(sub.current_period_end || (item && item.current_period_end)),
-    period: item && item.price && item.price.recurring && item.price.recurring.interval === "year" ? "year" : "month",
-    user: (sub.metadata && sub.metadata.nexora_user) || null,
-  }
-}
-export async function eventToBilling(env, ev) {
-  const o = ev.data && ev.data.object ? ev.data.object : {}
-  if (ev.type === "checkout.session.completed") {
-    const sub = o.subscription ? fromSubscription(await stripe(env, "GET", `subscriptions/${o.subscription}`)) : {}
-    return { ...sub, user: o.client_reference_id || sub.user || null, customer: o.customer, subscription: o.subscription, status: sub.status || "active", amount: o.amount_total || 0, currency: o.currency || "usd" }
-  }
-  if (/^customer\.subscription\.(created|updated|deleted)$/.test(ev.type)) {
-    const s = fromSubscription(o)
-    return { ...s, status: ev.type.endsWith("deleted") ? "canceled" : s.status, amount: 0, currency: "usd" }
-  }
-  if (ev.type === "invoice.paid" || ev.type === "invoice.payment_failed") {
-    const line = o.lines && o.lines.data && o.lines.data[0]
-    // #090 : période de la facture (commission du parrain, abonnement annuel gardé) : intervalle du prix, sinon durée.
-    const interval = line && line.price && line.price.recurring && line.price.recurring.interval
-    const span = line && line.period ? Number(line.period.end) - Number(line.period.start) : 0
-    return {
-      status: ev.type === "invoice.paid" ? "active" : "past_due", customer: o.customer, subscription: o.subscription || (o.parent && o.parent.subscription_details && o.parent.subscription_details.subscription) || null,
-      end: iso(line && line.period && line.period.end), period: interval ? (interval === "year" ? "year" : "month") : span > 200 * 86400 ? "year" : span > 0 ? "month" : null,
-      cancel: false, user: null, amount: o.amount_paid || 0, currency: o.currency || "usd",
-    }
-  }
-  return null
+  const mac = hex(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${ts}.${raw}`)))
+  return [...sig].reduce((d, c, i) => d | (c.charCodeAt(0) ^ mac.charCodeAt(i)), 0) === 0
 }
 async function webhook(req, env) {
-  if (!env.STRIPE_WEBHOOK_SECRET || !env.NX_PROBE_SECRET) return json(503, { error: "not_configured" })
+  if (!env.SASPAY_WEBHOOK_SECRET || !payReady(env)) return json(503, { error: "not_configured" })
   const raw = await req.text()
-  if (!(await stripeSignatureOk(env.STRIPE_WEBHOOK_SECRET, req.headers.get("stripe-signature"), raw))) return json(400, { error: "signature" })
-  const ev = JSON.parse(raw)
-  const b = await eventToBilling(env, ev)
-  if (!b) return json(200, { ignored: ev.type })
-  const r = await rpc("nx_billing_apply", {
-    // #090 : période inconnue → null (la période connue de l'abonnement est gardée).
-    p_secret: env.NX_PROBE_SECRET, p_provider: "stripe", p_event_id: ev.id, p_user: b.user, p_status: b.status, p_period: b.period || null,
-    p_period_end: b.end, p_customer: b.customer || null, p_subscription: b.subscription || null, p_amount: b.amount || 0, p_currency: b.currency || "usd",
-    p_kind: ev.type, p_cancel_at_end: Boolean(b.cancel),
-  })
-  // 500 : le prestataire renverra l'événement plus tard.
-  return json(r.ok ? 200 : 500, r.body || {})
+  if (!(await saspaySignatureOk(env.SASPAY_WEBHOOK_SECRET, req.headers.get("x-webhook-signature"), req.headers.get("x-webhook-timestamp"), raw))) return json(400, { error: "signature" })
+  let ev
+  try { ev = JSON.parse(raw) } catch { return json(400, { error: "bad_request" }) }
+  const type = String((ev && ev.event) || req.headers.get("x-webhook-event") || "")
+  if (type === "webhook.test") return json(200, { ok: true, test: true })
+  if (!/^transaction\.(success|failed|cancelled)$/.test(type)) return json(200, { ignored: type })
+  const tx = ev.data && ev.data.id ? String(ev.data.id) : ""
+  if (!tx) return json(200, { ignored: "transaction" })
+  // L'événement ne porte ni metadata ni session : session en attente dont le statut renvoie cette transaction.
+  // Traitement court et idempotent ; en cas d'échec, 5xx pour que SasPay renvoie l'événement.
+  const p = await rpc("nx_pay_sessions_pending", { p_secret: env.NX_PROBE_SECRET, p_transaction: tx })
+  if (!p.ok || !p.body) return json(500, { error: "server" })
+  if (p.body.known) return json(200, { ok: true, duplicate: true })
+  try {
+    for (const sess of p.body.sessions || []) {
+      if ((await sessionTransaction(env, sess.id)) !== tx) continue
+      const r = await settleTransaction(env, sess, tx)
+      return json(r.status === "error" ? 500 : 200, { ok: r.status !== "error", ...r })
+    }
+  } catch (e) {
+    return json(e instanceof SasPayError && e.status === 429 ? 503 : 502, { error: "provider" })
+  }
+  return json(200, { ignored: "unknown_transaction" })
 }
 
 export async function handleLicences(req, env) {
   const p = new URL(req.url).pathname
   try {
-    if (p === "/license/config") return json(200, { signing: Boolean(env.NX_LICENSE_SIGNING_KEY), payments: payReady(env), webhook: Boolean(env.STRIPE_WEBHOOK_SECRET), relay: Boolean(env.NX_PROBE_SECRET), yearly: Boolean(env.STRIPE_PRICE_YEAR) })
+    if (p === "/license/config") return json(200, { signing: Boolean(env.NX_LICENSE_SIGNING_KEY), payments: payReady(env), webhook: Boolean(env.SASPAY_WEBHOOK_SECRET), relay: Boolean(env.NX_PROBE_SECRET), yearly: true, provider: "saspay" })
     if (p === "/security/manifest") return await securityManifest(env)
     if (req.method !== "POST") return json(405, { error: "method" })
     if (p === "/security/report") return await securityReport(req, env)
     if (p === "/security/publication" && req.method === "POST") return await securityPublication(req, env)
     if (p === "/license/check") return await licenseCheck(req, env)
     if (p === "/pay/checkout") return await checkout(req, env)
-    if (p === "/pay/portal") return await portal(req, env)
+    if (p === "/pay/confirm") return await confirm(req, env)
     if (p === "/pay/webhook") return await webhook(req, env)
   } catch (e) {
     return json(500, { error: "server", message: String((e && e.message) || e).slice(0, 200) })

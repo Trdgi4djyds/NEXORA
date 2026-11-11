@@ -668,7 +668,7 @@ function SettingsForm({ initial, onSaved }: { initial: Rules; onSaved: () => voi
           <dt>Le parrain touche</dt><dd><b>{usd(example.comm)}</b> ({pct(v.commission_pct)} %)</dd>
           <dt>NEXORA garde</dt><dd><b>{usd(example.net)}</b></dd>
         </dl>
-        <p className="muted small" style={{ marginTop: 12 }}>Le prix de Pro se règle dans la section Offres. Changer la remise crée un nouveau coupon Stripe au paiement suivant ; les abonnements en cours gardent la leur.</p>
+        <p className="muted small" style={{ marginTop: 12 }}>Le prix de Pro se règle dans la section Offres. La remise est déduite du montant de chaque paiement de Pro (un mois ou un an) : une remise changée s’applique dès le paiement suivant.</p>
       </div>
     </form>
   )
