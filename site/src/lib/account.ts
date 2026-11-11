@@ -180,37 +180,24 @@ export async function referralAttach(s: Session, code: string, source: "link" | 
   return call(`${REST}rpc/nx_referral_attach`, { method: "POST", token: s.access_token, body: JSON.stringify({ p_code: code, p_source: source }) })
 }
 
-async function payCall<T>(route: string, s: Session, body: unknown): Promise<{ res: Response; b: T | null }> {
+/** Paiement (Worker de NEXORA, même adresse que le site) : page de paiement ou espace d'abonnement. #090 : code d'un
+ *  parrain (ref) rattaché par le Worker avant le paiement, remise appliquée à chaque paiement. */
+export async function pay(kind: "checkout" | "portal", s: Session, period: "month" | "year" = "month", ref?: { code: string; source: "link" | "code" }): Promise<string> {
   let res: Response
   try {
-    res = await fetch(route, {
+    res = await fetch(`/pay/${kind}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${s.access_token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ period, ...(ref ? { ref: ref.code, ref_source: ref.source } : {}) }),
     })
   } catch {
     throw new Error("Le service de paiement est injoignable : réessaie dans un instant.")
   }
-  return { res, b: (await res.json().catch(() => null)) as T | null }
-}
-
-/** Paiement de Pro (Worker de NEXORA, même adresse que le site ; #107 : SasPay, Mobile Money ou carte) : adresse de
- *  la page de paiement, pour un mois ou un an. #090 : code d'un parrain (ref) rattaché par le Worker avant le
- *  paiement, remise déduite du montant. */
-export async function pay(s: Session, period: "month" | "year" = "month", ref?: { code: string; source: "link" | "code" }): Promise<string> {
-  const { res, b } = await payCall<Record<string, string>>("/pay/checkout", s, { period, ...(ref ? { ref: ref.code, ref_source: ref.source } : {}) })
+  const b = (await res.json().catch(() => null)) as Record<string, string> | null
   if (!b) throw new Error("Le paiement en ligne arrive très bientôt.")
   if (res.ok && b.url) return b.url
   if (b.message) throw new Error(b.message)
   throw new Error(res.status === 404 ? "Le paiement en ligne arrive très bientôt." : `Paiement indisponible (HTTP ${res.status}).`)
-}
-
-export type PayStatus = { status: "paid" | "pending" | "failed" | "error"; period?: string | null; period_end?: string | null }
-/** NEXORA #107 : retour de la page de paiement : statut réel, vérifié par le Worker auprès du prestataire. */
-export async function confirmPayment(s: Session, ref: string): Promise<PayStatus> {
-  const { res, b } = await payCall<PayStatus & { message?: string }>("/pay/confirm", s, { ref })
-  if (res.ok && b && b.status) return b
-  throw new Error((b && b.message) || `Vérification du paiement indisponible (HTTP ${res.status}).`)
 }
 
 /**

@@ -256,7 +256,12 @@ app.on('web-contents-created', (_e, contents) => {
 // Conservé pour la compatibilité du pont : la barre native se dessine désormais hors de l'interface.
 ipcMain.handle('window:titlebar', () => false);
 ipcMain.handle('window:fullscreen', (_e, on) => { if (win) win.setFullScreen(Boolean(on)); });
-ipcMain.handle('window:zoom', (_e, f) => { if (win) win.webContents.setZoomFactor(Math.max(0.7, Math.min(1.5, Number(f) || 1))); });
+ipcMain.handle('window:zoom', (_e, f) => {
+  if (!win) return;
+  win.webContents.setZoomFactor(Math.max(0.7, Math.min(1.5, Number(f) || 1)));
+  // NEXORA #107 : les sites affichés dans les appareils suivent le nouveau zoom (voir applyMetrics).
+  reapplyEmulations();
+});
 
 // Audit de sécurité défensif d'un site (en lecture seule).
 const security = require('./src/security');
@@ -638,6 +643,30 @@ async function applyEnv(wc, env = {}) {
   try { await cdp(wc, 'Emulation.setCPUThrottlingRate', { rate: Number(env.cpu) || 1 }); } catch { /* ignore */ }
 }
 
+// NEXORA #107 : le zoom de l'interface (Réglages → échelle, canal window:zoom) ne doit pas changer l'affichage des
+// sites. Electron applique ce zoom à la taille réelle de chaque <webview>, mais l'image de l'émulation d'appareil gardait
+// la taille demandée (largeur × scale) : le site était rogné sous 100 % et laissait une bande vide au-dessus, dans le
+// Responsive Lab, le Browser Lab, l'aperçu du Dev Lab et l'App Builder. L'échelle de l'émulation suit donc le zoom de la
+// fenêtre hôte, et chaque émulation est gardée pour être rejouée quand ce zoom change. La largeur vue par le site, sa
+// densité de pixels et les captures (maquettes) restent exactement celles de l'appareil.
+const emulated = new Map(); // id de la page → paramètres de Emulation.setDeviceMetricsOverride (scale sans le zoom)
+function hostZoom(wc) {
+  try {
+    const host = wc.hostWebContents;
+    return host && !host.isDestroyed() ? host.getZoomFactor() || 1 : 1;
+  } catch { return 1; }
+}
+function applyMetrics(wc, metrics) {
+  return cdp(wc, 'Emulation.setDeviceMetricsOverride', { ...metrics, scale: metrics.scale * hostZoom(wc) });
+}
+function reapplyEmulations() {
+  for (const [id, metrics] of emulated) {
+    const wc = webContents.fromId(id);
+    if (!wc || wc.isDestroyed()) { emulated.delete(id); continue; }
+    applyMetrics(wc, metrics).catch(() => { /* page fermée entre-temps */ });
+  }
+}
+
 ipcMain.handle('device:emulate', async (_e, { wcId, emu, env }) => {
   const wc = webContents.fromId(wcId);
   if (!wc || wc.isDestroyed() || !ensureDebugger(wc)) return { ok: false };
@@ -646,7 +675,7 @@ ipcMain.handle('device:emulate', async (_e, { wcId, emu, env }) => {
   } = emu;
   try {
     // scale : la page est dessinée à la définition réelle de l'appareil (la webview est agrandie d'autant).
-    await cdp(wc, 'Emulation.setDeviceMetricsOverride', {
+    const metrics = {
       width,
       height,
       deviceScaleFactor: dpr,
@@ -655,7 +684,10 @@ ipcMain.handle('device:emulate', async (_e, { wcId, emu, env }) => {
       screenWidth: screenWidth || width,
       screenHeight: screenHeight || height,
       screenOrientation: { type: landscape ? 'landscapePrimary' : 'portraitPrimary', angle: landscape ? 90 : 0 },
-    });
+    };
+    if (!emulated.has(wc.id)) { const id = wc.id; wc.once('destroyed', () => emulated.delete(id)); }
+    emulated.set(wc.id, metrics);
+    await applyMetrics(wc, metrics);
   } catch (err) { return { ok: false, error: err.message }; }
   try { await cdp(wc, 'Emulation.setTouchEmulationEnabled', { enabled: Boolean(touch), maxTouchPoints: touch ? 5 : 1 }); } catch { /* ignore */ }
   // La conversion souris → toucher de Chrome ne transmet pas les mouvements dans une webview (seul le
@@ -970,7 +1002,7 @@ app.whenReady().then(() => {
     ipcMain, app, dialog, shell, safeStorage, net, send, getWin: () => win,
   });
   require('./src/lab/ipc').register({
-    ipcMain, app, dialog, shell, send, getWin: () => win,
+    ipcMain, app, dialog, shell, send, getWin: () => win, forgetEmulation: (id) => emulated.delete(id),
   });
   require('./src/skins').register({
     ipcMain, app, dialog, BrowserWindow, send, getWin: () => win,

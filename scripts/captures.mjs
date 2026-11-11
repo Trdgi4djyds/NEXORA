@@ -23,9 +23,6 @@
 //                         de l'App Builder déjà configurée, voir scripts/reglages-captures/)
 //   --upload              envoie chaque image dans le chat (figma artifacts upload) et affiche le Markdown
 //   --url <adresse>       adresse de l'aperçu (défaut : figma make preview get-local-url)
-//   --paiement <état>     NEXORA #107 : avec « site » et --compte demo, réponses simulées du Worker de paiement :
-//                         « ouvert » (paiement en ligne réglé, /license/config) ou « retour » (retour de la page de
-//                         paiement : /pay/confirm répond « payé », compte en Pro payé jusqu'au mois suivant)
 //   --compte demo         compte NEXORA fictif (données de scripts/admin-demo.mjs, appels Supabase interceptés) :
 //                         montre les fonctions réservées aux comptes connectés (supervision 24 h/24, #022)
 //   --demo                supervision de démonstration : sites fictifs et un mois de mesures simulées,
@@ -150,10 +147,6 @@ function parseArgs(argv) {
     else if (arg === "--theme") opts.theme = value()
     else if (arg === "--upload") opts.upload = true
     else if (arg === "--demo") opts.demo = true
-    else if (arg === "--paiement") {
-      opts.payment = value()
-      if (!["ouvert", "retour"].includes(opts.payment)) throw new Error("--paiement attend « ouvert » ou « retour ».")
-    }
     else if (arg === "--demo-dev") opts.demoDev = true
     else if (arg === "--compte") {
       if (value() !== "demo") throw new Error("--compte attend « demo ».")
@@ -267,7 +260,7 @@ async function clickByText(page, text) {
 // Compte NEXORA fictif (#022) : session gardée sous la clé du client Supabase de NEXORA (« nexora-auth »),
 // appels Supabase servis par les données de démonstration du back office. Le site « Boutique » de la
 // supervision de démonstration y est surveillé par les serveurs NEXORA.
-async function useDemoAccount(page, quiet = false, payment = "") {
+async function useDemoAccount(page, quiet = false) {
   const { demoResponse, demoSession, monitors } = await import(
     "./admin-demo.mjs"
   )
@@ -300,14 +293,6 @@ async function useDemoAccount(page, quiet = false, payment = "") {
   await page.setRequestInterception(true)
   page.on("request", (req) => {
     if (req.isInterceptResolutionHandled()) return
-    // NEXORA #107 : --paiement, réponses du Worker de paiement simulées (l'aperçu n'a pas le Worker).
-    const end = new Date(Date.now() + 31 * 86400000).toISOString()
-    if (payment) {
-      const p = new URL(req.url()).pathname
-      const reply = (body) => req.respond({ status: 200, headers: { "content-type": "application/json" }, body: JSON.stringify(body) })
-      if (p.endsWith("/license/config")) return reply({ signing: true, payments: true, webhook: true, relay: true, yearly: true, provider: "saspay" })
-      if (p.endsWith("/pay/confirm") && payment === "retour") return reply({ status: "paid", period: "month", period_end: end })
-    }
     if (!/\.supabase\.co\//.test(req.url()) || /realtime\/v1/.test(req.url()))
       return req.continue()
     const cors = {
@@ -340,12 +325,6 @@ async function useDemoAccount(page, quiet = false, payment = "") {
       req.postData(),
     )
     if (!res) return req.continue()
-    // #107 : après le paiement simulé, licence en Pro payé par paiement unique.
-    if (payment === "retour" && url.pathname === "/rest/v1/rpc/nx_license_mine" && res.status === 200) {
-      const lic = typeof res.body === "string" ? JSON.parse(res.body) : res.body
-      res.body = JSON.stringify({ ...lic, plan: "pro", plan_name: "Pro", paid_plan: "pro",
-        billing: { status: "active", period: "month", current_period_end: end, cancel_at_period_end: true, provider: "saspay" } })
-    }
     if (req.method() === "HEAD") servedHead.add(req)
     req.respond({
       status: res.status,
@@ -420,7 +399,7 @@ async function main() {
       opts.licence || "",
     )
     // Requêtes HEAD servies par l'interception : abouties, mais signalées « annulées » par Puppeteer.
-    const servedHead = opts.account ? await useDemoAccount(page, opts.quiet, opts.payment) : new Set()
+    const servedHead = opts.account ? await useDemoAccount(page, opts.quiet) : new Set()
     let where = "démarrage"
     page.on("pageerror", (err) =>
       issues.push({ where, kind: "exception", text: err.message }),

@@ -1,6 +1,6 @@
 // NEXORA #090 : essais de NEXORA REFERRAL (migration 20261108000007_parrainage.sql), rejouée deux fois sur PGlite après
 // toute la chaîne des offres et des licences (même base d'essai que pnpm test:offres et pnpm test:licences), puis le
-// paiement du Worker (remise du parrainage) avec un faux SasPay (#107). PGlite est installé HORS du dépôt :
+// paiement du Worker (remise du parrainage) avec un faux Stripe. PGlite est installé HORS du dépôt :
 //   mkdir -p /tmp/pgtest && cd /tmp/pgtest && echo '{}' > package.json && pnpm add @electric-sql/pglite@0.3
 // puis : pnpm test:parrainage (dossier : PGLITE_DIR, /tmp/pgtest par défaut).
 import fs from "node:fs"
@@ -248,163 +248,57 @@ const mAwa = mails.find((m) => m.to_addr === "client.awa@gmail.com")
 const mIntrus = mails.find((m) => m.to_addr === "intrus@exemple.ci")
 ok(mAwa && /17,50 \$ pour un mois, remise du parrainage comprise/.test(mAwa.body) && mIntrus && /\(25 \$ pour un mois\)/.test(mIntrus.body), "Relance : 17,50 $ pour un filleul, 25 $ sans parrain", mails.map((m) => m.body.slice(60, 200)))
 
-// ---------- #107 : paiement unique par SasPay ----------
-const MS = mig("20261111000001_paiement_saspay.sql")
-await db.exec(MS)
-await db.exec(MS)
-ok(true, "Migration 20261111000001 (SasPay) rejouée deux fois sans erreur")
-{
-  const R = (n) => `${n}${n}${n}${n}${n}${n}${n}${n}-${n}${n}${n}${n}-4${n}${n}${n}-8${n}${n}${n}-${n.repeat(12)}`
-  let refusedPay = false
-  try { await q("select nx_pay_session_open('faux', 'cs_0', $1, $2, 'month', 1750) as r", [R("0"), id(5)]) } catch { refusedPay = true }
-  ok(refusedPay, "SasPay : aucune session sans le secret du Worker")
-  await q("select nx_pay_session_open('secret-du-worker', 'cs_1', $1, $2, 'month', 1750, 'usd', 'KOFI-WHATSAPP', 'https://pay.saspay.me/checkout/x') as r", [R("1"), id(5)])
-  const found = (await q("select nx_pay_session_find('secret-du-worker', $1) as r", [R("1")]))[0].r
-  ok(found.id === "cs_1" && found.status === "pending" && found.user_id === id(5) && found.amount_cents === 1750, "SasPay : session gardée et retrouvée par la référence de retour", found)
-  const pend = (await q("select nx_pay_sessions_pending('secret-du-worker', 'tx_1') as r"))[0].r
-  ok(pend.known === false && pend.sessions.some((x) => x.id === "cs_1"), "SasPay : session en attente proposée au webhook", pend)
-  const ap = (await q("select nx_pay_apply('secret-du-worker', 'cs_1', 'tx_1', '17.50', '17.94', 'USD') as r"))[0].r
-  const days = (Date.parse(ap.period_end) - Date.now()) / 86400000
-  ok(ap.ok && ap.active && ap.commission === true && days > 27.9 && days < 31.1, "SasPay : paiement vérifié : Pro ouvert pour un mois, commission du parrain", ap)
-  const cs = (await q("select * from nx_commissions where source_ref = 'saspay:tx_1'"))[0]
-  ok(cs && cs.source === "saspay" && Number(cs.amount_cents) === 437.5 && cs.paid_cents === 1750 && cs.period === "month", "SasPay : commission de 25 % des 17,50 $ payés (4,375 $)", cs)
-  const bill = (await q(`select provider, status, period, cancel_at_period_end from nx_billing where user_id = '${id(5)}'`))[0]
-  ok(bill.provider === "saspay" && bill.status === "active" && bill.period === "month" && bill.cancel_at_period_end === true, "SasPay : paiement unique, sans renouvellement automatique (relance « prolonge »)", bill)
-  const sess = (await q("select status, transaction_id, net_amount, charged from nx_pay_sessions where id = 'cs_1'"))[0]
-  ok(sess.status === "paid" && sess.transaction_id === "tx_1" && sess.net_amount === "17.50" && sess.charged === "17.94", "SasPay : montant net et montant débité gardés pour la comptabilité", sess)
-  const dup = (await q("select nx_pay_apply('secret-du-worker', 'cs_1', 'tx_1') as r"))[0].r
-  ok(dup.ok && dup.duplicate && (await q("select count(*)::int as n from nx_commissions where source_ref like 'saspay:%'"))[0].n === 1, "SasPay : un paiement reçu deux fois (retour et webhook) ne compte qu'une fois", dup)
-  ok((await q("select nx_pay_sessions_pending('secret-du-worker', 'tx_1') as r"))[0].r.known === true, "SasPay : transaction déjà appliquée reconnue par le webhook")
-  await q("select nx_pay_session_open('secret-du-worker', 'cs_2', $1, $2, 'year', 17500) as r", [R("2"), id(5)])
-  const ap2 = (await q("select nx_pay_apply('secret-du-worker', 'cs_2', 'tx_2') as r"))[0].r
-  const expect = new Date(ap.period_end)
-  expect.setUTCFullYear(expect.getUTCFullYear() + 1)
-  ok(ap2.ok && Math.abs(Date.parse(ap2.period_end) - expect.getTime()) < 2 * 86400000 && ap2.period === "year", "SasPay : prolongation d'un an ajoutée à la fin de la période déjà payée", [ap.period_end, ap2.period_end])
-  await q("select nx_pay_session_open('secret-du-worker', 'cs_3', $1, $2, 'month', 1750) as r", [R("3"), id(5)])
-  const reused = (await q("select nx_pay_apply('secret-du-worker', 'cs_3', 'tx_1') as r"))[0].r
-  ok(reused.ok === false && reused.reason === "transaction_used", "SasPay : une transaction ne paie qu'une session", reused)
-  ok((await q("select nx_pay_session_fail('secret-du-worker', 'cs_3', 'tx_3') as r"))[0].r === true && (await q("select nx_pay_session_find('secret-du-worker', $1) as r", [R("3")]))[0].r.status === "failed",
-    "SasPay : paiement échoué : session close, rien d'activé")
-  let direct = false
-  try { await db.exec(`set role authenticated; insert into nx_pay_sessions (id, ref, user_id, amount_cents) values ('x', '${R("4")}', '${id(5)}', 1)`) } catch { direct = true } finally { await db.exec("reset role") }
-  ok(direct, "SasPay : aucune écriture directe dans les sessions de paiement")
-}
-
-// ---------- Worker : paiement SasPay (#107), remise du parrainage ----------
+// ---------- Worker : paiement avec la remise du parrainage ----------
 {
   const src = fs.readFileSync(path.join(ROOT, "worker/licences.js"), "utf8")
     .replace(/^import setup from .*$/m, `const setup = ${fs.readFileSync(path.join(ROOT, "supabase/nexora.json"), "utf8")}`)
   const W = await import(`data:text/javascript,${encodeURIComponent(src)}`)
-  const crypto = await import("node:crypto")
-  const env = { SASPAY_API_KEY: "sk_test_essai", NX_PROBE_SECRET: "secret-du-worker", SASPAY_WEBHOOK_SECRET: "whsec_essai" }
-  const API = "https://api.saspay.me/api/v1"
+  const env = { STRIPE_SECRET_KEY: "sk_test", STRIPE_PRICE_MONTH: "price_m", STRIPE_PRICE_YEAR: "price_y", NX_PROBE_SECRET: "secret-du-worker" }
   const calls = []
-  const PRICES = { discount_pct: 30, month_cents: 1750, year_cents: 17500, list_month_cents: 2500, list_year_cents: 25000 }
-  let mine = { referred: true, code: "KOFI25", ...PRICES }
+  let coupon = false
+  let mine = { referred: true, code: "KOFI25", discount_pct: 30 }
   let attach = { ok: true }
-  let fail = null
-  let txOf9 = null
-  let verify = { id: "tx_9", status: "SUCCESS", net_amount: "17.50", debited_amount: "17.94", currency: "USD" }
-  let sess = { id: "cs_9", user_id: id(3), period: "month", status: "pending" }
-  let pending = { known: false, sessions: [{ id: "cs_8" }, { id: "cs_9" }] }
   const realFetch = globalThis.fetch
   globalThis.fetch = async (u, o = {}) => {
     u = String(u)
     calls.push({ u, o })
-    const j = (b, st = 200) => new Response(JSON.stringify(b), { status: st })
-    const env200 = (data, st = 200) => j({ success: true, data, code: st }, st)
-    if (u.endsWith("/auth/v1/user")) return j({ id: id(3), email: "client.awa@gmail.com", user_metadata: { full_name: "Awa Kouassi" } })
+    const j = (b, s = 200) => new Response(JSON.stringify(b), { status: s })
+    if (u.endsWith("/auth/v1/user")) return j({ id: id(3), email: "client.awa@gmail.com" })
     if (u.endsWith("/rpc/nx_referral_attach")) return j(attach)
     if (u.endsWith("/rpc/nx_referral_mine")) return j(mine)
-    if (u.endsWith("/rpc/nx_pay_session_open")) return j({ ok: true })
-    if (u.endsWith("/rpc/nx_pay_session_find")) return j(sess)
-    if (u.endsWith("/rpc/nx_pay_sessions_pending")) return j(pending)
-    if (u.endsWith("/rpc/nx_pay_apply")) return j({ ok: true, period: "month", period_end: "2026-12-11T00:00:00Z" })
-    if (u.endsWith("/rpc/nx_pay_session_fail")) return j(true)
-    if (u.startsWith(API) && fail) return j({ success: false, error: { message: "Clé API invalide sk_test_essai", code: fail.code }, code: fail.status }, fail.status)
-    if (u === `${API}/checkout-sessions/` && o.method === "POST") return env200({ id: "cs_9", checkout_url: "https://pay.saspay.me/checkout/abc", status: "PENDING" }, 201)
-    if (u === `${API}/checkout-sessions/cs_9/status/`) return env200({ id: "cs_9", status: txOf9 ? "PAID" : "PENDING", transaction_id: txOf9 })
-    if (u === `${API}/checkout-sessions/cs_8/status/`) return env200({ id: "cs_8", status: "PAID", transaction_id: "tx_autre" })
-    if (u === `${API}/payments/tx_9/verify/`) return env200(verify)
+    if (u.includes("/rest/v1/nx_billing")) return j([])
+    if (u === "https://api.stripe.com/v1/coupons/nexora-parrainage-30") return coupon ? j({ id: "nexora-parrainage-30" }) : j({ error: { message: "No such coupon: 'nexora-parrainage-30'" } }, 404)
+    if (u === "https://api.stripe.com/v1/coupons") { coupon = true; return j({ id: "nexora-parrainage-30" }) }
+    if (u === "https://api.stripe.com/v1/checkout/sessions") return j({ url: "https://checkout.stripe.test/s" })
     return j({}, 404)
   }
-  const post = (route, body, headers = {}) => W.handleLicences(new Request(`https://x${route}`, { method: "POST", headers: { authorization: "Bearer jeton", "content-type": "application/json", ...headers }, body: typeof body === "string" ? body : JSON.stringify(body) }), env)
-  const last = (end) => calls.filter((c) => c.u.endsWith(end)).at(-1)
   try {
-    ok(W.decimal(1750) === "17.50" && W.decimal(25000) === "250.00" && W.decimal(5) === "0.05", "Worker : montants en chaînes décimales (17.50), jamais de flottants")
-    const r1 = await post("/pay/checkout", { period: "month", ref: "kofi25", ref_source: "link" })
-    const b1 = await r1.json()
-    const sentAttach = JSON.parse(last("/rpc/nx_referral_attach").o.body)
-    const created = last("/checkout-sessions/")
-    const body1 = JSON.parse(created.o.body)
-    const ref1 = (/[?&]ref=([0-9a-f-]{36})$/.exec(body1.return_url) || [])[1]
-    ok(r1.status === 200 && b1.url === "https://pay.saspay.me/checkout/abc" && sentAttach.p_code === "kofi25" && sentAttach.p_source === "link", "Worker : code du lien rattaché, adresse de la page de paiement renvoyée", b1)
-    ok(body1.amount === "17.50" && body1.currency === "USD" && body1.customer_email === "client.awa@gmail.com" && body1.customer_name === "Awa Kouassi" && ref1 && /\/licence\?paiement=retour&ref=/.test(body1.return_url),
-      "Worker : session de checkout SasPay au prix remisé du filleul (17,50 $), retour sur Ma licence", body1)
-    ok(created.o.headers.authorization === "Bearer sk_test_essai" && !JSON.stringify(b1).includes("sk_test"), "Worker : clé SasPay envoyée seulement à SasPay, jamais au navigateur")
-    const opened = JSON.parse(last("/rpc/nx_pay_session_open").o.body)
-    ok(opened.p_id === "cs_9" && opened.p_ref === ref1 && opened.p_amount === 1750 && opened.p_period === "month" && opened.p_referral === "KOFI25" && opened.p_secret === "secret-du-worker",
-      "Worker : session gardée dans la base (compte, période, montant, parrain)", opened)
-    mine = { referred: false, ...PRICES }
-    await post("/pay/checkout", { period: "year" })
-    ok(JSON.parse(last("/checkout-sessions/").o.body).amount === "250.00", "Worker : sans parrain, prix normal (250 $ pour un an)")
+    const pay = (body) => W.handleLicences(new Request("https://x/pay/checkout", { method: "POST", headers: { authorization: "Bearer jeton", "content-type": "application/json" }, body: JSON.stringify(body) }), env)
+    const r1 = await pay({ period: "month", ref: "kofi25", ref_source: "link" })
+    const sentAttach = JSON.parse(calls.find((c) => c.u.endsWith("/rpc/nx_referral_attach")).o.body)
+    const created = calls.find((c) => c.u === "https://api.stripe.com/v1/coupons")
+    const session = new URLSearchParams(calls.filter((c) => c.u.endsWith("/checkout/sessions")).at(-1).o.body)
+    ok(r1.status === 200 && sentAttach.p_code === "kofi25" && sentAttach.p_source === "link", "Worker : code du lien rattaché au compte avant le paiement", sentAttach)
+    ok(created && new URLSearchParams(created.o.body).get("percent_off") === "30" && new URLSearchParams(created.o.body).get("duration") === "forever",
+      "Worker : coupon Stripe de 30 % créé une fois, sur toute la durée de l'abonnement")
+    ok(session.get("discounts[0][coupon]") === "nexora-parrainage-30" && !session.has("allow_promotion_codes") && session.get("subscription_data[metadata][nexora_referral]") === "KOFI25" && session.get("line_items[0][price]") === "price_m",
+      "Worker : paiement mensuel avec la remise du parrainage (sans codes promo Stripe)", Object.fromEntries(session))
+    calls.length = 0
+    await pay({ period: "year" })
+    ok(!calls.some((c) => c.u === "https://api.stripe.com/v1/coupons") && new URLSearchParams(calls.at(-1).o.body).get("discounts[0][coupon]") === "nexora-parrainage-30",
+      "Worker : filleul déjà rattaché : remise sans recréer le coupon")
+    mine = { referred: false, discount_pct: 30 }
+    calls.length = 0
+    await pay({ period: "month" })
+    const plain = new URLSearchParams(calls.at(-1).o.body)
+    ok(plain.get("allow_promotion_codes") === "true" && !plain.has("discounts[0][coupon]"), "Worker : sans parrain, prix normal (codes promo Stripe permis)")
     attach = { ok: false, reason: "self" }
-    const r4 = await post("/pay/checkout", { period: "month", ref: "KOFI25" })
+    const r4 = await pay({ period: "month", ref: "KOFI25" })
     const b4 = await r4.json()
     ok(r4.status === 400 && /propre code/.test(b4.message), "Worker : code refusé expliqué (son propre code)", b4)
-    attach = { ok: true }
-    fail = { status: 429, code: "rate_limited" }
-    const r5 = await post("/pay/checkout", { period: "month" })
-    ok(r5.status === 503 && r5.headers.get("retry-after") === "60", "Worker : 429 de SasPay : appels espacés (réessayer dans une minute)")
-    fail = { status: 401, code: "authentication_failed" }
-    const r6 = await post("/pay/checkout", { period: "month" })
-    const b6 = await r6.json()
-    ok(r6.status === 503 && b6.error === "not_configured" && !JSON.stringify(b6).includes("sk_test"), "Worker : 401 de SasPay : paiement indisponible, sans détail de la clé", b6)
-    fail = { status: 422, code: "currency_country_mismatch" }
-    ok((await post("/pay/checkout", { period: "month" })).status === 422, "Worker : 422 de SasPay : demande refusée expliquée")
-    fail = null
-    ok((await W.handleLicences(new Request("https://x/pay/checkout", { method: "POST", body: "{}" }), {})).status === 503, "Worker : sans clé SasPay, paiement fermé (503)")
-    // Retour du client : statut réel, vérifié.
-    calls.length = 0
-    const c1 = await (await post("/pay/confirm", { ref: ref1 })).json()
-    ok(c1.status === "pending" && !calls.some((c) => c.u.endsWith("/rpc/nx_pay_apply")), "Retour : sans transaction, paiement en attente, rien d'activé", c1)
-    txOf9 = "tx_9"
-    verify = { ...verify, status: "PENDING" }
-    const c2 = await (await post("/pay/confirm", { ref: ref1 })).json()
-    ok(c2.status === "pending" && !calls.some((c) => c.u.endsWith("/rpc/nx_pay_apply")), "Retour : paiement PENDING : rien d'activé (seul SUCCESS ouvre Pro)", c2)
-    verify = { ...verify, status: "SUCCESS" }
-    const c3 = await (await post("/pay/confirm", { ref: ref1 })).json()
-    const applied = JSON.parse(last("/rpc/nx_pay_apply").o.body)
-    ok(c3.status === "paid" && applied.p_id === "cs_9" && applied.p_transaction === "tx_9" && applied.p_net === "17.50" && applied.p_charged === "17.94" && calls.some((c) => c.u === `${API}/payments/tx_9/verify/`),
-      "Retour : paiement vérifié (GET /payments/{id}/verify/ = SUCCESS) puis appliqué", applied)
-    verify = { ...verify, status: "FAILED" }
-    const c4 = await (await post("/pay/confirm", { ref: ref1 })).json()
-    ok(c4.status === "failed" && JSON.parse(last("/rpc/nx_pay_session_fail").o.body).p_id === "cs_9", "Retour : paiement FAILED : session close, rien d'activé", c4)
-    sess = { ...sess, user_id: id(4) }
-    ok((await post("/pay/confirm", { ref: ref1 })).status === 404, "Retour : le paiement d'un autre compte reste introuvable")
-    sess = { ...sess, user_id: id(3) }
-    ok((await post("/pay/confirm", { ref: "pas-une-reference" })).status === 400, "Retour : référence mal formée refusée")
-    // Webhook signé.
-    verify = { ...verify, status: "SUCCESS" }
-    const raw = JSON.stringify({ event: "transaction.success", data: { id: "tx_9", status: "SUCCESS", amount: "17.50", charged: "17.94", net_amount: "17.50", currency: "USD" } })
-    const t = Math.floor(Date.now() / 1000)
-    const sign = (ts, body = raw) => crypto.createHmac("sha256", "whsec_essai").update(`${ts}.${body}`).digest("hex")
-    const hook = (ts, sig, body = raw) => post("/pay/webhook", body, { "x-webhook-signature": sig, "x-webhook-timestamp": String(ts), "x-webhook-event": "transaction.success" })
-    ok((await hook(t, "0".repeat(64))).status === 400, "Webhook : signature fausse refusée")
-    ok((await hook(t - 600, sign(t - 600))).status === 400, "Webhook : horodatage de plus de 300 secondes refusé (rejeu)")
-    ok((await hook(t, sign(t), raw.replace("17.94", "1.00"))).status === 400, "Webhook : corps modifié refusé (signature sur le corps brut)")
-    calls.length = 0
-    const w1 = await hook(t, sign(t))
-    const bw1 = await w1.json()
-    ok(w1.status === 200 && bw1.status === "paid" && calls.some((c) => c.u === `${API}/checkout-sessions/cs_8/status/`) && JSON.parse(last("/rpc/nx_pay_apply").o.body).p_transaction === "tx_9",
-      "Webhook : transaction rattachée à sa session (statut de la session), vérifiée puis appliquée", bw1)
-    pending = { known: true, sessions: [] }
-    calls.length = 0
-    const w2 = await (await hook(t, sign(t))).json()
-    ok(w2.duplicate && !calls.some((c) => c.u.startsWith(API)), "Webhook : événement reçu deux fois traité une seule fois", w2)
-    const test = JSON.stringify({ event: "webhook.test", data: {} })
-    ok((await (await hook(t, sign(t, test), test)).json()).test === true, "Webhook : événement de test du tableau de bord accepté")
-    ok(await W.saspaySignatureOk("whsec_essai", sign(t).toUpperCase(), String(t), raw) && !(await W.saspaySignatureOk("", sign(t), String(t), raw)), "Webhook : signature hexadécimale vérifiée, secret obligatoire")
+    const ev = await W.eventToBilling(env, { type: "invoice.paid", data: { object: { customer: "cus_8", subscription: "sub_8", amount_paid: 17500, currency: "usd",
+      lines: { data: [{ period: { start: 1762560000, end: 1794096000 } }] } } } })
+    ok(ev.period === "year" && ev.amount === 17500, "Worker : facture annuelle reconnue (durée de la période) pour la commission", ev)
   } finally { globalThis.fetch = realFetch }
 }
 

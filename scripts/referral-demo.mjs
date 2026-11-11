@@ -61,7 +61,7 @@ for (const p of P) {
       const at = since - m * (kind === "year" ? 365 : 30)
       if (at < 0) break
       const paid = kind === "year" ? RULES.year_cents : RULES.month_cents
-      commissions.push({ id: cid++, partner_id: p.id, user_id: user, source: m % 5 === 4 ? "manual" : "saspay", source_ref: `demo:${cid}`, period: kind === "year" ? "year" : "month",
+      commissions.push({ id: cid++, partner_id: p.id, user_id: user, source: m % 5 === 4 ? "manual" : "stripe", source_ref: `demo:${cid}`, period: kind === "year" ? "year" : "month",
         paid_cents: paid, list_cents: kind === "year" ? 25000 : 2500, rate: RULES.commission_pct, amount_cents: COMM(paid), currency: "usd",
         status: p._src.n === 1 && k % 17 === 0 && m === 0 ? "canceled" : "valid", available_at: ago(at - 30), note: p._src.n === 1 && k % 17 === 0 && m === 0 ? "Remboursé" : "", created_at: ago(at), canceled_at: null })
     }
