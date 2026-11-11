@@ -52,7 +52,10 @@ function reattachAll(part) {
     for (const view of board.views.values()) {
       if (!view.wv || view.wv.getAttribute('partition') === part) continue;
       // L'appareil se réinitialise à la reconnexion (émulation, puis rechargement de son adresse).
+      // NEXORA #107 : la nouvelle page n'a encore aucune émulation : la clé de la dernière émulation est oubliée, sinon
+      // l'appareil sautait l'émulation (paramètres inchangés) et affichait le site en largeur de bureau.
       view.ready = false;
+      view.emuKey = null;
       if (view.url) view.pendingUrl = view.url;
       swap(view.wv, part);
     }
