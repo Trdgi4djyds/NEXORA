@@ -1834,12 +1834,14 @@ const mgmtAuth = {
   mailer_autoconfirm: false,
   password_min_length: 8,
   external_email_enabled: true,
-  // État relevé en ligne au #039 : Brevo branché, limite des e-mails des comptes restée à 2 par heure.
+  // #110 : état relevé en ligne le 2026-11-11 : Brevo branché par l'ancien compte (identifiant et expéditeur d'avant
+  // les consignes), limite des e-mails des comptes à 30 par heure.
   smtp_host: "smtp-relay.brevo.com",
   smtp_port: "587",
-  smtp_admin_email: "notifications@nexora.example",
+  smtp_user: "b58a4a001@smtp-brevo.com",
+  smtp_admin_email: "ippooz.up.2@gmail.com",
   smtp_sender_name: "NEXORA",
-  rate_limit_email_sent: 2,
+  rate_limit_email_sent: 30,
   jwt_exp: 3600,
 }
 const demoEmail = {

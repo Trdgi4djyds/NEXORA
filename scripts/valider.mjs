@@ -716,6 +716,18 @@ async function supabaseChecks() {
           ? `SMTP ${a.smtp_host}`
           : "serveur d'envoi de Supabase (quelques e-mails par heure)",
       )
+      // NEXORA #110 : compte Brevo et expéditeur attendus (supabase/nexora.json, d'après token_proj_nexora.txt).
+      if (a.smtp_host === setup.email.smtpHost) {
+        const stale = a.smtp_user !== setup.email.smtpUser || a.smtp_admin_email !== setup.email.senderEmail
+        rec(
+          E,
+          "Compte Brevo et expéditeur des e-mails des comptes",
+          stale ? "alerte" : "ok",
+          stale
+            ? `en place : ${a.smtp_user || "?"} <${a.smtp_admin_email}> ; attendu : ${setup.email.smtpUser} <${setup.email.senderEmail}> (back office → Supabase → E-mails (Brevo) → clé SMTP du compte, « Enregistrer le SMTP Brevo »)`
+            : `${a.smtp_user} <${a.smtp_admin_email}>`,
+        )
+      }
       const rate = Number(a.rate_limit_email_sent || 0)
       rec(
         E,

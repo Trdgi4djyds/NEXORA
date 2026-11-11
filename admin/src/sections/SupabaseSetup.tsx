@@ -60,6 +60,9 @@ export function OutcomeBanner({ outcome, onClose }: { outcome: Outcome; onClose:
 
 export const adminUrl = () => `${location.origin}${location.pathname}`
 export const recommendedRedirects = () => [...new Set([...setup.redirectUrls, `${adminUrl()}**`])]
+// NEXORA #110 : SMTP en place sur un autre compte Brevo ou un autre expéditeur que ceux de supabase/nexora.json.
+export const smtpStale = (a: { smtp_host?: string | null; smtp_user?: string | null; smtp_admin_email?: string | null }) =>
+  a.smtp_host === setup.email.smtpHost && (a.smtp_user !== setup.email.smtpUser || a.smtp_admin_email !== setup.email.senderEmail)
 
 export async function mgmt<T>(token: string, path: string, init: RequestInit = {}): Promise<T> {
   // Relais à la racine du site (le back office est servi sous /admin/).
@@ -194,7 +197,7 @@ function Checks({ token }: { token: string }) {
       { label: "Sécurité des tables (RLS)", ok: !d.no_rls.length, detail: d.no_rls.length ? <>Sans RLS : {d.no_rls.join(", ")}.</> : "Toutes les tables publiques ont la RLS." },
       { label: "Fonctions Edge", ok: !missingFns.length, detail: missingFns.length ? <>Absentes ou inactives : {missingFns.join(", ")}.</> : `${setup.functions.length} fonctions actives.` },
       { label: "Stockage", ok: !missingBuckets.length, detail: missingBuckets.length ? <>Compartiments manquants : {missingBuckets.map((b) => b.id).join(", ")}.</> : `${setup.buckets.length} compartiments présents.` },
-      { label: "E-mails", ok: auth.smtp_host ? !lowMailRate(auth) : null, detail: auth.smtp_host ? <>SMTP : <code>{auth.smtp_host}</code>{auth.smtp_host === setup.email.smtpHost ? " (Brevo)" : ""}, {Number(auth.rate_limit_email_sent ?? 0)} e-mails de compte par heure au plus.{lowMailRate(auth) ? <> Limite trop basse : au-delà, les inscriptions et les mots de passe oubliés ne reçoivent plus d’e-mail. « Appliquer la configuration recommandée » la passe à {AUTH_MAIL_RATE}.</> : null}</> : "Serveur d’envoi de Supabase (quelques e-mails par heure) : configure Brevo dans la carte « E-mails (Brevo) » ci-dessous." },
+      { label: "E-mails", ok: auth.smtp_host ? !lowMailRate(auth) && !smtpStale(auth) : null, detail: auth.smtp_host ? <>SMTP : <code>{auth.smtp_host}</code>{auth.smtp_host === setup.email.smtpHost ? " (Brevo)" : ""}, {Number(auth.rate_limit_email_sent ?? 0)} e-mails de compte par heure au plus.{smtpStale(auth) ? <> Ancien compte Brevo (identifiant <code>{auth.smtp_user || "?"}</code>, expéditeur {auth.smtp_admin_email}) : NEXORA attend <code>{setup.email.smtpUser}</code> et {setup.email.senderEmail} (carte « E-mails (Brevo) »).</> : null}{lowMailRate(auth) ? <> Limite trop basse : au-delà, les inscriptions et les mots de passe oubliés ne reçoivent plus d’e-mail. « Appliquer la configuration recommandée » la passe à {AUTH_MAIL_RATE}.</> : null}</> : "Serveur d’envoi de Supabase (quelques e-mails par heure) : configure Brevo dans la carte « E-mails (Brevo) » ci-dessous." },
     ]
     return checks
   }, [token, refresh, tick])
@@ -482,7 +485,8 @@ function EmailSettings({ token }: { token: string }) {
       <Loaded q={auth}>
         {(a) => (
           <p className="muted small" style={{ margin: 0 }}>
-            {a.smtp_host === EMAIL.smtpHost ? <><Tag tone="ok">Brevo actif</Tag> Expéditeur {a.smtp_sender_name} &lt;{a.smtp_admin_email}&gt;.</>
+            {a.smtp_host === EMAIL.smtpHost && !smtpStale(a) ? <><Tag tone="ok">Brevo actif</Tag> Expéditeur {a.smtp_sender_name} &lt;{a.smtp_admin_email}&gt;.</>
+              : a.smtp_host === EMAIL.smtpHost ? <><Tag tone="warn">ancien compte Brevo</Tag> Identifiant <code>{a.smtp_user || "?"}</code>, expéditeur &lt;{a.smtp_admin_email}&gt; : NEXORA attend <code>{EMAIL.smtpUser}</code> et &lt;{EMAIL.senderEmail}&gt;. Colle la clé SMTP de ce compte ci-dessous, puis « Enregistrer le SMTP Brevo ».</>
               : a.smtp_host ? <><Tag tone="warn">autre SMTP</Tag> {a.smtp_host}</>
               : <><Tag tone="warn">serveur de Supabase</Tag> quelques e-mails par heure seulement.</>}
           </p>
