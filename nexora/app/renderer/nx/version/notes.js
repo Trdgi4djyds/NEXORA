@@ -7,6 +7,7 @@ export const NOTES = {
   // NEXORA #107 : pourcentage de l'interface sans effet sur les sites ni les maquettes (republiée en v1.2.2-r2).
   // NEXORA #112 : « Passer à Pro » de Mon compte ouvre le paiement en ligne (republiée en v1.2.2-r3).
   // NEXORA #113 : Motion et fonctions reprises de desigma dans NEX-DESIGN (republiée en v1.2.2-r4).
+  // NEXORA #114 : défilement des appareils rétabli, icône Android, mises à jour sans dépôt à saisir (republiée en v1.2.2-r5).
   '1.2.2': {
     title: 'NEXORA 1.2.2',
     intro: 'Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.',
@@ -17,6 +18,8 @@ export const NOTES = {
       { icon: 'display', space: 'responsive', title: 'Taille de l’interface sans effet sur les sites', text: 'Changer le pourcentage de l’interface dans les Réglages ne rogne plus les sites dans les appareils et ne change plus les maquettes ; un appareil à 100 % garde sa taille réelle, et chaque appareil reste émulé quand tu changes de projet.' },
       { icon: 'nxAnimate', space: 'design', title: 'Animation dans NEX-DESIGN', text: 'Frise sous la page avec images clés, courbes et ressorts, 41 animations toutes faites, Smart Animate et animation dans le prototype, code CSS, SwiftUI et Compose ; aussi : couleurs de la sélection, coins lissés, pense-bêtes et connecteurs, notes de présentation.' },
       { icon: 'star', space: '', title: 'Passer à Pro depuis NEXORA', text: 'Dans Mon compte → Offre et usage, « Passer à Pro » ouvre maintenant le paiement en ligne (Mobile Money ou carte bancaire) sur la page « Ma licence », au lieu d’envoyer une demande à l’équipe.' },
+      { icon: 'display', space: 'responsive', title: 'Défilement des appareils rétabli', text: 'Barres de défilement à côté des appareils du Responsive Lab, glissement à la souris sur les téléphones et tablettes (avec élan), barres fines dans l’aperçu de l’App Builder ; défilement, clics, saisies et navigation de nouveau synchronisés entre appareils.' },
+      { icon: 'android', space: 'android', title: 'Nouvelle icône de l’App Builder', text: 'L’App Builder prend la tête du robot Android ; dans Maintenance et sauvegarde, NEXORA vérifie ses mises à jour sans dépôt à indiquer.' },
       { icon: 'key', space: '', title: 'Lanceur 1.0.5', text: 'Le lanceur NEXORA Devs Toolbox prend la même apparence et se met à jour tout seul avant d’installer cette version.' },
     ],
   },

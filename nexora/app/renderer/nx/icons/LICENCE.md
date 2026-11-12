@@ -24,3 +24,11 @@ lieu de 2), aucune autre retouche du dessin.
 
 Le fichier `lucide.js` est généré par `scripts/icones-lucide.mjs` (`pnpm icones:lucide`). Les icônes Streamline Flex
 du #043 ne sont plus utilisées.
+
+## Robot Android (NEXORA #114)
+
+L'icône de l'App Builder (`android` dans `lucide.js`, table `OWN` de `scripts/icones-lucide.mjs`) est la tête du robot
+Android, redessinée en aplat monochrome sur la grille de 24.
+
+> The Android robot is reproduced or modified from work created and shared by Google and used according to terms
+> described in the Creative Commons 3.0 Attribution License (https://creativecommons.org/licenses/by/3.0/).

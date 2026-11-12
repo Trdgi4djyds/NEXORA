@@ -248,6 +248,13 @@ const MAP = {
   nxiCrown: "crown",
 }
 
+// NEXORA #114 : icônes dessinées pour NEXORA, qui remplacent l'icône Lucide de MAP (aplat sur la grille de 24).
+// android : tête du robot Android, monochrome (Google, CC BY 3.0 ; attribution dans nx/icons/LICENCE.md).
+const OWN = {
+  android:
+    '<g fill="currentColor" stroke="none"><path fill-rule="evenodd" d="M2 18.5a10 10 0 0 1 20 0zm7.2-3.9a1.2 1.2 0 1 0-2.4 0a1.2 1.2 0 1 0 2.4 0m8 0a1.2 1.2 0 1 0-2.4 0a1.2 1.2 0 1 0 2.4 0"/></g><path fill="none" stroke="currentColor" stroke-linecap="round" d="M7.6 11.2L5.6 7.4m10.8 3.8l2-3.8"/>',
+}
+
 function body(name) {
   const alias = SET.aliases && SET.aliases[name]
   if (alias && Object.keys(alias).some((k) => k !== "parent"))
@@ -265,7 +272,8 @@ const lines = [
   "// Fichier généré par scripts/icones-lucide.mjs (pnpm icones:lucide) : ne pas modifier à la main.",
   "export const LUCIDE = {",
 ]
-for (const [k, v] of Object.entries(MAP)) lines.push(`  ${k}: '${body(v)}',`)
+for (const [k, v] of Object.entries(MAP))
+  lines.push(`  ${k}: '${OWN[k] || body(v)}',`)
 lines.push("};", "")
 writeFileSync(OUT, lines.join("\n"))
 console.log(
