@@ -61,7 +61,7 @@ function todos(e, acc, now) {
   if (e.mon && e.mon.cert && e.mon.cert.days != null && e.mon.cert.days <= 14) push(e.mon.cert.days <= 3 ? 95 : 75, `Renouveler le certificat de ${e.host}`, `Il expire dans ${e.mon.cert.days} jour(s).`, { tab: 'supervision', siteId: e.mon.id }, { who: 'hebergeur' });
   const exp = e.domain && e.domain.records && e.domain.records.expiry;
   if (exp && exp.days != null && exp.days <= 30) push(exp.days <= 7 ? 95 : 72, `Renouveler le domaine ${e.domain.target}`, `Il expire dans ${exp.days} jour(s).`, { tab: 'domaine', id: e.domain.id }, { who: 'registraire' });
-  if (e.mon && e.mon.slo && e.mon.slo.used >= 1) push(65, `Budget d’erreur dépassé pour ${e.name}`, `Objectif ${String(e.mon.slo.target).replace('.', ',')} % manqué sur 30 jours : priorise la stabilité avant les nouveautés.`, { tab: 'supervision', siteId: e.mon.id });
+  if (e.mon && e.mon.slo && e.mon.slo.used >= 1) push(65, `Budget d’erreur dépassé pour ${e.name}`, `Objectif ${String(e.mon.slo.target).replace('.', ',')} % manqué sur 30 jours : priorisez la stabilité avant les nouveautés.`, { tab: 'supervision', siteId: e.mon.id });
   if (e.host && !e.mon) push(50, `Surveiller ${e.host}`, 'Sois prévenu dès que le site tombe, ralentit ou que son certificat expire.', { protect: true });
   if (e.host && (!e.site || now - e.site.at > 14 * DAY)) push(45, `${e.site ? 'Refaire' : 'Lancer'} l’audit de sécurité de ${e.host}`, e.site ? `Dernier audit ${ago(e.site.at)}.` : 'Aucun audit pour l’instant.', { run: 'site' });
   if (e.host && !e.domain && !/^(localhost|127\.)/.test(e.host)) push(35, `Vérifier le domaine et les e-mails de ${e.host}`, 'SPF, DMARC, expiration et sous-domaines oubliés.', { run: 'domain' });
@@ -105,9 +105,9 @@ export async function render(inst, host) {
   const covered = ents.filter((e) => e.host && e.mon && e.site).length;
   const box = host.querySelector('.nxs');
   if (!ents.length) {
-    box.innerHTML = `<div class="sec-empty">${icon('shield', 34)}<b>Ton centre de fiabilité</b>
-      <p>Une note par projet qui réunit la sécurité du site, du domaine et du code, la disponibilité et la rapidité, et la liste de ce qu’il reste à faire cette semaine. Colle l’adresse de ton site pour tout mettre en place en un clic.</p>
-      <form class="sec-bar nxs-bar nxs-protect" data-protect-form><span class="sec-ico">${icon('globe', 15)}</span><input class="input" name="url" placeholder="https://ton-site.com" spellcheck="false" value="${esc(inst.siteUrl() || '')}"><button class="btn primary">${icon('shield', 14)}<span>Protéger ce site</span></button></form></div>`;
+    box.innerHTML = `<div class="sec-empty">${icon('shield', 34)}<b>Votre centre de fiabilité</b>
+      <p>Une note par projet qui réunit la sécurité du site, du domaine et du code, la disponibilité et la rapidité, et la liste de ce qu’il reste à faire cette semaine. Collez l’adresse de votre site pour tout mettre en place en un clic.</p>
+      <form class="sec-bar nxs-bar nxs-protect" data-protect-form><span class="sec-ico">${icon('globe', 15)}</span><input class="input" name="url" placeholder="https://votre-site.com" spellcheck="false" value="${esc(inst.siteUrl() || '')}"><button class="btn primary">${icon('shield', 14)}<span>Protéger ce site</span></button></form></div>`;
     box.querySelector('[data-protect-form]').onsubmit = (ev) => { ev.preventDefault(); const u = String(new FormData(ev.target).get('url') || '').trim(); if (u) protect(inst, { name: hostOf(u), url: /^https?:/i.test(u) ? u : `https://${u}`, host: hostOf(u), dir: '' }, () => render(inst, host)); };
     return;
   }
@@ -159,7 +159,7 @@ async function protect(inst, e, reload, only) {
   const owner = 'nxs-protect';
   const el = sheet(owner, `<div class="nxs-sheet"><div class="sheet-head"><span class="sheet-icon">${icon('shield', 22)}</span><div><h2>${only ? esc(steps[0][1]) : `Protéger ${esc(e.name)}`}</h2><p>${only ? 'Analyse en cours.' : 'NEXORA met tout en place : chaque étape est indépendante, une étape refusée (offre, réseau) n’empêche pas les autres.'}</p></div></div>
     <div class="sheet-body"><ol class="nxs-steps">${steps.map(([k, l]) => `<li data-step="${k}"><span class="nxs-step-i">${icon('clock', 13)}</span><span><b>${esc(l)}</b><small></small></span></li>`).join('')}</ol></div>
-    <div class="sheet-foot"><span class="grow"></span><button type="button" class="btn primary" data-pr="close" disabled>Patiente…</button></div></div>`, { onClose: reload });
+    <div class="sheet-foot"><span class="grow"></span><button type="button" class="btn primary" data-pr="close" disabled>Patientez…</button></div></div>`, { onClose: reload });
   el.onclick = (ev) => { if (ev.target.closest('[data-pr="close"]')) closeSheet(owner); };
   const mark = (k, ok, txt) => {
     const li = el.querySelector(`[data-step="${k}"]`);

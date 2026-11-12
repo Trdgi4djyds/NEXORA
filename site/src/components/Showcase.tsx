@@ -46,7 +46,7 @@ export function Showcase() {
           </Reveal>
           <div className="mt-12 flex flex-wrap items-end justify-between gap-8 lg:mt-auto lg:pt-24">
             <p className="max-w-[30ch] text-[14px] leading-relaxed text-muted-foreground">
-              Conçois, code, teste, sécurise et publie sans changer d’outil : chaque espace reprend là où le précédent s’est arrêté.
+              Concevez, codez, testez, sécurisez et publiez sans changer d’outil : chaque espace reprend là où le précédent s’est arrêté.
             </p>
             <div className="flex items-center gap-3">
               <span className="mr-2 text-[13px] text-muted-foreground tabular-nums" aria-live="polite">

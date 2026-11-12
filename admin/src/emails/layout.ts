@@ -200,7 +200,7 @@ ${o.greeting ? p(o.greeting, "font-weight:600;color:" + BRAND.ink) : ""}
 ${fr(o.body)}
 ${
   o.fallbackUrl
-    ? `<p class="nx-muted" style="margin:0 0 6px;font-family:${FONT};font-size:13px;line-height:1.5;color:${BRAND.muted}">Le bouton ne fonctionne pas&nbsp;? Copie ce lien dans ton navigateur&nbsp;:</p>
+    ? `<p class="nx-muted" style="margin:0 0 6px;font-family:${FONT};font-size:13px;line-height:1.5;color:${BRAND.muted}">Le bouton ne fonctionne pas&nbsp;? Copiez ce lien dans votre navigateur&nbsp;:</p>
 <p style="margin:0 0 24px;font-family:${MONO};font-size:12px;line-height:1.55;word-break:break-all"><a class="nx-link" href="${esc(o.fallbackUrl)}" target="_blank" style="color:${BRAND.ink};text-decoration:underline">${esc(o.fallbackUrl)}</a></p>`
     : ""
 }
@@ -211,7 +211,7 @@ ${o.note ? `<p class="nx-muted nx-sep" style="margin:0;padding:18px 0 28px;borde
 
 <tr><td align="center" style="padding:26px 24px 6px">
 <p style="margin:0 0 12px;font-family:${FONT};font-size:13px;line-height:1.6"><a class="nx-link" href="${esc(o.webUrl)}" target="_blank" style="display:inline-block;padding:8px 16px;border-radius:999px;border:1px solid #d6d6d6;color:${BRAND.ink};text-decoration:none;font-weight:600">Ouvrir NEXORA&nbsp;&#8599;</a></p>
-<p class="nx-muted" style="margin:0 0 8px;font-family:${FONT};font-size:12.5px;line-height:1.6;color:${BRAND.muted}"><b class="nx-ink" style="color:${BRAND.ink};letter-spacing:1.5px">NEXORA</b> · crée, teste et publie tes sites et applications.</p>
+<p class="nx-muted" style="margin:0 0 8px;font-family:${FONT};font-size:12.5px;line-height:1.6;color:${BRAND.muted}"><b class="nx-ink" style="color:${BRAND.ink};letter-spacing:1.5px">NEXORA</b> · créez, testez et publiez vos sites et applications.</p>
 <p class="nx-muted" style="margin:0 0 6px;font-family:${FONT};font-size:12px;line-height:1.6;color:${BRAND.faint}">${fr(o.reason)}</p>
 <p class="nx-muted" style="margin:0;font-family:${FONT};font-size:12px;line-height:1.6;color:${BRAND.faint}">© ${esc(year)} NEXORA</p>
 </td></tr>

@@ -43,7 +43,7 @@ export function Home() {
           <SectionHead
             eyebrow="nos espaces"
             title={["Construit pour créer,", "livré avec précision."]}
-            lead="Un projet réunit ton site ou ton code, ses applications, ses visuels et sa surveillance. Ouvre-le : tous les espaces s’alignent dessus."
+            lead="Un projet réunit votre site ou votre code, ses applications, ses visuels et sa surveillance. Ouvrez-le : tous les espaces s’alignent dessus."
           >
             <a className="link-arrow" href="/espaces">
               Voir les 9 espaces {arrow}
@@ -58,8 +58,8 @@ export function Home() {
         <div className="wrap relative">
           <SectionHead
             eyebrow="responsive lab"
-            title={["Ton site sur", "tous les écrans."]}
-            lead="Téléphones, pliables, tablettes, ordinateurs, téléviseurs, montres et écrans de voiture : le Responsive Lab affiche ton site dans le cadre de chaque modèle, côte à côte. Ici, c’est ce site que tu vois."
+            title={["Votre site sur", "tous les écrans."]}
+            lead="Téléphones, pliables, tablettes, ordinateurs, téléviseurs, montres et écrans de voiture : le Responsive Lab affiche votre site dans le cadre de chaque modèle, côte à côte. Ici, c’est ce site que vous voyez."
           >
             <a className="link-arrow" href="/espaces/responsive">
               Découvrir le Responsive Lab {arrow}
@@ -81,7 +81,7 @@ export function Home() {
             align="center"
             eyebrow="tarifs"
             title={["Gratuit pour commencer,", "sans limite de durée."]}
-            lead="Responsive Lab et Browser Lab restent gratuits, avec 2 applications Android ou Windows. Pro ouvre tout NEXORA : Dev Lab, jusqu’à 50 applications, Studio et NEX-DESIGN complets. Ton premier jour, tout est ouvert."
+            lead="Responsive Lab et Browser Lab restent gratuits, avec 2 applications Android ou Windows. Pro ouvre tout NEXORA : Dev Lab, jusqu’à 50 applications, Studio et NEX-DESIGN complets. Votre premier jour, tout est ouvert."
           />
           <PricingCards />
           <Reveal className="mt-10 flex justify-center">
@@ -111,7 +111,7 @@ export function Home() {
             <SectionHead align="left" eyebrow="questions fréquentes" title={["Ce qu’on nous", "demande le plus."]} className="mb-8 md:mb-8" />
             <Reveal className="hud p-6" delay={120}>
               <b className="text-[16px] font-semibold">Une autre question ?</b>
-              <p className="mt-2 text-[14px] text-muted-foreground">Écris-nous depuis NEXORA (Mon compte → Support) ou à {supportEmail}.</p>
+              <p className="mt-2 text-[14px] text-muted-foreground">Écrivez-nous depuis NEXORA (Mon compte → Support) ou à {supportEmail}.</p>
               <a className="link-arrow mt-4" href={supportEmail ? `mailto:${supportEmail}` : WEB_URL}>
                 Écrire à l’équipe {arrow}
               </a>

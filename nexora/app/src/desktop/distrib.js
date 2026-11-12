@@ -130,10 +130,10 @@ function patchUpdateYml(text, { staging = 100, mandatory = false, notes = '' } =
 const GH = 'https://api.github.com';
 function ghExplain(status, j, what) {
   const msg = (j && j.message) || '';
-  if (status === 401) return 'Jeton GitHub refusé : vérifie-le ou crée-en un nouveau.';
+  if (status === 401) return 'Jeton GitHub refusé : vérifiez-le ou créez-en un nouveau.';
   if (status === 403) return 'Ce jeton n’a pas le droit d’écrire dans ce dépôt (autorisation « Contents : lecture et écriture » nécessaire).';
-  if (status === 404) return 'Dépôt introuvable : vérifie le propriétaire, le nom et que le jeton y a accès.';
-  if (status === 422 && /empty/i.test(msg)) return 'Le dépôt est vide : ajoute au moins un fichier (README) avant de publier une version.';
+  if (status === 404) return 'Dépôt introuvable : vérifiez le propriétaire, le nom et que le jeton y a accès.';
+  if (status === 422 && /empty/i.test(msg)) return 'Le dépôt est vide : ajoutez au moins un fichier (README) avant de publier une version.';
   return `GitHub a refusé ${what} (${status}${msg ? ` : ${msg}` : ''}).`;
 }
 async function ghCall(fetchImpl, token, method, url, body, headers = {}) {
@@ -150,9 +150,9 @@ async function ghCall(fetchImpl, token, method, url, body, headers = {}) {
 async function publishGithub({
   owner, repo, token, version, files, notes = '', prerelease = false, name = '',
 }, fetchImpl, onStep = () => {}) {
-  if (!/^[A-Za-z0-9_.-]{1,100}$/.test(owner || '') || !/^[A-Za-z0-9_.-]{1,100}$/.test(repo || '')) throw new Error('Indique le propriétaire et le nom du dépôt (section Mises à jour).');
-  if (!token) throw new Error('Ajoute d’abord un jeton GitHub.');
-  if (!Array.isArray(files) || !files.length) throw new Error('Aucun fichier à publier : construis d’abord le logiciel.');
+  if (!/^[A-Za-z0-9_.-]{1,100}$/.test(owner || '') || !/^[A-Za-z0-9_.-]{1,100}$/.test(repo || '')) throw new Error('Indiquez le propriétaire et le nom du dépôt (section Mises à jour).');
+  if (!token) throw new Error('Ajoutez d’abord un jeton GitHub.');
+  if (!Array.isArray(files) || !files.length) throw new Error('Aucun fichier à publier : construisez d’abord le logiciel.');
   const tag = `v${version}`;
   const base = `${GH}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
   onStep(`Version ${tag}`, 0.05);

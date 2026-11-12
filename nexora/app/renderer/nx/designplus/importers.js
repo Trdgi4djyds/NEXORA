@@ -39,14 +39,14 @@ export async function importPsd(D) {
 }
 export async function importFigma(D, st, rerender) {
   const url = (st.figmaUrl || '').trim();
-  if (!url) { toast('Colle l’adresse du fichier Figma.'); return; }
+  if (!url) { toast('Collez l’adresse du fichier Figma.'); return; }
   const t = busy('Lecture du fichier Figma…');
   try { st.figma = await api.invoke('dzx:figma-file', { url }); st.pick = new Set(); } catch (e) { toast(clean(e), { kind: 'bad' }); st.figma = null; } finally { done(t); }
   rerender();
 }
 export async function importFigmaFrames(D, st) {
   const ids = [...(st.pick || [])];
-  if (!ids.length) { toast('Choisis au moins un cadre.'); return; }
+  if (!ids.length) { toast('Choisissez au moins un cadre.'); return; }
   const t = busy(`Import de ${pl(ids.length, 'cadre', 'cadres')}…`);
   try {
     const svgs = await api.invoke('dzx:figma-svg', { key: st.figma.key, ids });
@@ -69,13 +69,13 @@ export function panel(D, st, has) {
     <p class="dzx-hint">Chaque calque devient un calque NEX-DESIGN, avec son nom, sa position, son opacité et sa visibilité (RVB 8 bits).</p>
     <div class="nx-btns">${btn('imp-psd', 'download', 'Importer un fichier PSD', has.std ? '' : 'disabled', 'primary')}</div>
     <div class="dzp-sub">Figma ${has.pro ? '' : '<em class="dzp-pro">Pro</em>'}</div>
-    <p class="dzx-hint">Avec ton jeton d’accès personnel Figma (Réglages du compte Figma → Jetons d’accès), chiffré sur ce PC.</p>
-    <label class="dzx-row"><span>Jeton</span><input class="input" type="password" data-figk="token" placeholder="${st.figmaToken ? 'Enregistré : laisse vide pour le garder' : 'figd_…'}" ${has.pro ? '' : 'disabled'}></label>
+    <p class="dzx-hint">Avec votre jeton d’accès personnel Figma (Réglages du compte Figma → Jetons d’accès), chiffré sur ce PC.</p>
+    <label class="dzx-row"><span>Jeton</span><input class="input" type="password" data-figk="token" placeholder="${st.figmaToken ? 'Enregistré : laissez vide pour le garder' : 'figd_…'}" ${has.pro ? '' : 'disabled'}></label>
     <label class="dzx-row"><span>Fichier</span><input class="input" data-figk="url" value="${esc(st.figmaUrl || '')}" placeholder="https://www.figma.com/design/…" ${has.pro ? '' : 'disabled'}></label>
     <div class="nx-btns">${btn('imp-figma', 'search', 'Lire le fichier', has.pro ? '' : 'disabled')}</div>
     ${f ? `<p class="dzx-hint"><b>${esc(f.name)}</b> · ${pl(f.frames.length, 'cadre', 'cadres')}</p><div class="dzp-list">${f.frames.slice(0, 60).map((fr) => `<label class="dzp-item"><input type="checkbox" data-figpick="${esc(fr.id)}" ${st.pick && st.pick.has(fr.id) ? 'checked' : ''}><span><b>${esc(fr.name)}</b><small>${esc(fr.page)} · ${Math.round(fr.w)} × ${Math.round(fr.h)}</small></span></label>`).join('')}</div><div class="nx-btns">${btn('imp-figma-go', 'download', 'Importer les cadres choisis', '', 'primary')}</div>` : ''}
     <div class="dzp-sub">PDF</div>
-    <p class="dzx-hint">${ico('info', 12)} L’import de PDF modifiable n’est pas encore disponible : exporte la page en SVG depuis ton logiciel, puis dépose le fichier sur la page.</p>`;
+    <p class="dzx-hint">${ico('info', 12)} L’import de PDF modifiable n’est pas encore disponible : exportez la page en SVG depuis votre logiciel, puis déposez le fichier sur la page.</p>`;
 }
 export async function onPanel(D, e, rerender, st) {
   const b = e.target.closest('[data-dzx]');

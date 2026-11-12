@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-var version = "1.0.5" // remplacé à la construction : -ldflags "-X main.version=…" (1.0.3 : assistants d’installation et de désinstallation, #084 ; 1.0.5 : fenêtres « Horizon » du #103, publié au-dessus du 1.0.4 de la v1.2.1, #106)
+var version = "1.0.6" // remplacé à la construction : -ldflags "-X main.version=…" (1.0.3 : assistants d’installation et de désinstallation, #084 ; 1.0.5 : fenêtres « Horizon » du #103, publié au-dessus du 1.0.4 de la v1.2.1, #106 ; 1.0.6 : vouvoiement, #115)
 
 func main() {
 	args := os.Args[1:]

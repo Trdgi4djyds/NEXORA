@@ -77,7 +77,7 @@ class Databases {
       fs.mkdirSync(dir, { recursive: true });
       if (!fs.existsSync(path.join(dir, 'package.json'))) fs.writeFileSync(path.join(dir, 'package.json'), '{"private":true}');
       const r = await run('npm', ['install', 'pg@8', '--no-audit', '--no-fund', '--omit=dev'], { cwd: dir, env: envFor(dir), timeout: 5 * 60 * 1000 });
-      if (r.code) throw new Error('Téléchargement du pilote Postgres impossible : vérifie la connexion et que Node.js est installé (« Outils »).');
+      if (r.code) throw new Error('Téléchargement du pilote Postgres impossible : vérifiez la connexion et que Node.js est installé (« Outils »).');
     }
     this.pgMod = require(mod);
     return this.pgMod;
@@ -92,7 +92,7 @@ class Databases {
   sqliteDb(root, c, readOnly = false) { const { DatabaseSync } = sqlite(); return new DatabaseSync(inside(root, c.file), { readOnly }); }
   async supa(root, c, p, opts = {}) {
     const key = this.secretOf(root, c);
-    if (!key) throw new Error('Ajoute la clé du projet Supabase à la connexion (ou dans les variables protégées).');
+    if (!key) throw new Error('Ajoutez la clé du projet Supabase à la connexion (ou dans les variables protégées).');
     const r = await fetch(`${c.url.replace(/\/$/, '')}/rest/v1${p}`, { method: opts.method || 'GET', headers: { apikey: key, authorization: `Bearer ${key}`, 'content-type': 'application/json', prefer: opts.prefer || 'count=exact' }, body: opts.body ? JSON.stringify(opts.body) : undefined, signal: AbortSignal.timeout(20000) });
     const text = await r.text();
     if (!r.ok) throw new Error(`Supabase : ${(() => { try { return JSON.parse(text).message; } catch { return text.slice(0, 200); } })()}`);
@@ -145,7 +145,7 @@ class Databases {
       } finally { db.close(); }
     }
     if (c.type === 'postgres') return this.withPg(root, c, async (cl) => { const r = await cl.query(sql); return { rows: (r.rows || []).slice(0, 1000), total: r.rowCount, changes: r.command !== 'SELECT' ? r.rowCount : undefined, ms: Date.now() - t0 }; });
-    throw new Error('Les requêtes SQL ne passent pas par l’API d’un projet Supabase : parcours les tables, ou ajoute une connexion Postgres avec l’adresse de la base.');
+    throw new Error('Les requêtes SQL ne passent pas par l’API d’un projet Supabase : parcourez les tables, ou ajoutez une connexion Postgres avec l’adresse de la base.');
   }
   async seed(root, { id, table, count = 10 }) {
     const c = this.raw(root, id);

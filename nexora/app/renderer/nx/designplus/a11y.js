@@ -103,13 +103,13 @@ export async function onPanel(D, e, rerender, st) {
 // Texte de remplacement d'une image (panneau de droite), avec proposition de l'IA.
 export function altProps(D, o) {
   if (!o || o.type !== 'image') return '';
-  return sec('Texte de remplacement', `<textarea class="input nx-ta" rows="2" data-dzxk="alt" placeholder="Décris l’image pour les personnes qui ne la voient pas">${esc(o.nxAlt || '')}</textarea><div class="nx-btns">${btn('alt-ai', 'sparkle', 'Proposer avec l’IA')}</div>`);
+  return sec('Texte de remplacement', `<textarea class="input nx-ta" rows="2" data-dzxk="alt" placeholder="Décrivez l’image pour les personnes qui ne la voient pas">${esc(o.nxAlt || '')}</textarea><div class="nx-btns">${btn('alt-ai', 'sparkle', 'Proposer avec l’IA')}</div>`);
 }
 export async function altAi(D, o) {
   const near = [];
   walk(objs(D), (x) => { if (isText(x) && x.text) near.push(x.text.slice(0, 80)); });
   try {
-    const r = await api.invoke('ai:chat', { id: `alt${Date.now()}`, system: 'Tu écris des textes de remplacement d’images (attribut alt) en français, en une phrase de 15 mots au plus, sans « image de ».', messages: [{ role: 'user', content: `Nom du calque : ${o.name || 'image'}. Textes de la page : ${near.slice(0, 8).join(' | ')}. Propose le texte de remplacement.` }], maxTokens: 120 });
+    const r = await api.invoke('ai:chat', { id: `alt${Date.now()}`, system: 'Vous écrivez des textes de remplacement d’images (attribut alt) en français, en une phrase de 15 mots au plus, sans « image de ».', messages: [{ role: 'user', content: `Nom du calque : ${o.name || 'image'}. Textes de la page : ${near.slice(0, 8).join(' | ')}. Proposez le texte de remplacement.` }], maxTokens: 120 });
     o.nxAlt = String(r.text || '').trim().replace(/^["«\s]+|["»\s]+$/g, '');
     commit(D, 'Texte de remplacement'); D.renderProps();
   } catch (e) { toast(String(e.message || e).replace(/^Error invoking remote method '[^']+': (Error: )?/, ''), { kind: 'bad' }); }

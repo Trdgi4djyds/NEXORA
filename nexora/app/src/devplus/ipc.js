@@ -32,7 +32,7 @@ function register({ ipcMain, app, safeStorage, send, BrowserWindow, partition })
   const dbs = new Databases({ store, vault, dataDir });
   const prs = new gitx.PullRequests(gh);
   const project = (root) => {
-    if (!root || !fs.existsSync(root) || !fs.statSync(root).isDirectory()) throw new Error('Ouvre d’abord un projet dans le Dev Lab.');
+    if (!root || !fs.existsSync(root) || !fs.statSync(root).isDirectory()) throw new Error('Ouvrez d’abord un projet dans le Dev Lab.');
     return path.resolve(root);
   };
   const h = (channel, fn) => ipcMain.handle(channel, (_e, a = {}) => fn(a || {}));

@@ -228,7 +228,7 @@ export function nxTool(D, id) {
     D.tool = 'nxnodes';
   } else if (id === 'comment') {
     D.nxSetTool('select'); D.tool = 'nxcomment'; D.nxCommentMode = true; c.defaultCursor = 'copy';
-    D.$.hint.hidden = false; D.$.hint.innerHTML = '<span>Commentaire : clique sur la page à l’endroit voulu · Échap pour annuler</span>';
+    D.$.hint.hidden = false; D.$.hint.innerHTML = '<span>Commentaire : cliquez sur la page à l’endroit voulu · Échap pour annuler</span>';
   } else if (PIX_TOOLS[id]) {
     D.nxPix.target = target || D.nxPix.target;
     if (!D.nxPix.setTool(id)) { markTools(D); return; }
@@ -253,7 +253,7 @@ async function onKey(D, e) {
     const step = e.shiftKey ? 10 : 1;
     const arrows = { arrowleft: [-step, 0], arrowright: [step, 0], arrowup: [0, -step], arrowdown: [0, step] };
     if (arrows[k]) { e.preventDefault(); D.nxNodes.nudge(...arrows[k]); return true; }
-    if (k === 'k') { D.nxNodes.scissors = !D.nxNodes.scissors; toast(D.nxNodes.scissors ? 'Ciseaux : clique sur le tracé pour le couper.' : 'Ciseaux désactivés.'); return true; }
+    if (k === 'k') { D.nxNodes.scissors = !D.nxNodes.scissors; toast(D.nxNodes.scissors ? 'Ciseaux : cliquez sur le tracé pour le couper.' : 'Ciseaux désactivés.'); return true; }
   }
   if (D.nxPix.crop) {
     if (k === 'enter') { e.preventDefault(); D.nxPix.finishCrop(true); return true; }
@@ -452,7 +452,7 @@ function startOverlay(D) {
   if (box.dataset.page === D.page.id && box.innerHTML) return;
   box.dataset.page = D.page.id;
   const ids = Object.keys(TEMPLATES).slice(0, 8);
-  box.innerHTML = `<div class="nx-start-card"><div class="nx-start-h"><b>Commence avec un modèle</b><span>Aux couleurs de ton kit de marque · tous les formats</span></div>
+  box.innerHTML = `<div class="nx-start-card"><div class="nx-start-h"><b>Commencez avec un modèle</b><span>Aux couleurs de votre kit de marque · tous les formats</span></div>
     <div class="nx-start-grid">${ids.map((id) => `<button class="nx-tpl" data-start="${id}" title="${esc(TEMPLATES[id].label)}"><img src="${C.templateThumb(id, 110)}" alt=""><span>${esc(TEMPLATES[id].label)}</span></button>`).join('')}</div>
     <div class="nx-row"><button class="btn small" data-start-act="all">${ico('nxSticker', 13)}<span>Tous les modèles et éléments</span></button><button class="btn small" data-start-act="brand">${ico('nxBrand', 13)}<span>Kit de marque…</span></button><span class="grow"></span><button class="btn small" data-start-act="blank">Page vierge</button></div></div>`;
   box.onclick = async (e) => {
@@ -498,8 +498,8 @@ function renderFloat(D, kind, f) {
     // NEXORA #075 : un seul fil : commentaires de l'équipe, puis avis des clients reçus par les liens de validation.
     const cr = D.nxClientReviews ? D.nxClientReviews() : [];
     f.innerHTML = `<div class="nx-float-h"><b>${ico('nxComment', 14)} Commentaires</b><button class="btn small" data-fl="add">${ico('plus', 12)}<span>Ajouter</span></button><button class="icon-btn small" data-fl="close" title="Fermer">${ico('close', 12)}</button></div>
-      <div class="nx-float-list"><div class="pop-sub">Équipe</div>${list.length ? list.map((c) => { const pi = D.doc.pages.findIndex((p) => p.id === c.page); return `<div class="nx-crow${c.done ? ' off' : ''}"><b>${esc(c.author)}</b><small>Page ${pi + 1} · ${new Date(c.at).toLocaleDateString('fr-FR')}</small><p>${esc(c.text)}</p>${c.replies.map((r) => `<p class="nx-reply"><b>${esc(r.author)}</b> ${esc(r.text)}</p>`).join('')}<div class="nx-row"><button class="btn small" data-cgo="${esc(c.id)}">Voir</button>${c.done ? '' : `<button class="btn small" data-cdone="${esc(c.id)}">Résolu</button>`}</div></div>`; }).join('') : '<p class="nx-muted" style="padding:10px">Aucun commentaire. Clique sur « Ajouter », puis sur la page.</p>'}
-      <div class="pop-sub">Clients (validation)</div>${cr.length ? cr.map((r) => `<div class="nx-crow client ${esc(r.decision)}"><b>${esc(r.author)}</b><small>${esc(DECISION[r.decision] || 'Commentaire')} · page ${r.page + 1} · ${new Date(r.created_at).toLocaleDateString('fr-FR')} · « ${esc(r.link)} »</small><p>${esc(r.comment || '—')}</p><div class="nx-row"><button class="btn small" data-cpage="${r.page}">Voir</button></div></div>`).join('') : '<p class="nx-muted" style="padding:10px">Aucun avis de client. Envoie un lien : Partager → Validation client.</p>'}</div>`;
+      <div class="nx-float-list"><div class="pop-sub">Équipe</div>${list.length ? list.map((c) => { const pi = D.doc.pages.findIndex((p) => p.id === c.page); return `<div class="nx-crow${c.done ? ' off' : ''}"><b>${esc(c.author)}</b><small>Page ${pi + 1} · ${new Date(c.at).toLocaleDateString('fr-FR')}</small><p>${esc(c.text)}</p>${c.replies.map((r) => `<p class="nx-reply"><b>${esc(r.author)}</b> ${esc(r.text)}</p>`).join('')}<div class="nx-row"><button class="btn small" data-cgo="${esc(c.id)}">Voir</button>${c.done ? '' : `<button class="btn small" data-cdone="${esc(c.id)}">Résolu</button>`}</div></div>`; }).join('') : '<p class="nx-muted" style="padding:10px">Aucun commentaire. Cliquez sur « Ajouter », puis sur la page.</p>'}
+      <div class="pop-sub">Clients (validation)</div>${cr.length ? cr.map((r) => `<div class="nx-crow client ${esc(r.decision)}"><b>${esc(r.author)}</b><small>${esc(DECISION[r.decision] || 'Commentaire')} · page ${r.page + 1} · ${new Date(r.created_at).toLocaleDateString('fr-FR')} · « ${esc(r.link)} »</small><p>${esc(r.comment || '—')}</p><div class="nx-row"><button class="btn small" data-cpage="${r.page}">Voir</button></div></div>`).join('') : '<p class="nx-muted" style="padding:10px">Aucun avis de client. Envoyez un lien : Partager → Validation client.</p>'}</div>`;
     f.onclick = async (e) => {
       if (e.target.closest('[data-fl="close"]')) { f.remove(); return; }
       const cp = e.target.closest('[data-cpage]'); if (cp) { const pi = Number(cp.dataset.cpage); if (D.doc.pages[pi] && pi !== D.pageIdx) await D.openPage(pi); renderPins(D); return; }
@@ -533,10 +533,10 @@ function renderLibrary(D) {
   const rest = `${block('Autocollants', `<div class="nx-gridlib big">${Object.entries(STICKERS).filter(([, l]) => m(l)).map(([k, l]) => `<button class="nx-libbtn" data-nxl="sticker:${k}" title="${esc(l)}"><img src="${stick(k)}" alt=""></button>`).join('')}</div>`)}
     ${block('Cadres photo', `<div class="nx-gridlib">${Object.entries(FRAMES).filter(([, f]) => m(f[0]) || m('cadre photo')).map(([k, f]) => `<button class="nx-libbtn" data-nxl="frame:${k}" title="Cadre ${esc(f[0])}">${svgThumb(f[1], 'var(--text-3)')}</button>`).join('')}</div>`)}
     ${block('Grilles de photos', `<div class="nx-gridlib">${Object.entries(GRIDS).filter(([, g]) => m(g[0]) || m('grille')).map(([k, g]) => `<button class="nx-libbtn" data-nxl="grid:${k}" title="${esc(g[0])}"><svg viewBox="0 0 100 100" width="34" height="34">${g[1].map(([x, y, w, h]) => `<rect x="${x * 100 + 3}" y="${y * 100 + 3}" width="${w * 100 - 6}" height="${h * 100 - 6}" rx="6" fill="var(--text-3)"/>`).join('')}</svg></button>`).join('')}</div>`)}
-    ${block('Données', (m('graphique') || m('tableau') || m('qr') || !q) ? `<div class="nx-list">${Object.entries(C.CHARTS).map(([k, l]) => `<button class="menu-item" data-nxl="chart:${k}">${ico('nxChart', 14)}<span>Graphique · ${esc(l)}</span></button>`).join('')}<button class="menu-item" data-nxl="table">${ico('nxTable', 14)}<span>Tableau</span></button><button class="menu-item" data-nxl="qr">${ico('nxQr', 14)}<span>Code QR (lien de ton site)</span></button></div>` : '')}
+    ${block('Données', (m('graphique') || m('tableau') || m('qr') || !q) ? `<div class="nx-list">${Object.entries(C.CHARTS).map(([k, l]) => `<button class="menu-item" data-nxl="chart:${k}">${ico('nxChart', 14)}<span>Graphique · ${esc(l)}</span></button>`).join('')}<button class="menu-item" data-nxl="table">${ico('nxTable', 14)}<span>Tableau</span></button><button class="menu-item" data-nxl="qr">${ico('nxQr', 14)}<span>Code QR (lien de votre site)</span></button></div>` : '')}
     ${block('Motifs (remplissage de la sélection)', `<div class="nx-gridlib">${Object.entries(PATTERNS).filter(([, l]) => m(l) || m('motif')).map(([k, l]) => `<button class="nx-libbtn nx-pat" data-nxl="pattern:${k}" title="${esc(l)}" style="--pat:url(${patThumb(k, b)})"></button>`).join('')}</div>`)}
     ${block('Icônes', `<div class="nx-gridlib">${iconNames.map((k) => `<button class="nx-libbtn" data-nxl="icon:${k}" title="${esc(k)}">${ico(k, 20)}</button>`).join('')}</div>`)}
-    ${block('Composants du document', comps.length ? `<div class="nx-list">${comps.filter(([, c]) => m(c.name)).map(([id, c]) => `<button class="menu-item" data-nxl="comp:${id}">${ico('nxComponent', 14)}<span>${esc(c.name)}</span></button>`).join('')}</div>` : (q ? '' : '<p class="nx-muted nx-pad">Sélectionne des calques puis « Créer un composant » (panneau de droite) pour les réutiliser.</p>'))}`;
+    ${block('Composants du document', comps.length ? `<div class="nx-list">${comps.filter(([, c]) => m(c.name)).map(([id, c]) => `<button class="menu-item" data-nxl="comp:${id}">${ico('nxComponent', 14)}<span>${esc(c.name)}</span></button>`).join('')}</div>` : (q ? '' : '<p class="nx-muted nx-pad">Sélectionnez des calques puis « Créer un composant » (panneau de droite) pour les réutiliser.</p>'))}`;
   if (q) {
     // Recherche : seulement les résultats, formes comprises.
     D.$.left.innerHTML = `<div class="nx-lib">${top}${block('Formes', shapes)}${rest}</div>`;
@@ -576,8 +576,8 @@ function bindLeft(D) {
       if (kind === 'qr') await C.addQr(D);
       if (kind === 'icon') await C.addIcon(D, arg);
       if (kind === 'comp') await C.insertComponent(D, arg);
-      if (kind === 'pattern') { if (!s.length) { toast('Sélectionne d’abord une forme à remplir.', { kind: 'bad' }); return; } const br = getBrand(); for (const o of s) if (!isText(o) && o.type !== 'image') applyPattern(o, { kind: arg, fg: br.colors[0], bg: '#ffffff', size: 40 }); D.changed(); }
-      if (kind === 'color') { if (!s.length) { toast('Sélectionne d’abord un calque à colorer.'); return; } for (const o of s) o.set('fill', arg); D.canvas.requestRenderAll(); D.changed(); }
+      if (kind === 'pattern') { if (!s.length) { toast('Sélectionnez d’abord une forme à remplir.', { kind: 'bad' }); return; } const br = getBrand(); for (const o of s) if (!isText(o) && o.type !== 'image') applyPattern(o, { kind: arg, fg: br.colors[0], bg: '#ffffff', size: 40 }); D.changed(); }
+      if (kind === 'color') { if (!s.length) { toast('Sélectionnez d’abord un calque à colorer.'); return; } for (const o of s) o.set('fill', arg); D.canvas.requestRenderAll(); D.changed(); }
       if (kind === 'logo') { const br = getBrand(); const img = await FabricImage.fromURL(br.logo); const pg = D.page; const k = Math.min(pg.w * 0.2 / img.width, pg.h * 0.12 / img.height); img.set({ scaleX: k, scaleY: k, left: pg.w * 0.05, top: pg.h * 0.05 }); img.id = uid(); img.name = 'Logo'; img.nxKind = 'logo'; D.canvas.add(img); D.canvas.setActiveObject(img); D.changed(); }
       if (kind === 'brand-apply') await C.applyBrand(D);
       if (kind === 'brand-edit') brandSheet({});
@@ -603,7 +603,7 @@ function propsHtml(D) {
     return h;
   }
   // Calque seul.
-  if (o.nxFrame && o.nxFrame.empty) h += sec('Cadre photo', `<div class="nx-btns">${btn('frame-pick', 'image', 'Choisir une image…')}</div><p class="nx-note">Astuce : dépose une image directement sur le cadre.</p>`, '', true);
+  if (o.nxFrame && o.nxFrame.empty) h += sec('Cadre photo', `<div class="nx-btns">${btn('frame-pick', 'image', 'Choisir une image…')}</div><p class="nx-note">Astuce : déposez une image directement sur le cadre.</p>`, '', true);
   if (o.type === 'image' && o.nxFrame && !o.nxFrame.empty) {
     const f = o.nxFrame;
     h += sec('Cadre photo', `${range('frameZoom', 'Zoom dans le cadre', f.zoom || 1, 1, 4, 0.01, `${Math.round((f.zoom || 1) * 100)} %`)}${range('frameDx', 'Décalage horizontal', f.dx || 0, -0.5, 0.5, 0.01, `${Math.round((f.dx || 0) * 100)} %`)}${range('frameDy', 'Décalage vertical', f.dy || 0, -0.5, 0.5, 0.01, `${Math.round((f.dy || 0) * 100)} %`)}
@@ -616,7 +616,7 @@ function propsHtml(D) {
     const r = o.nxRepeat;
     h += sec(o.nxRepeat.mode === 'radial' ? 'Répétition circulaire' : 'Répétition en grille', r.mode === 'radial' ? `${range('rep:count', 'Nombre', r.count || 8, 2, 48, 1, String(r.count || 8))}${range('rep:radius', 'Rayon', Math.round(r.radius || 200), 10, 2000, 1, `${Math.round(r.radius || 200)} px`)}${chk('rep:rotate', 'Orienter les copies', r.rotate !== false)}` : `${range('rep:cols', 'Colonnes', r.cols || 3, 1, 20, 1, String(r.cols || 3))}${range('rep:rows', 'Rangées', r.rows || 3, 1, 20, 1, String(r.rows || 3))}${range('rep:gapX', 'Espace horizontal', Math.round(r.gapX ?? 20), 0, 600, 1, `${Math.round(r.gapX ?? 20)} px`)}${range('rep:gapY', 'Espace vertical', Math.round(r.gapY ?? 20), 0, 600, 1, `${Math.round(r.gapY ?? 20)} px`)}${chk('rep:stagger', 'Décaler une rangée sur deux', !!r.stagger)}`);
   }
-  if (o.nxComp) h += sec('Composant', o.nxComp.master ? `<p class="nx-note">Composant principal : modifie-le puis mets à jour ses copies, sur toutes les pages.</p><div class="nx-btns">${btn('comp-update', 'sync', 'Mettre à jour les copies')}${btn('comp-detach', 'close', 'Détacher')}</div>` : `<p class="nx-note">Copie d’un composant : elle suit le principal.</p><div class="nx-btns">${btn('comp-detach', 'close', 'Détacher la copie')}</div>`, '', true);
+  if (o.nxComp) h += sec('Composant', o.nxComp.master ? `<p class="nx-note">Composant principal : modifiez-le puis mettez à jour ses copies, sur toutes les pages.</p><div class="nx-btns">${btn('comp-update', 'sync', 'Mettre à jour les copies')}${btn('comp-detach', 'close', 'Détacher')}</div>` : `<p class="nx-note">Copie d’un composant : elle suit le principal.</p><div class="nx-btns">${btn('comp-detach', 'close', 'Détacher la copie')}</div>`, '', true);
   if (isText(o)) h += textCards(D, o);
   if (V.isShape(o) && o.type !== 'group') h += vectorCards(D, o);
   if (o.type === 'group' && !o.nxChart && !o.nxTable && !o.nxQr) h += sec('Vectoriel', `<div class="nx-btns">${btn('repeat-radial', 'nxRepeat', 'Répéter en cercle')}${btn('repeat-grid', 'grid', 'Répéter en grille')}${btn('mirror', 'nxMirror', 'Symétrie')}${o.nxComp ? '' : btn('comp-new', 'nxComponent', 'Créer un composant')}</div>`);
@@ -633,12 +633,12 @@ function pageProps(D) {
     h += sec(`Outil : ${PIX_TOOLS[id][0]}`, `${['lasso', 'wand'].includes(id) ? '' : `${range('pix:size', 'Taille', O.size, 2, 600, 1, `${O.size} px`)}${range('pix:hard', 'Dureté', O.hard, 0, 0.99, 0.01, `${Math.round(O.hard * 100)} %`)}${range('pix:opacity', 'Opacité', O.opacity, 0.05, 1, 0.01, `${Math.round(O.opacity * 100)} %`)}`}
       ${id === 'brush' ? `<div class="dz-row"><span class="dz-lab">Couleur</span>${sw('pixColor', O.color)}</div>` : ''}
       ${id === 'wand' ? `${range('pix:tol', 'Tolérance', O.tol, 0, 160, 1, String(O.tol))}${chk('pix:contiguous', 'Pixels contigus seulement', O.contiguous)}<p class="nx-note">Maj : ajouter · Alt : retirer</p>` : ''}
-      ${id === 'lasso' ? '<p class="nx-note">Entoure une zone de l’image en gardant le bouton enfoncé. Maj : ajouter à la sélection.</p>' : ''}
+      ${id === 'lasso' ? '<p class="nx-note">Entourez une zone de l’image en gardant le bouton enfoncé. Maj : ajouter à la sélection.</p>' : ''}
       ${id === 'maskbrush' ? `${seg('pix:maskMode', O.maskMode, { hide: 'Masquer', reveal: 'Révéler' })}<p class="nx-note">Le calque n’est pas modifié : le masque se retire à tout moment.</p>` : ''}
       ${['stamp', 'heal'].includes(id) ? '<p class="nx-note">Alt + clic sur la zone à copier, puis peins sur la zone à corriger.</p>' : ''}
       <p class="nx-note">Raccourcis : [ et ] pour la taille · Échap pour quitter.</p>`, '', true);
   }
-  if (t === 'nxnodes') h += sec('Édition des points', `<p class="nx-note">Glisse les points et les poignées · double-clic sur le trait : ajouter un point · double-clic sur un point : lisse ou angle · Suppr : retirer · K : ciseaux.</p><div class="nx-btns">${btn('nodes-scissors', 'nxScissors', D.nxNodes.scissors ? 'Ciseaux : actifs' : 'Ciseaux (K)')}${btn('nodes-done', 'check', 'Terminer')}</div>`, '', true);
+  if (t === 'nxnodes') h += sec('Édition des points', `<p class="nx-note">Glissez les points et les poignées · double-clic sur le trait : ajouter un point · double-clic sur un point : lisse ou angle · Suppr : retirer · K : ciseaux.</p><div class="nx-btns">${btn('nodes-scissors', 'nxScissors', D.nxNodes.scissors ? 'Ciseaux : actifs' : 'Ciseaux (K)')}${btn('nodes-done', 'check', 'Terminer')}</div>`, '', true);
   h += '<!--nx-split-->';
   if (t === 'pencil') h += sec('Lissage du crayon', range('pencilSmooth', 'Lissage', Number(settings.nxPencilSmooth || 0), 0, 1, 0.05, Number(settings.nxPencilSmooth || 0) ? `${Math.round(settings.nxPencilSmooth * 100)} %` : 'Aucun'), '', true);
   const pa = PG.pageAnim(D.page);
@@ -684,7 +684,7 @@ function imageCards(D, o) {
     ${o.nxLink ? btn('link-replace', 'sync', 'Remplacer toutes les copies…') : btn('link', 'link', 'Objet dynamique')}
     ${o.nxOrig ? btn('orig', 'restart', 'Revenir à l’original') : ''}</div>`);
   const adj = Array.isArray(o.nxAdj) ? o.nxAdj : [];
-  h += sec('Réglages non destructifs', `${adj.length ? adj.map((a, i) => adjRow(a, i, adj.length)).join('') : '<p class="nx-note">Ajoute des réglages : ils se modifient, se masquent ou se suppriment sans toucher à l’image.</p>'}<div class="nx-btns">${btn('adj-add', 'plus', 'Ajouter un réglage')}</div>`);
+  h += sec('Réglages non destructifs', `${adj.length ? adj.map((a, i) => adjRow(a, i, adj.length)).join('') : '<p class="nx-note">Ajoutez des réglages : ils se modifient, se masquent ou se suppriment sans toucher à l’image.</p>'}<div class="nx-btns">${btn('adj-add', 'plus', 'Ajouter un réglage')}</div>`);
   return h;
 }
 function adjRow(a, i, n) {
@@ -869,7 +869,7 @@ async function action(D, a, btnEl) {
       case 'subject': D.nxPix.target = o; D.nxPix.subject(o, 'select'); return;
       case 'bg-remove': act(D, 'Retirer l’arrière-plan'); D.nxPix.subject(o, 'remove'); return;
       case 'expand': D.nxPix.expandSheet(o); return;
-      case 'ai-fill': if (!D.nxPix.sel) { D.nxPix.target = o; toast('Sélectionne d’abord la zone à remplir (lasso Q, baguette W ou « Sélectionner le sujet »).'); nxTool(D, 'lasso'); return; } await D.nxPix.aiFill(); return;
+      case 'ai-fill': if (!D.nxPix.sel) { D.nxPix.target = o; toast('Sélectionnez d’abord la zone à remplir (lasso Q, baguette W ou « Sélectionner le sujet »).'); nxTool(D, 'lasso'); return; } await D.nxPix.aiFill(); return;
       case 'trace': { const r = await menu(btnEl, 'Vectoriser l’image', [{ id: 'c2', label: 'Logo (2 couleurs)' }, { id: 'c4', label: 'Illustration (4 couleurs)' }, { id: 'c8', label: 'Détaillée (8 couleurs)' }, { id: 'bw', label: 'Noir et blanc (trait)' }]); if (!r) return; act(D, 'Vectoriser l’image'); await V.traceImage(D, o, r === 'bw' ? { mode: 'bw', detail: 0.7 } : { colors: Number(r.slice(1)), detail: r === 'c8' ? 0.85 : 0.6 }); return; }
       case 'mask-paint': nxTool(D, 'maskbrush'); return;
       case 'mask-clear': o.nxMask = null; o.objectCaching = !fxActive(o); o.dirty = true; D.canvas.requestRenderAll(); D.changed(); D.renderProps(); return;

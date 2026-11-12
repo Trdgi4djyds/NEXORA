@@ -122,7 +122,7 @@ function dirChoices(selected) {
 }
 
 export async function pickDir(select) {
-  const d = await call('sec:pick-dir', { title: 'Choisis le dossier du projet' }).catch(() => null);
+  const d = await call('sec:pick-dir', { title: 'Choisissez le dossier du projet' }).catch(() => null);
   if (!d) { if (select) select.value = select.options[0] && select.options[0].value !== '__pick' ? select.options[0].value : '__pick'; return null; }
   if (select && ![...select.options].some((o) => o.value === d)) select.insertAdjacentHTML('afterbegin', `<option value="${esc(d)}">${esc(baseName(d))}</option>`);
   if (select) select.value = d;
@@ -135,7 +135,7 @@ export async function fixSheet(rep, { csp = '' } = {}) {
   try { plan = await call('sec:fix-plan', { id: rep.id, csp }); } catch (err) { toast(err.message, { kind: 'bad' }); return; }
   const dirs = dirChoices();
   const el = sheet(owner, `<div class="nxs-sheet">
-    <div class="sheet-head"><span class="sheet-icon">${icon('wrench', 22)}</span><div><h2>Correctifs prêts à écrire</h2><p>NEXORA a reconnu ton hébergeur et prépare le fichier de configuration qui corrige les en-têtes et l’exposition des fichiers. Une copie de chaque fichier modifié est gardée (.avant-nexora).</p></div></div>
+    <div class="sheet-head"><span class="sheet-icon">${icon('wrench', 22)}</span><div><h2>Correctifs prêts à écrire</h2><p>NEXORA a reconnu votre hébergeur et prépare le fichier de configuration qui corrige les en-têtes et l’exposition des fichiers. Une copie de chaque fichier modifié est gardée (.avant-nexora).</p></div></div>
     <div class="sheet-body">
       <div class="sup-form-grid">
         <label class="field"><span>Hébergeur</span><select class="input" name="target">${plan.targets.map((t) => `<option value="${esc(t.id)}" ${t.id === plan.target ? 'selected' : ''}>${esc(t.label)}${t.id === plan.detected ? ' (reconnu)' : ''}</option>`).join('')}</select></label>
@@ -169,7 +169,7 @@ export async function fixSheet(rep, { csp = '' } = {}) {
         const done = await call('sec:fix-write', { dir, files: plan.files });
         const d = done[0];
         closeSheet(owner);
-        toast(d.changed ? `${d.created ? 'Fichier créé' : 'Fichier mis à jour'} : ${d.path}${d.backup ? ` (copie : ${d.backup})` : ''}. Publie le site, puis réanalyse.` : `${d.path} est déjà à jour.`, { action: 'Afficher', onAction: () => call('sec:reveal', d.file) });
+        toast(d.changed ? `${d.created ? 'Fichier créé' : 'Fichier mis à jour'} : ${d.path}${d.backup ? ` (copie : ${d.backup})` : ''}. Publiez le site, puis réanalysez.` : `${d.path} est déjà à jour.`, { action: 'Afficher', onAction: () => call('sec:reveal', d.file) });
       } catch (err) { toast(err.message, { kind: 'bad' }); } finally { b.disabled = false; }
     }
   };
@@ -191,7 +191,7 @@ export async function cspSheet(url, rep) {
   out.innerHTML = `
     <div class="nxs-kv"><span>${r.resources} ressource(s) relevée(s)</span><span>${r.inline.scripts} script(s) en ligne</span><span>${r.inline.handlers} gestionnaire(s) en ligne</span><span>${r.inline.styleAttr} attribut(s) style</span></div>
     <h4 class="sup-h4">1. Version d’observation (rien n’est bloqué)</h4>
-    <p class="pop-note">À publier d’abord sous l’en-tête <code>Content-Security-Policy-Report-Only</code> : le navigateur signale ce qui serait bloqué, sans rien casser. Vérifie la console de ton site quelques jours.</p>
+    <p class="pop-note">À publier d’abord sous l’en-tête <code>Content-Security-Policy-Report-Only</code> : le navigateur signale ce qui serait bloqué, sans rien casser. Vérifiez la console de votre site quelques jours.</p>
     <div class="nxs-policy"><pre class="sec-code">${esc(r.reportOnly)}</pre>${btn('Copier', 'data-cp="ro"', { ic: 'copy' })}</div>
     <h4 class="sup-h4">2. Version stricte</h4>
     <div class="nxs-policy"><pre class="sec-code">${esc(r.strict)}</pre>${btn('Copier', 'data-cp="st"', { ic: 'copy' })}</div>
@@ -244,14 +244,14 @@ export async function scheduleSheet(url) {
   const host = hostOf(url);
   const cur = list.find((s) => hostOf(s.url) === host);
   const el = sheet(owner, `<form class="sup-form" autocomplete="off">
-    <div class="sheet-head"><span class="sheet-icon">${icon('clock', 22)}</span><div><h2>Programmer l’audit</h2><p>NEXORA réanalyse ${esc(host)} tout seul et te prévient (e-mail, webhooks) si la note baisse ou si un problème grave apparaît.</p></div></div>
+    <div class="sheet-head"><span class="sheet-icon">${icon('clock', 22)}</span><div><h2>Programmer l’audit</h2><p>NEXORA réanalyse ${esc(host)} tout seul et vous prévient (e-mail, webhooks) si la note baisse ou si un problème grave apparaît.</p></div></div>
     <div class="sheet-body sup-form-body">
       <div class="sup-form-grid">
         <label class="field"><span>Fréquence</span><select class="input" name="every"><option value="day" ${cur && cur.every === 'day' ? 'selected' : ''}>Chaque jour</option><option value="week" ${!cur || cur.every === 'week' ? 'selected' : ''}>Chaque semaine</option><option value="deploy" ${cur && cur.every === 'deploy' ? 'selected' : ''}>Seulement après un déploiement</option></select></label>
         <label class="field"><span>Note minimale (alerte en dessous)</span><input class="input" type="number" name="minScore" min="0" max="100" step="5" value="${esc(cur ? cur.minScore || '' : 70)}" placeholder="aucune"></label>
       </div>
       <label class="tog-row"><span class="tog-text"><span>Aussi après chaque déploiement</span><small>Envoi Git depuis le Dev Lab ou construction d’un logiciel : l’audit part deux minutes après.</small></span><input type="checkbox" name="onDeploy" ${!cur || cur.onDeploy ? 'checked' : ''}><span class="tog" aria-hidden="true"></span></label>
-      <p class="sup-note">Les audits programmés tournent tant que NEXORA est ouverte et comptent dans ton quota d’audits du jour.</p>
+      <p class="sup-note">Les audits programmés tournent tant que NEXORA est ouverte et comptent dans votre quota d’audits du jour.</p>
       ${list.length ? `<div class="field"><span>Audits programmés</span><div class="nxs-sched">${list.map((s) => `<div class="nxs-sched-i"><span><b>${esc(hostOf(s.url))}</b><small>${esc(EVERY_LABEL[s.every] || '')}${s.onDeploy && s.every !== 'deploy' ? ' et après chaque déploiement' : ''} · ${s.lastAt ? `dernier ${esc(ago(s.lastAt))}` : 'jamais lancé'}${s.lastError ? ` · ${esc(s.lastError)}` : ''}</small></span>${s.lastScore != null ? `<b class="${toneOf(s.lastScore)}">${s.lastScore}</b>` : ''}<button type="button" class="icon-btn small" title="Lancer maintenant" aria-label="Lancer maintenant" data-sr="${esc(s.id)}">${icon('play', 13)}</button><button type="button" class="icon-btn small" title="Retirer" aria-label="Retirer" data-sd="${esc(s.id)}">${icon('trash', 13)}</button></div>`).join('')}</div></div>` : ''}
       <p class="sup-form-err" hidden></p>
     </div>

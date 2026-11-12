@@ -12,6 +12,7 @@ const { rewrite, list } = require('./zip');
 const { optimizeWww } = require('./optimize');
 const { parseGoogleServices, firebaseValuesXml, channelId } = require('./push');
 const { mergeKits } = require('./billing');
+const modules = require('./modules');
 
 const ROOT = path.join(__dirname, '..', '..', 'android');
 const MIN_SDK = 24;
@@ -390,7 +391,7 @@ function shellConfig(spec) {
     fileUpload: c.fileUpload !== false,
     offlinePage: c.offlinePage !== false,
     offlineTitle: c.offlineTitle || 'Pas de connexion',
-    offlineText: c.offlineText || 'Vérifie ta connexion Internet, puis réessaie.',
+    offlineText: c.offlineText || 'Vérifiez votre connexion Internet, puis réessayez.',
     offlineButton: c.offlineButton || 'Réessayer',
     tabs: (c.tabs || []).filter((t) => t && t.url).slice(0, 5),
     tabBg: hexColor(c.tabBg, '#FFFFFF'),
@@ -413,6 +414,8 @@ function shellConfig(spec) {
     ...(spec.billing && spec.billing.enabled && spec.mode !== 'twa' ? {
       billing: { enabled: true, autoAcknowledge: spec.billing.autoAcknowledge !== false, consumables: (spec.billing.consumables || []).filter(Boolean).slice(0, 200) },
     } : {}),
+    // NEXORA #115 : modules OneSignal, AdMob, Google Analytics et Meta (lus par MainActivity, transmis aux ponts Vt…).
+    ...Object.fromEntries(modules.MODULE_IDS.map((id) => [id, modules.moduleConfig(id, spec)]).filter(([, v]) => v)),
     // NEXORA #018 : statistiques et plantages envoyés au compte NEXORA du propriétaire (lu par Insights.java).
     ...(spec.insights && spec.insights.key && /^https:\/\//.test(spec.insights.url || '') ? {
       insights: {
@@ -481,12 +484,12 @@ async function build(spec, ctx) {
   // Étapes en parallèle : la barre de progression ne recule jamais.
   const step = (label, p) => { pmax = Math.max(pmax, p || 0); step0(label, pmax); };
   if (!validAppId(spec.appId)) throw new Error("Identifiant d'application invalide. Exemple : com.monentreprise.monapp (lettres, chiffres, points ; pas de mot réservé Java comme « new » ou « class »).");
-  if (!spec.appName || !String(spec.appName).trim()) throw new Error("Donne un nom à l'application.");
+  if (!spec.appName || !String(spec.appName).trim()) throw new Error("Donnez un nom à l'application.");
   if (!tools || !tools.ready) throw new Error('Les outils Android ne sont pas installés.');
   if (spec.mode === 'twa' && !/^https:\/\/[^/]+/i.test(spec.startUrl || '')) throw new Error('Le mode plein écran navigateur demande un site en https.');
-  if (spec.mode === 'local' && (!spec.wwwDir || !fs.existsSync(path.join(spec.wwwDir, 'index.html')))) throw new Error("Le dossier de l'application web ne contient pas de index.html (lance d'abord la construction du projet).");
+  if (spec.mode === 'local' && (!spec.wwwDir || !fs.existsSync(path.join(spec.wwwDir, 'index.html')))) throw new Error("Le dossier de l'application web ne contient pas de index.html (lancez d'abord la construction du projet).");
   const outputs = spec.outputs || { apk: true };
-  if (outputs.aab && !tools.bundletool) throw new Error("Le format Play Store (AAB) n'est pas encore prêt : installe les outils Android (bandeau en haut).");
+  if (outputs.aab && !tools.bundletool) throw new Error("Le format Play Store (AAB) n'est pas encore prêt : installez les outils Android (bandeau en haut).");
   const t0 = Date.now();
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'nexora-android-'));
   const exe = async (file, args, label, opts = {}) => {
@@ -504,7 +507,7 @@ async function build(spec, ctx) {
   const java = tools.java;
   const result0 = {};
   if (spec.config && spec.config.scanner && !(spec.permissions || []).includes('camera')) spec = { ...spec, permissions: [...(spec.permissions || []), 'camera'] };
-  if (spec.tv && !(spec.images && Object.keys(spec.images).some((k) => /vt_banner\.png$/.test(k)))) throw new Error("Pour Android TV, ajoute une bannière (320 × 180) dans l'onglet Icône.");
+  if (spec.tv && !(spec.images && Object.keys(spec.images).some((k) => /vt_banner\.png$/.test(k)))) throw new Error("Pour Android TV, ajoutez une bannière (320 × 180) dans l'onglet Icône.");
   try {
     step('Préparation des ressources', 0.05);
     const resDir = path.join(work, 'res');
@@ -514,7 +517,7 @@ async function build(spec, ctx) {
     const usePush = spec.push && spec.push.enabled && spec.mode !== 'twa';
     if (usePush) {
       const gs = parseGoogleServices(spec.push.googleServices || '', spec.appId);
-      if (!gs.ok) throw new Error(`Notifications push : ${gs.error || 'ajoute le fichier google-services.json de ton projet Firebase.'}`);
+      if (!gs.ok) throw new Error(`Notifications push : ${gs.error || 'ajoutez le fichier google-services.json de votre projet Firebase.'}`);
       if (!ctx.pushKit) throw new Error('Notifications push : kit indisponible.');
       if (!ctx.pushKit.status().installed) {
         step('Notifications push : préparation du kit Firebase (une seule fois)', 0.06);
@@ -540,6 +543,49 @@ async function build(spec, ctx) {
       log(`Achats intégrés : Google Play Billing ${ctx.billingKit.status().version} (${bk.libraries} bibliothèque(s) ajoutée(s)).`);
       pk = mergeKits(pk, bk);
       pk.billing = true;
+    }
+    // NEXORA #115 : modules (OneSignal, AdMob, Google Analytics, Meta) : un kit par module, préparé une fois, réuni
+    // aux autres kits sans jamais ajouter deux fois la même bibliothèque.
+    const useModules = spec.mode === 'twa' ? [] : modules.MODULE_IDS.filter((id) => spec[id] && spec[id].enabled);
+    if (useModules.length) {
+      const bad = modules.validate(spec);
+      if (bad.length) throw new Error(bad[0]);
+      if (!ctx.moduleKits) throw new Error('Modules : kits indisponibles.');
+      const have = new Map();
+      const keep = (list) => { for (const s of list || []) { const p = s.split(':'); if (!have.has(`${p[0]}:${p[1]}`)) have.set(`${p[0]}:${p[1]}`, p[2]); } };
+      if (usePush) keep(ctx.pushKit.kit().artifacts);
+      if (useBilling) keep(ctx.billingKit.kit().artifacts);
+      for (const id of useModules) {
+        const kit = ctx.moduleKits[id];
+        const label = modules.MODULES[id].label;
+        if (!kit) throw new Error(`${label} : kit indisponible.`);
+        if (!kit.status().installed) {
+          step(`${label} : préparation du kit (une seule fois)`, 0.06);
+          await kit.install(tools, (p) => step(`Kit ${label} : ${p.label}`, 0.06 + (p.progress || 0) * 0.1));
+        }
+        step(`${label} : ajout au code de l’application`, 0.17);
+        const mk = await kit.forBuild(spec, { tools, work, log, have });
+        keep(mk.artifacts);
+        log(`${label} : version ${kit.status().version} (${mk.libraries} bibliothèque(s) ajoutée(s)).`);
+        for (const [file, xml] of Object.entries(modules.moduleValues(id, spec))) write(path.join(resDir, 'values', file), xml);
+        pk = mergeKits(pk, mk);
+      }
+      // Une seule déclaration par composant (même balise, même android:name), quel que soit le kit qui l'apporte.
+      const seen = new Set();
+      pk.application = pk.application.filter((el) => {
+        const m = /^\s*<([\w-]+)\b[^>]*?android:name\s*=\s*"([^"]+)"/.exec(el);
+        const k = m ? `${m[1]}:${m[2]}` : el.trim();
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+      // Google Analytics : projet Firebase de google-services.json (déjà écrit si les notifications push sont actives).
+      if (useModules.includes('analytics') && !usePush) {
+        const gs = parseGoogleServices(spec.analytics.googleServices || '', spec.appId);
+        if (!gs.ok) throw new Error(`Google Analytics : ${gs.error || 'importez le fichier google-services.json de votre projet Firebase.'}`);
+        write(path.join(resDir, 'values', 'vt_firebase.xml'), firebaseValuesXml(gs.strings));
+        log(`Google Analytics : projet Firebase « ${gs.projectId} ».`);
+      }
     }
     write(path.join(work, 'AndroidManifest.xml'), manifest(spec, pk));
     const assets = path.join(work, 'assets');
@@ -586,8 +632,8 @@ async function build(spec, ctx) {
     // Mode Trusted Web Activity : second fichier de code (androidx.browser réduit).
     const dexExtra = spec.mode === 'twa' ? [{ name: 'classes2.dex', data: fs.readFileSync(path.join(ROOT, 'shell', 'twa.dex')) }] : [];
     if (pk) {
-      step(usePush ? 'Notifications push : identifiants des ressources' : 'Achats intégrés : identifiants des ressources', 0.36);
-      const rdex = await (ctx.pushKit || ctx.billingKit).compileR(path.join(work, 'gen'), work, tools);
+      step(usePush ? 'Notifications push : identifiants des ressources' : useBilling ? 'Achats intégrés : identifiants des ressources' : 'Modules : identifiants des ressources', 0.36);
+      const rdex = await (ctx.pushKit || ctx.billingKit || Object.values(ctx.moduleKits || {})[0]).compileR(path.join(work, 'gen'), work, tools);
       for (const d of [...pk.dex, ...rdex]) dexExtra.push({ name: `classes${dexExtra.length + 2}.dex`, data: d });
     }
     const result = {
@@ -601,7 +647,7 @@ async function build(spec, ctx) {
     if (!key) {
       step('Création de la clé de signature', 0.38);
       key = await keystores.create(spec.appId, java, ctx.owner || { name: spec.appName });
-      log('Nouvelle clé de signature créée et conservée sur ce PC (pense à la sauvegarder).');
+      log('Nouvelle clé de signature créée et conservée sur ce PC (pensez à la sauvegarder).');
     }
     const storePass = keystores.password(key);
     const keyPass = keystores.keyPassword(key);
@@ -675,12 +721,12 @@ async function build(spec, ctx) {
       fs.writeFileSync(steps, [
         `${spec.appName} ${spec.versionName || '1.0.0'} — ${spec.appId}`, '',
         spec.mode === 'twa' ? 'Mode : Trusted Web Activity (le site s’ouvre en plein écran dans le navigateur du téléphone).' : 'Mode : application NEX-WEBVIEW.', '',
-        '1. Publie le fichier assetlinks.json sur ton site :',
-        `   ${origin || 'https://ton-site'}/.well-known/assetlinks.json`,
+        '1. Publiez le fichier assetlinks.json sur votre site :',
+        `   ${origin || 'https://votre-site'}/.well-known/assetlinks.json`,
         '   Sans ce fichier, une barre d’adresse s’affiche en haut de l’application (mode TWA).', '',
-        '2. Sur le Play Store, Google signe l’application avec sa propre clé : copie l’empreinte SHA-256 de',
+        '2. Sur le Play Store, Google signe l’application avec sa propre clé : copiez l’empreinte SHA-256 de',
         '   « Play Console > Configuration > Intégrité de l’application » et ajoute-la dans sha256_cert_fingerprints.', '',
-        `3. Empreinte SHA-256 de ta clé de signature : ${key.sha256}`,
+        `3. Empreinte SHA-256 de votre clé de signature : ${key.sha256}`,
         `   Fichier de la clé : ${key.file} (à sauvegarder : sans elle, aucune mise à jour ne pourra être publiée).`, '',
       ].join('\r\n'));
       result.files.push(steps);

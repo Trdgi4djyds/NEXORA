@@ -135,7 +135,7 @@ function installerView(a) {
     body: `${desktopIcons(a, false)}<div class="pc-win pc-setup" style="left:${(SCREEN.w - 504) / 2}px;top:${(SCREEN.h - SCREEN.bar - 420) / 2}px;width:504px;height:420px">
       ${titlebar(`Installation de ${a.name || 'Mon logiciel'}`, { dark: false, max: false })}
       <div class="pc-setup-body"><canvas class="dsk-sidebar" width="164" height="314"></canvas>
-        <div class="pc-setup-text"><b>Bienvenue dans l’assistant d’installation de ${name}</b><p>Cet assistant va installer ${name} ${esc(a.version)} sur ton ordinateur.</p><p>Il est conseillé de fermer les autres applications avant de continuer.</p><p>Clique sur Suivant pour continuer.</p></div></div>
+        <div class="pc-setup-text"><b>Bienvenue dans l’assistant d’installation de ${name}</b><p>Cet assistant va installer ${name} ${esc(a.version)} sur votre ordinateur.</p><p>Il est conseillé de fermer les autres applications avant de continuer.</p><p>Cliquez sur Suivant pour continuer.</p></div></div>
       <div class="pc-setup-foot"><span>${esc(a.publisher || '')}</span><i class="pc-def">Suivant &gt;</i><i>Annuler</i></div>
     </div>${taskbar(a, { active: false })}`,
     note: `Étapes : ${pages.join(' → ')}${i.scope === 'machine' ? ' · droits administrateur demandés' : ' · sans droits administrateur'}.`,

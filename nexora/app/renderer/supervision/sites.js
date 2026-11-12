@@ -221,15 +221,15 @@ async function fillServer(ctx, d, token) {
   const sub = 'Vérifié en continu, même NEXORA fermée et ordinateur éteint';
   const paint = (body, actions = '') => { if (token === ctx.token && host0.isConnected) { host0.innerHTML = card('Surveillance 24 h/24', body, { sub, actions, cls: 'sup-srv-card' }); bindServer(ctx, d, host0); } };
   if (!acc.signedIn) {
-    paint(`<p class="sup-note">${icon('cloud', 13)} Connecte-toi à ton compte NEXORA (bouton Connexion du rail) : ce site sera vérifié jour et nuit et ton équipe sera prévenue dès qu’il tombe ou ralentit.</p>`);
+    paint(`<p class="sup-note">${icon('cloud', 13)} Connectez-vous à votre compte NEXORA (bouton Connexion du rail) : ce site sera vérifié jour et nuit et votre équipe sera prévenue dès qu’il tombe ou ralentit.</p>`);
     return;
   }
   let l;
   try { l = await links(); } catch (err) { paint(`<p class="sup-note bad">${esc(err.message || String(err))}</p>`); return; }
-  if (l.outdated) { paint('<p class="sup-note">La surveillance 24 h/24 n’est pas encore disponible. Réessaie plus tard.</p>'); return; }
+  if (l.outdated) { paint('<p class="sup-note">La surveillance 24 h/24 n’est pas encore disponible. Réessayez plus tard.</p>'); return; }
   const m = l.map.get(s.id);
   if (!m) {
-    paint(`<p class="sup-note">${icon('cloud', 13)} Ce site n’est vérifié que pendant que NEXORA est ouverte sur ce PC. Active la surveillance 24 h/24 pour l’équipe « ${esc(acc.orgName)} » : vérification toutes les ${Math.max(1, Math.round(s.intervalSec / 60))} min, pannes confirmées, notification dans NEXORA.</p>`,
+    paint(`<p class="sup-note">${icon('cloud', 13)} Ce site n’est vérifié que pendant que NEXORA est ouverte sur ce PC. Activez la surveillance 24 h/24 pour l’équipe « ${esc(acc.orgName)} » : vérification toutes les ${Math.max(1, Math.round(s.intervalSec / 60))} min, pannes confirmées, notification dans NEXORA.</p>`,
       acc.canEdit ? btn('Activer la surveillance 24 h/24', 'data-srv="on"', { ic: 'cloud', cls: 'small primary' }) : '<small class="muted">Rôle éditeur requis</small>');
     return;
   }
@@ -241,7 +241,7 @@ async function fillServer(ctx, d, token) {
   const actions = btn('Arrêter', 'data-srv="off"', { ic: 'close' });
   // NEXORA #048 : adresse du signal de vie et confirmation depuis une deuxième région.
   const hb = heartbeatUrl(m);
-  const extra = `${hb ? `<div class="sup-hb"><small>Adresse à appeler à chaque passage de ta tâche (GET ou POST) :</small><div class="sup-hb-u"><code>${esc(hb)}</code>${btn('Copier', `data-copy-hb="${esc(hb)}"`, { ic: 'copy' })}</div><small class="muted">Exemple : <code>curl -fsS ${esc(hb)}</code> à la fin de ta sauvegarde. ${m.last_ping_at ? `Dernier signal ${esc(ago(Date.parse(m.last_ping_at)))}.` : 'Aucun signal reçu pour l’instant.'}</small></div>` : ''}${m.regional_at ? `<p class="sup-note">${icon('globe', 12)} Deuxième région (${esc(m.regional_colo || 'réseau Cloudflare')}) : ${m.regional_status === 'up' ? 'le site y répond' : 'le site n’y répond pas'} · ${esc(ago(Date.parse(m.regional_at)))}.</p>` : ''}`;
+  const extra = `${hb ? `<div class="sup-hb"><small>Adresse à appeler à chaque passage de votre tâche (GET ou POST) :</small><div class="sup-hb-u"><code>${esc(hb)}</code>${btn('Copier', `data-copy-hb="${esc(hb)}"`, { ic: 'copy' })}</div><small class="muted">Exemple : <code>curl -fsS ${esc(hb)}</code> à la fin de votre sauvegarde. ${m.last_ping_at ? `Dernier signal ${esc(ago(Date.parse(m.last_ping_at)))}.` : 'Aucun signal reçu pour l’instant.'}</small></div>` : ''}${m.regional_at ? `<p class="sup-note">${icon('globe', 12)} Deuxième région (${esc(m.regional_colo || 'réseau Cloudflare')}) : ${m.regional_status === 'up' ? 'le site y répond' : 'le site n’y répond pas'} · ${esc(ago(Date.parse(m.regional_at)))}.</p>` : ''}`;
   if (!srv || srv.error) {
     paint(`${extra}<div class="sup-srv-row">${chip(label, tone, 'cloud')}<small class="muted">Vérifié ${esc(ago(m.last_checked_at ? Date.parse(m.last_checked_at) : 0))}${m.last_latency_ms != null ? ` · ${ms(m.last_latency_ms)}` : ''}${m.last_error ? ` · ${esc(m.last_error)}` : ''}</small></div>${srv && srv.error ? `<p class="sup-note">${esc(srv.error.message)}</p>` : ''}`, actions);
     return;

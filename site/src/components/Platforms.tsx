@@ -17,7 +17,7 @@ const PLATFORMS: { id: string; icon: string; logos: string[]; title: string; tex
     icon: "globe",
     logos: ["cloudflare", "vercel", "netlify", "github"],
     title: "Sur le web",
-    text: "Partage ton projet par une adresse publique, puis mets-le en ligne chez les principaux hébergeurs, contrôlé sur trois appareils avant chaque publication.",
+    text: "Partagez votre projet par une adresse publique, puis mettez-le en ligne chez les principaux hébergeurs, contrôlé sur trois appareils avant chaque publication.",
     points: ["Partage en ligne (Pro)", "Cloudflare, Vercel, Netlify, GitHub Pages (Pro)", "Contrôles avant mise en ligne"],
   },
   {
@@ -114,7 +114,7 @@ export function Platforms() {
           index="04"
           eyebrow="Un projet, trois plateformes"
           title={["Publie partout,", "sans tout refaire."]}
-          lead="Ton site reste la source. NEXORA en tire une adresse web, une application Android et un logiciel Windows, chacun prêt à distribuer."
+          lead="Votre site reste la source. NEXORA en tire une adresse web, une application Android et un logiciel Windows, chacun prêt à distribuer."
         />
       </div>
       <div className="wrap-wide">

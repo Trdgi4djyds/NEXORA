@@ -455,7 +455,7 @@ final class Extras {
         title.setTextColor(ink);
         title.setTextSize(19);
         title.setGravity(Gravity.CENTER);
-        title.setText(create ? "Choisis un code à 4 chiffres" : a.cfg.passcode.optString("title", "Saisis ton code"));
+        title.setText(create ? "Choisissez un code à 4 chiffres" : a.cfg.passcode.optString("title", "Saisissez votre code"));
         col.addView(title, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         LinearLayout dots = new LinearLayout(a);
         dots.setGravity(Gravity.CENTER);
@@ -509,13 +509,13 @@ final class Extras {
                         if (create) {
                             if (first[0] == null) {
                                 first[0] = entered;
-                                title.setText("Confirme le code");
+                                title.setText("Confirmez le code");
                             } else if (first[0].equals(entered)) {
                                 setPasscode(entered);
                                 unlock();
                             } else {
                                 first[0] = null;
-                                title.setText("Les codes ne correspondent pas. Recommence.");
+                                title.setText("Les codes ne correspondent pas. Recommencez.");
                             }
                         } else if (hash(entered).equals(prefs().getString("passcode", ""))) unlock();
                         else {

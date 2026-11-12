@@ -83,18 +83,18 @@ function bannerMessage(e) {
   const raw = String((e && (e.message || e.error_description || e.msg)) || e || '').replace(/^Error:\s*/, '');
   const msg = errText(e);
   console.warn('[NEXORA] bannière', e);
-  return msg && msg !== raw ? msg : 'La bannière n’a pas pu être enregistrée. Réessaie dans un instant.';
+  return msg && msg !== raw ? msg : 'La bannière n’a pas pu être enregistrée. Réessayez dans un instant.';
 }
 
 // Recadrage au centre au format 3:1, 1500 px de large au plus, en JPEG : fichier léger et affichage net.
 async function bannerBlob(file) {
-  if (!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) throw new BannerError('Choisis une image PNG, JPG, WebP ou GIF.');
+  if (!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) throw new BannerError('Choisissez une image PNG, JPG, WebP ou GIF.');
   if (file.size > BANNER_MAX) throw new BannerError('Image trop lourde : 15 Mo maximum.');
   let img;
   try {
     img = await createImageBitmap(file);
   } catch {
-    throw new BannerError('Cette image ne peut pas être lue. Essaie un autre fichier.');
+    throw new BannerError('Cette image ne peut pas être lue. Essayez un autre fichier.');
   }
   const iw = img.width;
   const ih = img.height;
@@ -112,7 +112,7 @@ async function bannerBlob(file) {
   ctx.drawImage(img, (iw - cw) / 2, (ih - ch) / 2, cw, ch, 0, 0, ow, oh);
   if (img.close) img.close();
   const blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.88));
-  if (!blob) throw new BannerError('Cette image ne peut pas être préparée. Essaie un autre fichier.');
+  if (!blob) throw new BannerError('Cette image ne peut pas être préparée. Essayez un autre fichier.');
   return blob;
 }
 
@@ -241,7 +241,7 @@ export function sheet(tab, tabs) {
   const promo = free
     ? `<div class="nxc-promo">
         <span class="nxc-promo-ic">${ico('star', 18)}</span>
-        <b>Passe à Pro</b>
+        <b>Passez à Pro</b>
         <small>Dev Lab complet, jusqu’à ${FALLBACK.pro.limits.apps} applications, Studio et NEX-DESIGN complets, pour ${esc(money(FALLBACK.pro.price_month_cents))} par mois.</small>
         <button type="button" class="nxc-promo-btn" data-tab-back="plan">Voir les offres</button>
       </div>`
@@ -318,7 +318,7 @@ export async function profile() {
   </article>
   <div class="nxc-cols">
     <form class="nxc-card nx-form" data-form="profile">
-      <div class="nxc-card-head"><span class="nxc-card-ic">${ico('user', 15)}</span><div><h3>Informations personnelles</h3><p>Ton nom et ta photo sont visibles par les membres de tes équipes.</p></div></div>
+      <div class="nxc-card-head"><span class="nxc-card-ic">${ico('user', 15)}</span><div><h3>Informations personnelles</h3><p>Votre nom et votre photo sont visibles par les membres de vos équipes.</p></div></div>
       <div class="nx-grid2">
         <label class="nx-field"><span>Nom complet</span><input class="input" name="full_name" value="${esc(p.full_name || '')}" maxlength="80" autocomplete="name"></label>
         <label class="nx-field"><span>Entreprise</span><input class="input" name="company" value="${esc(p.company || '')}" maxlength="80" autocomplete="organization"></label>
@@ -333,7 +333,7 @@ export async function profile() {
         <div class="nx-inline"><input class="input" name="email" type="email" value="${esc(email)}" required autocomplete="email" aria-label="Adresse e-mail"><button class="btn">Changer</button></div>
       </form>
       <div class="nxc-card">
-        <div class="nxc-card-head"><span class="nxc-card-ic">${ico('info', 15)}</span><div><h3>Ton compte</h3></div></div>
+        <div class="nxc-card-head"><span class="nxc-card-ic">${ico('info', 15)}</span><div><h3>Votre compte</h3></div></div>
         <dl class="nxc-kv">
           <dt>Compte créé</dt><dd>${esc(longDate(p.created_at))}</dd>
           <dt>Rôle sur la plateforme</dt><dd>${esc(platformRole(p.app_role))}</dd>

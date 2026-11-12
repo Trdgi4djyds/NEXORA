@@ -39,11 +39,11 @@ export class PixelTools {
   setTool(id) {
     this.finishCrop(false);
     this.tool = id;
-    if (id === 'crop') { const o = this.o; if (!o) { toast('Sélectionne d’abord une image à recadrer.', { kind: 'bad' }); this.tool = null; return false; } this.startCrop(o); return true; }
+    if (id === 'crop') { const o = this.o; if (!o) { toast('Sélectionnez d’abord une image à recadrer.', { kind: 'bad' }); this.tool = null; return false; } this.startCrop(o); return true; }
     const a = this.D.canvas.getActiveObject();
     if (a) this.target = a;
-    if ((id === 'maskbrush') && !a) { toast('Sélectionne d’abord le calque à masquer.', { kind: 'bad' }); this.tool = null; return false; }
-    if (id !== 'maskbrush' && (!a || a.type !== 'image')) toast('Clique sur une image pour l’utiliser avec cet outil.');
+    if ((id === 'maskbrush') && !a) { toast('Sélectionnez d’abord le calque à masquer.', { kind: 'bad' }); this.tool = null; return false; }
+    if (id !== 'maskbrush' && (!a || a.type !== 'image')) toast('Cliquez sur une image pour l’utiliser avec cet outil.');
     return true;
   }
   // ---------- Événements de la souris ----------
@@ -56,11 +56,11 @@ export class PixelTools {
       return;
     }
     const o = this.pickImage(e);
-    if (!o) { toast('Clique sur une image.', { kind: 'bad' }); return; }
+    if (!o) { toast('Cliquez sur une image.', { kind: 'bad' }); return; }
     this.target = o;
     if (this.tool === 'lasso') { this.stroke = { o, pts: [p] }; return; }
     if (this.tool === 'wand') { this.wand(o, p, e); return; }
-    if ((this.tool === 'stamp' || this.tool === 'heal') && e.altKey) { this.src = { o, ...this.toElem(o, p) }; toast('Source définie : peins maintenant là où corriger.'); return; }
+    if ((this.tool === 'stamp' || this.tool === 'heal') && e.altKey) { this.src = { o, ...this.toElem(o, p) }; toast('Source définie : peignez maintenant là où corriger.'); return; }
     if ((this.tool === 'stamp' || this.tool === 'heal') && (!this.src || this.src.o !== o)) { toast('Alt + clic d’abord sur la zone à copier (source).', { kind: 'bad' }); return; }
     if (['brush', 'eraser', 'stamp', 'heal'].includes(this.tool)) {
       const work = cloneCanvas(elemOf(o));
@@ -200,7 +200,7 @@ export class PixelTools {
       return;
     }
     this.setSelection(o, invertMask(bg));
-    toast('Sujet sélectionné. Ajuste avec la baguette (Maj : ajouter, Alt : retirer).');
+    toast('Sujet sélectionné. Ajustez avec la baguette (Maj : ajouter, Alt : retirer).');
   }
   invertSel() { if (this.sel) this.setSelection(this.sel.o, invertMask(this.sel.mask)); }
   featherSel(r = 3) { if (this.sel) this.setSelection(this.sel.o, blurMask(this.sel.mask, this.sel.w, this.sel.h, r)); }
@@ -235,13 +235,13 @@ export class PixelTools {
     }, 30);
   }
   async aiFill() {
-    const s = this.sel; if (!s) { toast('Fais d’abord une sélection (lasso, baguette ou sujet).', { kind: 'bad' }); return; }
+    const s = this.sel; if (!s) { toast('Faites d’abord une sélection (lasso, baguette ou sujet).', { kind: 'bad' }); return; }
     if (!(await needAi())) return;
-    const what = await prompt('Remplissage génératif', { label: 'Que faut-il mettre dans la zone sélectionnée ? Laisse vide pour effacer naturellement.', icon: 'sparkle', placeholder: 'un ciel au coucher du soleil, une plante verte…', go: 'Générer' });
+    const what = await prompt('Remplissage génératif', { label: 'Que faut-il mettre dans la zone sélectionnée ? Laissez vide pour effacer naturellement.', icon: 'sparkle', placeholder: 'un ciel au coucher du soleil, une plante verte…', go: 'Générer' });
     if (what === null) return;
     const t = busy('Génération par l’IA…');
     try {
-      const res = await this.aiEdit(s.o, s.mask, what || 'Efface l’objet de cette zone et complète l’image naturellement, en continuité avec le reste.');
+      const res = await this.aiEdit(s.o, s.mask, what || 'Effacez l’objet de cette zone et complétez l’image naturellement, en continuité avec le reste.');
       const c = cloneCanvas(elemOf(s.o)); const x = c.getContext('2d');
       const piece = makeCanvas(s.w, s.h); const px = piece.getContext('2d'); px.drawImage(res, 0, 0, s.w, s.h);
       px.globalCompositeOperation = 'destination-in'; px.drawImage(maskCanvas(blurMask(s.mask, s.w, s.h, 3), s.w, s.h), 0, 0);
@@ -262,7 +262,7 @@ export class PixelTools {
   }
   // Agrandir l'image (bords complétés selon le contenu ou par l'IA).
   expandSheet(o) {
-    const s = sheet('nx-expand', sheetHtml({ icon: 'nxResize', title: 'Agrandir l’image', sub: 'Ajoute de la place autour de l’image : les bords sont complétés selon le contenu, ou inventés par l’IA.', body: `
+    const s = sheet('nx-expand', sheetHtml({ icon: 'nxResize', title: 'Agrandir l’image', sub: 'Ajoutez de la place autour de l’image : les bords sont complétés selon le contenu, ou inventés par l’IA.', body: `
       <div class="field-label">Agrandissement</div><div class="seg wide" data-nx-seg="amt">${[['15', '+15 %'], ['30', '+30 %'], ['50', '+50 %'], ['100', '×2']].map(([v, l], i) => `<button class="${i === 1 ? 'on' : ''}" data-v="${v}">${l}</button>`).join('')}</div>
       <div class="field-label">Côtés</div><div class="seg wide" data-nx-seg="side">${[['all', 'Tous'], ['h', 'Gauche et droite'], ['v', 'Haut et bas'], ['r', 'Droite'], ['b', 'Bas']].map(([v, l], i) => `<button class="${i === 0 ? 'on' : ''}" data-v="${v}">${l}</button>`).join('')}</div>
       <label class="check-row" style="margin-top:10px"><input type="checkbox" data-nx-ai><span class="box"></span><span>Inventer les bords avec l’IA (sinon, prolongement selon le contenu)</span></label>`, go: 'Agrandir', goIcon: 'nxResize' }));
@@ -286,7 +286,7 @@ export class PixelTools {
     try {
       if (useAi && await needAi()) {
         const fake = { _originalElement: c, getElement: () => c, width: W, height: H };
-        const res = await this.aiEdit(fake, mask, 'Prolonge l’image dans les zones transparentes, en continuité parfaite avec le contenu existant.');
+        const res = await this.aiEdit(fake, mask, 'Prolongez l’image dans les zones transparentes, en continuité parfaite avec le contenu existant.');
         const piece = makeCanvas(W, H); const px = piece.getContext('2d'); px.drawImage(res, 0, 0, W, H);
         px.globalCompositeOperation = 'destination-in'; px.drawImage(maskCanvas(blurMask(mask, W, H, 4), W, H), 0, 0);
         x.drawImage(piece, 0, 0);
@@ -311,7 +311,7 @@ export class PixelTools {
     this.crop = { o, r };
     o.selectable = false; o.evented = false;
     D.loading = true; D.canvas.add(r); D.loading = false; D.canvas.setActiveObject(r);
-    D.$.hint.hidden = false; D.$.hint.innerHTML = '<span>Recadrage : ajuste le cadre blanc · Entrée pour valider · Échap pour annuler</span>';
+    D.$.hint.hidden = false; D.$.hint.innerHTML = '<span>Recadrage : ajustez le cadre blanc · Entrée pour valider · Échap pour annuler</span>';
     D.canvas.requestRenderAll();
   }
   finishCrop(ok) {

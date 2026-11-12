@@ -137,21 +137,21 @@ const graph = (...nodes: Record<string, unknown>[]) => [{ "@context": "https://s
 
 /** Données de référencement d'une page (chemin normalisé : « / », « /tarifs », « /espaces/dev »…). */
 export function headFor(path: string): Head {
-  const base = { path, ogType: "website" as const, image: OG_IMAGE, imageAlt: "NEXORA, l’atelier complet du web installé sur ton PC" }
+  const base = { path, ogType: "website" as const, image: OG_IMAGE, imageAlt: "NEXORA, l’atelier complet du web installé sur votre PC" }
   const canonical = (p: string) => `${SITE_URL}${p === "/" ? "/" : p}`
   const [a, b] = path.split("/").filter(Boolean)
 
   if (!a) {
-    const title = "NEXORA — L’atelier complet du web, installé sur ton PC"
+    const title = "NEXORA — L’atelier complet du web, installé sur votre PC"
     const description = cut(
-      `Conçois, code, teste sur ${DEVICE_COUNT} modèles d’appareils, sécurise et publie ton site sur le web, Android et Windows depuis une seule application. Gratuit, sans limite de durée.`,
+      `Concevez, codez, testez sur ${DEVICE_COUNT} modèles d’appareils, sécurisez et publiez votre site sur le web, Android et Windows depuis une seule application. Gratuit, sans limite de durée.`,
     )
     return { ...base, title, description, canonical: canonical("/"), robots: INDEX, jsonLd: graph(organisation(), website(), application(), webPage("/", title, description), faqPage(FAQ)) }
   }
   if (a === "espaces" && !b) {
     const title = "Les 9 espaces de NEXORA — Responsive Lab, Dev Lab, App Builder…"
     const description = cut(
-      "Responsive Lab, Browser Lab, Dev Lab, App Builder, Desktop Builder, Studio 3D & Motion, NEX-DESIGN, Sécurité et Accueil : chaque espace fait un métier, tous partagent tes projets.",
+      "Responsive Lab, Browser Lab, Dev Lab, App Builder, Desktop Builder, Studio 3D & Motion, NEX-DESIGN, Sécurité et Accueil : chaque espace fait un métier, tous partagent vos projets.",
     )
     return {
       ...base,
@@ -208,7 +208,7 @@ export function headFor(path: string): Head {
   if (a === "telecharger") {
     const title = "Télécharger NEXORA pour Windows 10 et 11 — gratuit"
     const description = cut(
-      `Télécharge NEXORA ${APP_VERSION} pour Windows 10 et 11 : un lanceur vérifie la signature de chaque fichier, installe et met à jour l’application. Licence gratuite, sans limite de durée.`,
+      `Téléchargez NEXORA ${APP_VERSION} pour Windows 10 et 11 : un lanceur vérifie la signature de chaque fichier, installe et met à jour l’application. Licence gratuite, sans limite de durée.`,
     )
     return {
       ...base,
@@ -249,13 +249,13 @@ export function headFor(path: string): Head {
   }
   if (a === "licence") {
     const title = b === "verifier" ? "Vérifier une clé de licence NEXORA" : "Ma licence NEXORA — compte, clé et abonnement"
-    const description = "Crée ton compte NEXORA, récupère ta clé de licence gratuite, gère tes ordinateurs et ton abonnement Pro."
+    const description = "Créez votre compte NEXORA, récupérez votre clé de licence gratuite, gérez vos ordinateurs et votre abonnement Pro."
     return { ...base, title, description, canonical: canonical(b === "verifier" ? "/licence/verifier" : "/licence"), robots: NOINDEX, jsonLd: graph(organisation(), webPage(path, title, description)) }
   }
   return {
     ...base,
     title: "Page introuvable — NEXORA",
-    description: "Cette page n’existe pas ou a changé d’adresse. Retrouve les 9 espaces de NEXORA, les tarifs et le téléchargement.",
+    description: "Cette page n’existe pas ou a changé d’adresse. Retrouvez les 9 espaces de NEXORA, les tarifs et le téléchargement.",
     canonical: canonical(path),
     robots: "noindex, nofollow",
     jsonLd: [],

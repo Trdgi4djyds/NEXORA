@@ -187,14 +187,14 @@ function Login() {
           <button type="button" className="auth-back" onClick={() => go("login")}><Icon name="back" size={14} /> Retour à la connexion</button>
         )}
         {mode === "login"
-          ? <Head kicker="Back office" title="Connexion" text="Connecte-toi avec ton compte NEXORA administrateur." />
-          : <Head badge="key" title="Mot de passe oublié ?" text="Saisis ton adresse e-mail : tu recevras un lien pour choisir un nouveau mot de passe." />}
+          ? <Head kicker="Back office" title="Connexion" text="Connectez-vous avec votre compte NEXORA administrateur." />
+          : <Head badge="key" title="Mot de passe oublié ?" text="Saisissez votre adresse e-mail : vous recevrez un lien pour choisir un nouveau mot de passe." />}
         <Field label="Adresse e-mail" icon="mail">
-          <input className="input" type="email" autoComplete="email" required autoFocus placeholder="toi@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input className="input" type="email" autoComplete="email" required autoFocus placeholder="vous@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} />
         </Field>
         {mode === "login" && (
           <Field label="Mot de passe" icon="lock" aside={<button type="button" className="link-btn auth-forgot" onClick={() => go("forgot")}>Mot de passe oublié ?</button>}>
-            <PasswordInput value={password} onChange={setPassword} autoComplete="current-password" placeholder="Ton mot de passe" />
+            <PasswordInput value={password} onChange={setPassword} autoComplete="current-password" placeholder="Votre mot de passe" />
           </Field>
         )}
         {msg && <div className={`auth-msg ${msg.bad ? "bad" : "ok"}`} role={msg.bad ? "alert" : "status"}>{msg.text}</div>}
@@ -223,7 +223,7 @@ function SetPassword({ onDone }: { onDone: () => void }) {
   return (
     <AuthShell>
       <form className="auth-form" onSubmit={submit}>
-        <Head badge="lock" title="Nouveau mot de passe" text="Choisis un mot de passe d’au moins 8 caractères." />
+        <Head badge="lock" title="Nouveau mot de passe" text="Choisissez un mot de passe d’au moins 8 caractères." />
         <Field label="Nouveau mot de passe" icon="lock">
           <PasswordInput value={password} onChange={setPassword} autoComplete="new-password" minLength={8} placeholder="8 caractères minimum" autoFocus />
         </Field>
@@ -241,7 +241,7 @@ function Denied({ reason }: { reason: string }) {
   return (
     <AuthShell>
       <div className="auth-form">
-        <Head badge="shield" title="Accès réservé" text={reason || "Ce compte n’a pas le rôle administrateur. Demande à un super-administrateur de te l’attribuer."} />
+        <Head badge="shield" title="Accès réservé" text={reason || "Ce compte n’a pas le rôle administrateur. Demande à un super-administrateur de vous l’attribuer."} />
         <button className="btn auth-alt" onClick={() => sb.auth.signOut()}>
           Changer de compte
         </button>

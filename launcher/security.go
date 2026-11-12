@@ -124,10 +124,10 @@ func VerifyStatement(payload, sigB64 string, key ed25519.PublicKey) (*Statement,
 	iss, e1 := time.Parse(time.RFC3339, s.IssuedAt)
 	exp, e2 := time.Parse(time.RFC3339, s.ExpiresAt)
 	if e1 != nil || e2 != nil || iss.After(now.Add(5*time.Minute)) {
-		return nil, &SecFail{Kind: "manifest", Message: "La déclaration du serveur de sécurité est incohérente (dates). Vérifie la date et l’heure de Windows."}
+		return nil, &SecFail{Kind: "manifest", Message: "La déclaration du serveur de sécurité est incohérente (dates). Vérifiez la date et l’heure de Windows."}
 	}
 	if now.After(exp.Add(5 * time.Minute)) {
-		return nil, &SecFail{Kind: "manifest", Message: "La déclaration du serveur de sécurité a expiré. Vérifie la date et l’heure de Windows, puis réessaie."}
+		return nil, &SecFail{Kind: "manifest", Message: "La déclaration du serveur de sécurité a expiré. Vérifiez la date et l’heure de Windows, puis réessayez."}
 	}
 	return &s, nil
 }
@@ -136,12 +136,12 @@ func VerifyStatement(payload, sigB64 string, key ed25519.PublicKey) (*Statement,
 func FetchStatement(ctx context.Context, c *http.Client, key ed25519.PublicKey) (*Statement, error) {
 	res, err := get(ctx, c, serverBase+"/security/manifest", map[string]string{"Accept": "application/json"})
 	if err != nil {
-		return nil, &SecFail{Kind: "offline", Message: "Connexion perdue : NEXORA Devs Toolbox ne peut pas joindre le serveur de sécurité de NEXORA. Vérifie ta connexion à Internet, puis réessaie.", Detail: err.Error()}
+		return nil, &SecFail{Kind: "offline", Message: "Connexion perdue : NEXORA Devs Toolbox ne peut pas joindre le serveur de sécurité de NEXORA. Vérifiez votre connexion à Internet, puis réessayez.", Detail: err.Error()}
 	}
 	defer res.Body.Close()
 	b, _ := io.ReadAll(io.LimitReader(res.Body, 1<<20))
 	if res.StatusCode == http.StatusServiceUnavailable {
-		return nil, &SecFail{Kind: "server", Message: "Le serveur de sécurité de NEXORA n’est pas encore prêt. Réessaie dans quelques minutes."}
+		return nil, &SecFail{Kind: "server", Message: "Le serveur de sécurité de NEXORA n’est pas encore prêt. Réessayez dans quelques minutes."}
 	}
 	if res.StatusCode != http.StatusOK {
 		return nil, &SecFail{Kind: "offline", Message: fmt.Sprintf("Connexion perdue : le serveur de sécurité répond %d.", res.StatusCode)}
@@ -170,7 +170,7 @@ func StartupCheck(ctx context.Context, c *http.Client, l Layout, st *State, relK
 	if err != nil {
 		switch {
 		case errors.Is(err, errOffline):
-			return nil, &SecFail{Kind: "offline", Message: "Connexion perdue : le dépôt officiel des versions de NEXORA est injoignable. Vérifie ta connexion à Internet, puis réessaie.", Detail: err.Error()}
+			return nil, &SecFail{Kind: "offline", Message: "Connexion perdue : le dépôt officiel des versions de NEXORA est injoignable. Vérifiez votre connexion à Internet, puis réessayez.", Detail: err.Error()}
 		case errors.Is(err, errSignature):
 			return nil, &SecFail{Kind: "integrity", Message: "La publication trouvée sur le dépôt officiel n’est pas signée par NEXORA : rien n’a été installé."}
 		case errors.Is(err, errExpired):
@@ -209,7 +209,7 @@ func StartupCheck(ctx context.Context, c *http.Client, l Layout, st *State, relK
 				return nil, err
 			}
 			if errors.Is(err, errOffline) {
-				return nil, &SecFail{Kind: "offline", Message: "Connexion perdue pendant le téléchargement de NEXORA. Réessaie : le téléchargement reprendra où il s’est arrêté.", Detail: err.Error()}
+				return nil, &SecFail{Kind: "offline", Message: "Connexion perdue pendant le téléchargement de NEXORA. Réessayez : le téléchargement reprendra où il s’est arrêté.", Detail: err.Error()}
 			}
 			return nil, &SecFail{Kind: "integrity", Message: "Le téléchargement de NEXORA a été refusé au contrôle : " + err.Error(), Detail: err.Error()}
 		}

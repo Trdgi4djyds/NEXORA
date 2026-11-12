@@ -1,7 +1,7 @@
 import{a as p,d as l,e as b,f as h,i as v}from"./chunk-EWSFHS6Y.js";import{a as r}from"./chunk-XJMNRA7U.js";import{a as f}from"./chunk-6ZWS5EFO.js";import{b as i}from"./chunk-S4I2LXHS.js";import{a as c}from"./chunk-GKSXEY5K.js";import{a as u}from"./chunk-V3CX37JL.js";import{a as s,c as d,o as m}from"./chunk-VBMWAH3C.js";function w(n){let e=(Date.now()-n)/1e3;return e<3600?`il y a ${Math.max(1,Math.round(e/60))} min`:e<86400?`il y a ${Math.round(e/3600)} h`:`il y a ${Math.round(e/86400)} j`}function g(){let n=s("#welcome"),e=!!r.source,a=r.board.welcome;if(r.board.welcome=!e,n.hidden=e,document.body.classList.toggle("welcome-mode",!e),a!==r.board.welcome&&(v(),r.board.relayout()),e)return;let t=(c.recent||[]).slice(0,5);n.innerHTML=`
     <div class="hero">
-      <h1>Colle un lien,<br>obtiens la maquette.</h1>
-      <p class="lead">Affiche un site ou un projet dans le cadre d'un vrai iPhone, Samsung, pliable, ordinateur ou t\xE9l\xE9viseur. Compare plusieurs appareils c\xF4te \xE0 c\xF4te, exporte des photos et des vid\xE9os HD, anime-les en 3D ou transforme le site en application Android.</p>
+      <h1>Collez un lien,<br>obtenez la maquette.</h1>
+      <p class="lead">Affichez un site ou un projet dans le cadre d'un vrai iPhone, Samsung, pliable, ordinateur ou t\xE9l\xE9viseur. Comparez plusieurs appareils c\xF4te \xE0 c\xF4te, exportez des photos et des vid\xE9os HD, animez-les en 3D ou transformez le site en application Android.</p>
       <form class="hero-link" data-w="link">
         <span class="hl-ico">${i("link",18)}</span>
         <input id="heroLink" placeholder="https://monsite.com" spellcheck="false" aria-label="Lien du site">

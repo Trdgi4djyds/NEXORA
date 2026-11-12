@@ -93,7 +93,7 @@ function parseGoogleServices(text, appId) {
   const c = clients.find((x) => x.client_info.android_client_info.package_name === appId);
   if (!c) {
     return {
-      ok: false, projectId: pi.project_id, packages: pkgs, error: `Ce fichier ne contient pas l’application « ${appId} » (il contient : ${pkgs.join(', ') || 'aucune application Android'}). Dans la console Firebase, ajoute une application Android avec exactement cet identifiant, puis télécharge à nouveau le fichier.`,
+      ok: false, projectId: pi.project_id, packages: pkgs, error: `Ce fichier ne contient pas l’application « ${appId} » (il contient : ${pkgs.join(', ') || 'aucune application Android'}). Dans la console Firebase, ajoutez une application Android avec exactement cet identifiant, puis téléchargez à nouveau le fichier.`,
     };
   }
   const key = (c.api_key || []).find((k) => k.current_key);
@@ -389,17 +389,17 @@ class PushKit {
     }
     this.setBase(first);
     const err = new Error(`Windows a bloqué l’écriture du kit dans tous les emplacements essayés :\n• ${tried.join('\n• ')}\n`
-      + 'Cause habituelle : antivirus ou « Accès contrôlé aux dossiers » de Windows Defender. Autorise NEXORA dans '
+      + 'Cause habituelle : antivirus ou « Accès contrôlé aux dossiers » de Windows Defender. Autorisez NEXORA dans '
       + 'Sécurité Windows › Protection contre les virus et menaces › Protection contre les ransomwares › « Autoriser une application », '
-      + 'ou choisis un autre dossier avec « Changer l’emplacement », puis relance.');
+      + 'ou choisissez un autre dossier avec « Changer l’emplacement », puis relancez.');
     err.code = 'PUSH_LOCATION';
     throw err;
   }
 
   async installInner(tools, onStep = () => {}) {
-    if (!tools || !tools.buildTools || !tools.platform || !tools.java) throw new Error('Installe d’abord les outils Android (bouton « Installer » de l’App Builder).');
+    if (!tools || !tools.buildTools || !tools.platform || !tools.java) throw new Error('Installez d’abord les outils Android (bouton « Installer » de l’App Builder).');
     const javac = path.join(tools.java.home, 'bin', process.platform === 'win32' ? 'javac.exe' : 'javac');
-    if (!fs.existsSync(javac)) throw new Error('Le Java installé ne contient pas le compilateur (javac) : installe le JDK proposé par l’App Builder.');
+    if (!fs.existsSync(javac)) throw new Error('Le Java installé ne contient pas le compilateur (javac) : installez le JDK proposé par l’App Builder.');
     onStep({ label: 'Vérification de l’emplacement du kit', progress: 0.01 });
     const w = await this.checkWritable();
     if (!w.ok) { const e = new Error(w.error); e.code = w.code || 'EPERM'; throw e; }
@@ -603,7 +603,7 @@ async function accessToken(sa, fetchImpl, scope = 'https://www.googleapis.com/au
     method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: `grant_type=${encodeURIComponent('urn:ietf:params:oauth:grant-type:jwt-bearer')}&assertion=${jwt}`,
   });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok || !j.access_token) throw new Error(`Connexion à Google refusée : ${j.error_description || j.error || r.status}. Vérifie la clé du compte de service.`);
+  if (!r.ok || !j.access_token) throw new Error(`Connexion à Google refusée : ${j.error_description || j.error || r.status}. Vérifiez la clé du compte de service.`);
   return j.access_token;
 }
 
@@ -682,7 +682,7 @@ async function sendTest(opts, fetchImpl) {
   const j = await r.json().catch(() => ({}));
   if (!r.ok) {
     const st = j.error && (j.error.status || j.error.message);
-    const hint = /UNREGISTERED|NOT_FOUND/.test(String(st)) ? ' Le jeton n’est plus valide (application désinstallée ou réinstallée).' : /PERMISSION_DENIED/.test(String(st)) ? ' Active l’API « Firebase Cloud Messaging » du projet et vérifie que la clé appartient bien à ce projet.' : /INVALID_ARGUMENT/.test(String(st)) ? ' Un champ est invalide (jeton, sujet ou adresse d’image).' : '';
+    const hint = /UNREGISTERED|NOT_FOUND/.test(String(st)) ? ' Le jeton n’est plus valide (application désinstallée ou réinstallée).' : /PERMISSION_DENIED/.test(String(st)) ? ' Activez l’API « Firebase Cloud Messaging » du projet et vérifiez que la clé appartient bien à ce projet.' : /INVALID_ARGUMENT/.test(String(st)) ? ' Un champ est invalide (jeton, sujet ou adresse d’image).' : '';
     throw new Error(`Envoi refusé (${r.status}) : ${(j.error && j.error.message) || st || 'erreur inconnue'}.${hint}`);
   }
   return { ok: true, name: j.name, projectId: sa.projectId, topic: message.topic || null };

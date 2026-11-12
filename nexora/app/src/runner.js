@@ -180,7 +180,7 @@ class ProjectRunner extends EventEmitter {
         const ok = await this.runStep(this.fill(step.cmd, a, values), dir, env, gen);
         if (gen !== this.gen) return;
         if (!ok) {
-          this.setStatus('error', { message: `Échec : ${step.label.toLowerCase()}. Consulte la console du serveur.`, step: step.label });
+          this.setStatus('error', { message: `Échec : ${step.label.toLowerCase()}. Consultez la console du serveur.`, step: step.label });
           return;
         }
       }
@@ -250,7 +250,7 @@ class ProjectRunner extends EventEmitter {
     const limit = a.kind === 'flutter' || a.kind === 'dotnet' ? 600000 : 240000;
     const giveUp = setTimeout(() => {
       if (!this.url && gen === this.gen && this.status === 'starting') {
-        this.setStatus('error', { message: 'L\'adresse du serveur n\'a pas été détectée. Colle-la dans la barre d\'adresse si le serveur tourne.' });
+        this.setStatus('error', { message: 'L\'adresse du serveur n\'a pas été détectée. Collez-la dans la barre d\'adresse si le serveur tourne.' });
       }
     }, limit);
 
@@ -266,7 +266,7 @@ class ProjectRunner extends EventEmitter {
       if (code === 0 || code === null) this.setStatus('stopped', { message: 'Serveur arrêté' });
       else {
         this.setStatus('error', {
-          message: wasRunning ? `Le serveur s'est arrêté (code ${code}).` : `Le serveur n'a pas pu démarrer (code ${code}). Consulte la console du serveur.`,
+          message: wasRunning ? `Le serveur s'est arrêté (code ${code}).` : `Le serveur n'a pas pu démarrer (code ${code}). Consultez la console du serveur.`,
         });
       }
     });

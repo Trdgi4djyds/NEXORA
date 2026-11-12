@@ -17,7 +17,7 @@ export async function createSet(D, master) {
   const id = uid();
   sets(D)[id] = { name: master.name || 'Composant', props: [{ name: prop.trim(), values: [val.trim()] }], variants: { [val.trim()]: master.nxComp.id } };
   commit(D, 'Jeu de variantes');
-  toast('Jeu créé : ajoute maintenant les autres variantes (survol, désactivé…).');
+  toast('Jeu créé : ajoutez maintenant les autres variantes (survol, désactivé…).');
 }
 export async function addVariant(D, master) {
   const found = setOfComp(D, master.nxComp.id);
@@ -41,7 +41,7 @@ export async function addVariant(D, master) {
   s.variants[key] = compId;
   D.canvas.add(copy); D.canvas.setActiveObject(copy);
   commit(D, 'Variante ajoutée');
-  toast(`Variante « ${values.join(', ')} » créée à côté : modifie-la, puis « Mettre à jour les copies ».`);
+  toast(`Variante « ${values.join(', ')} » créée à côté : modifiez-la, puis « Mettre à jour les copies ».`);
   void setId;
 }
 export async function addProp(D, master) {
@@ -86,7 +86,7 @@ export function props(D, o) {
   const found = setOfComp(D, o.nxComp.id);
   if (o.nxComp.master) {
     return sec('Variantes', found ? `<p class="dzx-hint">Jeu « ${esc(found[1].name)} » : ${pl(Object.keys(found[1].variants).length, 'variante', 'variantes')}, propriétés ${found[1].props.map((p) => esc(p.name)).join(', ')}.</p><div class="nx-btns">${btn('var-new', 'plus', 'Ajouter une variante')}${btn('var-prop', 'nxTag', 'Ajouter une propriété')}</div>`
-      : `<p class="dzx-hint">Regroupe les états de ce composant (normal, survol, désactivé…) et ses tailles dans un seul composant.</p><div class="nx-btns">${btn('var-set', 'nxComponent', 'Créer un jeu de variantes')}</div>`);
+      : `<p class="dzx-hint">Regroupez les états de ce composant (normal, survol, désactivé…) et ses tailles dans un seul composant.</p><div class="nx-btns">${btn('var-set', 'nxComponent', 'Créer un jeu de variantes')}</div>`);
   }
   const cur = found ? ((o.nxVariant && o.nxVariant.values) || (Object.entries(found[1].variants).find(([, v]) => v === o.nxComp.id) || [''])[0].split('|')) : [];
   const t = texts(o);

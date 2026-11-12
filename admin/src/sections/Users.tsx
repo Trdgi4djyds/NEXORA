@@ -142,7 +142,7 @@ function CreateUser({ onClose, onDone }: { onClose: () => void; onDone: () => vo
       <form className="form" onSubmit={submit}>
         <label className="field"><span>Nom complet</span><input className="input" name="name" autoFocus /></label>
         <label className="field"><span>Adresse e-mail</span><input className="input" name="email" type="email" required /></label>
-        <label className="field"><span>Mot de passe provisoire</span><input className="input" name="password" type="password" minLength={8} required autoComplete="new-password" /><small>8 caractères au moins. Communique-le à la personne : elle pourra le changer dans NEXORA.</small></label>
+        <label className="field"><span>Mot de passe provisoire</span><input className="input" name="password" type="password" minLength={8} required autoComplete="new-password" /><small>8 caractères au moins. Communiquez-le à la personne : elle pourra le changer dans NEXORA.</small></label>
         <div className="actions">
           <button type="button" className="btn" onClick={onClose}>Annuler</button>
           <button className="btn primary" disabled={act.busy}>Créer le compte</button>

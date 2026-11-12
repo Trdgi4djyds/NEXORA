@@ -31,7 +31,7 @@ const PROBE = `new Promise((resolve) => {
 })`;
 
 async function runChecks({ BrowserWindow, partition }, { url, thresholds = {} }) {
-  if (!/^https?:\/\//i.test(url || '')) throw new Error('Lance le projet ou indique l’adresse à contrôler.');
+  if (!/^https?:\/\//i.test(url || '')) throw new Error('Lancez le projet ou indiquez l’adresse à contrôler.');
   const th = { ...DEFAULTS, ...thresholds };
   const devices = [];
   for (const d of DEVICES) {

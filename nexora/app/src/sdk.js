@@ -16,16 +16,16 @@ const SDKS = {
     url: 'https://nodejs.org/fr/download',
     steps: {
       win: [
-        { text: 'Installe la version LTS de Node.js avec winget, dans PowerShell ou le Terminal :', cmd: 'winget install OpenJS.NodeJS.LTS' },
+        { text: 'Installez la version LTS de Node.js avec winget, dans PowerShell ou le Terminal :', cmd: 'winget install OpenJS.NodeJS.LTS' },
         { text: 'Ou télécharge l\'installateur Windows (.msi) et suis les étapes en gardant les options par défaut.', url: 'https://nodejs.org/fr/download', label: 'Télécharger Node.js' },
-        { text: 'Vérifie l\'installation dans un nouveau terminal :', cmd: 'node --version' },
+        { text: 'Vérifiez l\'installation dans un nouveau terminal :', cmd: 'node --version' },
       ],
       mac: [
-        { text: 'Installe Node.js avec Homebrew :', cmd: 'brew install node' },
+        { text: 'Installez Node.js avec Homebrew :', cmd: 'brew install node' },
         { text: 'Ou télécharge l\'installateur macOS (.pkg).', url: 'https://nodejs.org/fr/download', label: 'Télécharger Node.js' },
       ],
       linux: [
-        { text: 'Installe Node.js depuis le site officiel ou le gestionnaire de paquets de ta distribution.', url: 'https://nodejs.org/fr/download', label: 'Télécharger Node.js' },
+        { text: 'Installez Node.js depuis le site officiel ou le gestionnaire de paquets de votre distribution.', url: 'https://nodejs.org/fr/download', label: 'Télécharger Node.js' },
       ],
     },
   },
@@ -36,7 +36,7 @@ const SDKS = {
     url: 'https://yarnpkg.com/getting-started/install',
     steps: {
       all: [
-        { text: 'Yarn est fourni avec Node.js via Corepack. Active-le dans un terminal (en administrateur sous Windows) :', cmd: 'corepack enable' },
+        { text: 'Yarn est fourni avec Node.js via Corepack. Activez-le dans un terminal (en administrateur sous Windows) :', cmd: 'corepack enable' },
         { text: 'Ou installe Yarn globalement avec npm :', cmd: 'npm install -g yarn' },
       ],
     },
@@ -59,9 +59,9 @@ const SDKS = {
     check: ['bun --version'],
     url: 'https://bun.sh/docs/installation',
     steps: {
-      win: [{ text: 'Installe Bun dans PowerShell :', cmd: 'powershell -c "irm bun.sh/install.ps1 | iex"' }],
-      mac: [{ text: 'Installe Bun dans le Terminal :', cmd: 'curl -fsSL https://bun.sh/install | bash' }],
-      linux: [{ text: 'Installe Bun dans le terminal :', cmd: 'curl -fsSL https://bun.sh/install | bash' }],
+      win: [{ text: 'Installez Bun dans PowerShell :', cmd: 'powershell -c "irm bun.sh/install.ps1 | iex"' }],
+      mac: [{ text: 'Installez Bun dans le Terminal :', cmd: 'curl -fsSL https://bun.sh/install | bash' }],
+      linux: [{ text: 'Installez Bun dans le terminal :', cmd: 'curl -fsSL https://bun.sh/install | bash' }],
     },
   },
   flutter: {
@@ -71,19 +71,19 @@ const SDKS = {
     url: 'https://docs.flutter.dev/install/manual',
     steps: {
       win: [
-        { text: 'Installe Git pour Windows, nécessaire à Flutter :', cmd: 'winget install Git.Git' },
-        { text: 'Télécharge le SDK Flutter pour Windows (fichier flutter_windows_…-stable.zip), version stable.', url: 'https://docs.flutter.dev/install/archive', label: 'Archive des SDK Flutter' },
-        { text: 'Crée le dossier %USERPROFILE%\\develop puis décompresse le fichier dedans, par exemple dans PowerShell :', cmd: 'Expand-Archive -Path "$env:USERPROFILE\\Downloads\\flutter_windows_VERSION-stable.zip" -DestinationPath "$env:USERPROFILE\\develop"' },
-        { text: 'Ajoute Flutter au PATH : touche Windows, tape « variables d\'environnement », ouvre « Modifier les variables d\'environnement pour votre compte », sélectionne Path, Modifier, Nouveau, puis colle :', cmd: '%USERPROFILE%\\develop\\flutter\\bin' },
-        { text: 'Ferme les terminaux ouverts, puis vérifie dans un nouveau terminal :', cmd: 'flutter doctor' },
+        { text: 'Installez Git pour Windows, nécessaire à Flutter :', cmd: 'winget install Git.Git' },
+        { text: 'Téléchargez le SDK Flutter pour Windows (fichier flutter_windows_…-stable.zip), version stable.', url: 'https://docs.flutter.dev/install/archive', label: 'Archive des SDK Flutter' },
+        { text: 'Créez le dossier %USERPROFILE%\\develop puis décompressez le fichier dedans, par exemple dans PowerShell :', cmd: 'Expand-Archive -Path "$env:USERPROFILE\\Downloads\\flutter_windows_VERSION-stable.zip" -DestinationPath "$env:USERPROFILE\\develop"' },
+        { text: 'Ajoutez Flutter au PATH : appuyez sur la touche Windows, tapez « variables d\'environnement », ouvrez « Modifier les variables d\'environnement pour votre compte », sélectionnez Path, Modifier, Nouveau, puis collez :', cmd: '%USERPROFILE%\\develop\\flutter\\bin' },
+        { text: 'Fermez les terminaux ouverts, puis vérifiez dans un nouveau terminal :', cmd: 'flutter doctor' },
       ],
       mac: [
-        { text: 'Télécharge le SDK Flutter pour macOS et décompresse-le dans ~/develop, puis ajoute ~/develop/flutter/bin au PATH.', url: 'https://docs.flutter.dev/install/manual', label: 'Guide d\'installation' },
-        { text: 'Vérifie l\'installation :', cmd: 'flutter doctor' },
+        { text: 'Téléchargez le SDK Flutter pour macOS et décompressez-le dans ~/develop, puis ajoutez ~/develop/flutter/bin au PATH.', url: 'https://docs.flutter.dev/install/manual', label: 'Guide d\'installation' },
+        { text: 'Vérifiez l\'installation :', cmd: 'flutter doctor' },
       ],
       linux: [
-        { text: 'Télécharge le SDK Flutter pour Linux et décompresse-le dans ~/develop, puis ajoute ~/develop/flutter/bin au PATH.', url: 'https://docs.flutter.dev/install/manual', label: 'Guide d\'installation' },
-        { text: 'Vérifie l\'installation :', cmd: 'flutter doctor' },
+        { text: 'Téléchargez le SDK Flutter pour Linux et décompressez-le dans ~/develop, puis ajoutez ~/develop/flutter/bin au PATH.', url: 'https://docs.flutter.dev/install/manual', label: 'Guide d\'installation' },
+        { text: 'Vérifiez l\'installation :', cmd: 'flutter doctor' },
       ],
     },
   },
@@ -105,11 +105,11 @@ const SDKS = {
     url: 'https://www.php.net/downloads',
     steps: {
       win: [
-        { text: 'Installe PHP avec winget :', cmd: 'winget install PHP.PHP.8.4' },
+        { text: 'Installez PHP avec winget :', cmd: 'winget install PHP.PHP.8.4' },
         { text: 'Ferme et rouvre les terminaux, puis vérifie :', cmd: 'php --version' },
       ],
-      mac: [{ text: 'Installe PHP avec Homebrew :', cmd: 'brew install php' }],
-      linux: [{ text: 'Installe PHP avec le gestionnaire de paquets de ta distribution.', url: 'https://www.php.net/downloads', label: 'Téléchargements PHP' }],
+      mac: [{ text: 'Installez PHP avec Homebrew :', cmd: 'brew install php' }],
+      linux: [{ text: 'Installez PHP avec le gestionnaire de paquets de votre distribution.', url: 'https://www.php.net/downloads', label: 'Téléchargements PHP' }],
     },
   },
   composer: {
@@ -118,9 +118,9 @@ const SDKS = {
     check: ['composer --version'],
     url: 'https://getcomposer.org/download/',
     steps: {
-      win: [{ text: 'Télécharge et lance Composer-Setup.exe, en gardant les options par défaut.', url: 'https://getcomposer.org/download/', label: 'Télécharger Composer' }],
-      mac: [{ text: 'Installe Composer avec Homebrew :', cmd: 'brew install composer' }],
-      linux: [{ text: 'Installe Composer en suivant le guide officiel.', url: 'https://getcomposer.org/download/', label: 'Télécharger Composer' }],
+      win: [{ text: 'Téléchargez et lancez Composer-Setup.exe, en gardant les options par défaut.', url: 'https://getcomposer.org/download/', label: 'Télécharger Composer' }],
+      mac: [{ text: 'Installez Composer avec Homebrew :', cmd: 'brew install composer' }],
+      linux: [{ text: 'Installez Composer en suivant le guide officiel.', url: 'https://getcomposer.org/download/', label: 'Télécharger Composer' }],
     },
   },
   python: {
@@ -130,11 +130,11 @@ const SDKS = {
     url: 'https://www.python.org/downloads/',
     steps: {
       win: [
-        { text: 'Installe Python avec winget :', cmd: 'winget install Python.Python.3.13' },
+        { text: 'Installez Python avec winget :', cmd: 'winget install Python.Python.3.13' },
         { text: 'Ou télécharge l\'installateur et coche « Add python.exe to PATH » au premier écran.', url: 'https://www.python.org/downloads/', label: 'Télécharger Python' },
       ],
-      mac: [{ text: 'Installe Python avec Homebrew :', cmd: 'brew install python' }],
-      linux: [{ text: 'Installe python3 et python3-venv avec le gestionnaire de paquets de ta distribution.' }],
+      mac: [{ text: 'Installez Python avec Homebrew :', cmd: 'brew install python' }],
+      linux: [{ text: 'Installez python3 et python3-venv avec le gestionnaire de paquets de votre distribution.' }],
     },
   },
   ruby: {
@@ -144,11 +144,11 @@ const SDKS = {
     url: 'https://rubyinstaller.org/downloads/',
     steps: {
       win: [
-        { text: 'Télécharge Ruby+Devkit (version recommandée) et lance l\'installateur. À la fin, laisse cocher « ridk install ».', url: 'https://rubyinstaller.org/downloads/', label: 'Télécharger Ruby' },
+        { text: 'Téléchargez Ruby+Devkit (version recommandée) et lancez l\'installateur. À la fin, laissez cocher « ridk install ».', url: 'https://rubyinstaller.org/downloads/', label: 'Télécharger Ruby' },
         { text: 'Installe ensuite Bundler :', cmd: 'gem install bundler' },
       ],
-      mac: [{ text: 'Installe Ruby avec Homebrew, puis Bundler :', cmd: 'brew install ruby && gem install bundler' }],
-      linux: [{ text: 'Installe Ruby avec le gestionnaire de paquets de ta distribution, puis Bundler :', cmd: 'gem install bundler' }],
+      mac: [{ text: 'Installez Ruby avec Homebrew, puis Bundler :', cmd: 'brew install ruby && gem install bundler' }],
+      linux: [{ text: 'Installez Ruby avec le gestionnaire de paquets de votre distribution, puis Bundler :', cmd: 'gem install bundler' }],
     },
   },
   bundler: {
@@ -164,9 +164,9 @@ const SDKS = {
     check: ['hugo version'],
     url: 'https://gohugo.io/installation/',
     steps: {
-      win: [{ text: 'Installe Hugo (édition étendue) :', cmd: 'winget install Hugo.Hugo.Extended' }],
+      win: [{ text: 'Installez Hugo (édition étendue) :', cmd: 'winget install Hugo.Hugo.Extended' }],
       mac: [{ text: 'Installe Hugo :', cmd: 'brew install hugo' }],
-      linux: [{ text: 'Installe Hugo en suivant le guide officiel.', url: 'https://gohugo.io/installation/', label: 'Installer Hugo' }],
+      linux: [{ text: 'Installez Hugo en suivant le guide officiel.', url: 'https://gohugo.io/installation/', label: 'Installer Hugo' }],
     },
   },
   dotnet: {
@@ -175,9 +175,9 @@ const SDKS = {
     check: ['dotnet --version'],
     url: 'https://dotnet.microsoft.com/fr-fr/download',
     steps: {
-      win: [{ text: 'Installe le SDK .NET :', cmd: 'winget install Microsoft.DotNet.SDK.9' }],
-      mac: [{ text: 'Télécharge le SDK .NET pour macOS.', url: 'https://dotnet.microsoft.com/fr-fr/download', label: 'Télécharger .NET' }],
-      linux: [{ text: 'Installe le SDK .NET en suivant le guide officiel.', url: 'https://dotnet.microsoft.com/fr-fr/download', label: 'Télécharger .NET' }],
+      win: [{ text: 'Installez le SDK .NET :', cmd: 'winget install Microsoft.DotNet.SDK.9' }],
+      mac: [{ text: 'Téléchargez le SDK .NET pour macOS.', url: 'https://dotnet.microsoft.com/fr-fr/download', label: 'Télécharger .NET' }],
+      linux: [{ text: 'Installez le SDK .NET en suivant le guide officiel.', url: 'https://dotnet.microsoft.com/fr-fr/download', label: 'Télécharger .NET' }],
     },
   },
   go: {
@@ -188,7 +188,7 @@ const SDKS = {
     steps: {
       win: [{ text: 'Installe Go :', cmd: 'winget install GoLang.Go' }],
       mac: [{ text: 'Installe Go :', cmd: 'brew install go' }],
-      linux: [{ text: 'Installe Go en suivant le guide officiel.', url: 'https://go.dev/dl/', label: 'Télécharger Go' }],
+      linux: [{ text: 'Installez Go en suivant le guide officiel.', url: 'https://go.dev/dl/', label: 'Télécharger Go' }],
     },
   },
   // NEXORA #016 : Flutter a besoin de Git pour se mettre à jour et récupérer ses paquets.
@@ -198,9 +198,9 @@ const SDKS = {
     check: ['git --version'],
     url: 'https://git-scm.com/downloads',
     steps: {
-      win: [{ text: 'Installe Git pour Windows :', cmd: 'winget install Git.Git' }],
-      mac: [{ text: 'Installe Git avec les outils de développement d\'Apple :', cmd: 'xcode-select --install' }],
-      linux: [{ text: 'Installe Git avec le gestionnaire de paquets de ta distribution.', url: 'https://git-scm.com/downloads', label: 'Télécharger Git' }],
+      win: [{ text: 'Installez Git pour Windows :', cmd: 'winget install Git.Git' }],
+      mac: [{ text: 'Installez Git avec les outils de développement d\'Apple :', cmd: 'xcode-select --install' }],
+      linux: [{ text: 'Installez Git avec le gestionnaire de paquets de votre distribution.', url: 'https://git-scm.com/downloads', label: 'Télécharger Git' }],
     },
   },
 };

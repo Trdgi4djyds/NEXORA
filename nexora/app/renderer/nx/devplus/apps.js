@@ -10,17 +10,17 @@ export async function toAndroid() {
   if (!dir) return;
   go('android');
   const a = await until(() => state.android && state.android.useDir && state.android);
-  if (!a) { toast('Ouvre l’App Builder une première fois, puis réessaie.'); return; }
+  if (!a) { toast('Ouvrez l’App Builder une première fois, puis réessayez.'); return; }
   a.act_app_new();
   a.set('source.kind', 'project', { rerender: true });
-  try { await a.useDir(dir); toast(`« ${projectName()} » est la source de ta nouvelle application. Vérifie l’identité, puis construis l’APK.`); } catch (e) { toast(String(e.message || e), { kind: 'bad' }); }
+  try { await a.useDir(dir); toast(`« ${projectName()} » est la source de votre nouvelle application. Vérifiez l’identité, puis construisez l’APK.`); } catch (e) { toast(String(e.message || e), { kind: 'bad' }); }
 }
 export async function toDesktop() {
   const dir = root();
   if (!dir) return;
   go('desktop');
   const d = await until(() => state.desktop && state.desktop.newApp && state.desktop);
-  if (!d) { toast('Ouvre le Desktop Builder une première fois, puis réessaie.'); return; }
+  if (!d) { toast('Ouvrez le Desktop Builder une première fois, puis réessayez.'); return; }
   const an = state.devLab && state.devLab.analysis;
   const electron = Boolean(an && /electron/i.test(`${an.kind} ${an.label}`));
   // Le dossier est celui du projet ouvert : pas de fenêtre de choix.
@@ -36,7 +36,7 @@ export async function toDesktop() {
   setTimeout(() => { if (d.pickSource !== pick && !document.querySelector('[data-kind]')) d.pickSource = pick; }, 60000);
 }
 export async function showOnDevices(url) {
-  if (!url) { toast('Lance d’abord le projet (Scripts ou Lancer) pour avoir son adresse.'); return; }
+  if (!url) { toast('Lancez d’abord le projet (Scripts ou Lancer) pour avoir son adresse.'); return; }
   go('preview');
   const input = await until(() => document.getElementById('addressInput'));
   if (!input) return;
@@ -45,7 +45,7 @@ export async function showOnDevices(url) {
   input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true }));
 }
 export async function auditInBrowser(url) {
-  if (!url) { toast('Lance d’abord le projet pour avoir son adresse.'); return; }
+  if (!url) { toast('Lancez d’abord le projet pour avoir son adresse.'); return; }
   go('browser');
   const b = await until(() => state.browserLab && state.browserLab.navigate && state.browserLab);
   if (b) b.navigate(url);
@@ -66,9 +66,9 @@ export async function appsMenu(anchor, ctx) {
 
 export function mount(el, ctx) {
   const render = () => {
-    el.innerHTML = `${head('Vers une app', root() ? `Le projet <b>${esc(projectName())}</b> passe dans les autres espaces de NEXORA sans être reconfiguré.` : 'Ouvre un projet pour l’envoyer vers les autres espaces.')}
+    el.innerHTML = `${head('Vers une app', root() ? `Le projet <b>${esc(projectName())}</b> passez dans les autres espaces de NEXORA sans être reconfiguré.` : 'Ouvrez un projet pour l’envoyer vers les autres espaces.')}
       <div class="nxd-tiles">${ACTIONS(ctx).map((a) => `<button class="nxd-tile" data-go="${a.id}" ${root() ? '' : 'disabled'}><span class="nxd-tile-ic">${ico(a.icon, 20)}</span><b>${esc(a.label)}</b><small>${esc(a.sub)}</small></button>`).join('')}</div>
-      <p class="nxd-muted">${ico('info', 12)} ${ctx.url() ? `Adresse utilisée : ${esc(ctx.url())}` : 'Pour les appareils et le Browser Lab, lance d’abord le projet (onglet Scripts ou bouton « Lancer »).'}</p>`;
+      <p class="nxd-muted">${ico('info', 12)} ${ctx.url() ? `Adresse utilisée : ${esc(ctx.url())}` : 'Pour les appareils et le Browser Lab, lancez d’abord le projet (onglet Scripts ou bouton « Lancer »).'}</p>`;
   };
   el.addEventListener('click', (e) => { const b = e.target.closest('[data-go]'); if (b) { const a = ACTIONS(ctx).find((x) => x.id === b.dataset.go); if (a) a.run(); } });
   ctx.bus.addEventListener('url', () => { if (el.isConnected) render(); });

@@ -315,7 +315,7 @@ func register(l Layout, st *State, m *Manifest) error {
 	}
 	for _, lnk := range want {
 		_ = os.MkdirAll(filepath.Dir(lnk), 0o755)
-		if err := createShortcut(lnk, l.Launcher, l.Root, icon, "Ouvre NEXORA après vérification"); err != nil {
+		if err := createShortcut(lnk, l.Launcher, l.Root, icon, "Ouvrez NEXORA après vérification"); err != nil {
 			errs = append(errs, err.Error())
 		}
 	}

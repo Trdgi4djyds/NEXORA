@@ -80,7 +80,7 @@ export function Portal({ me, onMe, onSignOut }: { me: Me; onMe: (m: Me) => void;
         )}
       </main>
       <footer className="foot">
-        <span><Icon name="key" size={13} /> Code d’accès valable jusqu’au {lastDay(me.code_expires_at)} : un nouveau code t’est transmis chaque mois.</span>
+        <span><Icon name="key" size={13} /> Code d’accès valable jusqu’au {lastDay(me.code_expires_at)} : un nouveau code vous est transmis chaque mois.</span>
         <a href="/">Site de NEXORA</a>
       </footer>
     </div>
@@ -122,7 +122,7 @@ function Overview({ d, first }: { d: Dashboard; first: string }) {
       <Head title={`Bonjour${first ? ` ${first}` : ""}`} sub={`${plural(d.referrals, "filleul")} au total, dont ${d.referrals_month} ce mois-ci · ${usdTotal(d.month_cents)} gagnés ce mois-ci`} />
       <div className="kpis">
         <Kpi tone="rose" icon="sync" label="Revenus récurrents" value={usdTotal(d.recurring.commission_cents)} unit=" / mois" hint={plural(d.recurring.payers, "filleul payant", "filleuls payants")} />
-        <Kpi icon="star" label="Disponible" value={usdFloor(avail)} hint={avail >= min ? "Tu peux demander un retrait." : `Retrait à partir de ${usd(min)}`} />
+        <Kpi icon="star" label="Disponible" value={usdFloor(avail)} hint={avail >= min ? "Vous pouvez demander un retrait." : `Retrait à partir de ${usd(min)}`} />
         <Kpi icon="clock" label="En attente" value={usdTotal(b.pending_cents)} hint={`Disponible ${r.hold_days} jours après chaque paiement`} />
         <Kpi tone="blue" icon="gift" label="Total gagné" value={usdTotal(b.earned_cents)} hint={`${usdTotal(b.paid_cents)} déjà versés`} />
       </div>
@@ -133,14 +133,14 @@ function Overview({ d, first }: { d: Dashboard; first: string }) {
         </section>
         <div className="stack">
           <section className="card">
-            <div className="card-head"><h2>Vers ton prochain retrait</h2></div>
+            <div className="card-head"><h2>Vers votre prochain retrait</h2></div>
             <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={min} aria-valuenow={Math.min(avail, min)}>
               <i style={{ width: `${min > 0 ? Math.min(100, (avail / min) * 100) : 100}%` }} />
             </div>
-            <p className="muted small">{avail >= min ? <>Tu as atteint le minimum de {usd(min)}. <a href="#/retraits">Demander un retrait</a></> : <>{usdFloor(avail)} disponibles sur {usd(min)} : encore {usdTotal(min - avail)}.</>}</p>
+            <p className="muted small">{avail >= min ? <>Vous avez atteint le minimum de {usd(min)}. <a href="#/retraits">Demander un retrait</a></> : <>{usdFloor(avail)} disponibles sur {usd(min)} : encore {usdTotal(min - avail)}.</>}</p>
           </section>
           <section className="card share">
-            <div className="card-head"><h2>Ton lien de parrainage</h2></div>
+            <div className="card-head"><h2>Votre lien de parrainage</h2></div>
             {codes === null ? <Spinner /> : main ? (
               <>
                 <div className="share-code"><span>Code promo</span><b>{main.code}</b><CopyButton value={main.code} label="Code promo" small /></div>
@@ -149,7 +149,7 @@ function Overview({ d, first }: { d: Dashboard; first: string }) {
               </>
             ) : (
               <>
-                <p className="muted small">Crée ton premier code promo : il donne aussi ton lien de parrainage.</p>
+                <p className="muted small">Créez votre premier code promo : il donne aussi votre lien de parrainage.</p>
                 <a className="btn primary sm" href="#/codes"><Icon name="plus" size={14} /> Créer un code</a>
               </>
             )}
@@ -157,11 +157,11 @@ function Overview({ d, first }: { d: Dashboard; first: string }) {
         </div>
       </div>
       <section className="card how">
-        <div className="card-head"><h2>Comment tu gagnes</h2></div>
+        <div className="card-head"><h2>Comment vous gagnez</h2></div>
         <ol>
-          <li><i>1</i><div><b>Ton filleul s’abonne avec ton code ou ton lien</b><p>Il paie l’offre Pro {usd(r.month_cents)} par mois au lieu de {usd(r.list_month_cents)} ({usd(r.year_cents)} par an au lieu de {usd(r.list_year_cents)}) : −{pct(r.discount_pct)} % à chaque paiement.</p></div></li>
-          <li><i>2</i><div><b>Tu touches {pct(r.commission_pct)} % de chaque paiement</b><p>Soit {usd(perPayer)} par mois et par filleul mensuel, {usd((Number(r.year_cents) * Number(r.commission_pct)) / 100)} par filleul annuel, tant que son abonnement continue.</p></div></li>
-          <li><i>3</i><div><b>Tu retires tes gains</b><p>Disponibles {r.hold_days} jours après chaque paiement, retirables à partir de {usd(min)} par {r.methods.map((m) => METHOD[m] || m).join(", ").replace(/, ([^,]*)$/, " ou $1")}.</p></div></li>
+          <li><i>1</i><div><b>Votre filleul s’abonne avec votre code ou votre lien</b><p>Il paie l’offre Pro {usd(r.month_cents)} par mois au lieu de {usd(r.list_month_cents)} ({usd(r.year_cents)} par an au lieu de {usd(r.list_year_cents)}) : −{pct(r.discount_pct)} % à chaque paiement.</p></div></li>
+          <li><i>2</i><div><b>Vous touchez {pct(r.commission_pct)} % de chaque paiement</b><p>Soit {usd(perPayer)} par mois et par filleul mensuel, {usd((Number(r.year_cents) * Number(r.commission_pct)) / 100)} par filleul annuel, tant que son abonnement continue.</p></div></li>
+          <li><i>3</i><div><b>Vous retirez vos gains</b><p>Disponibles {r.hold_days} jours après chaque paiement, retirables à partir de {usd(min)} par {r.methods.map((m) => METHOD[m] || m).join(", ").replace(/, ([^,]*)$/, " ou $1")}.</p></div></li>
         </ol>
       </section>
     </>
@@ -229,7 +229,7 @@ function Codes({ d, onChange }: { d: Dashboard; onChange: () => void }) {
   const full = list ? list.length >= d.rules.max_codes : false
   return (
     <>
-      <Head title="Codes et liens" sub={`Chaque code promo donne aussi un lien de parrainage. Le site garde ton lien ${d.rules.cookie_days} jours : ton filleul peut s’abonner plus tard.`} />
+      <Head title="Codes et liens" sub={`Chaque code promo donne aussi un lien de parrainage. Le site garde votre lien ${d.rules.cookie_days} jours : votre filleul peut s’abonner plus tard.`} />
       <section className="card">
         <form className="create" onSubmit={create}>
           <label className="field grow">
@@ -237,7 +237,7 @@ function Codes({ d, onChange }: { d: Dashboard; onChange: () => void }) {
             <input className="input code-input sm" value={code} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 24))} placeholder="PRENOM25" required minLength={3} disabled={full} />
           </label>
           <label className="field grow">
-            <span>Où tu le partages (pour toi)</span>
+            <span>Où vous le partagez (pour vous)</span>
             <input className="input" value={label} onChange={(e) => setLabel(e.target.value.slice(0, 60))} placeholder="Chaîne YouTube, groupe WhatsApp…" disabled={full} />
           </label>
           <button className="btn primary" disabled={busy || full}>{busy ? "Création…" : "Créer le code"}</button>
@@ -246,7 +246,7 @@ function Codes({ d, onChange }: { d: Dashboard; onChange: () => void }) {
         {err && <p className="msg bad" role="alert">{err}</p>}
       </section>
       {list === null ? <div className="loading"><Spinner /></div> : !list.length ? (
-        <Empty icon="link" title="Aucun code pour l’instant">Crée un code par endroit où tu partages NEXORA pour savoir lequel marche le mieux.</Empty>
+        <Empty icon="link" title="Aucun code pour l’instant">Créez un code par endroit où vous partagez NEXORA pour savoir lequel marche le mieux.</Empty>
       ) : (
         <div className="code-list">
           {list.map((c) => (
@@ -288,10 +288,10 @@ function Filleuls({ d }: { d: Dashboard }) {
       <Head title="Filleuls" sub={`${plural(d.referrals, "filleul")} · ${plural(d.recurring.payers, "payant")} en ce moment. Adresses masquées pour leur confidentialité.`} />
       {err && <p className="msg bad">{err}</p>}
       {list === null ? <div className="loading"><Spinner /></div> : !list.length ? (
-        <Empty icon="group" title="Pas encore de filleul">Partage ton lien ou ton code : tes filleuls apparaissent ici dès leur inscription.</Empty>
+        <Empty icon="group" title="Pas encore de filleul">Partagez votre lien ou votre code : vos filleuls apparaissent ici dès leur inscription.</Empty>
       ) : (
         <div className="rows">
-          <div className="row-head"><span>Filleul</span><span>Arrivé par</span><span>Abonnement</span><span>Paiements</span><span className="num">Tes gains</span></div>
+          <div className="row-head"><span>Filleul</span><span>Arrivé par</span><span>Abonnement</span><span>Paiements</span><span className="num">Vos gains</span></div>
           {list.map((f, i) => (
             <div className="row-item" key={`${f.who}-${i}`}>
               <span><b>{f.who}</b><small>depuis le {fmtDate(f.since)}</small></span>
@@ -338,10 +338,10 @@ function Gains({ d }: { d: Dashboard }) {
       </div>
       {err && <p className="msg bad">{err}</p>}
       {total === null ? <div className="loading"><Spinner /></div> : !rows.length ? (
-        <Empty icon="gift" title="Pas encore de gains">Chaque paiement de tes filleuls ajoute une ligne ici.</Empty>
+        <Empty icon="gift" title="Pas encore de gains">Chaque paiement de vos filleuls ajoute une ligne ici.</Empty>
       ) : (
         <div className="rows">
-          <div className="row-head"><span>Date</span><span>Filleul</span><span>Payé</span><span>État</span><span className="num">Ta commission</span></div>
+          <div className="row-head"><span>Date</span><span>Filleul</span><span>Payé</span><span>État</span><span className="num">Votre commission</span></div>
           {rows.map((g) => (
             <div className={`row-item${g.state === "canceled" ? " off" : ""}`} key={g.id}>
               <span><b>{fmtDate(g.at)}</b><small>{g.period === "year" ? "abonnement annuel" : "abonnement mensuel"}</small></span>
@@ -384,7 +384,7 @@ function Retraits({ d, me, onChange }: { d: Dashboard; me: Me; onChange: () => v
     e.preventDefault()
     setErr("")
     if (cents < min) { setErr(`Le retrait minimum est de ${usd(min)}.`); return }
-    if (cents > avail) { setErr(`Au plus ${usdFloor(avail)} (tes gains disponibles).`); return }
+    if (cents > avail) { setErr(`Au plus ${usdFloor(avail)} (vos gains disponibles).`); return }
     setBusy(true)
     try {
       await rpc("nx_partner_payout_request", { p_amount_cents: cents, p_method: method, p_details: details })
@@ -400,7 +400,7 @@ function Retraits({ d, me, onChange }: { d: Dashboard; me: Me; onChange: () => v
   async function cancel(p: Payout) {
     try {
       await rpc("nx_partner_payout_cancel", { p_id: p.id })
-      toast("Demande annulée : le montant revient dans tes gains disponibles.")
+      toast("Demande annulée : le montant revient dans vos gains disponibles.")
       load()
       onChange()
     } catch (x) {
@@ -409,7 +409,7 @@ function Retraits({ d, me, onChange }: { d: Dashboard; me: Me; onChange: () => v
   }
   return (
     <>
-      <Head title="Retraits" sub={`À partir de ${usd(min)}. L’équipe NEXORA verse tes gains et t’indique la référence du versement.`} />
+      <Head title="Retraits" sub={`À partir de ${usd(min)}. L’équipe NEXORA verse vos gains et vous indique la référence du versement.`} />
       <div className="cols">
         <section className="card">
           <div className="card-head"><h2>Demander un retrait</h2><span className="pill blue">{usdFloor(avail)} disponibles</span></div>
@@ -447,9 +447,9 @@ function Retraits({ d, me, onChange }: { d: Dashboard; me: Me; onChange: () => v
           )}
         </section>
         <section className="card">
-          <div className="card-head"><h2>Tes retraits</h2></div>
+          <div className="card-head"><h2>Vos retraits</h2></div>
           {list === null ? <Spinner /> : !list.length ? (
-            <Empty icon="download" title="Aucun retrait pour l’instant">Tes demandes et leurs versements apparaissent ici.</Empty>
+            <Empty icon="download" title="Aucun retrait pour l’instant">Vos demandes et leurs versements apparaissent ici.</Empty>
           ) : (
             <ul className="payouts">
               {list.map((p) => (

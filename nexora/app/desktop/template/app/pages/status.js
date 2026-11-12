@@ -11,9 +11,9 @@
   if (HEX.test(q.get('c') || '')) document.documentElement.style.setProperty('--accent', q.get('c'));
   const TEXT = {
     fr: {
-      offline: ['Pas de connexion', 'Vérifie ta connexion à Internet. La page se rouvrira toute seule dès que le réseau reviendra.'],
-      cert: ['Connexion non sécurisée', 'Le certificat de sécurité du site n’est pas valide : la page a été bloquée pour te protéger. Réessaie plus tard ou préviens l’éditeur du logiciel.'],
-      crash: ['L’affichage s’est arrêté', 'La page a rencontré un problème à plusieurs reprises. Recharge-la pour reprendre.'],
+      offline: ['Pas de connexion', 'Vérifiez votre connexion à Internet. La page se rouvrira toute seule dès que le réseau reviendra.'],
+      cert: ['Connexion non sécurisée', 'Le certificat de sécurité du site n’est pas valide : la page a été bloquée pour vous protéger. Réessayez plus tard ou prévenez l’éditeur du logiciel.'],
+      crash: ['L’affichage s’est arrêté', 'La page a rencontré un problème à plusieurs reprises. Rechargez-la pour reprendre.'],
       retry: 'Réessayer', reload: 'Recharger', auto: (s) => `Nouvel essai dans ${s} s…`, trying: 'Connexion en cours…', waiting: 'En attente du réseau…',
     },
     en: {

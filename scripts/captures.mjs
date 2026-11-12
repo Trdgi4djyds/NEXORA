@@ -30,6 +30,8 @@
 //                         montre les fonctions réservées aux comptes connectés (supervision 24 h/24, #022)
 //   --demo                supervision de démonstration : sites fictifs et un mois de mesures simulées,
 //                         servis par le vrai code du processus principal (preview/demo-main.mjs)
+//   --pliage <sens>       NEXORA #115 : avec « responsive » et un pliable affiché (iPhone Duo…) : « fermer » ou « ouvrir »,
+//                         série de 6 images pendant l'animation de pliage (ralentie 4 fois pour être lisible)
 //   --motion <état>       NEXORA #113 : avec « design » (après un modèle) : animation de démonstration (« Éclat » sur le
 //                         titre, « Pulsation » sur l'autocollant, images clés sur le sous-titre), frise ouverte à 0,45 s,
 //                         onglet Animation ; état : frise, bibliotheque, courbe ou code
@@ -158,6 +160,11 @@ function parseArgs(argv) {
       if (!["ouvert", "retour"].includes(opts.payment)) throw new Error("--paiement attend « ouvert » ou « retour ».")
     }
     else if (arg === "--demo-dev") opts.demoDev = true
+    else if (arg === "--pliage") {
+      const sens = value()
+      if (!["fermer", "ouvrir"].includes(sens)) throw new Error("--pliage attend « fermer » ou « ouvrir ».")
+      opts.actions.push({ kind: "pliage", sens })
+    }
     else if (arg === "--motion") {
       const mode = value()
       if (!["frise", "bibliotheque", "courbe", "code"].includes(mode)) throw new Error("--motion attend frise, bibliotheque, courbe ou code.")
@@ -195,7 +202,7 @@ function parseArgs(argv) {
       ? SPACES
       : SPACES.filter((space) => opts.screens.includes(space.slug))
   if (opts.actions.length && opts.spaces.length !== 1)
-    throw new Error("--click, --saisir, --compte-onglet et --motion demandent un seul espace.")
+    throw new Error("--click, --saisir, --compte-onglet, --motion et --pliage demandent un seul espace.")
   return opts
 }
 
@@ -533,6 +540,33 @@ async function main() {
             return true
           }, action.mode)
           if (!done) throw new Error("NEX-DESIGN n'est pas prêt pour --motion (ouvre d'abord un modèle avec --click).")
+        } else if (action.kind === "pliage") {
+          // NEXORA #115 : pliable affiché mis dans l'état de départ sans animation, puis plié ou déplié (ralenti).
+          const started = await page.evaluate(async (sens) => {
+            const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+            const { state } = await import(new URL("nx/core.js", location.href).href)
+            const views = state.board && state.board.views ? [...state.board.views.values()] : []
+            const v = views.find((x) => x.dev && x.dev.fold && Array.isArray(x.dev.states))
+            if (!v) return false
+            const byW = [...v.dev.states].sort((a, b) => (a.w || 0) - (b.w || 0))
+            const [from, to] = sens === "fermer" ? [byW[byW.length - 1].id, byW[0].id] : [byW[0].id, byW[byW.length - 1].id]
+            const anim = globalThis.nxFold
+            globalThis.nxFold = null
+            await v.setState(from)
+            globalThis.nxFold = anim
+            await wait(900)
+            globalThis.nxFoldSlow = 4
+            v.setState(to)
+            return true
+          }, action.sens)
+          if (!started) throw new Error("Aucun appareil pliable affiché pour --pliage (choisissez d'abord l'iPhone Duo avec --click).")
+          for (let k = 0; k < 6; k += 1) {
+            await sleep(k === 0 ? 250 : 520)
+            const file = path.join(dir, `${String(shots.length + 1).padStart(2, "0")}-pliage-${action.sens}-${k + 1}.png`)
+            await page.screenshot({ path: file })
+            shots.push({ file, label: `Pliage (${action.sens}) ${k + 1}/6` })
+          }
+          await page.evaluate(() => { globalThis.nxFoldSlow = 1 })
         } else if (action.kind === "account") {
           // #090 : fenêtre Mon compte ouverte comme par NEXORA (nx/offres/upsell.js, openAccount).
           const opened = await page.evaluate(async (tab) => {

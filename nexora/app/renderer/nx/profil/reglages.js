@@ -53,8 +53,8 @@ function quick() {
   const user = cloud.user;
   const p = cloud.profile || {};
   const items = [
-    ['compte', user ? avatar(p.id ? p : { email: user.email, id: user.id }, 36) : `<span class="nxr-q-ic">${ico('cloud', 18)}</span>`, user ? 'Mon compte' : 'Connexion', user ? 'Profil, sécurité, équipe et offre' : 'Retrouve tes projets sur le web et sur Windows'],
-    ['ia', `<span class="nxr-q-ic">${ico('sparkle', 18)}</span>`, 'Assistant IA', 'Connecte ta clé API et choisis l’IA active'],
+    ['compte', user ? avatar(p.id ? p : { email: user.email, id: user.id }, 36) : `<span class="nxr-q-ic">${ico('cloud', 18)}</span>`, user ? 'Mon compte' : 'Connexion', user ? 'Profil, sécurité, équipe et offre' : 'Retrouvez vos projets sur le web et sur Windows'],
+    ['ia', `<span class="nxr-q-ic">${ico('sparkle', 18)}</span>`, 'Assistant IA', 'Connectez votre clé API et choisissez l’IA active'],
     ['outils', `<span class="nxr-q-ic">${ico('download', 18)}</span>`, 'NEX-OUTILS', 'Mettre à jour les bibliothèques'],
     ['maint', `<span class="nxr-q-ic">${ico('shield', 18)}</span>`, 'Maintenance', 'Sauvegarde, mises à jour, mode léger'],
   ];

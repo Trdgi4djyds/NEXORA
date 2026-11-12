@@ -447,6 +447,13 @@
     "android:play-status": () => ({ serviceAccount: false }),
     // NEXORA #019 : kit d'achats intégrés pas encore préparé sur un PC neuf (src/android/billing.js, status()).
     "android:billing-status": () => ({ installed: false, dir: "" }),
+    // NEXORA #115 : modules de l'App Builder (kits jamais préparés dans l'aperçu : « Préparer maintenant » proposé).
+    "android:module-status": () => ({
+      onesignal: { installed: false, label: "OneSignal", size: "≈ 6 Mo" },
+      admob: { installed: false, label: "Google AdMob", size: "≈ 8 Mo" },
+      analytics: { installed: false, label: "Google Analytics", size: "≈ 3 Mo" },
+      meta: { installed: false, label: "Meta", size: "≈ 2 Mo" },
+    }),
     "android:listing-assets": (appId) => listingCopy(appId),
     "android:listing-asset-put": async ({ appId, kind, dataUrl, replace }) => {
       const s = listingOf(appId)

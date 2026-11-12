@@ -69,14 +69,14 @@ function fit(o) {
 function prep(o) { if (isSticky(o)) { o.objectCaching = false; o.padding = PAD; o.initDimensions(); } }
 export function addSticky(D, color = settings.nxStickyColor || 'yellow') {
   const pg = D.page;
-  const o = new Textbox('Écris ici…', { width: 220, fontSize: 24, fontFamily: 'NX Inter', fontWeight: 500, fill: '#1f1f22', lineHeight: 1.2, backgroundColor: (STICKY[color] || STICKY.yellow)[0], nxKind: 'sticky', nxSticky: { size: 24, color }, name: 'Pense-bête' });
+  const o = new Textbox('Écrivez ici…', { width: 220, fontSize: 24, fontFamily: 'NX Inter', fontWeight: 500, fill: '#1f1f22', lineHeight: 1.2, backgroundColor: (STICKY[color] || STICKY.yellow)[0], nxKind: 'sticky', nxSticky: { size: 24, color }, name: 'Pense-bête' });
   o.id = `nx${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   prep(o);
   const n = objs(D).filter(isSticky).length;
   o.set({ left: pg.w / 2 - 110 + (n % 5) * 28, top: pg.h / 2 - 110 + (n % 5) * 28 });
   D.canvas.add(o); D.canvas.setActiveObject(o); o.setCoords();
   D.nxNextLabel = 'Pense-bête'; D.changed(); D.canvas.requestRenderAll();
-  toast('Pense-bête ajouté : double-clique pour écrire ; le texte rétrécit pour tenir.');
+  toast('Pense-bête ajouté : double-cliquez pour écrire ; le texte rétrécit pour tenir.');
   return o;
 }
 
@@ -114,7 +114,7 @@ export function connect(D, a, b) {
   if (idx >= 0 && D.canvas.moveObjectTo) D.canvas.moveObjectTo(c, idx);
   D.canvas.setActiveObject(c);
   D.nxNextLabel = 'Connecteur'; D.changed(); D.canvas.requestRenderAll();
-  toast('Connecteur ajouté : il suit les deux calques quand tu les déplaces.');
+  toast('Connecteur ajouté : il suit les deux calques quand vous les déplacez.');
   return c;
 }
 function follow(D, moved) {
@@ -145,7 +145,7 @@ function colorUses(list) {
 function colorsCard(D, list, title) {
   const uses = colorUses(list);
   if (!uses.length) return '';
-  return sec(title, `<div class="nxx-colors">${uses.slice(0, 24).map((u) => `<label class="nxx-color" title="${esc(`${u.hex} · utilisée ${u.n} fois`)}"><input type="color" value="${u.hex}" data-exc="${u.hex}" aria-label="${esc(`Remplacer ${u.hex}`)}"><span class="nxx-sw" style="--c:${u.hex}"></span><span class="nxx-hex">${u.hex.toUpperCase()}</span><small>${u.n}</small></label>`).join('')}</div><p class="dzx-hint">Change une couleur : toutes ses utilisations ${list.length === objs(D).length ? 'de la page' : 'de la sélection'} suivent (remplissages, contours, dégradés, textes).</p>`);
+  return sec(title, `<div class="nxx-colors">${uses.slice(0, 24).map((u) => `<label class="nxx-color" title="${esc(`${u.hex} · utilisée ${u.n} fois`)}"><input type="color" value="${u.hex}" data-exc="${u.hex}" aria-label="${esc(`Remplacer ${u.hex}`)}"><span class="nxx-sw" style="--c:${u.hex}"></span><span class="nxx-hex">${u.hex.toUpperCase()}</span><small>${u.n}</small></label>`).join('')}</div><p class="dzx-hint">Changez une couleur : toutes ses utilisations ${list.length === objs(D).length ? 'de la page' : 'de la sélection'} suivent (remplissages, contours, dégradés, textes).</p>`);
 }
 function replaceColor(D, from, to) {
   const s = D.sel(); const list = s.length ? s : objs(D);
@@ -169,8 +169,8 @@ export function props(D) {
   const s = D.sel();
   if (!s.length) {
     const notes = D.page && D.page.nxNotes ? D.page.nxNotes : '';
-    return sec('Notes de présentation', `<textarea class="input nxx-notes" rows="3" maxlength="4000" data-exk="notes" placeholder="Ce que tu veux dire sur cette page : lu dans la présentation (touche N), jamais exporté.">${esc(notes)}</textarea>`)
-      + sec('Tableau blanc', `<div class="nx-btns"><button class="btn small" data-ex="sticky">${ico('nxComment', 13)}<span>Pense-bête</span></button></div><p class="dzx-hint">Pense-bêtes dont le texte rétrécit pour tenir ; sélectionne deux calques pour les relier par un connecteur qui les suit.</p>`)
+    return sec('Notes de présentation', `<textarea class="input nxx-notes" rows="3" maxlength="4000" data-exk="notes" placeholder="Ce que vous voulez dire sur cette page : lu dans la présentation (touche N), jamais exporté.">${esc(notes)}</textarea>`)
+      + sec('Tableau blanc', `<div class="nx-btns"><button class="btn small" data-ex="sticky">${ico('nxComment', 13)}<span>Pense-bête</span></button></div><p class="dzx-hint">Pense-bêtes dont le texte rétrécit pour tenir ; sélectionnez deux calques pour les relier par un connecteur qui les suit.</p>`)
       + colorsCard(D, objs(D), 'Couleurs de la page');
   }
   let h = '';
@@ -178,7 +178,7 @@ export function props(D) {
   const o = s.length === 1 ? s[0] : null;
   if (o && o.type === 'rect') {
     const v = Math.round((Number(o.nxSmooth) || 0) * 100);
-    h += sec('Lissage des coins', `<div class="st-field"><span>Lissage <b data-exv>${v} %</b></span><input type="range" min="0" max="100" step="1" value="${v}" data-exk="smooth" aria-label="Lissage des coins"></div><p class="dzx-hint">${o.rx ? 'Coins continus, comme les icônes d’iOS (60 % : réglage d’Apple).' : 'Donne d’abord un arrondi aux coins (section Calque), puis lisse-les.'}</p>`);
+    h += sec('Lissage des coins', `<div class="st-field"><span>Lissage <b data-exv>${v} %</b></span><input type="range" min="0" max="100" step="1" value="${v}" data-exk="smooth" aria-label="Lissage des coins"></div><p class="dzx-hint">${o.rx ? 'Coins continus, comme les icônes d’iOS (60 % : réglage d’Apple).' : 'Donnez d’abord un arrondi aux coins (section Calque), puis lissez-les.'}</p>`);
   }
   if (isSticky(o)) h += sec('Pense-bête', `<div class="nxx-stk">${Object.entries(STICKY).map(([k, [c, l]]) => `<button class="nxx-stkc${(o.nxSticky && o.nxSticky.color) === k ? ' on' : ''}" data-ex="stk:${k}" style="--c:${c}" title="${l}" aria-label="${l}"></button>`).join('')}</div>`);
   if (isConn(o)) h += sec('Connecteur', `<p class="dzx-hint">Relie « ${esc((byId(D, o.nxConn.from) || {}).name || 'calque')} » à « ${esc((byId(D, o.nxConn.to) || {}).name || 'calque')} ».</p><div class="nx-btns"><button class="btn small" data-ex="flip">${ico('nxRepeat', 13)}<span>Inverser le sens</span></button><button class="btn small" data-ex="unlink">${ico('link', 13)}<span>Détacher</span></button></div>`);

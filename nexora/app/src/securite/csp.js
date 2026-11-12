@@ -63,14 +63,14 @@ function build(info, { header = '' } = {}) {
   const hashes = [];
   const inline = (info.scripts || []).filter((s) => !s.src && s.inline && s.inline.trim());
   for (const s of inline.slice(0, 25)) hashes.push(`'sha256-${sha256b64(s.inline)}'`);
-  if (inline.length > 25) notes.push(`${inline.length} scripts en ligne : au-delà de 25, utilise plutôt un « nonce » généré par ton serveur à chaque page.`);
-  else if (inline.length) notes.push(`${inline.length} script(s) en ligne autorisé(s) par leur empreinte SHA-256 : si tu modifies l’un d’eux, relance l’assistant (ou passe à un « nonce »).`);
+  if (inline.length > 25) notes.push(`${inline.length} scripts en ligne : au-delà de 25, utilisez plutôt un « nonce » généré par votre serveur à chaque page.`);
+  else if (inline.length) notes.push(`${inline.length} script(s) en ligne autorisé(s) par leur empreinte SHA-256 : si vous modifiez l’un d’eux, relancez l’assistant (ou passez à un « nonce »).`);
   const styleHashes = (info.styles || []).filter((s) => s.trim()).slice(0, 15).map((s) => `'sha256-${sha256b64(s)}'`);
   const needUnsafeStyle = (info.styleAttr || 0) > 0 || (info.styles || []).length > 15;
   if (needUnsafeStyle) notes.push(`${info.styleAttr || 0} élément(s) avec un attribut style : 'unsafe-inline' reste nécessaire pour les styles (risque faible, le plus courant).`);
-  if (info.handlers) notes.push(`${info.handlers} gestionnaire(s) d’évènement en ligne (${(info.handlerNames || []).join(', ')}) : ils seront bloqués par la version stricte. Remplace-les par addEventListener dans un fichier .js.`);
+  if (info.handlers) notes.push(`${info.handlers} gestionnaire(s) d’évènement en ligne (${(info.handlerNames || []).join(', ')}) : ils seront bloqués par la version stricte. Remplacez-les par addEventListener dans un fichier .js.`);
   if (info.jsUrls) notes.push(`${info.jsUrls} lien(s) « javascript: » : bloqués par la version stricte.`);
-  if (header) notes.push('Ton site envoie déjà une politique : compare-la avec la proposition avant de la remplacer.');
+  if (header) notes.push('Votre site envoie déjà une politique : comparez-la avec la proposition avant de la remplacer.');
   const strictScript = new Set([...d['script-src'], ...hashes]);
   const strictStyle = new Set([...d['style-src'], ...(needUnsafeStyle ? ["'unsafe-inline'"] : styleHashes)]);
   const relaxedScript = new Set([...d['script-src'], ...(inline.length ? ["'unsafe-inline'"] : [])]);

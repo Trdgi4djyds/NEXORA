@@ -104,7 +104,7 @@ class Store {
 
 function normUrl(u) {
   let s = String(u || '').trim();
-  if (!s) throw new Error('Indique l’adresse du site.');
+  if (!s) throw new Error('Indiquez l’adresse du site.');
   if (!/^https?:\/\//i.test(s)) s = `https://${s}`;
   const x = new URL(s);
   return x.href;
@@ -158,17 +158,17 @@ function register({ ipcMain, app, net, send, dialog, shell, getWin, BrowserWindo
     return store.record(r);
   });
   ipcMain.handle('sec:app-audit', async (_e, { target } = {}) => store.record(await apps.audit(target)));
-  ipcMain.handle('sec:pick-dir', (_e, { title } = {}) => pickDir(title || 'Choisis le dossier du projet'));
+  ipcMain.handle('sec:pick-dir', (_e, { title } = {}) => pickDir(title || 'Choisissez le dossier du projet'));
   ipcMain.handle('sec:pick-app', async () => {
     if (!dialog) return null;
-    const r = await dialog.showOpenDialog(win(), { title: 'Choisis une application Android (.apk) ou le dossier d’un projet Electron', properties: ['openFile', 'openDirectory'], filters: [{ name: 'Application Android', extensions: ['apk'] }, { name: 'Tous les fichiers', extensions: ['*'] }] });
+    const r = await dialog.showOpenDialog(win(), { title: 'Choisissez une application Android (.apk) ou le dossier d’un projet Electron', properties: ['openFile', 'openDirectory'], filters: [{ name: 'Application Android', extensions: ['apk'] }, { name: 'Tous les fichiers', extensions: ['*'] }] });
     return r.canceled || !r.filePaths[0] ? null : r.filePaths[0];
   });
 
   // ---------- Correctifs ----------
   ipcMain.handle('sec:fix-plan', (_e, { id, target, csp: policy } = {}) => {
     const rep = id ? store.get(id) : store.latest('site');
-    if (!rep) throw new Error('Lance d’abord un audit du site.');
+    if (!rep) throw new Error('Lancez d’abord un audit du site.');
     return { ...fixes.generate(rep, target, { csp: policy || '' }), detected: fixes.detect(rep.headers), targets: Object.entries(fixes.TARGETS).map(([k, v]) => ({ id: k, label: v.label })) };
   });
   ipcMain.handle('sec:fix-write', (_e, { dir, files } = {}) => fixes.write(dir, files));
@@ -237,7 +237,7 @@ function register({ ipcMain, app, net, send, dialog, shell, getWin, BrowserWindo
       const dropped = before != null && rep.score <= before - 5;
       const under = s.minScore && rep.score < s.minScore;
       if (notify && (worse.length || dropped || under)) {
-        const why2 = [dropped ? `la note passe de ${before} à ${rep.score}/100` : '', under ? `la note ${rep.score}/100 est sous ton seuil de ${s.minScore}` : '', worse.length ? `${worse.length} nouveau(x) problème(s) grave(s) : ${worse.slice(0, 3).map((f) => f.title).join(' ; ')}` : ''].filter(Boolean).join(', ');
+        const why2 = [dropped ? `la note passe de ${before} à ${rep.score}/100` : '', under ? `la note ${rep.score}/100 est sous votre seuil de ${s.minScore}` : '', worse.length ? `${worse.length} nouveau(x) problème(s) grave(s) : ${worse.slice(0, 3).map((f) => f.title).join(' ; ')}` : ''].filter(Boolean).join(', ');
         notify({ id: `sec:${host}`, name: `Sécurité de ${host}`, url: s.url, key: 'secu', level: worse.some((f) => f.sev === 'critical') || under ? 'critique' : 'alerte', text: `🟠 Audit de sécurité de ${host} : ${why2}.` });
       }
       send('sec:scheduled', { id: s.id, report: store.summary(rep) });

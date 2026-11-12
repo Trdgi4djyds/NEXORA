@@ -377,7 +377,7 @@ const REC_SCRIPT = `(() => { if (window.__nxRec) return; window.__nxRec = 1;
 ipcMain.handle('mon:journey-record', (_e, { url } = {}) => new Promise((resolve) => {
   const steps = [];
   let last = String(url || '');
-  const w = new BrowserWindow({ width: 1200, height: 820, title: 'Enregistrement du parcours : fais tes clics, puis ferme cette fenêtre', autoHideMenuBar: true, webPreferences: { sandbox: true, partition: 'nexora-parcours-enregistrement' } });
+  const w = new BrowserWindow({ width: 1200, height: 820, title: 'Enregistrement du parcours : faites vos clics, puis fermez cette fenêtre', autoHideMenuBar: true, webPreferences: { sandbox: true, partition: 'nexora-parcours-enregistrement' } });
   const wc = w.webContents;
   wc.setWindowOpenHandler(({ url: u }) => { wc.loadURL(u).catch(() => {}); return { action: 'deny' }; });
   wc.on('dom-ready', () => { wc.executeJavaScript(REC_SCRIPT).catch(() => {}); });
@@ -506,7 +506,7 @@ ipcMain.handle('project:stop', async () => { closeStatic(); await runner.stop();
 ipcMain.handle('project:flutter-web', async (_e, dir) => {
   send('runner:status', { status: 'installing', message: 'Ajout de la version web au projet Flutter' });
   const ok = await runner.runOnce('flutter create --platforms web .', dir);
-  if (!ok) { send('runner:status', { status: 'error', message: 'L\'ajout de la version web a échoué. Consulte la console du serveur.' }); return false; }
+  if (!ok) { send('runner:status', { status: 'error', message: 'L\'ajout de la version web a échoué. Consultez la console du serveur.' }); return false; }
   runner.start({ dir });
   return true;
 });

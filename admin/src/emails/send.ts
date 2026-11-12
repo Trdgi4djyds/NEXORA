@@ -19,7 +19,7 @@ export async function waitBrevo(id: number): Promise<{ ok: boolean; text: string
     return {
       ok: false,
       text: r.status === 401
-        ? "Brevo refuse la clé API (401) : enregistre une nouvelle clé dans Supabase → E-mails (Brevo)."
+        ? "Brevo refuse la clé API (401) : enregistrez une nouvelle clé dans Supabase → E-mails (Brevo)."
         : `Brevo a refusé l’e-mail (HTTP ${r.status ?? "?"}) : ${detail}`,
     }
   }

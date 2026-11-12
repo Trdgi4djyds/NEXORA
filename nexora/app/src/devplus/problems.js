@@ -37,7 +37,7 @@ async function check(root) {
     const found = parseTsc(root, r.stdout + r.stderr);
     items.push(...found);
     tools.push({ name: 'TypeScript', ran: true, ms: Date.now() - t0, count: found.length });
-  } else tools.push({ name: 'TypeScript', ran: false, reason: tsconfig ? 'TypeScript n’est pas installé dans le projet (installe les dépendances).' : 'Pas de tsconfig.json.' });
+  } else tools.push({ name: 'TypeScript', ran: false, reason: tsconfig ? 'TypeScript n’est pas installé dans le projet (installez les dépendances).' : 'Pas de tsconfig.json.' });
   const eslint = localBin(root, 'eslint');
   if (eslint) {
     const t0 = Date.now();

@@ -64,7 +64,7 @@ async function scan(root, { files, vault } = {}) {
     if (findings.length > 200) break;
   }
   const envTracked = list.map((f) => rel(root, path.resolve(root, f))).filter((f) => /(^|\/)\.env(\.local|\.production|\.development)?$/.test(f));
-  for (const f of envTracked) findings.unshift({ file: f, line: 1, col: 1, rule: 'Fichier de variables d’environnement prêt à être envoyé', preview: 'ajoute-le au .gitignore' });
+  for (const f of envTracked) findings.unshift({ file: f, line: 1, col: 1, rule: 'Fichier de variables d’environnement prêt à être envoyé', preview: 'ajoutez-le au .gitignore' });
   return { findings, scanned };
 }
 

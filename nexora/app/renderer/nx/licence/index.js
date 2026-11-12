@@ -19,20 +19,20 @@ let wasTrial = false;
 // détail technique (fichiers, signatures, serveurs de sécurité) n'est montré : il reste dans le journal local.
 const TEXT = {
   checking: ['Vérification de la licence', 'Chargement de votre espace…', 'shield'],
-  auth: ['Connecte-toi pour ouvrir NEXORA', 'NEXORA Devs Toolbox s’utilise avec un compte NEXORA (gratuit). Ta licence est liée à ton compte : connecte-toi ou crée ton compte.', 'user'],
-  offline: ['Connexion perdue', 'Impossible de joindre NEXORA. Vérifie ta connexion à Internet, puis réessaie.', 'globe'],
-  server: ['NEXORA est momentanément indisponible', 'Réessaie dans quelques minutes.', 'cloud'],
-  integrity: ['Échec du contrôle d’intégrité — Installation non authentifiée', 'NEXORA ne peut pas s’ouvrir : répare l’installation pour continuer.', 'shield'],
-  manifest: ['Vérification de la licence impossible', 'Vérifie la date et l’heure de Windows, puis réessaie.', 'shield'],
-  outdated: ['Version non autorisée', 'Mets NEXORA à jour pour continuer.', 'download'],
-  rollback: ['Version non autorisée', 'Mets NEXORA à jour pour continuer.', 'download'],
+  auth: ['Connectez-vous pour ouvrir NEXORA', 'NEXORA Devs Toolbox s’utilise avec un compte NEXORA (gratuit). Votre licence est liée à votre compte : connectez-vous ou créez votre compte.', 'user'],
+  offline: ['Connexion perdue', 'Impossible de joindre NEXORA. Vérifiez votre connexion à Internet, puis réessayez.', 'globe'],
+  server: ['NEXORA est momentanément indisponible', 'Réessayez dans quelques minutes.', 'cloud'],
+  integrity: ['Échec du contrôle d’intégrité — Installation non authentifiée', 'NEXORA ne peut pas s’ouvrir : réparez l’installation pour continuer.', 'shield'],
+  manifest: ['Vérification de la licence impossible', 'Vérifiez la date et l’heure de Windows, puis réessayez.', 'shield'],
+  outdated: ['Version non autorisée', 'Mettez NEXORA à jour pour continuer.', 'download'],
+  rollback: ['Version non autorisée', 'Mettez NEXORA à jour pour continuer.', 'download'],
   device_limit: ['Trop d’ordinateurs pour cette licence', '', 'laptop'],
   device_accounts: ['Limite de comptes gratuits atteinte', '', 'group'],
   device_gmail: ['Limite d’adresses Gmail atteinte', '', 'group'],
   key_mismatch: ['Clé d’un autre compte', '', 'key'],
   revoked: ['Licence désactivée', '', 'lock'],
   device_blocked: ['Ordinateur non autorisé', '', 'lock'],
-  signature: ['Vérification de la licence impossible', 'Réessaie dans un instant.', 'shield'],
+  signature: ['Vérification de la licence impossible', 'Réessayez dans un instant.', 'shield'],
 };
 // États techniques : texte fixe ci-dessus, jamais le message détaillé du serveur.
 const FIXED = new Set(['checking', 'offline', 'server', 'integrity', 'manifest', 'outdated', 'rollback', 'signature']);
@@ -70,7 +70,7 @@ function render() {
   }
   const t = (['integrity', 'manifest', 'outdated', 'offline', 'checking'].includes(st.status) ? TEXT[st.status] : null) || TEXT[st.reason] || TEXT[st.status] || ['NEXORA est verrouillé', '', 'lock'];
   const keyBox = ['blocked', 'auth'].includes(st.status)
-    ? '<details class="nxl-key"><summary>J’ai une clé de licence</summary><div class="nxl-row"><input class="input" data-lic-key placeholder="NXDT-XXXX-XXXX-XXXX-XXXX" maxlength="24" spellcheck="false"><button type="button" class="btn" data-lic="key">Valider</button></div><small>Ta clé est sur le site de NEXORA, page « Ma licence ». Elle doit appartenir au compte connecté.</small></details>'
+    ? '<details class="nxl-key"><summary>J’ai une clé de licence</summary><div class="nxl-row"><input class="input" data-lic-key placeholder="NXDT-XXXX-XXXX-XXXX-XXXX" maxlength="24" spellcheck="false"><button type="button" class="btn" data-lic="key">Valider</button></div><small>Votre clé est sur le site de NEXORA, page « Ma licence ». Elle doit appartenir au compte connecté.</small></details>'
     : '';
   const who = st.email && st.status === 'blocked' ? `<p class="nxl-who">Compte : <b>${esc(st.email)}</b>${st.license_key ? ` · licence ${esc(st.license_key)}` : ''}</p>` : '';
   box.hidden = false;
@@ -136,7 +136,7 @@ function renderChip() {
     if (chip) chip.hidden = true;
     if (wasTrial && st && st.status === 'ok' && !st.trial) {
       // NEXORA #087 : l'offre Gratuite comprend aussi 2 applications (App Builder et Desktop Builder confondus).
-      toast('Ton essai Pro est terminé : NEXORA passe en offre Gratuite (Responsive Lab, Browser Lab et 2 applications). Passe à Pro pour tout garder.', { action: 'Passer à Pro', onAction: () => api.invoke('license:open-site', 'licence?offre=pro') });
+      toast('Votre essai Pro est terminé : NEXORA passe en offre Gratuite (Responsive Lab, Browser Lab et 2 applications). Passez à Pro pour tout garder.', { action: 'Passer à Pro', onAction: () => api.invoke('license:open-site', 'licence?offre=pro') });
     }
     wasTrial = false;
     return;

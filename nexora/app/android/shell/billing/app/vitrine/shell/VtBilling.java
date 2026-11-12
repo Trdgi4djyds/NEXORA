@@ -147,7 +147,7 @@ public final class VtBilling {
                 one.add(QueryProductDetailsParams.Product.newBuilder().setProductId(productId).setProductType(productType(type)).build());
                 client.queryProductDetailsAsync(QueryProductDetailsParams.newBuilder().setProductList(one).build(), (r, res) -> {
                     if (r.getResponseCode() != BillingClient.BillingResponseCode.OK || res.getProductDetailsList().isEmpty()) {
-                        reject(id, r.getResponseCode() == BillingClient.BillingResponseCode.OK ? "Produit introuvable sur Google Play : « " + productId + " » (vérifie qu'il est actif dans la Play Console)." : message(r));
+                        reject(id, r.getResponseCode() == BillingClient.BillingResponseCode.OK ? "Produit introuvable sur Google Play : « " + productId + " » (vérifiez qu'il est actif dans la Play Console)." : message(r));
                         return;
                     }
                     details.put(productId, res.getProductDetailsList().get(0));
@@ -221,7 +221,7 @@ public final class VtBilling {
         } else if (code == BillingClient.BillingResponseCode.USER_CANCELED) {
             if (id != null) reject(id, "Achat annulé.");
         } else if (code == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) {
-            if (id != null) reject(id, "Tu possèdes déjà ce produit.");
+            if (id != null) reject(id, "Vous possédez déjà ce produit.");
             syncPurchases(null);
         } else if (id != null) {
             reject(id, message(r));
@@ -330,11 +330,11 @@ public final class VtBilling {
 
     private static String message(BillingResult r) {
         switch (r.getResponseCode()) {
-            case BillingClient.BillingResponseCode.BILLING_UNAVAILABLE: return "Achats indisponibles : ouvre le Play Store avec un compte Google sur ce téléphone, ou installe l'application depuis Google Play (piste de test).";
-            case BillingClient.BillingResponseCode.ITEM_UNAVAILABLE: return "Produit indisponible : vérifie qu'il est actif dans la Play Console et que l'application vient de Google Play.";
+            case BillingClient.BillingResponseCode.BILLING_UNAVAILABLE: return "Achats indisponibles : ouvrez le Play Store avec un compte Google sur ce téléphone, ou installez l'application depuis Google Play (piste de test).";
+            case BillingClient.BillingResponseCode.ITEM_UNAVAILABLE: return "Produit indisponible : vérifiez qu'il est actif dans la Play Console et que l'application vient de Google Play.";
             case BillingClient.BillingResponseCode.DEVELOPER_ERROR: return "Configuration refusée par Google Play (identifiant de produit, offre ou signature de l'application) : " + r.getDebugMessage();
             case BillingClient.BillingResponseCode.NETWORK_ERROR:
-            case BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE: return "Pas de connexion à Google Play : réessaie.";
+            case BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE: return "Pas de connexion à Google Play : réessayez.";
             case BillingClient.BillingResponseCode.ITEM_NOT_OWNED: return "Ce produit n'est pas possédé.";
             default: return "Google Play a répondu par l'erreur " + r.getResponseCode() + (r.getDebugMessage() != null && !r.getDebugMessage().isEmpty() ? " : " + r.getDebugMessage() : ".");
         }

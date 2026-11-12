@@ -47,7 +47,7 @@ export const FALLBACK = {
     id: 'free', name: 'Gratuit', description: 'Responsive Lab et Browser Lab complets, et 2 applications Android ou Windows. Gratuit, sans limite de durée.', price_month_cents: 0, price_year_cents: 0,
     currency: 'USD', sort: 1, badge: '', perms: FREE_PERMS,
     limits: { projects: 3, designs: 3, members: 1, monitors: 1, storage_mb: 200, apps: 2, apps_lifetime: 1, app_trial_days: 0, builds_per_app_month: 5, ai_requests_month: -1, scans_per_day: 1, crawls_per_day: -1, builds_month: 10, push_month: 1000 },
-    features: ['Responsive Lab complet : tous les modèles d’appareils, vidéo et outils de développement', 'Browser Lab complet : inspection, réseau, console, tests et extraction', '2 applications Android ou Windows au total, applications supprimées comprises', 'Tout l’App Builder et le Desktop Builder pour ces applications, 5 constructions par application et par mois', 'NEX-DESIGN découverte (3 documents)', '1 audit de sécurité par jour, 1 site surveillé', 'Assistant IA avec ta propre clé', 'Tout NEXORA pendant ton premier jour'],
+    features: ['Responsive Lab complet : tous les modèles d’appareils, vidéo et outils de développement', 'Browser Lab complet : inspection, réseau, console, tests et extraction', '2 applications Android ou Windows au total, applications supprimées comprises', 'Tout l’App Builder et le Desktop Builder pour ces applications, 5 constructions par application et par mois', 'NEX-DESIGN découverte (3 documents)', '1 audit de sécurité par jour, 1 site surveillé', 'Assistant IA avec votre propre clé', 'Tout NEXORA pendant votre premier jour'],
   },
   pro: {
     id: 'pro', name: 'Pro', description: 'Toutes les options de NEXORA Devs Toolbox, sans limite d’espace.', price_month_cents: 2500, price_year_cents: 25000,
@@ -128,7 +128,7 @@ export const COMPARE = [
     { label: 'Visiteurs réels, intégration continue et SARIF', perm: 'api_sdk' },
   ]],
   ['Intelligence artificielle', [
-    { label: 'Assistant IA avec ta propre clé (Claude, GPT, Gemini, Mistral, Ollama…)', text: { free: 'Sans limite', pro: 'Sans limite' } },
+    { label: 'Assistant IA avec votre propre clé (Claude, GPT, Gemini, Mistral, Ollama…)', text: { free: 'Sans limite', pro: 'Sans limite' } },
   ]],
   ['Notifications et automatisations', [
     { label: 'Notifications push et in-app', perm: 'push' },
@@ -140,7 +140,7 @@ export const COMPARE = [
   ]],
   ['Intégrations', [
     { label: 'API et SDK', perm: 'api_sdk' },
-    { label: 'Outils d’intégration (achats intégrés…)', perm: 'integrations' },
+    { label: 'Outils d’intégration (achats intégrés, OneSignal, AdMob, Analytics, Meta)', perm: 'integrations' },
   ]],
   ['Équipe et assistance', [
     { label: 'Membres par espace', limit: 'members' },

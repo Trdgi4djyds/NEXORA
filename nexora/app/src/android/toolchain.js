@@ -229,11 +229,12 @@ class Toolchain {
         const label = 'bundletool (format AAB pour le Play Store)';
         // eslint-disable-next-line no-await-in-loop
         const res = await this.fetch('https://api.github.com/repos/google/bundletool/releases/latest');
-        if (!res.ok) throw new Error(`GitHub indisponible (${res.status})`);
+        // NEXORA #115 : messages sans nom de service ni d'outil (affichés par NEX-OUTILS et l'App Builder).
+        if (!res.ok) throw new Error(`Service de téléchargement indisponible (${res.status}) : réessayez plus tard.`);
         // eslint-disable-next-line no-await-in-loop
         const rel = await res.json();
         const asset = (rel.assets || []).find((a) => /^bundletool-all-.*\.jar$/.test(a.name));
-        if (!asset) throw new Error('bundletool introuvable');
+        if (!asset) throw new Error('Bibliothèque du format Play Store introuvable : réessayez plus tard.');
         // eslint-disable-next-line no-await-in-loop
         await this.download(asset.browser_download_url, path.join(this.home, 'bundletool.jar'), { onProgress: (p) => onStep({ part, label, progress: p }) });
         onStep({ part, label, progress: 1 });

@@ -39,7 +39,7 @@ export function SpaceBento() {
               </span>
             </span>
             <dl className="mt-4 grid grid-cols-[110px_1fr] gap-x-4 gap-y-1.5 text-[13.5px] leading-snug">
-              <dt className="text-muted-foreground">Ce que tu fais</dt>
+              <dt className="text-muted-foreground">Ce que vous faites</dt>
               <dd>{s.card}</dd>
               <dt className="text-muted-foreground">Repère</dt>
               <dd>

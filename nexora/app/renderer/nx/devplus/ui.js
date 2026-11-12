@@ -38,7 +38,7 @@ export function proGate(title, text) {
 }
 
 export const empty = (icon, title, text, action = '') => `<div class="nxd-empty">${ico(icon, 26)}<b>${esc(title)}</b><p>${esc(text)}</p>${action}</div>`;
-export const noProject = () => empty('folderOpen', 'Aucun projet ouvert', 'Ouvre un dossier de projet dans le Dev Lab pour utiliser cet outil.', '<button class="btn small primary" data-nxd-open-project>Ouvrir un projet</button>');
+export const noProject = () => empty('folderOpen', 'Aucun projet ouvert', 'Ouvrez un dossier de projet dans le Dev Lab pour utiliser cet outil.', '<button class="btn small primary" data-nxd-open-project>Ouvrir un projet</button>');
 export const head = (title, sub, actions = '') => `<div class="nxd-head"><div><h3>${esc(title)}</h3>${sub ? `<p>${sub}</p>` : ''}</div><div class="nxd-row">${actions}</div></div>`;
 export const pill = (text, tone = '') => `<span class="nxd-pill ${tone}">${esc(text)}</span>`;
 export const btn = (label, attrs = '', icon = '', cls = '') => `<button class="btn small ${cls}" ${attrs}>${icon ? ico(icon, 13) : ''}<span>${esc(label)}</span></button>`;

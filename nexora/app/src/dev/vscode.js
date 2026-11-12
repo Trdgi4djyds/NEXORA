@@ -95,7 +95,7 @@ class VsCode {
     if (this.starting) return this.starting;
     const st = this.status();
     const cli = prefer === 'installed' && st.installed ? st.installed : st.cli;
-    if (!cli) return Promise.reject(new Error('VS Code n’est pas disponible : télécharge-le d’abord.'));
+    if (!cli) return Promise.reject(new Error('VS Code n’est pas disponible : téléchargez-le d’abord.'));
     this.starting = new Promise((resolve, reject) => {
       const args = ['serve-web', '--host', '127.0.0.1', '--port', '0', '--connection-token-file', this.token(), '--accept-server-license-terms', '--server-data-dir', path.join(this.dir, 'server'), '--cli-data-dir', path.join(this.dir, 'cli-data'), '--disable-telemetry'];
       const p = spawn(cli, args, { windowsHide: true, detached: !WIN, env: { ...process.env, VSCODE_CLI_DATA_DIR: path.join(this.dir, 'cli-data') } });

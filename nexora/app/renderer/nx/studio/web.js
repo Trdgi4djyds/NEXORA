@@ -5,7 +5,7 @@ import { CollabRoom, collabSheet } from '../services.js';
 import { nxEase as EASES } from '../../dist/chunks/chunk-2DYF2ZBK.js';
 
 export const HOVERS = { none: 'Aucune', lift: 'Se soulève', grow: 'Grossit', spin: 'Pivote', tilt: 'S’incline' };
-export const CLICKS = { none: 'Aucune', spin: 'Fait un tour', bounce: 'Rebondit', play: 'Lance l’animation', link: 'Ouvre un lien' };
+export const CLICKS = { none: 'Aucune', spin: 'Fait un tour', bounce: 'Rebondit', play: 'Lancez l’animation', link: 'Ouvrez un lien' };
 
 // ---------- Mode « Tester les interactions » ----------
 export function toggleTest(S) {
@@ -42,7 +42,7 @@ export function toggleTest(S) {
   cv.addEventListener('pointermove', move); cv.addEventListener('click', click, true); cv.addEventListener('wheel', wheel, { passive: false });
   tick();
   S.nxTest = { stop: () => { cancelAnimationFrame(raf); cv.removeEventListener('pointermove', move); cv.removeEventListener('click', click, true); cv.removeEventListener('wheel', wheel); cv.style.cursor = ''; for (const id of S.order) S.applyItemTransform(S.objects.get(id)); S.applyTime(); } };
-  toast('Test des interactions : survole et clique les objets (molette : défilement de l’animation). Clique à nouveau sur le bouton pour terminer.');
+  toast('Test des interactions : survolez et cliquez les objets (molette : défilement de l’animation). Cliquez à nouveau sur le bouton pour terminer.');
   S.renderProps();
 }
 
@@ -124,7 +124,7 @@ export async function exportWeb(S, dest = 'file') {
       await api.invoke('clipboard:write', `<iframe src="${name}" title="${esc(title)}" style="width:100%;height:520px;border:0" loading="lazy"></iframe>`).catch(() => {});
       toast(`Page « ${name} » ajoutée au projet du Dev Lab. Le code d’intégration (iframe) est copié.`);
     } else await saveBytes(new TextEncoder().encode(html), { name: `${safeName(title)}`, ext: 'html', kind: 'photo', project: state.source ? state.source.name : 'Studio' });
-  } catch (e) { toast(dest === 'dev' ? `Ouvre d’abord un projet dans le Dev Lab. (${e.message || e})` : `L’export web a échoué : ${e.message || e}`, { kind: 'bad' }); } finally { t.close(); }
+  } catch (e) { toast(dest === 'dev' ? `Ouvrez d’abord un projet dans le Dev Lab. (${e.message || e})` : `L’export web a échoué : ${e.message || e}`, { kind: 'bad' }); } finally { t.close(); }
 }
 
 // ---------- Mes mises en scène ----------
@@ -143,11 +143,11 @@ export function deletePreset(id) { settings.nxStudioPresets = myPresets().filter
 export function collab(S) {
   collabSheet({
     current: S.nxRoom ? { code: S.nxRoom.code, peers: S.nxRoom.peers } : null,
-    onStop: async () => { await S.nxRoom.leave(); S.nxRoom = null; toast('Tu as quitté la salle de coédition.'); },
+    onStop: async () => { await S.nxRoom.leave(); S.nxRoom = null; toast('Vous avez quitté la salle de coédition.'); },
     onStart: async (code, created) => {
-      const room = new CollabRoom({ kind: 'studio', code, getState: () => S.serialize(), onState: async (st) => { S.nxRemote = true; try { await S.restore(JSON.stringify(st)); } finally { S.nxRemote = false; } }, onPeers: (p) => toast(p.length ? `${p.length} personne${p.length > 1 ? 's' : ''} dans la salle ${code}.` : `Salle ${code} : tu es seul pour l’instant.`) });
+      const room = new CollabRoom({ kind: 'studio', code, getState: () => S.serialize(), onState: async (st) => { S.nxRemote = true; try { await S.restore(JSON.stringify(st)); } finally { S.nxRemote = false; } }, onPeers: (p) => toast(p.length ? `${p.length} personne${p.length > 1 ? 's' : ''} dans la salle ${code}.` : `Salle ${code} : vous êtes seul pour l’instant.`) });
       const t = busy('Connexion à la salle…');
-      try { await room.join(); S.nxRoom = room; toast(created ? `Salle créée : ${code}. Donne ce code à tes coéquipiers.` : `Tu as rejoint la salle ${code}.`); } catch (e) { toast(e.message || String(e), { kind: 'bad' }); } finally { t.close(); }
+      try { await room.join(); S.nxRoom = room; toast(created ? `Salle créée : ${code}. Donnez ce code à vos coéquipiers.` : `Vous avez rejoint la salle ${code}.`); } catch (e) { toast(e.message || String(e), { kind: 'bad' }); } finally { t.close(); }
     }
   });
 }

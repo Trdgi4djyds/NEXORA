@@ -225,20 +225,20 @@ class Monitor {
 
   async rpc(name, args) {
     const c = this.cloud;
-    if (!c) throw new Error('Connecte-toi à ton compte NEXORA (bouton Compte du rail) : les alertes par e-mail sont envoyées à l’adresse de ton compte.');
+    if (!c) throw new Error('Connectez-vous à votre compte NEXORA (bouton Compte du rail) : les alertes par e-mail sont envoyées à l’adresse de votre compte.');
     let r;
     try {
       r = await this.fetch(`${c.url}/rest/v1/rpc/${name}`, {
         method: 'POST', headers: { apikey: c.key, authorization: `Bearer ${c.token}`, 'content-type': 'application/json' }, body: JSON.stringify(args), signal: timeout(15000),
       });
     } catch {
-      throw new Error('Connexion à NEXORA impossible : vérifie ta connexion à Internet.');
+      throw new Error('Connexion à NEXORA impossible : vérifiez votre connexion à Internet.');
     }
     const j = await r.json().catch(() => null);
     if (r.ok) return j;
     const msg = String((j && (j.message || j.msg || j.error_description)) || `HTTP ${r.status}`);
-    if (r.status === 401 || /jwt/i.test(msg)) throw new Error('Session NEXORA expirée : reconnecte-toi à ton compte, puis réessaie.');
-    if ((j && j.code === 'PGRST202') || r.status === 404) throw new Error('Les alertes par e-mail ne sont pas encore disponibles. Réessaie plus tard.');
+    if (r.status === 401 || /jwt/i.test(msg)) throw new Error('Session NEXORA expirée : reconnectez-vous à votre compte, puis réessayez.');
+    if ((j && j.code === 'PGRST202') || r.status === 404) throw new Error('Les alertes par e-mail ne sont pas encore disponibles. Réessayez plus tard.');
     throw new Error(msg);
   }
 
@@ -523,7 +523,7 @@ class Monitor {
     if (rec.changed) {
       const open = this.openOf(e.id, 'change');
       const cause = rec.changed.dns ? `DNS : ${String(rec.changed.from).slice(0, 60)} → ${String(rec.changed.to).slice(0, 60)}` : `contenu modifié (${rec.changed.from} → ${rec.changed.to} caractères)`;
-      if (!open) this.alert(e, 'change', 'alerte', rec.changed.dns ? `🟠 L’enregistrement DNS surveillé par « ${name} » a changé : ${cause}.` : `🟠 Le contenu de ${name} a changé. Vérifie qu’il s’agit bien d’une mise à jour de ta part.`, this.openIncident(e, 'change', rec.at, cause, rec));
+      if (!open) this.alert(e, 'change', 'alerte', rec.changed.dns ? `🟠 L’enregistrement DNS surveillé par « ${name} » a changé : ${cause}.` : `🟠 Le contenu de ${name} a changé. Vérifiez qu’il s’agit bien d’une mise à jour de votre part.`, this.openIncident(e, 'change', rec.at, cause, rec));
       else { open.checks += 1; open.lastCause = cause; }
     }
     // NEXORA #048 : expiration du nom de domaine (seuil réglable, 30 jours par défaut).
@@ -532,7 +532,7 @@ class Monitor {
       const open = this.openOf(e.id, 'domain');
       const cause = rec.domainDays < 0 ? 'domaine expiré' : `expire dans ${rec.domainDays} jour(s)`;
       if (rec.domainDays <= warn) {
-        if (!open) this.alert(e, 'domain', rec.domainDays <= 7 ? 'critique' : 'alerte', `${rec.domainDays <= 7 ? '🔴' : '🟠'} Le nom de domaine de ${name} ${rec.domainDays < 0 ? 'a expiré' : `expire dans ${rec.domainDays} jour(s)`} : renouvelle-le chez ton registraire.`, this.openIncident(e, 'domain', rec.at, cause, rec));
+        if (!open) this.alert(e, 'domain', rec.domainDays <= 7 ? 'critique' : 'alerte', `${rec.domainDays <= 7 ? '🔴' : '🟠'} Le nom de domaine de ${name} ${rec.domainDays < 0 ? 'a expiré' : `expire dans ${rec.domainDays} jour(s)`} : renouvelez-le chez votre registraire.`, this.openIncident(e, 'domain', rec.at, cause, rec));
         else open.lastCause = cause;
       } else if (open) {
         this.closeIncident(e.id, 'domain', rec.at, 'auto', 'Domaine renouvelé');
@@ -722,7 +722,7 @@ class Monitor {
   async testWebhook({ url } = {}) {
     const h = cleanHook({ url });
     if (!h) throw new Error('Adresse du webhook invalide : elle doit commencer par https://.');
-    await this.postWebhook(h.url, { subject: 'Test des alertes NEXORA', text: 'Test d’alerte NEXORA : le webhook fonctionne. Tu recevras ici les pannes, lenteurs et retours à la normale de tes sites.', level: 'ok', site: null, at: this.now() });
+    await this.postWebhook(h.url, { subject: 'Test des alertes NEXORA', text: 'Test d’alerte NEXORA : le webhook fonctionne. Vous recevrez ici les pannes, lenteurs et retours à la normale de vos sites.', level: 'ok', site: null, at: this.now() });
     return { ok: true, kind: hookKind(h.url) };
   }
 
@@ -815,16 +815,16 @@ class Monitor {
   // Test depuis l'interface : l'e-mail part, puis la réponse de Brevo est lue (quelques secondes).
   async testAlert(channel) {
     if (channel !== 'email') throw new Error('Seules les alertes par e-mail sont proposées.');
-    const sent = await this.sendEmail('Test des alertes NEXORA', 'Test d’alerte NEXORA : la configuration fonctionne. Tu recevras un e-mail comme celui-ci quand un site surveillé tombe en panne, ralentit ou revient en ligne.', 'test');
+    const sent = await this.sendEmail('Test des alertes NEXORA', 'Test d’alerte NEXORA : la configuration fonctionne. Vous recevrez un e-mail comme celui-ci quand un site surveillé tombe en panne, ralentit ou revient en ligne.', 'test');
     for (let i = 0; i < 8; i++) {
       await new Promise((ok) => setTimeout(ok, 1500));
       const res = await this.rpc('nx_alert_email_result', { p_id: sent.id }).catch(() => null);
       if (!res) continue;
-      if (res.status && res.status < 300) return { ok: true, note: `E-mail de test envoyé à ${sent.to} : vérifie ta boîte de réception (et les indésirables).` };
+      if (res.status && res.status < 300) return { ok: true, note: `E-mail de test envoyé à ${sent.to} : vérifiez votre boîte de réception (et les indésirables).` };
       let detail = res.error || res.content || '';
       try { detail = JSON.parse(res.content).message || detail; } catch { /* texte brut */ }
       techLog('erreurs', `alerte e-mail de test refusée (${res.status || '?'}) : ${detail}`);
-      throw new Error('L’e-mail de test n’a pas pu être envoyé. Réessaie plus tard.');
+      throw new Error('L’e-mail de test n’a pas pu être envoyé. Réessayez plus tard.');
     }
     return { ok: true, note: `E-mail de test envoyé à ${sent.to} : il peut mettre une minute à arriver.` };
   }

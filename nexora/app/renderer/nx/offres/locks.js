@@ -18,9 +18,9 @@ const SPACES = [
   { id: 'devlab', perm: 'devlab', label: 'Le Dev Lab',
     perks: ['Éditeur de code complet, terminal, Git et GitHub', 'Débogueur, tests, problèmes et scripts', 'Bases de données, API et mise en ligne', 'Assistant IA de tout le projet'] },
   { id: 'android', perm: 'apk', label: 'L’App Builder',
-    perks: ['Ton site transformé en application Android (APK, AAB)', 'PWA, notifications push et messagerie', 'Fiche et publication sur le Play Store', 'Jusqu’à 50 applications, sans limite par application'] },
+    perks: ['Votre site transformé en application Android (APK, AAB)', 'PWA, notifications push et messagerie', 'Fiche et publication sur le Play Store', 'Jusqu’à 50 applications, sans limite par application'] },
   { id: 'desktop', perm: 'desktop_builder', label: 'Le Desktop Builder',
-    perks: ['Ton site transformé en logiciel Windows', 'Installateur, version portable, ZIP et MSI', 'Signature et mises à jour', 'Jusqu’à 50 applications, sans limite par application'] },
+    perks: ['Votre site transformé en logiciel Windows', 'Installateur, version portable, ZIP et MSI', 'Signature et mises à jour', 'Jusqu’à 50 applications, sans limite par application'] },
 ];
 
 function card(sp) {
@@ -30,7 +30,7 @@ function card(sp) {
     <div class="nxo-space-card">
       <div class="nxo-lock-head">
         <span class="nxo-medal nxo-pro lg">${ico('nxCrown', 22)}</span>
-        <div><small class="nxo-kicker">Offre ${esc(p.name)}</small><h3>${esc(sp.label)} fait partie de l’offre ${esc(p.name)}</h3><p>${esc(price)} par mois, sans engagement. Tout était ouvert pendant ton premier jour.</p></div>
+        <div><small class="nxo-kicker">Offre ${esc(p.name)}</small><h3>${esc(sp.label)} fait partie de l’offre ${esc(p.name)}</h3><p>${esc(price)} par mois, sans engagement. Tout était ouvert pendant votre premier jour.</p></div>
       </div>
       <ul class="nxo-feats">${sp.perks.map((f) => `<li>${ico('check', 12)}<span>${esc(f)}</span></li>`).join('')}</ul>
       <div class="nxo-ab-lock-acts">

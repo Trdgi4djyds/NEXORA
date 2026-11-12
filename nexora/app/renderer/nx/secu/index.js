@@ -43,7 +43,7 @@ const api = {
     const sec = inst.el.querySelector('.sec');
     if (sec) sec.classList.add('sup-wide', 'nxs-space');
     const p = inst.el.querySelector('.sec-head p');
-    if (p) p.innerHTML = 'Pour <b>tes propres sites et projets</b> : audits en lecture seule (site, domaine, code, applications), surveillance en continu et alertes. Aucune attaque : NEXORA lit comme un visiteur et t’explique quoi corriger, et qui doit le faire.';
+    if (p) p.innerHTML = 'Pour <b>vos propres sites et projets</b> : audits en lecture seule (site, domaine, code, applications), surveillance en continu et alertes. Aucune attaque : NEXORA lit comme un visiteur et vous explique quoi corriger, et qui doit le faire.';
     const bar = inst.el.querySelector('.sec-tabs');
     if (bar) {
       bar.classList.add('nxs-tabs');

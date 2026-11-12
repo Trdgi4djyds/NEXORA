@@ -72,12 +72,12 @@ const LOGINS = {
 /** Vérifie et complète les réglages reçus de l'interface. Lève une erreur en français si un réglage indispensable manque. */
 function sanitize(raw = {}) {
   const name = text(raw.name, 80);
-  if (!name) throw new Error('Donne un nom à ton logiciel (section Identité).');
+  if (!name) throw new Error('Donnez un nom à votre logiciel (section Identité).');
   if (/[<>:"/\\|?*]/.test(name)) throw new Error('Le nom ne doit pas contenir ces caractères : < > : " / \\ | ? *');
   const appId = text(raw.appId, 120);
-  if (!APP_ID_RE.test(appId)) throw new Error('Identifiant invalide : utilise la forme com.monentreprise.monlogiciel (lettres, chiffres et points).');
+  if (!APP_ID_RE.test(appId)) throw new Error('Identifiant invalide : utilisez la forme com.monentreprise.monlogiciel (lettres, chiffres et points).');
   const version = text(raw.version, 40) || '1.0.0';
-  if (!VERSION_RE.test(version)) throw new Error('Version invalide : utilise la forme 1.0.0.');
+  if (!VERSION_RE.test(version)) throw new Error('Version invalide : utilisez la forme 1.0.0.');
   const s = raw.source || {};
   const kind = pick(s.kind, ['url', 'folder', 'electron'], 'url');
   const source = {
@@ -85,10 +85,10 @@ function sanitize(raw = {}) {
   };
   if (kind === 'url') {
     source.url = webUrl(s.url);
-    if (!source.url) throw new Error('Indique l’adresse complète du site, par exemple https://monsite.com (section Source).');
+    if (!source.url) throw new Error('Indiquez l’adresse complète du site, par exemple https://monsite.com (section Source).');
   } else {
     source.dir = text(s.dir, 1000);
-    if (!source.dir || !path.isAbsolute(source.dir)) throw new Error('Choisis le dossier du projet (section Source).');
+    if (!source.dir || !path.isAbsolute(source.dir)) throw new Error('Choisissez le dossier du projet (section Source).');
     source.buildCmd = text(s.buildCmd, 300);
     source.prepareCmd = text(s.prepareCmd, 300);
     source.build = bool(s.build, false);
@@ -118,12 +118,12 @@ function sanitize(raw = {}) {
   };
   if (updates.mode === 'generic') {
     updates.url = webUrl(up.url);
-    if (!/^https:/i.test(updates.url)) throw new Error('Indique l’adresse https du dossier de mise à jour (section Mises à jour).');
+    if (!/^https:/i.test(updates.url)) throw new Error('Indiquez l’adresse https du dossier de mise à jour (section Mises à jour).');
   }
   if (updates.mode === 'github') {
     updates.owner = text(up.owner, 100);
     updates.repo = text(up.repo, 100);
-    if (!GH_RE.test(updates.owner) || !GH_RE.test(updates.repo)) throw new Error('Indique le propriétaire et le nom du dépôt GitHub (section Mises à jour).');
+    if (!GH_RE.test(updates.owner) || !GH_RE.test(updates.repo)) throw new Error('Indiquez le propriétaire et le nom du dépôt GitHub (section Mises à jour).');
   }
   const httpSource = kind === 'url' && /^http:/i.test(source.url);
   const scheme = text(b.protocol, 31).toLowerCase();
@@ -132,8 +132,8 @@ function sanitize(raw = {}) {
   const st = raw.store || {};
   const store = { identityName: text(st.identityName, 50), publisher: text(st.publisher, 300), publisherDisplayName: text(st.publisherDisplayName, 100) };
   if (formats.appx) {
-    if (!/^[A-Za-z0-9.-]{3,50}$/.test(store.identityName)) throw new Error('Paquet Microsoft Store : indique le nom d’identité du paquet (Espace partenaires › Identité du produit).');
-    if (!/^CN=.+/.test(store.publisher)) throw new Error('Paquet Microsoft Store : indique l’éditeur, de la forme CN=… (Espace partenaires › Identité du produit).');
+    if (!/^[A-Za-z0-9.-]{3,50}$/.test(store.identityName)) throw new Error('Paquet Microsoft Store : indiquez le nom d’identité du paquet (Espace partenaires › Identité du produit).');
+    if (!/^CN=.+/.test(store.publisher)) throw new Error('Paquet Microsoft Store : indiquez l’éditeur, de la forme CN=… (Espace partenaires › Identité du produit).');
     if (!store.publisherDisplayName) store.publisherDisplayName = publisher || name;
   }
   // Signature : certificat .pfx enregistré sur le PC, ou signature Microsoft dans le cloud (Azure Trusted Signing).
@@ -145,9 +145,9 @@ function sanitize(raw = {}) {
     azure: { endpoint: text(az.endpoint, 120).replace(/\/?$/, '/'), account: text(az.account, 64), profile: text(az.profile, 64), publisherName: text(az.publisherName, 200) },
   };
   if (signing.enabled && signing.mode === 'azure') {
-    if (!AZURE_RE.test(signing.azure.endpoint)) throw new Error('Signature dans le cloud : choisis la région de ton compte de signature (adresse https://….codesigning.azure.net/).');
-    if (!/^[A-Za-z0-9-]{3,64}$/.test(signing.azure.account) || !/^[A-Za-z0-9-]{3,64}$/.test(signing.azure.profile)) throw new Error('Signature dans le cloud : indique le compte de signature et le profil de certificat (lettres, chiffres, tirets).');
-    if (!signing.azure.publisherName) throw new Error('Signature dans le cloud : indique le nom de l’éditeur tel qu’il figure sur le certificat.');
+    if (!AZURE_RE.test(signing.azure.endpoint)) throw new Error('Signature dans le cloud : choisissez la région de votre compte de signature (adresse https://….codesigning.azure.net/).');
+    if (!/^[A-Za-z0-9-]{3,64}$/.test(signing.azure.account) || !/^[A-Za-z0-9-]{3,64}$/.test(signing.azure.profile)) throw new Error('Signature dans le cloud : indiquez le compte de signature et le profil de certificat (lettres, chiffres, tirets).');
+    if (!signing.azure.publisherName) throw new Error('Signature dans le cloud : indiquez le nom de l’éditeur tel qu’il figure sur le certificat.');
   }
   const jumpList = (Array.isArray(b.jumpList) ? b.jumpList : []).map((j) => ({ label: text(j && j.label, 40), path: text(j && j.path, 200) }))
     .filter((j) => j.label && /^\/[^\s]*$/.test(j.path)).slice(0, 5);
@@ -405,7 +405,7 @@ function copyWeb(src, dest) {
         fs.copyFileSync(a, b);
         files += 1;
         bytes += fs.statSync(b).size;
-        if (files > 60000) throw new Error('Le dossier du site contient plus de 60 000 fichiers : choisis le dossier de build (dist, build…).');
+        if (files > 60000) throw new Error('Le dossier du site contient plus de 60 000 fichiers : choisissez le dossier de build (dist, build…).');
       }
     }
   };
@@ -457,12 +457,12 @@ function writeProject(projectDir, c, assets = {}, { electronVersion, nexoraVersi
   for (const f of ['status.html', 'status.css', 'status.js']) copyTemplate(`app/pages/${f}`, path.join(app, 'pages', f));
   let web = null;
   if (c.source.kind === 'folder') {
-    if (!webDir || !fs.existsSync(path.join(webDir, 'index.html'))) throw new Error(`Aucun fichier index.html dans ${webDir || 'le dossier du site'} : choisis le dossier qui contient la page d'accueil du site.`);
+    if (!webDir || !fs.existsSync(path.join(webDir, 'index.html'))) throw new Error(`Aucun fichier index.html dans ${webDir || 'le dossier du site'} : choisissez le dossier qui contient la page d'accueil du site.`);
     web = copyWeb(webDir, path.join(app, 'web'));
   }
   writeJson(path.join(app, 'config.json'), appConfig(c, { nexoraVersion }));
   const png256 = assets.png256 || assets.png;
-  if (!assets.ico || !assets.png) throw new Error('L’icône du logiciel n’a pas pu être préparée. Rouvre la section Icône, puis réessaie.');
+  if (!assets.ico || !assets.png) throw new Error('L’icône du logiciel n’a pas pu être préparée. Rouvrez la section Icône, puis réessayez.');
   writeBytes(path.join(projectDir, 'build', 'icon.ico'), assets.ico);
   writeBytes(path.join(projectDir, 'build', 'icon.png'), assets.png);
   writeBytes(path.join(app, 'assets', 'icon.ico'), assets.ico);

@@ -151,7 +151,7 @@ func InstallRelease(ctx context.Context, c *http.Client, l Layout, st *State, re
 	final := l.versionDir(m.Version)
 	if err := os.RemoveAll(final); err != nil {
 		os.RemoveAll(staging)
-		return fmt.Errorf("NEXORA %s est encore ouvert : ferme-le, puis réessaie", m.Version)
+		return fmt.Errorf("NEXORA %s est encore ouvert : fermez-le, puis réessayez", m.Version)
 	}
 	if err := os.Rename(staging, final); err != nil {
 		os.RemoveAll(staging)

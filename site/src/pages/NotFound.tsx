@@ -12,7 +12,7 @@ export function NotFound() {
       <h1 className="title-1 mt-4">
         Cette page <span className="tone">n’existe pas.</span>
       </h1>
-      <p className="lead mx-auto mt-5 max-w-xl">Le lien est peut-être ancien. Repars de l’accueil ou découvre les espaces de NEXORA.</p>
+      <p className="lead mx-auto mt-5 max-w-xl">Le lien est peut-être ancien. Repartez de l’accueil ou découvrez les espaces de NEXORA.</p>
       <div className="mt-9 flex flex-wrap justify-center gap-3">
         <Button asChild size="lg">
           <a href="/">

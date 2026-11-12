@@ -74,17 +74,17 @@ export async function mgmt<T>(token: string, path: string, init: RequestInit = {
       headers: { Authorization: `Bearer ${token}`, ...(init.body ? { "Content-Type": "application/json" } : {}), ...(init.headers || {}) },
     })
   } catch {
-    throw new Error("Impossible de joindre Supabase par le relais du back office : vérifie ta connexion, puis réessaie.")
+    throw new Error("Impossible de joindre Supabase par le relais du back office : vérifiez votre connexion, puis réessayez.")
   }
   const text = await res.text()
   let body: unknown = text
   try { body = JSON.parse(text) } catch { /* texte brut */ }
   // Réponse qui ne vient pas du relais (page restée ouverte avant la publication, publication en cours…).
   if (!res.ok && !res.headers.get("X-Nexora-Relay"))
-    throw new Error(`Le relais du back office ne répond pas (HTTP ${res.status}) : recharge la page avec Ctrl + F5, puis réessaie.`)
+    throw new Error(`Le relais du back office ne répond pas (HTTP ${res.status}) : rechargez la page avec Ctrl + F5, puis réessayez.`)
   if (!res.ok) {
     const m = (body as { message?: string; error?: string })?.message || (body as { error?: string })?.error || text
-    throw new Error(res.status === 401 ? "Jeton refusé : vérifie qu’il est valide et qu’il a accès au projet." : `Supabase (${res.status}) : ${m}`)
+    throw new Error(res.status === 401 ? "Jeton refusé : vérifiez qu’il est valide et qu’il a accès au projet." : `Supabase (${res.status}) : ${m}`)
   }
   return body as T
 }
@@ -98,7 +98,7 @@ export function SupabaseSetup() {
     <>
       <div className="banner info">
         <Icon name="key" size={16} />
-        <span className="grow">Connecté au projet <code>{PROJECT_REF}</code> avec ton jeton d’accès (gardé jusqu’à la fermeture de l’onglet).</span><small className="muted">{ADMIN_BUILD}</small>
+        <span className="grow">Connecté au projet <code>{PROJECT_REF}</code> avec votre jeton d’accès (gardé jusqu’à la fermeture de l’onglet).</span><small className="muted">{ADMIN_BUILD}</small>
         <button className="btn sm" onClick={() => { sessionStorage.removeItem(TOKEN_KEY); setToken("") }}>Oublier le jeton</button>
       </div>
       <Project token={token} />
@@ -135,8 +135,8 @@ export function TokenForm({ onToken }: { onToken: (t: string) => void }) {
     <form className="card form" style={{ maxWidth: 620 }} onSubmit={submit}>
       <div className="card-head"><Icon name="key" size={16} /><h3>Jeton d’accès Supabase</h3></div>
       <p className="muted" style={{ margin: 0 }}>
-        Pour modifier la configuration du projet (adresses de redirection, inscriptions, base de données), le back office utilise l’API de gestion de Supabase avec ton jeton d’accès personnel.
-        Crée-le dans Supabase → avatar → Account preferences → Access Tokens. Il commence par <code>sbp_</code>.
+        Pour modifier la configuration du projet (adresses de redirection, inscriptions, base de données), le back office utilise l’API de gestion de Supabase avec votre jeton d’accès personnel.
+        Créez-le dans Supabase → avatar → Account preferences → Access Tokens. Il commence par <code>sbp_</code>.
       </p>
       <label className="field"><span>Jeton d’accès personnel</span><input className="input" type="password" autoComplete="off" required pattern="sbp_.+" value={value} onChange={(e) => setValue(e.target.value)} placeholder="sbp_…" /></label>
       <small className="muted">Gardé seulement dans cet onglet ; il n’est enregistré nulle part ailleurs.</small>
@@ -197,7 +197,7 @@ function Checks({ token }: { token: string }) {
       { label: "Sécurité des tables (RLS)", ok: !d.no_rls.length, detail: d.no_rls.length ? <>Sans RLS : {d.no_rls.join(", ")}.</> : "Toutes les tables publiques ont la RLS." },
       { label: "Fonctions Edge", ok: !missingFns.length, detail: missingFns.length ? <>Absentes ou inactives : {missingFns.join(", ")}.</> : `${setup.functions.length} fonctions actives.` },
       { label: "Stockage", ok: !missingBuckets.length, detail: missingBuckets.length ? <>Compartiments manquants : {missingBuckets.map((b) => b.id).join(", ")}.</> : `${setup.buckets.length} compartiments présents.` },
-      { label: "E-mails", ok: auth.smtp_host ? !lowMailRate(auth) && !smtpStale(auth) : null, detail: auth.smtp_host ? <>SMTP : <code>{auth.smtp_host}</code>{auth.smtp_host === setup.email.smtpHost ? " (Brevo)" : ""}, {Number(auth.rate_limit_email_sent ?? 0)} e-mails de compte par heure au plus.{smtpStale(auth) ? <> Ancien compte Brevo (identifiant <code>{auth.smtp_user || "?"}</code>, expéditeur {auth.smtp_admin_email}) : NEXORA attend <code>{setup.email.smtpUser}</code> et {setup.email.senderEmail} (carte « E-mails (Brevo) »).</> : null}{lowMailRate(auth) ? <> Limite trop basse : au-delà, les inscriptions et les mots de passe oubliés ne reçoivent plus d’e-mail. « Appliquer la configuration recommandée » la passe à {AUTH_MAIL_RATE}.</> : null}</> : "Serveur d’envoi de Supabase (quelques e-mails par heure) : configure Brevo dans la carte « E-mails (Brevo) » ci-dessous." },
+      { label: "E-mails", ok: auth.smtp_host ? !lowMailRate(auth) && !smtpStale(auth) : null, detail: auth.smtp_host ? <>SMTP : <code>{auth.smtp_host}</code>{auth.smtp_host === setup.email.smtpHost ? " (Brevo)" : ""}, {Number(auth.rate_limit_email_sent ?? 0)} e-mails de compte par heure au plus.{smtpStale(auth) ? <> Ancien compte Brevo (identifiant <code>{auth.smtp_user || "?"}</code>, expéditeur {auth.smtp_admin_email}) : NEXORA attend <code>{setup.email.smtpUser}</code> et {setup.email.senderEmail} (carte « E-mails (Brevo) »).</> : null}{lowMailRate(auth) ? <> Limite trop basse : au-delà, les inscriptions et les mots de passe oubliés ne reçoivent plus d’e-mail. « Appliquer la configuration recommandée » la passe à {AUTH_MAIL_RATE}.</> : null}</> : "Serveur d’envoi de Supabase (quelques e-mails par heure) : configurez Brevo dans la carte « E-mails (Brevo) » ci-dessous." },
     ]
     return checks
   }, [token, refresh, tick])
@@ -395,7 +395,7 @@ function EmailSettings({ token }: { token: string }) {
           if (lowMailRate(after)) throw new Error(`SMTP enregistré, mais la limite des e-mails des comptes reste à ${rate} par heure.`)
         }
         setSmtpKey("")
-        setSmtpOutcome({ ok: true, text: `SMTP Brevo enregistré et vérifié sur Supabase : ${fresh.smtp_host}:${fresh.smtp_port}, expéditeur ${fresh.smtp_sender_name} <${fresh.smtp_admin_email}>, ${rate} e-mails de compte par heure au plus. Envoie-toi un e-mail de test pour vérifier la clé SMTP.`, at: Date.now() })
+        setSmtpOutcome({ ok: true, text: `SMTP Brevo enregistré et vérifié sur Supabase : ${fresh.smtp_host}:${fresh.smtp_port}, expéditeur ${fresh.smtp_sender_name} <${fresh.smtp_admin_email}>, ${rate} e-mails de compte par heure au plus. Envoyez-vous un e-mail de test pour vérifier la clé SMTP.`, at: Date.now() })
         setTick((n) => n + 1)
       } catch (e) {
         setSmtpOutcome({ ok: false, text: `Échec de l’enregistrement du SMTP : ${errMsg(e)}`, at: Date.now() })
@@ -409,10 +409,10 @@ function EmailSettings({ token }: { token: string }) {
     await smtpAct.run(async () => {
       const { error } = await sb.auth.resetPasswordForEmail(myEmail, { redirectTo: adminUrl() })
       if (error) {
-        setSmtpOutcome({ ok: false, text: `Supabase n’a pas pu envoyer l’e-mail de test : ${error.message}. Vérifie la clé SMTP (xsmtpsib-…) et que l’expéditeur est validé dans Brevo.`, at: Date.now() })
+        setSmtpOutcome({ ok: false, text: `Supabase n’a pas pu envoyer l’e-mail de test : ${error.message}. Vérifiez la clé SMTP (xsmtpsib-…) et que l’expéditeur est validé dans Brevo.`, at: Date.now() })
         throw error
       }
-      setSmtpOutcome({ ok: true, text: `E-mail de test envoyé par Brevo à ${myEmail} (lien « mot de passe oublié », tu peux l’ignorer). S’il n’arrive pas d’ici quelques minutes, regarde les indésirables, puis Brevo → Statistiques → E-mails transactionnels.`, at: Date.now() })
+      setSmtpOutcome({ ok: true, text: `E-mail de test envoyé par Brevo à ${myEmail} (lien « mot de passe oublié », vous pouvez l’ignorer). S’il n’arrive pas d’ici quelques minutes, regardez les indésirables, puis Brevo → Statistiques → E-mails transactionnels.`, at: Date.now() })
     }, "E-mail de test envoyé.")
   }
 
@@ -439,7 +439,7 @@ function EmailSettings({ token }: { token: string }) {
     await alertAct.run(async () => {
       try {
         const [r] = await sql<{ value: AlertState["cfg"] }>(token, `update public.app_config set value = jsonb_build_object('enabled', ${enabled}, 'sender_email', ${sqlText(form.sender.trim())}, 'sender_name', ${sqlText(form.name.trim())}), updated_at = now() where key = 'email_alerts' returning value`)
-        if (!r || Boolean(r.value?.enabled) !== enabled) throw new Error("Supabase n’a pas gardé le réglage : applique d’abord la migration des alertes.")
+        if (!r || Boolean(r.value?.enabled) !== enabled) throw new Error("Supabase n’a pas gardé le réglage : appliquez d’abord la migration des alertes.")
         setAlertOutcome({ ok: true, text: enabled ? `Alertes par e-mail activées : chaque panne, lenteur ou retour en ligne part de ${form.name} <${form.sender}> vers les membres concernés.` : "Alertes par e-mail désactivées : les notifications restent dans NEXORA.", at: Date.now() })
         setTick((n) => n + 1)
       } catch (e) {
@@ -455,20 +455,20 @@ function EmailSettings({ token }: { token: string }) {
     await alertAct.run(async () => {
       try {
         const [r] = await sql<{ id: number | null }>(token, `select public.nx_brevo_test(${sqlText(myEmail)}) as id`)
-        if (!r?.id) throw new Error("rien n’est parti : enregistre la clé API et l’expéditeur.")
+        if (!r?.id) throw new Error("rien n’est parti : enregistrez la clé API et l’expéditeur.")
         let res: { status_code: number | null; error_msg: string | null; content: string | null } | undefined
         for (let i = 0; i < 8 && !res; i++) {
           await new Promise((ok) => setTimeout(ok, 1500))
           ;[res] = await sql<NonNullable<typeof res>>(token, `select status_code, error_msg, left(content::text, 400) as content from net._http_response where id = ${Number(r.id)}`)
         }
-        if (!res) throw new Error("Brevo n’a pas encore répondu. Réessaie dans un instant.")
+        if (!res) throw new Error("Brevo n’a pas encore répondu. Réessayez dans un instant.")
         if (res.status_code && res.status_code < 300) {
           setAlertOutcome({ ok: true, text: `Brevo a accepté l’alerte de test (HTTP ${res.status_code}) pour ${myEmail}.`, at: Date.now() })
           return
         }
         let detail = res.error_msg || res.content || ""
         try { detail = (JSON.parse(res.content || "") as { message?: string }).message || detail } catch { /* texte brut */ }
-        throw new Error(res.status_code === 401 ? "Brevo refuse la clé API (401) : vérifie-la ou crée-en une nouvelle." : `Brevo a refusé l’e-mail (HTTP ${res.status_code ?? "?"}) : ${detail}`)
+        throw new Error(res.status_code === 401 ? "Brevo refuse la clé API (401) : vérifiez-la ou créez-en une nouvelle." : `Brevo a refusé l’e-mail (HTTP ${res.status_code ?? "?"}) : ${detail}`)
       } catch (e) {
         setAlertOutcome({ ok: false, text: `Échec de l’alerte de test : ${errMsg(e)}`, at: Date.now() })
         throw e
@@ -486,7 +486,7 @@ function EmailSettings({ token }: { token: string }) {
         {(a) => (
           <p className="muted small" style={{ margin: 0 }}>
             {a.smtp_host === EMAIL.smtpHost && !smtpStale(a) ? <><Tag tone="ok">Brevo actif</Tag> Expéditeur {a.smtp_sender_name} &lt;{a.smtp_admin_email}&gt;.</>
-              : a.smtp_host === EMAIL.smtpHost ? <><Tag tone="warn">ancien compte Brevo</Tag> Identifiant <code>{a.smtp_user || "?"}</code>, expéditeur &lt;{a.smtp_admin_email}&gt; : NEXORA attend <code>{EMAIL.smtpUser}</code> et &lt;{EMAIL.senderEmail}&gt;. Colle la clé SMTP de ce compte ci-dessous, puis « Enregistrer le SMTP Brevo ».</>
+              : a.smtp_host === EMAIL.smtpHost ? <><Tag tone="warn">ancien compte Brevo</Tag> Identifiant <code>{a.smtp_user || "?"}</code>, expéditeur &lt;{a.smtp_admin_email}&gt; : NEXORA attend <code>{EMAIL.smtpUser}</code> et &lt;{EMAIL.senderEmail}&gt;. Collez la clé SMTP de ce compte ci-dessous, puis « Enregistrer le SMTP Brevo ».</>
               : a.smtp_host ? <><Tag tone="warn">autre SMTP</Tag> {a.smtp_host}</>
               : <><Tag tone="warn">serveur de Supabase</Tag> quelques e-mails par heure seulement.</>}
           </p>
@@ -501,7 +501,7 @@ function EmailSettings({ token }: { token: string }) {
         <label className="field"><span>Nom de l’expéditeur</span><input className="input" value={form.name} onChange={set("name")} /></label>
       </div>
       <div className="actions">
-        <button className="btn" disabled={smtpAct.busy || !myEmail || auth.data?.smtp_host !== EMAIL.smtpHost} onClick={testSmtp} title={myEmail ? `Envoie un e-mail à ${myEmail}` : ""}>M’envoyer un e-mail de test</button>
+        <button className="btn" disabled={smtpAct.busy || !myEmail || auth.data?.smtp_host !== EMAIL.smtpHost} onClick={testSmtp} title={myEmail ? `Envoyez un e-mail à ${myEmail}` : ""}>M’envoyer un e-mail de test</button>
         <button className="btn primary" disabled={smtpAct.busy || !formOk || !/^xsmtpsib-[\w-]{10,}$/.test(smtpKey.trim())} onClick={saveSmtp}>{smtpAct.busy ? <span className="spinner sm" /> : "Enregistrer le SMTP Brevo"}</button>
       </div>
 
@@ -510,10 +510,10 @@ function EmailSettings({ token }: { token: string }) {
       <OutcomeBanner outcome={alertOutcome} onClose={() => setAlertOutcome(null)} />
       <Loaded q={alerts}>
         {(st) => !st.installed ? (
-          <div className="banner"><Icon name="warn" size={16} /><span className="grow">Applique d’abord la migration <code>20261104000004_alertes_email_brevo.sql</code> (carte « Migrations du dépôt »).</span></div>
+          <div className="banner"><Icon name="warn" size={16} /><span className="grow">Appliquez d’abord la migration <code>20261104000004_alertes_email_brevo.sql</code> (carte « Migrations du dépôt »).</span></div>
         ) : (
           <>
-            {!st.app && <div className="banner"><Icon name="warn" size={16} /><span className="grow">Pour les alertes de l’application Windows, applique aussi la migration <code>20261104000005_alertes_email_application.sql</code>.</span></div>}
+            {!st.app && <div className="banner"><Icon name="warn" size={16} /><span className="grow">Pour les alertes de l’application Windows, appliquez aussi la migration <code>20261104000005_alertes_email_application.sql</code>.</span></div>}
             <p className="muted small" style={{ margin: 0 }}>
               {st.has_key ? <Tag tone="ok">clé API dans le coffre</Tag> : <Tag tone="warn">clé API manquante</Tag>}{" "}
               {st.app ? <Tag tone="ok">application Windows prête</Tag> : <Tag tone="warn">application Windows : migration manquante</Tag>}{" "}

@@ -14,7 +14,7 @@ export function SpacesIndex() {
           align="left"
           eyebrow="Les espaces"
           title={["Neuf espaces,", "une seule application."]}
-          lead="Chaque espace de NEXORA fait un métier : tester, inspecter, coder, publier sur Android et Windows, présenter en 3D, créer des visuels, sécuriser. Tous partagent tes projets."
+          lead="Chaque espace de NEXORA fait un métier : tester, inspecter, coder, publier sur Android et Windows, présenter en 3D, créer des visuels, sécuriser. Tous partagent vos projets."
           className="mb-0 md:mb-0"
         />
       </PageHero>
@@ -30,9 +30,9 @@ export function SpacesIndex() {
         eyebrow="Comment ça marche"
         title={["Quatre étapes,", "du site à la publication."]}
         steps={[
-          { icon: "download", title: "Télécharge NEXORA", text: "Le lanceur installe NEXORA et vérifie chaque fichier." },
-          { icon: "key", title: "Crée ta licence", text: "Gratuite, liée à ton compte, vérifiée à chaque démarrage." },
-          { icon: "folder", title: "Ouvre un projet", text: "Un site, un dossier de code ou un projet existant : tous les espaces s’y alignent." },
+          { icon: "download", title: "Téléchargez NEXORA", text: "Le lanceur installe NEXORA et vérifie chaque fichier." },
+          { icon: "key", title: "Créez votre licence", text: "Gratuite, liée à votre compte, vérifiée à chaque démarrage." },
+          { icon: "folder", title: "Ouvrez un projet", text: "Un site, un dossier de code ou un projet existant : tous les espaces s’y alignent." },
           { icon: "rocket", title: "Publie partout", text: "Mise en ligne, application Android ou logiciel Windows installable." },
         ]}
       />
@@ -44,7 +44,7 @@ export function SpacesIndex() {
           { value: String(SPACES.length), label: "espaces", text: "Un par métier : tester, inspecter, coder, publier, présenter, créer, sécuriser." },
           { value: String(DEVICE_COUNT), label: "modèles d’appareils", text: "Téléphones, pliables, tablettes, ordinateurs, téléviseurs, montres et voitures." },
           { value: "2", label: "applications offertes", text: "Android ou Windows, avec l’offre Gratuite, sans limite de durée." },
-          { value: "24 h", label: "d’essai Pro", text: "Ton premier jour, tout NEXORA est ouvert." },
+          { value: "24 h", label: "d’essai Pro", text: "Votre premier jour, tout NEXORA est ouvert." },
         ]}
       />
       <CtaBand bright />

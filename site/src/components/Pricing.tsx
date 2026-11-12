@@ -121,14 +121,14 @@ export function PricingCards() {
         <Icon name="info" size={15} className="mt-0.5 shrink-0 text-primary" />
         {/* #087 (A-056) : tant que le paiement en ligne n'est pas ouvert (Worker, /license/config), l'équipe active Pro sur demande. */}
         {payments ? (
-          <span>Paiement sécurisé dans ton navigateur, depuis la page Ma licence : NEXORA passe en Pro au contrôle de licence suivant. Prix en dollars américains.</span>
+          <span>Paiement sécurisé dans votre navigateur, depuis la page Ma licence : NEXORA passe en Pro au contrôle de licence suivant. Prix en dollars américains.</span>
         ) : (
           <span>
-            Pour passer à Pro, écris à{" "}
+            Pour passer à Pro, écrivez à{" "}
             <a className="text-foreground underline decoration-foreground/25 underline-offset-4 hover:text-primary" href={`mailto:${supportEmail}?subject=${encodeURIComponent("Passage à l’offre Pro")}`}>
               {supportEmail}
             </a>{" "}
-            ou depuis NEXORA (Mon compte → Support) : l’équipe NEXORA active ton offre, en général sous 24 h. Prix en dollars américains.
+            ou depuis NEXORA (Mon compte → Support) : l’équipe NEXORA active votre offre, en général sous 24 h. Prix en dollars américains.
           </span>
         )}
       </p>

@@ -262,8 +262,8 @@ async function inspect(url, { partition = 'persist:vitrine', timeout = 25000 } =
     const tests = m ? manifestTests(m) : [];
     const swTests = [
       { category: 'required', label: 'Service worker enregistré', ok: sw.registered },
-      { category: 'recommended', label: 'Contrôle la page au second chargement', ok: sw.controlling },
-      { category: 'recommended', label: 'Gère les requêtes (événement fetch)', ok: sw.fetch },
+      { category: 'recommended', label: 'Contrôlez la page au second chargement', ok: sw.controlling },
+      { category: 'recommended', label: 'Gérez les requêtes (événement fetch)', ok: sw.fetch },
       { category: 'recommended', label: 'Fonctionne hors connexion', ok: sw.offline === true },
       { category: 'optional', label: 'Notifications push', ok: sw.push },
       { category: 'optional', label: 'Synchronisation en arrière-plan', ok: sw.sync },
@@ -400,7 +400,7 @@ self.addEventListener('fetch', (e) => {
 `,
   };
   const push = `
-// Notifications push (envoyées par ton serveur avec le protocole Web Push).
+// Notifications push (envoyées par votre serveur avec le protocole Web Push).
 self.addEventListener('push', (e) => {
   let data = {};
   try { data = e.data ? e.data.json() : {}; } catch { data = { body: e.data && e.data.text() }; }
@@ -414,7 +414,7 @@ self.addEventListener('notificationclick', (e) => {
   return head + (bodies[strategy] || bodies.offline) + push;
 }
 
-function offlinePage({ name = 'Application', bg = '#ffffff', color = '#1d1d1f', accent = '#007aff', title = 'Pas de connexion', text = 'Vérifie ta connexion Internet, puis réessaie.', button = 'Réessayer' } = {}) {
+function offlinePage({ name = 'Application', bg = '#ffffff', color = '#1d1d1f', accent = '#007aff', title = 'Pas de connexion', text = 'Vérifiez votre connexion Internet, puis réessayez.', button = 'Réessayer' } = {}) {
   const e = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   return `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>${e(name)} – hors ligne</title>

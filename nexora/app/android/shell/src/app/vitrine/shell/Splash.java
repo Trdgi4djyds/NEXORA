@@ -100,6 +100,16 @@ final class Splash {
         FrameLayout f = new FrameLayout(a);
         f.setBackgroundColor(cfg.splashBg);
         f.setClickable(true);
+        // NEXORA #115 : fond composé dans le créateur d'écran de démarrage (drawable-nodpi/vt_splash_bg), rogné
+        // pour remplir l'écran quel que soit son format ; la couleur de fond reste dessous pendant le chargement.
+        int bgId = a.getResources().getIdentifier("vt_splash_bg", "drawable", a.getPackageName());
+        if (bgId != 0) {
+            ImageView bg = new ImageView(a);
+            bg.setTag("bg");
+            bg.setImageResource(bgId);
+            bg.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            f.addView(bg, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        }
         LinearLayout col = new LinearLayout(a);
         col.setOrientation(LinearLayout.VERTICAL);
         col.setGravity(Gravity.CENTER_HORIZONTAL);

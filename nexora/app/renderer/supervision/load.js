@@ -5,7 +5,7 @@ import { Chart } from './charts.js';
 import { kpi, card, btn, iconBtn, confirmSheet } from './ui.js';
 
 const SCEN = [
-  ['smoke', 'Vérification rapide', 'Un seul visiteur : vérifie que tout répond avant un vrai test.'],
+  ['smoke', 'Vérification rapide', 'Un seul visiteur : vérifiez que tout répond avant un vrai test.'],
   ['load', 'Charge', 'Montée progressive jusqu’au nombre de visiteurs choisi, puis palier.'],
   ['stress', 'Stress', 'Paliers jusqu’au double de la charge pour trouver la limite du site.'],
   ['spike', 'Pic soudain', 'Afflux brutal de visiteurs (lancement, publicité), puis retour au calme.'],
@@ -56,7 +56,7 @@ export async function renderLoad(ctx) {
   const stages = plan(f.scenario, f.vus, f.duration);
   const total = stages.reduce((a, s) => a + s[0], 0);
   const cfg = card('Configurer un test', `<form class="sup-lt" data-lt-form autocomplete="off">
-      <label class="field"><span>Pages à visiter (une adresse par ligne, dans l’ordre du parcours)</span><textarea class="input" rows="2" name="urls" placeholder="https://ton-site.com&#10;https://ton-site.com/contact" spellcheck="false">${esc(f.urls)}</textarea></label>
+      <label class="field"><span>Pages à visiter (une adresse par ligne, dans l’ordre du parcours)</span><textarea class="input" rows="2" name="urls" placeholder="https://votre-site.com&#10;https://votre-site.com/contact" spellcheck="false">${esc(f.urls)}</textarea></label>
       <div class="field"><span>Scénario</span><div class="sup-scen">${SCEN.map(([id, label, txt]) => `<button type="button" class="sup-scen-tile ${f.scenario === id ? 'on' : ''}" data-scen="${id}">${shape(plan(id, f.vus, f.duration))}<b>${esc(label)}</b><small>${esc(txt)}</small></button>`).join('')}</div></div>
       <div class="sup-form-grid four">
         <label class="field"><span>Visiteurs simultanés${f.scenario === 'stress' ? ' (palier de base)' : ''}</span><input class="input" type="number" name="vus" min="1" max="2000" value="${esc(f.vus)}" ${f.scenario === 'smoke' ? 'disabled' : ''}></label>
@@ -66,7 +66,7 @@ export async function renderLoad(ctx) {
         <label class="field"><span>Seuil p95 (ms)</span><input class="input" type="number" name="p95Ms" min="50" step="50" value="${esc(f.p95Ms)}"></label>
         <label class="field"><span>Erreurs tolérées (%)</span><input class="input" type="number" name="errPct" min="0" max="100" step="0.5" value="${esc(f.errPct)}"></label>
       </div>
-      <div class="sup-lt-foot"><small class="muted">${icon('clock', 12)} Durée totale prévue : <b>${dur(total * 1000)}</b> · jusqu’à <b>${num(Math.max(...stages.map((s) => s[1])))}</b> visiteurs simultanés. Teste uniquement <b>tes propres sites</b>.</small>
+      <div class="sup-lt-foot"><small class="muted">${icon('clock', 12)} Durée totale prévue : <b>${dur(total * 1000)}</b> · jusqu’à <b>${num(Math.max(...stages.map((s) => s[1])))}</b> visiteurs simultanés. Testez uniquement <b>vos propres sites</b>.</small>
       ${live ? `<button type="button" class="btn danger-soft" data-lt="stop">${icon('stop', 13)}<span>Arrêter le test</span></button>` : `<button type="submit" class="btn primary">${icon('bolt', 14)}<span>Lancer le test</span></button>`}</div>
     </form>`, { sub: 'Moteur k6 (Grafana), téléchargé une seule fois' });
   const livePanel = live ? liveHtml(live, f) : '';
@@ -99,9 +99,9 @@ function liveKpis(p, f) {
 }
 
 function verdictText(r) {
-  if (r.failRate < 1 && r.p95 < 1000) return 'Ton site tient bien la charge testée.';
-  if (r.failRate >= 5) return 'Beaucoup d’erreurs : le site sature à cette charge. Regarde à partir de combien de visiteurs les erreurs apparaissent sur le graphique.';
-  return 'Temps de réponse élevé sous charge : pense à un cache (pages, images), à des données mieux organisées ou à plus de ressources serveur.';
+  if (r.failRate < 1 && r.p95 < 1000) return 'Votre site tient bien la charge testée.';
+  if (r.failRate >= 5) return 'Beaucoup d’erreurs : le site sature à cette charge. Regardez à partir de combien de visiteurs les erreurs apparaissent sur le graphique.';
+  return 'Temps de réponse élevé sous charge : pensez à un cache (pages, images), à des données mieux organisées ou à plus de ressources serveur.';
 }
 
 function resultHtml(r) {
@@ -125,7 +125,7 @@ function resultHtml(r) {
 }
 
 function historyHtml(ctx, hist, shown) {
-  if (!hist.length) return '<p class="sup-none">Aucun test pour l’instant : lance-en un pour mesurer la tenue de ton site.</p>';
+  if (!hist.length) return '<p class="sup-none">Aucun test pour l’instant : lancez-en un pour mesurer la tenue de votre site.</p>';
   const sel = new Set(ctx.state.ltCompare || []);
   return `<div class="sup-table-wrap"><table class="sup-table dense"><thead><tr><th></th><th>Test</th><th class="num">Visiteurs</th><th class="num">Req./s</th><th class="num">p95</th><th class="num">Erreurs</th><th>Seuils</th><th></th></tr></thead><tbody>${hist.map((r) => {
     const ok = r.pass ? r.pass.p95 && r.pass.err : r.failRate < 1;
@@ -219,7 +219,7 @@ function bind(ctx) {
     let sel = (ctx.state.ltCompare || []).filter((id) => id !== c.dataset.ltCmp);
     if (c.checked) sel = [...sel, c.dataset.ltCmp].slice(-2);
     ctx.state.ltCompare = sel;
-    if (sel.length === 1) toast('Coche un second test pour les comparer.');
+    if (sel.length === 1) toast('Cochez un second test pour les comparer.');
     ctx.show(true);
   };
   for (const t of v.querySelectorAll('[data-lt-open]')) t.onclick = () => { const r = (ctx.state.ltHistory || []).find((x) => x.id === t.dataset.ltOpen); if (r) { ctx.state.ltResult = r; ctx.show(true); const pane = ctx.host.closest('.sec-pane'); if (pane) pane.scrollTop = 0; } };
@@ -235,7 +235,7 @@ function bind(ctx) {
 async function start(ctx) {
   const f = readForm(ctx);
   const urls = f.urls.split(/\s*\n\s*/).map((u) => u.trim()).filter(Boolean);
-  if (!urls.length) { toast('Indique au moins une adresse à tester.', { kind: 'bad' }); return; }
+  if (!urls.length) { toast('Indiquez au moins une adresse à tester.', { kind: 'bad' }); return; }
   // NEXORA #048 : un test de charge ne vise que des sites dont la propriété est prouvée.
   for (const u of urls) {
     let st = null;
@@ -264,10 +264,10 @@ function verifySheet(st) {
   return new Promise((resolve) => {
     let done = false;
     const finish = (v) => { if (!done) { done = true; resolve(v); } };
-    const el = sheet(owner, `<div class="sheet-head"><span class="sheet-icon">${icon('shield', 22)}</span><div><h2>Ce site t’appartient-il ?</h2><p>Un test de charge envoie des centaines de requêtes : sur le site de quelqu’un d’autre, c’est une attaque. Prouve une fois que ${esc(st.host)} est à toi, avec l’une des deux méthodes.</p></div></div>
+    const el = sheet(owner, `<div class="sheet-head"><span class="sheet-icon">${icon('shield', 22)}</span><div><h2>Ce site vous appartient-il ?</h2><p>Un test de charge envoie des centaines de requêtes : sur le site de quelqu’un d’autre, c’est une attaque. Prouvez une fois que ${esc(st.host)} est à vous, avec l’une des deux méthodes.</p></div></div>
       <div class="sheet-body sup-form-body">
-        <div class="sup-verif"><b>1. Fichier sur le site</b><small>Crée le fichier <code>${esc(st.file)}</code> avec ce contenu, puis publie le site :</small><div class="sup-hb-u"><code>${esc(st.token)}</code><button type="button" class="btn small" data-vc="${esc(st.token)}">${icon('copy', 12)}<span>Copier</span></button></div></div>
-        <div class="sup-verif"><b>2. Enregistrement DNS</b><small>Chez ton hébergeur DNS, ajoute un enregistrement TXT sur ${esc(st.host)} (ou _nexora.${esc(st.host)}) :</small><div class="sup-hb-u"><code>${esc(st.txt)}</code><button type="button" class="btn small" data-vc="${esc(st.txt)}">${icon('copy', 12)}<span>Copier</span></button></div></div>
+        <div class="sup-verif"><b>1. Fichier sur le site</b><small>Créez le fichier <code>${esc(st.file)}</code> avec ce contenu, puis publie le site :</small><div class="sup-hb-u"><code>${esc(st.token)}</code><button type="button" class="btn small" data-vc="${esc(st.token)}">${icon('copy', 12)}<span>Copier</span></button></div></div>
+        <div class="sup-verif"><b>2. Enregistrement DNS</b><small>Chez votre hébergeur DNS, ajoutez un enregistrement TXT sur ${esc(st.host)} (ou _nexora.${esc(st.host)}) :</small><div class="sup-hb-u"><code>${esc(st.txt)}</code><button type="button" class="btn small" data-vc="${esc(st.txt)}">${icon('copy', 12)}<span>Copier</span></button></div></div>
         <p class="sup-form-err" hidden></p>
       </div>
       <div class="sheet-foot"><span class="grow"></span><button type="button" class="btn" data-v="no">Annuler</button><button type="button" class="btn primary" data-v="check">${icon('search', 13)}<span>Vérifier</span></button></div>`, { onClose: () => finish(false) });
@@ -281,7 +281,7 @@ function verifySheet(st) {
       b.disabled = true;
       try {
         const r = await call('mon:verify-check', { url: `https://${st.host}` });
-        if (r.verified) { toast(`${st.host} est vérifié : tu peux lancer tes tests de charge.`); finish(true); closeSheet(owner); }
+        if (r.verified) { toast(`${st.host} est vérifié : vous pouvez lancer vos tests de charge.`); finish(true); closeSheet(owner); }
         else { err.hidden = false; err.textContent = `Preuve introuvable pour l’instant (${r.detail || 'fichier et DNS absents'}). Un enregistrement DNS peut mettre quelques minutes à apparaître.`; }
       } catch (x) { err.hidden = false; err.textContent = x.message; } finally { b.disabled = false; }
     };

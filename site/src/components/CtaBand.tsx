@@ -12,8 +12,8 @@ import { Words } from "./SectionHead"
  * Meta, lib/devices.ts) à la place de l'écran dessiné en CSS, de face, avec la vraie Accueil de NEXORA à l'écran.
  */
 export function CtaBand({
-  title = "Ouvre ton premier projet aujourd’hui.",
-  text = "NEXORA est gratuit, sans limite de durée, avec 2 applications offertes. Passe à Pro quand tu veux aller plus loin.",
+  title = "Ouvrez votre premier projet aujourd’hui.",
+  text = "NEXORA est gratuit, sans limite de durée, avec 2 applications offertes. Passez à Pro quand vous voulez aller plus loin.",
   bright = false,
 }: {
   title?: string

@@ -19,7 +19,7 @@ export function News() {
           align="left"
           eyebrow="Nouveautés"
           title={["Ce qui a changé", "dans NEXORA."]}
-          lead="Chaque version apporte de nouvelles fonctions. NEXORA te les présente une fois après la mise à jour ; les voici toutes, de la plus récente à la plus ancienne."
+          lead="Chaque version apporte de nouvelles fonctions. NEXORA vous les présente une fois après la mise à jour ; les voici toutes, de la plus récente à la plus ancienne."
           className="mb-0 md:mb-0"
         />
       </PageHero>

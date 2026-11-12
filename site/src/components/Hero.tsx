@@ -92,7 +92,7 @@ export function Hero() {
           </a>
         </div>
         <p className="hx-lead rise" style={{ animationDelay: "360ms" }}>
-          Design, code, tests sur {DEVICE_COUNT} modèles d’appareils, supervision et publication sur le web, Android et Windows, dans une seule application installée sur ton PC.
+          Design, code, tests sur {DEVICE_COUNT} modèles d’appareils, supervision et publication sur le web, Android et Windows, dans une seule application installée sur votre PC.
         </p>
         <a className="link-arrow rise mt-6 text-white" href="/licence" style={{ animationDelay: "440ms" }}>
           Obtenir ma licence gratuite <Icon name="nxArrowUpRight" size={13} stroke={2} />

@@ -26,7 +26,7 @@ function register({ ipcMain, app, safeStorage }) {
       const r = await fetch(`https://fonts.googleapis.com/css2?family=${q}${axis ? `:${axis}` : ''}&display=swap`, { headers: { 'user-agent': UA } });
       if (r.ok) { css = await r.text(); break; }
     }
-    if (!css) throw new Error('Cette police n’a pas pu être téléchargée. Vérifie la connexion à Internet.');
+    if (!css) throw new Error('Cette police n’a pas pu être téléchargée. Vérifiez la connexion à Internet.');
     const faces = [];
     for (const block of css.split('@font-face').slice(1)) {
       if (block.includes('unicode-range') && !/U\+0000-00FF/i.test(block)) continue;
@@ -84,11 +84,11 @@ function register({ ipcMain, app, safeStorage }) {
   });
   const figma = async (p) => {
     const token = readToken();
-    if (!token) throw new Error('Ajoute d’abord ton jeton d’accès Figma.');
+    if (!token) throw new Error('Ajoutez d’abord votre jeton d’accès Figma.');
     const r = await fetch(`https://api.figma.com/v1${p}`, { headers: { 'X-Figma-Token': token } });
-    if (r.status === 403) throw new Error('Figma refuse l’accès : vérifie le jeton et tes droits sur ce fichier.');
-    if (r.status === 404) throw new Error('Fichier Figma introuvable : vérifie l’adresse.');
-    if (!r.ok) throw new Error(`Figma ne répond pas (code ${r.status}). Réessaie dans un instant.`);
+    if (r.status === 403) throw new Error('Figma refuse l’accès : vérifiez le jeton et vos droits sur ce fichier.');
+    if (r.status === 404) throw new Error('Fichier Figma introuvable : vérifiez l’adresse.');
+    if (!r.ok) throw new Error(`Figma ne répond pas (code ${r.status}). Réessayez dans un instant.`);
     return r.json();
   };
   ipcMain.handle('dzx:figma-file', async (_e, { url } = {}) => {
@@ -101,7 +101,7 @@ function register({ ipcMain, app, safeStorage }) {
     return { key, name: f.name, frames };
   });
   ipcMain.handle('dzx:figma-svg', async (_e, { key, ids = [] } = {}) => {
-    if (!/^[A-Za-z0-9]{10,}$/.test(key || '') || !ids.length) throw new Error('Choisis au moins un cadre.');
+    if (!/^[A-Za-z0-9]{10,}$/.test(key || '') || !ids.length) throw new Error('Choisissez au moins un cadre.');
     const r = await figma(`/images/${key}?ids=${encodeURIComponent(ids.slice(0, 20).join(','))}&format=svg&svg_outline_text=false&svg_include_id=false`);
     const out = {};
     for (const [id, link] of Object.entries(r.images || {})) {

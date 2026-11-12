@@ -136,7 +136,7 @@ async function openDrawer(id, opts = {}) {
       const mod = await p.load();
       m.api = (await mod.mount(el, ctx)) || {};
     } catch (e) {
-      el.innerHTML = `<div class="nxd-empty">${ico('error', 24)}<b>Cet outil n’a pas pu s’ouvrir</b><p>Relance NEXORA. Si le problème continue, contacte le support.</p></div>`;
+      el.innerHTML = `<div class="nxd-empty">${ico('error', 24)}<b>Cet outil n’a pas pu s’ouvrir</b><p>Relancez NEXORA. Si le problème continue, contactez le support.</p></div>`;
       console.error('[NEXORA #052]', id, e);
     }
   }
@@ -175,7 +175,7 @@ function autoCheck() {
 
 // ---------- Ouverture rapide d'un fichier (Ctrl+P) ----------
 async function quickOpen() {
-  if (!root()) { toast('Ouvre d’abord un projet.'); return; }
+  if (!root()) { toast('Ouvrez d’abord un projet.'); return; }
   const { sheet, closeSheet } = await import('../core.js');
   let files = [];
   const s = sheet('nxd-quick', `<div class="nxd-quick"><div class="nxd-quick-in">${ico('search', 16)}<input class="input" data-autofocus placeholder="Nom du fichier (ex. panier, src/app)…" spellcheck="false" aria-label="Rechercher un fichier"></div><div class="nxd-quick-list" role="listbox"></div><small class="nxd-quick-foot">↑ ↓ pour choisir · Entrée pour ouvrir · Échap pour fermer</small></div>`, {});
@@ -273,7 +273,7 @@ function hookEditor(d) {
   });
   ed.addAction({ id: 'nxd.breakpoint', label: 'Point d’arrêt sur cette ligne', keybindings: [monaco.KeyCode.F9], contextMenuGroupId: 'nxd', contextMenuOrder: 1, run: () => { const p = ed.getPosition(); if (p) toggleBp(p.lineNumber); } });
   ed.addAction({ id: 'nxd.debug', label: 'Déboguer ce fichier', contextMenuGroupId: 'nxd', contextMenuOrder: 2, run: () => openDrawer('debug', { file: fileOf(), start: true }) });
-  ed.addAction({ id: 'nxd.explain', label: 'Expliquer ce code avec l’IA', contextMenuGroupId: 'nxd', contextMenuOrder: 3, run: () => { const sel = ed.getModel().getValueInRange(ed.getSelection()); openDrawer('assistant', { prompt: sel ? `Explique ce code de ${relPath(fileOf())} et propose une amélioration si c’est utile :\n\n${sel.slice(0, 8000)}` : `Explique le rôle du fichier ${relPath(fileOf())}.` }); } });
+  ed.addAction({ id: 'nxd.explain', label: 'Expliquer ce code avec l’IA', contextMenuGroupId: 'nxd', contextMenuOrder: 3, run: () => { const sel = ed.getModel().getValueInRange(ed.getSelection()); openDrawer('assistant', { prompt: sel ? `Expliquez ce code de ${relPath(fileOf())} et proposez une amélioration si c’est utile :\n\n${sel.slice(0, 8000)}` : `Expliquez le rôle du fichier ${relPath(fileOf())}.` }); } });
   ed.addAction({ id: 'nxd.blame', label: 'Auteur des lignes (Git) : afficher ou masquer', contextMenuGroupId: 'nxd', contextMenuOrder: 4, run: () => { prefs().blame = !prefs().blame; savePrefs(); if (prefs().blame) loadBlame(); else { blame = null; paintBlame(); } } });
   ed.addAction({ id: 'nxd.quick', label: 'Ouvrir un fichier du projet…', keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyP], run: () => quickOpen() });
   paintBp();
@@ -305,8 +305,8 @@ function guardGit() {
       try { res = await invoke('devx:secrets-scan', { root: root() }); } catch { res = null; }
       if (res && res.findings.length) {
         const rows = res.findings.slice(0, 12).map((f) => `<li><b>${esc(f.rule)}</b><small>${esc(f.file)} · ligne ${f.line}</small><code>${esc(f.preview)}</code></li>`).join('');
-        const go = await confirmSheet({ id: 'nxd-secrets', icon: 'shield', title: `${res.findings.length} secret${res.findings.length > 1 ? 's' : ''} repéré${res.findings.length > 1 ? 's' : ''} avant l’enregistrement`, sub: 'Une clé envoyée sur un dépôt peut être réutilisée par n’importe qui. Range-la plutôt dans les variables protégées du projet.', body: `<ul class="nxd-findings">${rows}</ul>${res.findings.length > 12 ? `<p class="nxd-muted">Et ${res.findings.length - 12} autre(s).</p>` : ''}<p class="nxd-muted">Pour ignorer une ligne précise, ajoute le commentaire « nexora-allow-secret ».</p>`, go: 'Enregistrer quand même', wide: true });
-        if (!go) { setTimeout(() => openDrawer('env', { findings: res.findings }), 50); throw new Error('Enregistrement annulé : retire les secrets repérés ou range-les dans les variables protégées.'); }
+        const go = await confirmSheet({ id: 'nxd-secrets', icon: 'shield', title: `${res.findings.length} secret${res.findings.length > 1 ? 's' : ''} repéré${res.findings.length > 1 ? 's' : ''} avant l’enregistrement`, sub: 'Une clé envoyée sur un dépôt peut être réutilisée par n’importe qui. Rangez-la plutôt dans les variables protégées du projet.', body: `<ul class="nxd-findings">${rows}</ul>${res.findings.length > 12 ? `<p class="nxd-muted">Et ${res.findings.length - 12} autre(s).</p>` : ''}<p class="nxd-muted">Pour ignorer une ligne précise, ajoutez le commentaire « nexora-allow-secret ».</p>`, go: 'Enregistrer quand même', wide: true });
+        if (!go) { setTimeout(() => openDrawer('env', { findings: res.findings }), 50); throw new Error('Enregistrement annulé : retirez les secrets repérés ou rangez-les dans les variables protégées.'); }
       }
     }
     const out = await invoke(channel, ...args);

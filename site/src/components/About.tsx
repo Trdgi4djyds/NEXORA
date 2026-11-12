@@ -10,9 +10,9 @@ type Cell = { value: number; label: string; tone: "white" | "dark" | "photo" } |
 // Chiffres relevés dans NEXORA (catalogue des appareils, outils installés, modèles du Dev Lab, espaces du rail,
 // plateformes de publication). Sur ordinateur, damier de 4 × 2 comme la référence (cases vides comprises).
 const CELLS: Cell[] = [
-  { value: DEVICE_COUNT, label: "modèles d’appareils pour tester ton site", tone: "white" },
+  { value: DEVICE_COUNT, label: "modèles d’appareils pour tester votre site", tone: "white" },
   null,
-  { value: 15, label: "outils installés pour toi, depuis leurs sources officielles", tone: "dark" },
+  { value: 15, label: "outils installés pour vous, depuis leurs sources officielles", tone: "dark" },
   null,
   null,
   { value: SPACES.length, label: "espaces réunis dans une seule application", tone: "photo" },
@@ -34,7 +34,7 @@ export function About() {
           <p className="title-2 words max-w-[26ch] !text-[clamp(28px,3.1vw,46px)] !leading-[1.18]">
             <Words text="Pensé pour construire, porté par l’exigence —" />{" "}
             <span className="tone">
-              <Words text="NEXORA réunit tout ce qu’il faut pour concevoir, coder, tester, sécuriser et publier tes sites, tes applications Android et tes logiciels Windows." from={7} />
+              <Words text="NEXORA réunit tout ce qu’il faut pour concevoir, coder, tester, sécuriser et publier vos sites, vos applications Android et vos logiciels Windows." from={7} />
             </span>
           </p>
         </Reveal>

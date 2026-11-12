@@ -54,7 +54,9 @@ const handlers = {}
 const sent = []
 const shown = []
 let quit = 0
+const asked = []
 const fetchImpl = async (url) => {
+  if (/releases\/latest$/.test(url)) asked.push(url)
   if (/releases\/latest$/.test(url))
     return new Response(
       JSON.stringify({
@@ -79,11 +81,13 @@ maint.register({
   net: { fetch: fetchImpl },
   send: (ch, d) => sent.push([ch, d]),
 })
-let r = await handlers["update:check"]({}, { repo: "exemple/nexora" })
+let r = await handlers["update:check"]({})
 ok(r.available && r.version === "1.3.0" && r.kind === "zip" && r.current === "1.2.0", "version 1.3.0 portable trouvée (1.2.0 installée)", r)
-r = await handlers["update:check"]({}, { repo: "pas un dépôt" })
-ok(r.configured === false, "dépôt mal écrit : pas de vérification")
-await handlers["update:check"]({}, { repo: "exemple/nexora" })
+// NEXORA #115 : la source des mises à jour est fixée par le processus principal ; un dépôt envoyé par l'interface
+// (ancien réglage « Dépôt des versions ») est ignoré.
+r = await handlers["update:check"]({}, { repo: "exemple/autre" })
+ok(r.configured === true && asked.length === 2 && asked.every((u) => u === asked[0]) && !/exemple\/autre/.test(asked[1]), "dépôt envoyé par l’interface ignoré : source interne seulement", asked)
+await handlers["update:check"]({})
 r = await handlers["update:install"]({})
 const file = path.join(tmp, "downloads", "NEXORA-1.3.0-portable.zip")
 ok(r.kind === "zip" && r.file === file && fs.readFileSync(file).equals(bytes), "fichier rangé dans Téléchargements, contenu identique")

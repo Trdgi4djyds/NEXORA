@@ -105,7 +105,7 @@ export function applyArray(entry) {
 export const BOOLS = { union: 'Unir', subtract: 'Soustraire (la 2e forme creuse la 1re)', intersect: 'Intersection' };
 export async function combine(S, ids, op) {
   const list = ids.map((id) => S.objects.get(id)).filter((e) => e && canMatter(e.item));
-  if (list.length !== 2) { toast('Sélectionne exactement deux objets 3D (Maj + clic) pour les combiner.', { kind: 'bad' }); return; }
+  if (list.length !== 2) { toast('Sélectionnez exactement deux objets 3D (Maj + clic) pour les combiner.', { kind: 'bad' }); return; }
   const t = busy('Calcul de la forme combinée…');
   try {
     await sleep(30);

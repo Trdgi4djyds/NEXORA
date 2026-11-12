@@ -73,7 +73,7 @@ class Ownership {
   assert(urls) {
     for (const u of urls) {
       const s = this.status(u);
-      if (!s.verified) throw new Error(`Vérifie d’abord que ${s.host} t’appartient (fichier ou DNS) : un test de charge ne se lance que sur tes propres sites.`);
+      if (!s.verified) throw new Error(`Vérifiez d’abord que ${s.host} vous appartient (fichier ou DNS) : un test de charge ne se lance que sur vos propres sites.`);
     }
   }
 }

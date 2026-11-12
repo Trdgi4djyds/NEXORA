@@ -20,11 +20,11 @@ if (achats && achats.available) {
   const [produit] = await achats.products(['${one.id}'], 'inapp');
   bouton.textContent = \`Débloquer — \${produit.price}\`;
 
-  // 2. Achat (idClient : identifiant de ton client, haché, pour relier l’achat à son compte)
+  // 2. Achat (idClient : identifiant de votre client, haché, pour relier l’achat à son compte)
   bouton.onclick = async () => {
     try {
       const [achat] = await achats.buy('${one.id}', { accountId: idClient });
-      // 3. Envoie achat.purchaseToken à ton serveur : il vérifie auprès de Google, puis débloque.
+      // 3. Envoyez achat.purchaseToken à votre serveur : il vérifie auprès de Google, puis débloque.
       await fetch('/api/achat-android', { method: 'POST', body: JSON.stringify(achat) });
     } catch (e) { alert(e.message); } // « Achat annulé. », produit déjà possédé…
   };
@@ -83,14 +83,14 @@ export function install(proto, SECTIONS) {
       : st.installed ? `<span class="ab-okchip">${icon('check', 12)} Kit Google Play Billing ${esc(st.version || '')} prêt</span><small class="ab-hint">${st.artifacts || 0} bibliothèques, ${fmtSize(st.size)}</small>`
         : `<span class="ab-hint">Le kit (bibliothèque officielle de Google et ses dépendances, environ 9 Mo) est préparé une fois sur ce PC, automatiquement à la première construction.</span><button class="btn small" data-act="billing-install">${icon('download', 13)}<span>Préparer maintenant</span></button><small class="ab-hint" data-nxb-prog></small>`;
     let h = this.card('Achats intégrés avec Google Play', `
-      <p class="ab-hint">Pour vendre dans l’application du <b>contenu numérique</b> (fonctions premium, crédits, abonnements, contenus à débloquer), Google Play impose son système de paiement. Les biens physiques et les services réels (commandes, réservations, livraisons) peuvent garder le paiement de ton site.</p>
-      ${twa ? `<div class="ab-note">${icon('info', 15)}<span>Le mode Trusted Web Activity n’est pas pris en charge ici : choisis le moteur NEX-WEBVIEW (section Source) pour les achats intégrés.</span></div>` : ''}
+      <p class="ab-hint">Pour vendre dans l’application du <b>contenu numérique</b> (fonctions premium, crédits, abonnements, contenus à débloquer), Google Play impose son système de paiement. Les biens physiques et les services réels (commandes, réservations, livraisons) peuvent garder le paiement de votre site.</p>
+      ${twa ? `<div class="ab-note">${icon('info', 15)}<span>Le mode Trusted Web Activity n’est pas pris en charge ici : choisissez le moteur NEX-WEBVIEW (section Source) pour les achats intégrés.</span></div>` : ''}
       <div class="ab-row">${kit}</div>
-      ${this.tog('Activer les achats intégrés', 'billing.enabled', 'Ajoute Google Play Billing à l’application (environ 3 Mo) et NexoraApp.billing à ta page.')}
-      ${b.enabled ? this.tog('Confirmer les achats automatiquement', 'billing.autoAcknowledge', 'Google rembourse tout achat non confirmé sous 3 jours. Décoche si ton serveur vérifie puis confirme lui-même chaque achat (recommandé pour les abonnements).') : ''}`);
+      ${this.tog('Activer les achats intégrés', 'billing.enabled', 'Ajoutez Google Play Billing à l’application (environ 3 Mo) et NexoraApp.billing à votre page.')}
+      ${b.enabled ? this.tog('Confirmer les achats automatiquement', 'billing.autoAcknowledge', 'Google rembourse tout achat non confirmé sous 3 jours. Décochez si votre serveur vérifie puis confirme lui-même chaque achat (recommandé pour les abonnements).') : ''}`);
     if (!b.enabled) return h;
     h += this.card('Produits', `
-      <p class="ab-hint">Crée d’abord chaque produit dans la Play Console (Monétiser › Produits) avec exactement le même identifiant. Un produit « Consommable » (crédits, pièces) est consommé après l’achat pour pouvoir être racheté.</p>
+      <p class="ab-hint">Créez d’abord chaque produit dans la Play Console (Monétiser › Produits) avec exactement le même identifiant. Un produit « Consommable » (crédits, pièces) est consommé après l’achat pour pouvoir être racheté.</p>
       <div class="nxb-products">${b.products.map((p, i) => `<div class="nxb-prod">
           <input class="input${p.id && !PRODUCT_RE.test(p.id) ? ' bad' : ''}" data-k="billing.products.${i}.id" value="${esc(p.id || '')}" placeholder="premium" spellcheck="false" aria-label="Identifiant du produit">
           <select class="input" data-k="billing.products.${i}.type" aria-label="Type">${Object.entries(TYPES).map(([v, l]) => `<option value="${v}" ${p.type === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
@@ -98,23 +98,23 @@ export function install(proto, SECTIONS) {
           <button class="icon-btn" data-list-del="billing.products" data-i="${i}" title="Retirer">${icon('close', 13)}</button>
         </div>`).join('') || '<p class="ab-hint">Aucun produit pour l’instant.</p>'}</div>
       ${bad.length ? `<p class="ab-hint bad">Identifiant invalide : lettres minuscules, chiffres, points et tirets bas, en commençant par une lettre ou un chiffre (${bad.map((p) => esc(p.id)).join(', ')}).</p>` : ''}
-      <div class="ab-row"><button class="btn small" data-act="billing-add">${icon('plus', 13)}<span>Ajouter un produit</span></button><button class="btn small" data-act="billing-read" ${play.serviceAccount && ID_RE.test(cfg.appId || '') ? '' : 'disabled'} title="${play.serviceAccount ? 'Lire les produits créés dans la Play Console' : 'Importe d’abord la clé du compte de service (section Publication Play Store)'}">${icon('download', 13)}<span>Lire les produits de la Play Console</span></button><button class="btn small" data-external="https://play.google.com/console">${icon('external', 13)}<span>Play Console</span></button></div>`);
+      <div class="ab-row"><button class="btn small" data-act="billing-add">${icon('plus', 13)}<span>Ajouter un produit</span></button><button class="btn small" data-act="billing-read" ${play.serviceAccount && ID_RE.test(cfg.appId || '') ? '' : 'disabled'} title="${play.serviceAccount ? 'Lire les produits créés dans la Play Console' : 'Importez d’abord la clé du compte de service (section Publication Play Store)'}">${icon('download', 13)}<span>Lire les produits de la Play Console</span></button><button class="btn small" data-external="https://play.google.com/console">${icon('external', 13)}<span>Play Console</span></button></div>`);
     const code = sample(b.products.filter((p) => p.id));
-    h += this.card('Dans ta page', `
-      <p class="ab-hint">L’application ajoute <code>NexoraApp.billing</code> à ta page. Chaque achat renvoie un jeton (<code>purchaseToken</code>) : ton serveur le vérifie auprès de Google (API Google Play Developer, <code>purchases.products.get</code> ou <code>purchases.subscriptionsv2.get</code>) avant de livrer. Un achat payé pendant que l’application était fermée est finalisé à l’ouverture suivante, et <code>onPurchase</code> te prévient.</p>
+    h += this.card('Dans votre page', `
+      <p class="ab-hint">L’application ajoute <code>NexoraApp.billing</code> à votre page. Chaque achat renvoie un jeton (<code>purchaseToken</code>) : votre serveur le vérifie auprès de Google (API Google Play Developer, <code>purchases.products.get</code> ou <code>purchases.subscriptionsv2.get</code>) avant de livrer. Un achat payé pendant que l’application était fermée est finalisé à l’ouverture suivante, et <code>onPurchase</code> vous prévient.</p>
       <pre class="nxb-code">${esc(code)}</pre>
       <div class="ab-row"><button class="btn small" data-copy="${esc(code)}">${icon('copy', 13)}<span>Copier le code</span></button></div>`);
     const v = b.verify;
     h += this.card('Vérifier un achat', `
-      <p class="ab-hint">Contrôle un achat signalé par un client, ou ton propre achat de test, avec la clé du compte de service de la publication.</p>
+      <p class="ab-hint">Contrôlez un achat signalé par un client, ou votre propre achat de test, avec la clé du compte de service de la publication.</p>
       <div class="ab-grid2">${this.field('Identifiant du produit', 'billing.verify.productId', { placeholder: (b.products[0] && b.products[0].id) || 'premium' })}${this.field('Type', 'billing.verify.type', { type: 'select', options: { inapp: 'Achat unique ou consommable', subs: 'Abonnement' } })}</div>
-      ${this.field('Jeton d’achat (purchaseToken)', 'billing.verify.token', { type: 'textarea', rows: 2, placeholder: 'Reçu par ta page après l’achat' })}
+      ${this.field('Jeton d’achat (purchaseToken)', 'billing.verify.token', { type: 'textarea', rows: 2, placeholder: 'Reçu par votre page après l’achat' })}
       <div class="ab-row"><button class="btn small primary" data-act="billing-verify" ${play.serviceAccount ? '' : 'disabled'}>${icon('pass', 13)}<span>Vérifier auprès de Google</span></button>${play.serviceAccount ? '' : `<button class="btn small" data-sec="store">${icon('key', 13)}<span>Ajouter la clé d’accès</span></button>`}</div>
       <div data-nxb-verify></div>`);
     h += this.card('Tester les achats', `<ol class="ab-psteps">
       <li class="ab-pstep"><i>1</i><div><b>Créer les produits</b><p>Play Console › Monétiser › Produits : achats uniques ou abonnements, actifs, avec les identifiants ci-dessus.</p></div></li>
       <li class="ab-pstep"><i>2</i><div><b>Ajouter des testeurs de licence</b><p>Play Console › Paramètres › Test de licence : leurs achats sont gratuits (cartes de test).</p></div></li>
-      <li class="ab-pstep"><i>3</i><div><b>Publier en test interne</b><p>Construis l’AAB et envoie-le sur la piste « Test interne » (section Publication Play Store), puis installe l’application depuis le lien de test : une application installée par câble USB répond « Achats indisponibles ».</p></div></li>
+      <li class="ab-pstep"><i>3</i><div><b>Publier en test interne</b><p>Construisez l’AAB et envoyez-le sur la piste « Test interne » (section Publication Play Store), puis installez l’application depuis le lien de test : une application installée par câble USB répond « Achats indisponibles ».</p></div></li>
     </ol>`);
     return h;
   };
@@ -145,7 +145,7 @@ export function install(proto, SECTIONS) {
   proto.act_billing_verify = async function act() {
     const v = bil(this.cfg).verify;
     const out = $('[data-nxb-verify]', this.el);
-    if (!v.productId || !v.token) throw new Error('Indique l’identifiant du produit et le jeton d’achat.');
+    if (!v.productId || !v.token) throw new Error('Indiquez l’identifiant du produit et le jeton d’achat.');
     const n = busy('Vérification auprès de Google…');
     try {
       const r = await api.invoke('android:billing-verify', { appId: this.cfg.appId, productId: v.productId.trim(), token: v.token.trim(), type: v.type });
@@ -171,7 +171,7 @@ export function install(proto, SECTIONS) {
     const out = validate0.call(this) || [];
     const b = this.cfg.billing;
     if (b && b.enabled) {
-      if (this.cfg.engine === 'twa' && this.cfg.source.kind === 'url') out.push(['billing', 'Achats intégrés : choisis le moteur NEX-WEBVIEW (section Source), le mode Trusted Web Activity n’est pas pris en charge.']);
+      if (this.cfg.engine === 'twa' && this.cfg.source.kind === 'url') out.push(['billing', 'Achats intégrés : choisissez le moteur NEX-WEBVIEW (section Source), le mode Trusted Web Activity n’est pas pris en charge.']);
       const badIds = (b.products || []).filter((p) => p.id && !PRODUCT_RE.test(p.id.trim()));
       if (badIds.length) out.push(['billing', `Achats intégrés : identifiant de produit invalide (${badIds.map((p) => p.id).join(', ')}).`]);
     }

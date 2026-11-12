@@ -14,11 +14,11 @@ export function errText(error: unknown): string {
   const e = error as { message?: string; error_description?: string; msg?: string } | null
   const m = String((e && (e.message || e.error_description || e.msg)) || error || "")
   if (/signups? not allowed|not allowed for otp|user not found/i.test(m)) return "Cette adresse n’a pas d’accès parrain : l’accès se fait sur invitation de l’équipe NEXORA."
-  if (/rate limit|too many|for security purposes/i.test(m)) return "Trop de demandes rapprochées : patiente une minute, puis réessaie."
-  if (/Failed to fetch|NetworkError|network|load failed/i.test(m)) return "Serveurs de NEXORA injoignables : vérifie ta connexion, puis réessaie."
-  if (/JWT expired|invalid jwt/i.test(m)) return "Ta session a expiré : reconnecte-toi."
-  if (/PGRST202|could not find the function/i.test(m)) return "L’espace des parrains est en cours de mise en service : réessaie un peu plus tard."
-  if (/permission denied|row-level security/i.test(m)) return "Tu n’as pas accès à cette action."
+  if (/rate limit|too many|for security purposes/i.test(m)) return "Trop de demandes rapprochées : patientez une minute, puis réessayez."
+  if (/Failed to fetch|NetworkError|network|load failed/i.test(m)) return "Serveurs de NEXORA injoignables : vérifiez votre connexion, puis réessayez."
+  if (/JWT expired|invalid jwt/i.test(m)) return "Votre session a expiré : reconnectez-vous."
+  if (/PGRST202|could not find the function/i.test(m)) return "L’espace des parrains est en cours de mise en service : réessayez un peu plus tard."
+  if (/permission denied|row-level security/i.test(m)) return "Vous n’avez pas accès à cette action."
   return m.replace(/^Error:\s*/, "") || "Une erreur est survenue."
 }
 

@@ -17,7 +17,7 @@ export function Pricing() {
           align="center"
           eyebrow="Tarifs"
           title={["Une offre pour chaque projet,", "gratuite pour commencer."]}
-          lead="Garde l’offre Gratuite aussi longtemps que tu veux : Responsive Lab et Browser Lab complets, et 2 applications Android ou Windows. Pro ouvre tout NEXORA, et ton premier jour est un essai complet de 24 h."
+          lead="Gardez l’offre Gratuite aussi longtemps que vous voulez : Responsive Lab et Browser Lab complets, et 2 applications Android ou Windows. Pro ouvre tout NEXORA, et votre premier jour est un essai complet de 24 h."
           className="max-w-4xl"
         />
         <PricingCards />
@@ -52,13 +52,13 @@ function PricingNumbers() {
   return (
     <NumberRows
       eyebrow="Les offres en chiffres"
-      title={["Ce que tu paies,", "rien de plus."]}
+      title={["Ce que vous payez,", "rien de plus."]}
       icon="key"
       rows={[
         { value: money(free?.price_month_cents ?? 0), label: "Gratuit", text: free?.description || "Gratuit, sans limite de durée." },
         ...(pro ? [{ value: money(pro.price_month_cents), label: "Pro, par mois", text: pro.description }] : []),
         ...(pro && pro.price_year_cents ? [{ value: money(pro.price_year_cents), label: "Pro, par an", text: offered ? `${offered} mois offerts par rapport au paiement mensuel.` : "Payé une fois pour toute l’année." }] : []),
-        { value: "24 h", label: "d’essai complet", text: "Ton premier jour, tout Pro est ouvert, sans carte bancaire." },
+        { value: "24 h", label: "d’essai complet", text: "Votre premier jour, tout Pro est ouvert, sans carte bancaire." },
       ]}
     />
   )

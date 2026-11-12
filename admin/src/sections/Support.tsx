@@ -181,7 +181,7 @@ function TicketView({ id }: { id: string }) {
                       <span className="grow">{t.assigned_to === me.profile.id ? "Moi" : t.assignee?.full_name || "Personne"}</span>
                       {t.assigned_to === me.profile.id
                         ? <button className="btn sm" disabled={act.busy} onClick={() => update({ assigned_to: null }, "Ticket libéré.")}>Libérer</button>
-                        : <button className="btn sm" disabled={act.busy} onClick={() => update({ assigned_to: me.profile.id }, "Ticket assigné à toi.")}>M’assigner</button>}
+                        : <button className="btn sm" disabled={act.busy} onClick={() => update({ assigned_to: me.profile.id }, "Ticket assigné à vous.")}>M’assigner</button>}
                     </div>
                   </div>
                   <dl className="kv">

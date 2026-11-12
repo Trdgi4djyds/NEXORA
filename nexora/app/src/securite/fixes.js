@@ -12,9 +12,9 @@ const TARGETS = {
   netlify: { label: 'Netlify', file: 'netlify.toml', hint: 'À la racine du projet.' },
   vercel: { label: 'Vercel', file: 'vercel.json', hint: 'À la racine du projet.' },
   firebase: { label: 'Firebase Hosting', file: 'firebase.json', hint: 'À la racine du projet.' },
-  nginx: { label: 'nginx', file: 'nexora-securite.conf', hint: 'À inclure dans le bloc « server » de ton site : include /chemin/nexora-securite.conf;' },
+  nginx: { label: 'nginx', file: 'nexora-securite.conf', hint: 'À inclure dans le bloc « server » de votre site : include /chemin/nexora-securite.conf;' },
   apache: { label: 'Apache ou LiteSpeed (.htaccess)', file: '.htaccess', hint: 'À la racine publique du site.' },
-  express: { label: 'Node.js (Express)', file: 'nexora-securite.js', hint: 'Dans ton serveur : app.use(require(\'./nexora-securite\'));' },
+  express: { label: 'Node.js (Express)', file: 'nexora-securite.js', hint: 'Dans votre serveur : app.use(require(\'./nexora-securite\'));' },
   meta: { label: 'Hébergement sans en-têtes (GitHub Pages…)', file: 'nexora-securite.html', hint: 'Balises à copier dans le <head> de chaque page.' },
 };
 
@@ -75,7 +75,7 @@ function generate(report, target, { csp = '' } = {}) {
   if (t === 'cloudflare') {
     content = ['/*', ...H.map(([k, v]) => `  ${k}: ${v}`)].join('\n');
     if (p.forceHttps) notes.push('Redirection vers HTTPS : active « Always Use HTTPS » dans Cloudflare (SSL/TLS → Edge Certificates).');
-    if (p.blockDotfiles || p.sourceMaps) notes.push('Ne publie pas les fichiers .env, .git ni les fichiers .map : retire-les du dossier publié.');
+    if (p.blockDotfiles || p.sourceMaps) notes.push('Ne publiez pas les fichiers .env, .git ni les fichiers .map : retirez-les du dossier publié.');
   } else if (t === 'netlify') {
     content = ['[[headers]]', '  for = "/*"', '  [headers.values]', ...H.map(([k, v]) => `    ${k} = ${JSON.stringify(v)}`)].join('\n');
     if (p.blockDotfiles) content += '\n\n[[redirects]]\n  from = "/.env"\n  to = "/404"\n  status = 404\n  force = true\n\n[[redirects]]\n  from = "/.git/*"\n  to = "/404"\n  status = 404\n  force = true';
@@ -83,7 +83,7 @@ function generate(report, target, { csp = '' } = {}) {
   } else if (t === 'vercel') {
     merge = 'json';
     content = JSON.stringify({ headers: [{ source: '/(.*)', headers: H.map(([key, value]) => ({ key, value })) }] }, null, 2);
-    if (p.blockDotfiles) notes.push('Vercel ne publie pas les fichiers .env ; vérifie qu’aucun fichier .git ou .env n’est dans le dossier publié (public/).');
+    if (p.blockDotfiles) notes.push('Vercel ne publie pas les fichiers .env ; vérifiez qu’aucun fichier .git ou .env n’est dans le dossier publié (public/).');
   } else if (t === 'firebase') {
     merge = 'json';
     content = JSON.stringify({ hosting: { headers: [{ source: '**', headers: H.map(([key, value]) => ({ key, value })) }] } }, null, 2);
@@ -110,13 +110,13 @@ function generate(report, target, { csp = '' } = {}) {
     if (p.sourceMaps) L.push('<FilesMatch "\\.map$">', '  Require all denied', '</FilesMatch>');
     if (p.forceHttps) L.push('<IfModule mod_rewrite.c>', '  RewriteEngine On', '  RewriteCond %{HTTPS} off', '  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]', '</IfModule>');
     content = L.join('\n');
-    if (p.noTrace) notes.push('Méthode TRACE : ajoute « TraceEnable Off » dans la configuration du serveur (pas dans .htaccess).');
+    if (p.noTrace) notes.push('Méthode TRACE : ajoutez « TraceEnable Off » dans la configuration du serveur (pas dans .htaccess).');
     if (p.hideVersion) notes.push('Version d’Apache : « ServerTokens Prod » et « ServerSignature Off » dans la configuration du serveur.');
   } else if (t === 'express') {
     merge = 'replace';
     content = [
       `// ${BEGIN}`,
-      '// Intergiciel Express : app.use(require(\'./nexora-securite\')); placé avant tes routes.',
+      '// Intergiciel Express : app.use(require(\'./nexora-securite\')); placé avant vos routes.',
       `const HEADERS = ${JSON.stringify(Object.fromEntries(H), null, 2)};`,
       'module.exports = function nexoraSecurite(req, res, next) {',
       p.hideVersion ? "  res.removeHeader('X-Powered-By');" : '',
@@ -129,13 +129,13 @@ function generate(report, target, { csp = '' } = {}) {
       '};',
       `// ${END}`,
     ].filter(Boolean).join('\n');
-    if (p.hideVersion) notes.push('Ajoute aussi app.disable(\'x-powered-by\') après la création de l’application.');
-    if (p.cookies) notes.push('Cookies : { secure: true, httpOnly: true, sameSite: \'lax\' } dans les options de ta session (express-session, cookie-session…).');
+    if (p.hideVersion) notes.push('Ajoutez aussi app.disable(\'x-powered-by\') après la création de l’application.');
+    if (p.cookies) notes.push('Cookies : { secure: true, httpOnly: true, sameSite: \'lax\' } dans les options de votre session (express-session, cookie-session…).');
   } else {
     merge = 'replace';
     const meta = H.filter(([k]) => /^Content-Security-Policy$|^Referrer-Policy$/.test(k));
     content = [`<!-- ${BEGIN} -->`, ...meta.map(([k, v]) => (k === 'Referrer-Policy' ? `<meta name="referrer" content="${v}">` : `<meta http-equiv="${k}" content="${v.replace(/frame-ancestors[^;]*;?\s*/, '')}">`)), `<!-- ${END} -->`].join('\n');
-    notes.push('Cet hébergeur ne permet pas de régler les en-têtes HTTP : seules la CSP (sans frame-ancestors) et la politique de référent passent par des balises <meta>. Pour le reste, passe par un service intermédiaire (Cloudflare) ou un autre hébergeur.');
+    notes.push('Cet hébergeur ne permet pas de régler les en-têtes HTTP : seules la CSP (sans frame-ancestors) et la politique de référent passent par des balises <meta>. Pour le reste, passez par un service intermédiaire (Cloudflare) ou un autre hébergeur.');
   }
   if (!H.length && !p.hideVersion && !p.blockDotfiles && !p.noIndexes && !p.noTrace && !p.forceHttps) notes.unshift('Aucun en-tête à corriger d’après cet audit.');
   return { target: t, label: TARGETS[t].label, hint: TARGETS[t].hint, files: [{ path: TARGETS[t].file, content, merge }], notes, headers: H };
@@ -161,7 +161,7 @@ function mergeMarkers(existing, block, file) {
 // Fusion JSON : les en-têtes générés remplacent ceux de même nom pour la même source, le reste est gardé.
 function mergeJson(existing, generated) {
   let cur = {};
-  try { cur = existing.trim() ? JSON.parse(existing) : {}; } catch { throw new Error('Le fichier existant n’est pas un JSON valide : corrige-le d’abord, puis relance la correction.'); }
+  try { cur = existing.trim() ? JSON.parse(existing) : {}; } catch { throw new Error('Le fichier existant n’est pas un JSON valide : corrigez-le d’abord, puis relancez la correction.'); }
   const gen = JSON.parse(generated);
   const mergeList = (list, add) => {
     const out = Array.isArray(list) ? list.slice() : [];

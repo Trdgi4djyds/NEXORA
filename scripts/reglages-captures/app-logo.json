@@ -1,0 +1,14 @@
+{
+  "android": {
+    "current": "nx-demo-kora",
+    "section": "brand",
+    "apps": [
+      {
+        "id": "nx-demo-kora",
+        "appName": "Kora Market",
+        "appId": "fr.kora.market",
+        "source": { "kind": "url", "url": "https://kora.example/" }
+      }
+    ]
+  }
+}

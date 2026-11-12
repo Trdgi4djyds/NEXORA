@@ -92,7 +92,7 @@ function Templates() {
           done.push(`${AUTH_COUNT} e-mails des comptes vérifiés chez Supabase, limite de 30 e-mails par heure`)
         }
         const r = await sb.rpc("nx_email_templates_save", { p: dbTemplates() as unknown as Json })
-        if (r.error) throw new Error(missing(r.error) ? "applique d’abord la migration 20261104000006_emails_factures.sql (Supabase → Migrations du dépôt)." : errMsg(r.error))
+        if (r.error) throw new Error(missing(r.error) ? "appliquez d’abord la migration 20261104000006_emails_factures.sql (Supabase → Migrations du dépôt)." : errMsg(r.error))
         done.push(`modèle des alertes enregistré dans la base (version ${TEMPLATES_VERSION})`)
         setOutcome({ ok: true, text: `Modèles appliqués : ${done.join(" ; ")}.`, at: Date.now() })
         setTick((n) => n + 1)
@@ -119,10 +119,10 @@ function Templates() {
         <Loaded q={status}>
           {(s) => (
             <>
-              {!s.migration && <div className="banner"><Icon name="warn" size={16} /><span className="grow">Applique d’abord la migration <code>20261104000006_emails_factures.sql</code> (Supabase → Migrations du dépôt) : alertes aux couleurs de NEXORA, annonces, factures et journal.</span></div>}
+              {!s.migration && <div className="banner"><Icon name="warn" size={16} /><span className="grow">Appliquez d’abord la migration <code>20261104000006_emails_factures.sql</code> (Supabase → Migrations du dépôt) : alertes aux couleurs de NEXORA, annonces, factures et journal.</span></div>}
               <div className="email-stats">
                 <Stat icon="user" label="E-mails des comptes" value={s.auth ? `${TEMPLATES.filter((x) => applied(s.auth, x)).length} / ${AUTH_COUNT}` : "—"}
-                  hint={s.auth ? (String(s.auth.smtp_host) === setup.email.smtpHost ? `Brevo · ${s.auth.rate_limit_email_sent} par heure` : "SMTP de Supabase") : me.isSuper ? "Connecte ton jeton pour vérifier" : "Réservé aux super-administrateurs"}
+                  hint={s.auth ? (String(s.auth.smtp_host) === setup.email.smtpHost ? `Brevo · ${s.auth.rate_limit_email_sent} par heure` : "SMTP de Supabase") : me.isSuper ? "Connectez votre jeton pour vérifier" : "Réservé aux super-administrateurs"}
                   tone={s.auth ? (TEMPLATES.every((x) => x.target !== "auth" || applied(s.auth, x)) ? "good" : "warn") : ""} />
                 <Stat icon="bell" label="Modèle des alertes" value={s.db >= TEMPLATES_VERSION ? "À jour" : s.db ? "Ancien" : "À enregistrer"}
                   hint={s.db ? `Version ${s.db}${s.dbAt ? ` · ${fmtDateTime(s.dbAt)}` : ""}` : "Version simple en attendant"} tone={s.db >= TEMPLATES_VERSION ? "good" : "warn"} />
@@ -132,7 +132,7 @@ function Templates() {
               {me.isSuper && !token && (
                 askToken
                   ? <TokenForm onToken={(v) => { sessionStorage.setItem(TOKEN_KEY, v); setToken(v); setAskToken(false) }} />
-                  : <div className="banner info"><Icon name="key" size={16} /><span className="grow">Pour appliquer les e-mails des comptes chez Supabase, connecte ton jeton d’accès personnel (gardé dans cet onglet seulement).</span><button className="btn sm" onClick={() => setAskToken(true)}>Connecter le jeton</button></div>
+                  : <div className="banner info"><Icon name="key" size={16} /><span className="grow">Pour appliquer les e-mails des comptes chez Supabase, connectez votre jeton d’accès personnel (gardé dans cet onglet seulement).</span><button className="btn sm" onClick={() => setAskToken(true)}>Connecter le jeton</button></div>
               )}
             </>
           )}
@@ -193,7 +193,7 @@ function TemplatePreview({ t, myEmail, myName }: { t: EmailTemplate; myEmail: st
         if (!b.ok) throw new Error(b.text)
         setOutcome({ ok: true, text: `Exemple envoyé à ${myEmail}. ${b.text}${t.target === "auth" ? " Les liens de l’exemple ne mènent nulle part." : ""}`, at: Date.now() })
       } catch (e) {
-        setOutcome({ ok: false, text: `Échec de l’envoi : ${missing(e) ? "applique d’abord la migration 20261104000006_emails_factures.sql." : errMsg(e)}`, at: Date.now() })
+        setOutcome({ ok: false, text: `Échec de l’envoi : ${missing(e) ? "appliquez d’abord la migration 20261104000006_emails_factures.sql." : errMsg(e)}`, at: Date.now() })
         throw e
       }
     }, "Exemple envoyé.")
@@ -206,7 +206,7 @@ function TemplatePreview({ t, myEmail, myName }: { t: EmailTemplate; myEmail: st
           <h3>{t.label}</h3>
           <p className="muted small">{t.desc}</p>
         </div>
-        <button className="btn" disabled={act.busy || !myEmail} onClick={sendSample} title={myEmail ? `Envoie cet exemple à ${myEmail}` : ""}>
+        <button className="btn" disabled={act.busy || !myEmail} onClick={sendSample} title={myEmail ? `Envoyez cet exemple à ${myEmail}` : ""}>
           {act.busy ? <span className="spinner sm" /> : <><Icon name="mail" size={14} /> M’envoyer un exemple</>}
         </button>
       </div>
@@ -278,7 +278,7 @@ function Announce() {
         const res = must(await sb.rpc("nx_email_broadcast", { p_audience: form.audience, p_subject: mail.subject, p_html: mail.html, p_text: mail.text || "", p_tag: "maj" })) as { count: number }
         setOutcome({ ok: true, text: `Annonce envoyée à ${fmtNum(res.count)} personne${res.count > 1 ? "s" : ""} par Brevo. La réponse de Brevo pour chaque e-mail se lit dans le journal des envois.`, at: Date.now() })
       } catch (e) {
-        setOutcome({ ok: false, text: `Échec de l’envoi : ${missing(e) ? "applique d’abord la migration 20261104000006_emails_factures.sql." : errMsg(e)}`, at: Date.now() })
+        setOutcome({ ok: false, text: `Échec de l’envoi : ${missing(e) ? "appliquez d’abord la migration 20261104000006_emails_factures.sql." : errMsg(e)}`, at: Date.now() })
         throw e
       }
     }, "Annonce envoyée.")
@@ -292,7 +292,7 @@ function Announce() {
           <label className="field"><span>Version</span><input className="input" value={form.version} onChange={set("version")} placeholder="1.1.0" /></label>
           <label className="field"><span>Public</span>
             <select className="input" value={form.audience} onChange={set("audience")}>{audiences.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
-            <small>{count == null ? "Calcul des destinataires…" : count < 0 ? "Indisponible : applique la migration 20261104000006_emails_factures.sql." : `${fmtNum(count)} destinataire${count > 1 ? "s" : ""}`}</small>
+            <small>{count == null ? "Calcul des destinataires…" : count < 0 ? "Indisponible : appliquez la migration 20261104000006_emails_factures.sql." : `${fmtNum(count)} destinataire${count > 1 ? "s" : ""}`}</small>
           </label>
         </div>
         <label className="field"><span>Titre</span><input className="input" value={form.title} onChange={set("title")} placeholder={`NEXORA ${form.version || "1.1.0"} est disponible`} /></label>
@@ -302,7 +302,7 @@ function Announce() {
           <small>Par défaut : le lien de téléchargement de la Configuration ({`desktop_download_url`}), sinon NEXORA en ligne.</small></label>
         <OutcomeBanner outcome={outcome} onClose={() => setOutcome(null)} />
         <div className="actions">
-          <small className="muted grow">Quota : 280 e-mails par jour avec l’offre gratuite de Brevo. Commence par « Moi seulement ».</small>
+          <small className="muted grow">Quota : 280 e-mails par jour avec l’offre gratuite de Brevo. Commencez par « Moi seulement ».</small>
           <button className="btn primary" disabled={act.busy || !form.version.trim() || count === 0 || count === -1} onClick={send}>{act.busy ? <span className="spinner sm" /> : <><Icon name="mail" size={14} /> Envoyer</>}</button>
         </div>
       </div>

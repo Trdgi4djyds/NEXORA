@@ -21,6 +21,8 @@ load('studio', () => state.studio && state.studio.ready && state.studio, './stud
 load('projects', () => settings.uiV2 && document.body, './projects/index.js');
 // NEXORA #017 : sections ajoutées à l'App Builder (fiche Play Store…), posées avant la première ouverture.
 load('android', () => document.body, './android/index.js');
+// NEXORA #115 : animation de pliage des pliables « livre » (iPhone Duo…) du Responsive Lab.
+load('devices', () => document.body, './devices/duo.js');
 // NEXORA #030 : session du compte transmise au processus principal pour les alertes e-mail (Brevo).
 load('alerts', () => document.body, './alerts/index.js');
 // NEXORA #076 : licence obligatoire (écran de verrouillage, essai Pro du premier jour, journaux de session).

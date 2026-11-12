@@ -60,7 +60,7 @@ export function brandSheet({ onApply = null, applyLabel = '' } = {}) {
   const render = () => sheetHtml({
     icon: 'nxBrand',
     title: 'Kit de marque',
-    sub: 'Logo, couleurs et polices de ta marque : NEX-DESIGN, le Studio et les Maquettes les appliquent en un clic.',
+    sub: 'Logo, couleurs et polices de votre marque : NEX-DESIGN, le Studio et les Maquettes les appliquent en un clic.',
     body: `<div class="field-label">Kit</div><div class="nx-row nx-brand-kits"><select class="input" data-nxb-kit>${brandList().map((k) => `<option value="${esc(k.id)}" ${k.id === settings.nxBrandId ? 'selected' : ''}>${esc(k.name || 'Sans nom')}</option>`).join('')}</select><button class="btn small" data-nxb-act="kit-new">${ico('plus', 13)}<span>Nouveau kit</span></button>${brandList().length > 1 ? `<button class="btn small" data-nxb-act="kit-del">${ico('trash', 13)}<span>Supprimer ce kit</span></button>` : ''}</div>
       <div class="field-label">Nom de la marque</div><input class="input" data-nxb="name" value="${esc(b.name)}" placeholder="Ma marque">
       <div class="field-label">Couleurs</div>
@@ -75,7 +75,7 @@ export function brandSheet({ onApply = null, applyLabel = '' } = {}) {
         <button class="btn small" data-nxb-act="logo">${ico('upload', 13)}<span>${b.logo ? 'Remplacer' : 'Importer'}…</span></button>
         ${b.logo ? `<button class="btn small" data-nxb-act="logo-del">${ico('trash', 13)}<span>Retirer</span></button>` : ''}</div>
       <div class="nx-brand-preview" style="--b1:${b.colors[0]};--b2:${b.colors[1]};--b3:${b.colors[2]};--b4:${b.colors[3]};--b5:${b.colors[4]}">
-        <b style="font-family:'${esc(b.fonts.title)}'">${esc(b.name || 'Ma marque')}</b><span style="font-family:'${esc(b.fonts.body)}'">Un aperçu de ton style.</span><i></i><i></i><i></i></div>`,
+        <b style="font-family:'${esc(b.fonts.title)}'">${esc(b.name || 'Ma marque')}</b><span style="font-family:'${esc(b.fonts.body)}'">Un aperçu de votre style.</span><i></i><i></i><i></i></div>`,
     go: applyLabel || 'Enregistrer',
     goIcon: 'check'
   });
@@ -99,7 +99,7 @@ export function brandSheet({ onApply = null, applyLabel = '' } = {}) {
         if (f && f.dataUrl) { b.logo = f.dataUrl; refresh(); }
       }
       if (a.dataset.nxbAct === 'logo-del') { b.logo = null; refresh(); }
-      if (a.dataset.nxbAct === 'kit-new') { setBrand(b); newBrand('Nouvelle marque'); b = getBrand(); refresh(); toast('Nouveau kit créé : donne-lui un nom et ses couleurs.'); }
+      if (a.dataset.nxbAct === 'kit-new') { setBrand(b); newBrand('Nouvelle marque'); b = getBrand(); refresh(); toast('Nouveau kit créé : donnez-lui un nom et ses couleurs.'); }
       if (a.dataset.nxbAct === 'kit-del') { const name = b.name || 'Sans nom'; if (deleteBrand(settings.nxBrandId)) { b = getBrand(); refresh(); toast(`Kit « ${name} » supprimé.`); } }
       if (a.dataset.nxbAct === 'from-logo' && b.logo) {
         try { const img = await loadImage(b.logo); const cols = dominantColors(img, 5).filter((c) => { const [r, g, bb] = hexRgb(c); return !(r > 240 && g > 240 && bb > 240); }); cols.slice(0, 3).forEach((c, i) => { b.colors[i] = c; }); refresh(); toast('Couleurs tirées du logo.'); } catch { toast('Le logo n’a pas pu être lu.', { kind: 'bad' }); }
@@ -131,7 +131,7 @@ export async function aiChat(prompt, { system = '', maxTokens = 1400, temperatur
 }
 // Réponse JSON : on isole le premier objet ou tableau de la réponse.
 export async function aiJson(prompt, opts = {}) {
-  const txt = await aiChat(`${prompt}\n\nRéponds uniquement avec du JSON valide, sans texte autour.`, { temperature: 0.6, ...opts });
+  const txt = await aiChat(`${prompt}\n\nRépondez uniquement avec du JSON valide, sans texte autour.`, { temperature: 0.6, ...opts });
   const m = txt.match(/[[{][\s\S]*[\]}]/);
   if (!m) throw new Error('Réponse de l’IA illisible.');
   return JSON.parse(m[0]);
@@ -149,7 +149,7 @@ export async function aiTranscribe(bytes, { mime = 'audio/wav', name = 'audio.wa
 // Message clair quand l'IA n'est pas configurée.
 export async function needAi() {
   if (await aiReady()) return true;
-  toast('Connecte d’abord ta clé IA (bouton « IA » du rail).', { kind: 'bad', action: 'Ouvrir', onAction: () => document.getElementById('btnAI') && document.getElementById('btnAI').click() });
+  toast('Connectez d’abord votre clé IA (bouton « IA » du rail).', { kind: 'bad', action: 'Ouvrir', onAction: () => document.getElementById('btnAI') && document.getElementById('btnAI').click() });
   return false;
 }
 
@@ -242,7 +242,7 @@ export function collabSheet({ current, onStart, onStop }) {
   const s = sheet('nx-collab', sheetHtml({
     icon: 'nxUsers',
     title: 'Coéditer en direct',
-    sub: 'Travaille à plusieurs sur le même document : les modifications et les curseurs s’affichent chez tout le monde. Partage le code de la salle avec tes coéquipiers.',
+    sub: 'Travaillez à plusieurs sur le même document : les modifications et les curseurs s’affichent chez tout le monde. Partagez le code de la salle avec vos coéquipiers.',
     body: current ? `<div class="nx-room"><span class="nx-muted">Salle en cours</span><b class="nx-code">${esc(current.code)}</b><span>${current.peers.length ? `${current.peers.length} autre${current.peers.length > 1 ? 's' : ''} personne${current.peers.length > 1 ? 's' : ''} connectée${current.peers.length > 1 ? 's' : ''}` : 'Personne d’autre pour l’instant.'}</span></div>
       <div class="nx-row"><button class="btn small" data-nxc="copy">${ico('copy', 13)}<span>Copier le code</span></button><button class="btn small" data-nxc="stop">${ico('close', 13)}<span>Quitter la salle</span></button></div>`
       : `<div class="nx-grid2"><div><div class="field-label">Créer une salle</div><button class="btn wide" data-nxc="new">${ico('plus', 14)}<span>Nouvelle salle</span></button></div>
@@ -256,7 +256,7 @@ export function collabSheet({ current, onStart, onStop }) {
     if (a === 'copy') { await api.invoke('clipboard:write', current.code).catch(() => {}); toast('Code de la salle copié.'); return; }
     if (a === 'stop') { closeSheet('nx-collab'); await onStop(); return; }
     const code = a === 'new' ? roomCode() : String((s.querySelector('[data-nxc-code]') || {}).value || '').trim().toUpperCase();
-    if (!/^[A-Z0-9]{6}$/.test(code)) { toast('Saisis le code à 6 caractères donné par ton coéquipier.', { kind: 'bad' }); return; }
+    if (!/^[A-Z0-9]{6}$/.test(code)) { toast('Saisissez le code à 6 caractères donné par votre coéquipier.', { kind: 'bad' }); return; }
     closeSheet('nx-collab');
     await onStart(code, a === 'new');
   };

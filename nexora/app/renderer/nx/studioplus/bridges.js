@@ -26,7 +26,7 @@ export async function pageImage(docId, pageIdx = 0) {
 }
 export async function toScreen(S, docId, pageIdx = 0) {
   const e = S.sel && S.objects.get(S.sel);
-  if (!e || e.item.type !== 'device') { toast('Sélectionne d’abord un appareil.', { kind: 'bad' }); return; }
+  if (!e || e.item.type !== 'device') { toast('Sélectionnez d’abord un appareil.', { kind: 'bad' }); return; }
   const t = busy('Rendu de la page NEX-DESIGN…');
   try {
     const doc = await getDoc(docId); const pg = doc && doc.pages[pageIdx];

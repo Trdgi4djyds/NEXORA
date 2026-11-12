@@ -110,7 +110,7 @@ async function runTests(root, { runner, file, name, coverage }, onData) {
     if (fs.existsSync(out)) files = parseJunit(root, fs.readFileSync(out, 'utf8'));
     const pc = readJson(`${covDir}.json`);
     if (pc && pc.totals) cov = { lines: Math.round(pc.totals.percent_covered * 10) / 10 };
-  } else throw new Error('Choisis l’outil de test.');
+  } else throw new Error('Choisissez l’outil de test.');
   for (const f of [out]) fs.rmSync(f, { force: true });
   fs.rmSync(covDir, { recursive: true, force: true });
   const all = files.flatMap((f) => f.tests);

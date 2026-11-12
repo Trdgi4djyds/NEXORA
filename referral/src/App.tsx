@@ -66,7 +66,7 @@ export function App() {
         <div className="panel narrow center">
           <span className="big-ic warn"><Icon name="lock" size={22} /></span>
           <h1>Accès suspendu</h1>
-          <p className="muted">Ton accès de parrain est suspendu : tes codes promo ne fonctionnent plus pour l’instant. Écris à l’équipe NEXORA pour en savoir plus.</p>
+          <p className="muted">Votre accès de parrain est suspendu : vos codes promo ne fonctionnent plus pour l’instant. Écrivez à l’équipe NEXORA pour en savoir plus.</p>
         </div>
       </Frame>
     )
@@ -126,7 +126,7 @@ function SignIn({ invite }: { invite: string }) {
   async function send(e?: FormEvent) {
     e?.preventDefault()
     const v = email.trim().toLowerCase()
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { setErr("Saisis une adresse e-mail valide."); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { setErr("Saisissez une adresse e-mail valide."); return }
     setBusy(true)
     setErr("")
     // Avec une invitation, le compte NEXORA est créé s'il n'existe pas ; sans invitation, seul un compte existant reçoit un lien.
@@ -143,12 +143,12 @@ function SignIn({ invite }: { invite: string }) {
       <div className="auth-grid">
         <section className="pitch">
           <span className="eyebrow"><Icon name="gift" size={13} /> Programme de parrainage</span>
-          <h1>{invite && info?.valid ? <>Bienvenue{info.name ? `, ${info.name}` : ""}.<br /><em>Ton espace de parrain t’attend.</em></> : <>Partage NEXORA.<br /><em>Gagne à chaque paiement.</em></>}</h1>
-          <p>Tes filleuls ont {pct(DEFAULT_RULES.discount_pct)} % de remise sur l’offre Pro, à chaque paiement. Tu touches {pct(DEFAULT_RULES.commission_pct)} % de ce qu’ils paient, remise déduite, tant que leur abonnement continue.</p>
+          <h1>{invite && info?.valid ? <>Bienvenue{info.name ? `, ${info.name}` : ""}.<br /><em>Votre espace de parrain vous attend.</em></> : <>Partage NEXORA.<br /><em>Gagnez à chaque paiement.</em></>}</h1>
+          <p>Vos filleuls ont {pct(DEFAULT_RULES.discount_pct)} % de remise sur l’offre Pro, à chaque paiement. Vous touchez {pct(DEFAULT_RULES.commission_pct)} % de ce qu’ils paient, remise déduite, tant que leur abonnement continue.</p>
           <ul className="pitch-list">
-            <li><Icon name="link" size={16} />Crée tes codes promo et tes liens de parrainage</li>
-            <li><Icon name="sync" size={16} />Suis tes revenus récurrents, filleul par filleul</li>
-            <li><Icon name="download" size={16} />Demande tes retraits : PayPal, virement ou Mobile Money</li>
+            <li><Icon name="link" size={16} />Créez vos codes promo et vos liens de parrainage</li>
+            <li><Icon name="sync" size={16} />Suivez vos revenus récurrents, filleul par filleul</li>
+            <li><Icon name="download" size={16} />Demande vos retraits : PayPal, virement ou Mobile Money</li>
           </ul>
         </section>
         <section className="panel">
@@ -156,13 +156,13 @@ function SignIn({ invite }: { invite: string }) {
           {invalid ? (
             <>
               <h2>Lien d’invitation expiré</h2>
-              <p className="muted">{info?.reason === "suspended" ? "Cet accès de parrain est suspendu." : "Ce lien a déjà servi ou a été remplacé. Si ton accès est déjà activé, connecte-toi avec ton adresse e-mail ; sinon, demande un nouveau lien à l’équipe NEXORA."}</p>
+              <p className="muted">{info?.reason === "suspended" ? "Cet accès de parrain est suspendu." : "Ce lien a déjà servi ou a été remplacé. Si votre accès est déjà activé, connectez-vous avec votre adresse e-mail ; sinon, demande un nouveau lien à l’équipe NEXORA."}</p>
             </>
           ) : sent ? (
             <>
               <span className="big-ic"><Icon name="mail" size={22} /></span>
-              <h2>Vérifie ta boîte de réception</h2>
-              <p className="muted">Un lien de connexion vient d’être envoyé à <b>{sent}</b>. Ouvre-le <b>sur cet appareil</b>{invite ? " : tu saisiras ensuite ton code d’accès" : ""}. Il expire dans une heure.</p>
+              <h2>Vérifiez votre boîte de réception</h2>
+              <p className="muted">Un lien de connexion vient d’être envoyé à <b>{sent}</b>. Ouvrez-le <b>sur cet appareil</b>{invite ? " : vous saisirez ensuite votre code d’accès" : ""}. Il expire dans une heure.</p>
               <div className="row">
                 <button className="btn" disabled={busy || wait > 0} onClick={() => send()}>{wait > 0 ? `Renvoyer dans ${wait} s` : "Renvoyer le lien"}</button>
                 <button className="btn ghost" onClick={() => { setSent(""); setErr("") }}>Changer d’adresse</button>
@@ -170,9 +170,9 @@ function SignIn({ invite }: { invite: string }) {
             </>
           ) : (
             <form onSubmit={send} className="form">
-              <h2>{invite ? "Active ton accès" : "Connexion des parrains"}</h2>
+              <h2>{invite ? "Activez votre accès" : "Connexion des parrains"}</h2>
               <p className="muted">
-                {invite && info?.valid ? <>Connecte-toi avec l’adresse invitée, <b>{info.email}</b>. Tu recevras un lien de connexion, sans mot de passe.</> : "Saisis l’adresse e-mail de ton accès de parrain : tu recevras un lien de connexion, sans mot de passe."}
+                {invite && info?.valid ? <>Connectez-vous avec l’adresse invitée, <b>{info.email}</b>. Vous recevrez un lien de connexion, sans mot de passe.</> : "Saisissez l’adresse e-mail de votre accès de parrain : vous recevrez un lien de connexion, sans mot de passe."}
               </p>
               <label className="field">
                 <span>Adresse e-mail</span>
@@ -211,7 +211,7 @@ function CodeStep({ mode, token, email, me, onDone, onSignOut }: { mode: "activa
       const r = mode === "activate" ? await rpc<CodeResult>("nx_partner_activate", { p_token: token, p_code: code }) : await rpc<CodeResult>("nx_partner_unlock", { p_code: code })
       if (r.ok) { onDone(r); return }
       if (r.reason === "email") setWrongMail(r.expected || "")
-      else if (r.reason === "locked") setErr(`Trop de codes faux : réessaie après ${fmtTime(r.until)}.`)
+      else if (r.reason === "locked") setErr(`Trop de codes faux : réessayez après ${fmtTime(r.until)}.`)
       else if (r.reason === "code") setErr(`Code incorrect${r.left != null ? ` : encore ${r.left} essai${(r.left || 0) > 1 ? "s" : ""} avant un blocage de 30 minutes` : ""}.`)
       else if (r.reason === "invite") setErr("Ce lien d’invitation n’est plus valable : demande un nouveau lien à l’équipe NEXORA.")
       else if (r.reason === "already") setErr("Ce compte est déjà lié à un autre accès de parrain.")
@@ -228,15 +228,15 @@ function CodeStep({ mode, token, email, me, onDone, onSignOut }: { mode: "activa
       <section className="panel narrow">
         {mode === "activate" && <Steps at={2} />}
         <span className="big-ic"><Icon name="key" size={22} /></span>
-        <h2>{mode === "activate" ? "Saisis ton code d’accès" : `Code d’accès de ${month}`}</h2>
+        <h2>{mode === "activate" ? "Saisissez votre code d’accès" : `Code d’accès de ${month}`}</h2>
         <p className="muted">
           {mode === "activate"
-            ? <>Connecté avec <b>{email}</b>. Saisis le code de 8 caractères transmis par l’équipe NEXORA avec ton invitation.</>
-            : <>Pour ta sécurité, l’accès change chaque mois. Saisis le code de {month} transmis par l’équipe NEXORA{me?.code_expires_at ? ` (valable jusqu’au ${lastDay(me.code_expires_at)})` : ""}.</>}
+            ? <>Connecté avec <b>{email}</b>. Saisissez le code de 8 caractères transmis par l’équipe NEXORA avec votre invitation.</>
+            : <>Pour votre sécurité, l’accès change chaque mois. Saisissez le code de {month} transmis par l’équipe NEXORA{me?.code_expires_at ? ` (valable jusqu’au ${lastDay(me.code_expires_at)})` : ""}.</>}
         </p>
         {wrongMail ? (
           <div className="stack">
-            <p className="msg bad" role="alert">Tu es connecté avec <b>{email}</b>, mais l’invitation est pour <b>{wrongMail}</b>. Déconnecte-toi, puis connecte-toi avec l’adresse invitée.</p>
+            <p className="msg bad" role="alert">Vous êtes connecté avec <b>{email}</b>, mais l’invitation est pour <b>{wrongMail}</b>. Déconnectez-vous, puis connectez-vous avec l’adresse invitée.</p>
             <button className="btn primary block" onClick={onSignOut}>Changer de compte</button>
           </div>
         ) : (
@@ -246,10 +246,10 @@ function CodeStep({ mode, token, email, me, onDone, onSignOut }: { mode: "activa
               <input className="input code-input" value={code} onChange={(e) => onInput(e.target.value)} placeholder="XXXX-XXXX" autoComplete="one-time-code" inputMode="text" spellCheck={false} autoFocus aria-describedby="code-hint" disabled={Boolean(locked)} />
               <small id="code-hint">Sans 0, O, 1, I ni L : les caractères qui se confondent ne sont jamais utilisés.</small>
             </label>
-            {locked && <p className="msg bad" role="alert">Trop de codes faux : réessaie après {fmtTime(locked)}.</p>}
+            {locked && <p className="msg bad" role="alert">Trop de codes faux : réessayez après {fmtTime(locked)}.</p>}
             {err && <p className="msg bad" role="alert">{err}</p>}
             <button className="btn primary block" disabled={busy || Boolean(locked)}>{busy ? "Vérification…" : mode === "activate" ? "Activer mon accès" : "Ouvrir mon espace"}</button>
-            <p className="fine">Pas de code ? Demande-le à l’équipe NEXORA : il n’est jamais envoyé automatiquement.</p>
+            <p className="fine">Pas de code ? Demandez-le à l’équipe NEXORA : il n’est jamais envoyé automatiquement.</p>
           </form>
         )}
       </section>
@@ -262,10 +262,10 @@ function NotPartner({ me, onSignOut }: { me: Me; onSignOut: () => void }) {
     <Frame onSignOut={onSignOut}>
       <section className="panel narrow center">
         <span className="big-ic"><Icon name="gift" size={22} /></span>
-        <h2>{me.invited ? "Ouvre ton lien d’invitation" : "Pas d’accès parrain"}</h2>
+        <h2>{me.invited ? "Ouvrez votre lien d’invitation" : "Pas d’accès parrain"}</h2>
         <p className="muted">
           {me.invited
-            ? <>Une invitation attend <b>{me.email}</b>. Ouvre le lien d’invitation reçu de l’équipe NEXORA sur cet appareil pour saisir ton code d’accès.</>
+            ? <>Une invitation attend <b>{me.email}</b>. Ouvrez le lien d’invitation reçu de l’équipe NEXORA sur cet appareil pour saisir votre code d’accès.</>
             : <>Le compte <b>{me.email}</b> n’est pas parrain. L’accès au programme se fait sur invitation de l’équipe NEXORA.</>}
         </p>
       </section>

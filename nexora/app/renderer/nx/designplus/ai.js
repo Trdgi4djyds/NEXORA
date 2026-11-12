@@ -7,7 +7,7 @@ import { FabricImage, Ellipse } from '../design/fab.js';
 
 const done = (t) => { if (!t) return; if (t.close) t.close(); else if (t.remove) t.remove(); };
 const clean = (e) => String((e && e.message) || e).replace(/^Error invoking remote method '[^']+': (Error: )?/, '');
-const jsonOf = (text) => { const s = String(text || ''); const a = s.indexOf('{'); const b = s.lastIndexOf('}'); if (a < 0 || b < a) throw new Error('Réponse de l’IA illisible : relance la demande.'); return JSON.parse(s.slice(a, b + 1)); };
+const jsonOf = (text) => { const s = String(text || ''); const a = s.indexOf('{'); const b = s.lastIndexOf('}'); if (a < 0 || b < a) throw new Error('Réponse de l’IA illisible : relancez la demande.'); return JSON.parse(s.slice(a, b + 1)); };
 const sizeFor = (w, h) => (w / h > 1.25 ? '1536x1024' : h / w > 1.25 ? '1024x1536' : '1024x1024');
 
 const SPEC = `Réponds uniquement avec un objet JSON : {"background":"#hex","elements":[...]}.
@@ -20,7 +20,7 @@ export async function createDesign(D, { prompt, images, newPage }) {
   const pg = D.page;
   const t = busy('L’IA compose le design…');
   try {
-    const r = await api.invoke('ai:chat', { id: `dz${Date.now()}`, system: `Tu es directeur artistique. Tu crées des mises en page modernes et sobres.\n${SPEC}`, messages: [{ role: 'user', content: `Format : ${pg.w} × ${pg.h} px.\nCouleurs de la marque : ${(b.colors || []).join(', ') || 'libres'}.\nPolices de la marque : ${Object.values(b.fonts || {}).filter((x) => typeof x === 'string').join(', ') || 'Inter'}.\nDemande : ${prompt}` }], maxTokens: 6000, temperature: 0.6 });
+    const r = await api.invoke('ai:chat', { id: `dz${Date.now()}`, system: `Vous êtes directeur artistique. Vous créez des mises en page modernes et sobres.\n${SPEC}`, messages: [{ role: 'user', content: `Format : ${pg.w} × ${pg.h} px.\nCouleurs de la marque : ${(b.colors || []).join(', ') || 'libres'}.\nPolices de la marque : ${Object.values(b.fonts || {}).filter((x) => typeof x === 'string').join(', ') || 'Inter'}.\nDemande : ${prompt}` }], maxTokens: 6000, temperature: 0.6 });
     const spec = jsonOf(r.text);
     if (newPage) {
       D.capturePage();
@@ -56,12 +56,12 @@ export async function createDesign(D, { prompt, images, newPage }) {
 
 export async function variants(D) {
   const sel = D.sel();
-  if (!sel.length) { toast('Sélectionne d’abord les éléments à décliner.'); return; }
+  if (!sel.length) { toast('Sélectionnez d’abord les éléments à décliner.'); return; }
   const colors = new Set(); const fonts = new Set();
   walk(sel, (o) => { for (const k of ['fill', 'stroke']) { const h = hex(o[k]); if (h && typeof o[k] === 'string') colors.add(h); } if (isText(o)) fonts.add(o.fontFamily); });
   const t = busy('L’IA prépare 3 variantes…');
   try {
-    const r = await api.invoke('ai:chat', { id: `dzv${Date.now()}`, system: 'Tu proposes des déclinaisons graphiques. Réponds uniquement en JSON : {"variants":[{"name":"…","colors":{"#ancienne":"#nouvelle"},"font":"Police"}]} avec exactement 3 variantes distinctes, contrastes lisibles.', messages: [{ role: 'user', content: `Couleurs actuelles : ${[...colors].join(', ')}. Polices : ${[...fonts].join(', ') || 'aucune'}. Propose 3 variantes (par exemple : sombre, pastel, contrastée).` }], maxTokens: 1500, temperature: 0.8 });
+    const r = await api.invoke('ai:chat', { id: `dzv${Date.now()}`, system: 'Tu proposes des déclinaisons graphiques. Réponds uniquement en JSON : {"variants":[{"name":"…","colors":{"#ancienne":"#nouvelle"},"font":"Police"}]} avec exactement 3 variantes distinctes, contrastes lisibles.', messages: [{ role: 'user', content: `Couleurs actuelles : ${[...colors].join(', ')}. Polices : ${[...fonts].join(', ') || 'aucune'}. Proposez 3 variantes (par exemple : sombre, pastel, contrastée).` }], maxTokens: 1500, temperature: 0.8 });
     const list = (jsonOf(r.text).variants || []).slice(0, 3);
     const box = sel.reduce((a, o) => { const b = o.getBoundingRect(); return { l: Math.min(a.l, b.left), t: Math.min(a.t, b.top), r: Math.max(a.r, b.left + b.width) }; }, { l: Infinity, t: Infinity, r: -Infinity });
     const W = box.r - box.l;
@@ -116,10 +116,10 @@ export async function retouch(D, o, kind, text) {
       c.getContext('2d').drawImage(src, Math.round(src.width * m), Math.round(src.height * m));
       const mk = document.createElement('canvas'); mk.width = c.width; mk.height = c.height; const mx = mk.getContext('2d'); mx.fillStyle = '#000'; mx.fillRect(Math.round(src.width * m), Math.round(src.height * m), src.width, src.height);
       image = c.toDataURL('image/png'); mask = mk.toDataURL('image/png'); gx = c.width / src.width; gy = c.height / src.height;
-      prompt = 'Prolonge l’image dans les zones transparentes autour, de façon naturelle et cohérente avec le centre, sans modifier le centre.';
-    } else if (kind === 'erase') prompt = `Efface de l’image : ${text}. Reconstitue le fond à sa place de façon naturelle. Ne change rien d’autre.`;
-    else if (kind === 'background') prompt = `Garde le sujet principal intact et remplace le fond par : ${text}. Lumière cohérente.`;
-    else prompt = `${text}. Ne change que ce qui est demandé.`;
+      prompt = 'Prolongez l’image dans les zones transparentes autour, de façon naturelle et cohérente avec le centre, sans modifier le centre.';
+    } else if (kind === 'erase') prompt = `Effacez de l’image : ${text}. Reconstituez le fond à sa place de façon naturelle. Ne changez rien d’autre.`;
+    else if (kind === 'background') prompt = `Gardez le sujet principal intact et remplacez le fond par : ${text}. Lumière cohérente.`;
+    else prompt = `${text}. Ne changez que ce qui est demandé.`;
     const r = await api.invoke('ai:image', { prompt, image, mask, size: sizeFor(src.width * gx, src.height * gy) });
     await replaceSrc(D, o, r.dataUrl, gx, gy);
     toast('Retouche appliquée : Ctrl+Z pour revenir en arrière.');
@@ -130,21 +130,21 @@ export function imageProps(D, o, pro) {
   return sec('Retouche intelligente', `${pro ? '' : '<p class="dzx-hint">Effacer, remplacer le fond et agrandir par l’IA font partie de l’offre Pro.</p>'}<div class="nx-btns">${btn('ai-erase', 'nxEraser', 'Effacer un objet…', pro ? '' : 'disabled')}${btn('ai-bg', 'image', 'Remplacer le fond…', pro ? '' : 'disabled')}${btn('ai-expand', 'nxResize', 'Agrandir au-delà des bords', pro ? '' : 'disabled')}${btn('ai-edit', 'sparkle', 'Autre retouche…', pro ? '' : 'disabled')}${btn('ai-upscale', 'scale', 'Agrandir ×2 (sur ce PC)')}</div>`);
 }
 export function panel(D, st) {
-  return `<p class="dzx-hint">Décris ce que tu veux : l’IA crée une maquette complète aux couleurs de ton kit de marque. Chaque texte, forme et image reste modifiable.</p>
+  return `<p class="dzx-hint">Décrivez ce que vous voulez : l’IA crée une maquette complète aux couleurs de votre kit de marque. Chaque texte, forme et image reste modifiable.</p>
     <textarea class="input nx-ta" rows="4" data-aik="prompt" placeholder="Exemple : une page d’accueil pour une boutique de pagnes, avec un titre accrocheur, trois produits et un bouton « Commander »">${esc(st.prompt || '')}</textarea>
-    <label class="nxd-check dzx-check"><input type="checkbox" data-aik="images" ${st.images ? 'checked' : ''}> Générer aussi les images (plus long ; facturé par ton fournisseur d’IA, avec ta clé)</label>
+    <label class="nxd-check dzx-check"><input type="checkbox" data-aik="images" ${st.images ? 'checked' : ''}> Générer aussi les images (plus long ; facturé par votre fournisseur d’IA, avec votre clé)</label>
     <label class="nxd-check dzx-check"><input type="checkbox" data-aik="newPage" ${st.newPage !== false ? 'checked' : ''}> Sur une nouvelle page (${D.page.w} × ${D.page.h})</label>
     <div class="nx-btns">${btn('ai-create', 'sparkle', 'Créer le design', '', 'primary')}</div>
     <div class="dzp-sub">Déclinaisons</div>
-    <p class="dzx-hint">Sélectionne des éléments : l’IA propose 3 variantes de couleurs et de police, posées à côté.</p>
+    <p class="dzx-hint">Sélectionnez des éléments : l’IA propose 3 variantes de couleurs et de police, posées à côté.</p>
     <div class="nx-btns">${btn('ai-variants', 'layers', 'Proposer 3 variantes')}</div>
     <div class="dzp-sub">Retouche d’image</div>
-    <p class="dzx-hint">Sélectionne une image : la section « Retouche intelligente » du panneau de droite efface un objet, remplace le fond ou agrandit l’image au-delà de ses bords.</p>`;
+    <p class="dzx-hint">Sélectionnez une image : la section « Retouche intelligente » du panneau de droite efface un objet, remplace le fond ou agrandit l’image au-delà de ses bords.</p>`;
 }
 export async function onPanel(D, e, rerender, st) {
   const b = e.target.closest('[data-dzx]');
   if (!b) return false;
-  if (b.dataset.dzx === 'ai-create') { if (!st.prompt || !st.prompt.trim()) { toast('Décris d’abord le design voulu.'); return true; } await createDesign(D, { prompt: st.prompt, images: st.images, newPage: st.newPage !== false }); return true; }
+  if (b.dataset.dzx === 'ai-create') { if (!st.prompt || !st.prompt.trim()) { toast('Décrivez d’abord le design voulu.'); return true; } await createDesign(D, { prompt: st.prompt, images: st.images, newPage: st.newPage !== false }); return true; }
   if (b.dataset.dzx === 'ai-variants') { await variants(D); return true; }
   return false;
 }

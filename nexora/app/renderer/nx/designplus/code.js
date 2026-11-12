@@ -133,7 +133,7 @@ export function toTailwindHtml(D, target) { return `<!-- Généré par NEX-DESIG
 export async function toDevLab(D, files) {
   const dev = state.devLab;
   const root = dev && dev.st && dev.st.root;
-  if (!root) { toast('Ouvre d’abord un projet dans le Dev Lab, puis recommence.', { kind: 'bad' }); return false; }
+  if (!root) { toast('Ouvrez d’abord un projet dans le Dev Lab, puis recommencez.', { kind: 'bad' }); return false; }
   const sep = root.includes('\\') ? '\\' : '/';
   const written = [];
   try {
@@ -179,7 +179,7 @@ export async function copySvg(D, o) {
     const r = o.getBoundingRect();
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${r.left} ${r.top} ${r.width} ${r.height}" width="${Math.round(r.width)}" height="${Math.round(r.height)}">${o.toSVG()}</svg>`;
     await api.invoke('clipboard:write', svg).catch(() => navigator.clipboard.writeText(svg));
-    toast('SVG copié : colle-le dans un autre logiciel ou dans ton code.');
+    toast('SVG copié : collez-le dans un autre logiciel ou dans votre code.');
   } catch { toast('Cet élément ne peut pas être copié en SVG.', { kind: 'bad' }); }
 }
 
@@ -217,7 +217,7 @@ function swiftNode(D, n, depth, box) {
     if (st.width) mods.push(`.frame(width: ${num(st.width)}, alignment: .${o && o.textAlign === 'center' ? 'center' : o && o.textAlign === 'right' ? 'trailing' : 'leading'})`);
   } else if (n.tag === 'img') {
     const remote = /^https?:/i.test(n.src || '');
-    body = remote ? `AsyncImage(url: URL(string: ${quote(n.src)})) { $0.resizable().scaledToFill() } placeholder: { Color.gray.opacity(0.15) }` : `Image(${quote(slug(n.name))}) // image intégrée : ajoute-la au catalogue d’éléments\n${pad}    .resizable().scaledToFill()`;
+    body = remote ? `AsyncImage(url: URL(string: ${quote(n.src)})) { $0.resizable().scaledToFill() } placeholder: { Color.gray.opacity(0.15) }` : `Image(${quote(slug(n.name))}) // image intégrée : ajoutez-la au catalogue d’éléments\n${pad}    .resizable().scaledToFill()`;
     mods.push(`.frame(width: ${num(st.width)}, height: ${num(st.height)})`, '.clipped()');
   } else if (o && (o.type === 'rect' || o.type === 'ellipse' || o.type === 'circle')) {
     const shape = o.type === 'rect' ? (o.rx ? `RoundedRectangle(cornerRadius: ${num(o.rx * (o.scaleX || 1))})` : 'Rectangle()') : 'Ellipse()';
@@ -228,7 +228,7 @@ function swiftNode(D, n, depth, box) {
     body = `ZStack(alignment: .topLeading) {\n${n.kids.map((k) => swiftNode(D, k, depth + 1, r || { left: 0, top: 0 })).join('\n')}\n${pad}}`;
     if (st.width && st.width !== '100%') mods.push(`.frame(width: ${num(st.width)}, height: ${num(st.height)}, alignment: .topLeading)`);
   } else {
-    body = `Image(${quote(slug(n.name))}) // forme vectorielle : exporte-la en SVG (Copier en SVG) puis ajoute-la au catalogue`;
+    body = `Image(${quote(slug(n.name))}) // forme vectorielle : exportez-la en SVG (Copier en SVG) puis ajoutez-la au catalogue`;
     mods.push(`.frame(width: ${num(st.width)}, height: ${num(st.height)})`);
   }
   if (o && o.angle && box) mods.push(`.rotationEffect(.degrees(${num(o.angle)}))`);
@@ -267,7 +267,7 @@ function composeNode(D, n, depth, box) {
     out = `Text(\n${args.map((a) => `${pad}    ${a}`).join(',\n')}\n${pad})`;
   } else if (n.tag === 'img') {
     mod.push(`.size(${num(st.width)}.dp, ${num(st.height)}.dp)`);
-    out = /^https?:/i.test(n.src || '') ? `AsyncImage( // bibliothèque Coil\n${pad}    model = ${quote(n.src)},\n${pad}    contentDescription = ${quote(n.alt)},\n${pad}    contentScale = ContentScale.Crop,\n${pad}    modifier = ${mod.join('')}\n${pad})` : `Image( // image intégrée : ajoute-la dans res/drawable\n${pad}    painter = painterResource(R.drawable.${slug(n.name).replace(/-/g, '_')}),\n${pad}    contentDescription = ${quote(n.alt)},\n${pad}    contentScale = ContentScale.Crop,\n${pad}    modifier = ${mod.join('')}\n${pad})`;
+    out = /^https?:/i.test(n.src || '') ? `AsyncImage( // bibliothèque Coil\n${pad}    model = ${quote(n.src)},\n${pad}    contentDescription = ${quote(n.alt)},\n${pad}    contentScale = ContentScale.Crop,\n${pad}    modifier = ${mod.join('')}\n${pad})` : `Image( // image intégrée : ajoutez-la dans res/drawable\n${pad}    painter = painterResource(R.drawable.${slug(n.name).replace(/-/g, '_')}),\n${pad}    contentDescription = ${quote(n.alt)},\n${pad}    contentScale = ContentScale.Crop,\n${pad}    modifier = ${mod.join('')}\n${pad})`;
   } else if (o && (o.type === 'rect' || o.type === 'ellipse' || o.type === 'circle')) {
     const shape = o.type === 'rect' ? `RoundedCornerShape(${num((o.rx || 0) * (o.scaleX || 1))}.dp)` : 'CircleShape';
     mod.push(`.size(${num(st.width)}.dp, ${num(st.height)}.dp)`, `.background(${ktColor(fillOf(o))}, ${shape})`);
@@ -278,7 +278,7 @@ function composeNode(D, n, depth, box) {
     out = `Box(modifier = ${mod.join('')}) {\n${n.kids.map((k) => composeNode(D, k, depth + 1, r || { left: 0, top: 0 })).join('\n')}\n${pad}}`;
   } else {
     mod.push(`.size(${num(st.width)}.dp, ${num(st.height)}.dp)`);
-    out = `Image( // forme vectorielle : exporte-la en SVG puis importe-la comme Vector Asset\n${pad}    painter = painterResource(R.drawable.${slug(n.name).replace(/-/g, '_')}),\n${pad}    contentDescription = null,\n${pad}    modifier = ${mod.join('')}\n${pad})`;
+    out = `Image( // forme vectorielle : exportez-la en SVG puis importez-la comme Vector Asset\n${pad}    painter = painterResource(R.drawable.${slug(n.name).replace(/-/g, '_')}),\n${pad}    contentDescription = null,\n${pad}    modifier = ${mod.join('')}\n${pad})`;
   }
   const note = devNote(o);
   return `${note ? `${pad}// ${note}\n` : ''}${pad}${out}`;
@@ -297,7 +297,7 @@ export function panel(D) {
     <div class="nx-btns">${btn('code-html', 'code', 'HTML et CSS')}${btn('code-react', 'code', 'React (Tailwind)')}${btn('code-tw', 'code', 'HTML Tailwind')}${btn('code-swift', 'code', 'SwiftUI')}${btn('code-compose', 'code', 'Jetpack Compose')}</div>
     ${devList(D)}
     <div class="dzp-sub">Vers le Dev Lab</div>
-    <p class="dzx-hint">Ajoute le code ${target ? 'du composant' : 'de la page'} et le fichier des variables au projet ouvert dans le Dev Lab.</p>
+    <p class="dzx-hint">Ajoutez le code ${target ? 'du composant' : 'de la page'} et le fichier des variables au projet ouvert dans le Dev Lab.</p>
     <div class="nx-btns">${btn('code-devlab', 'nxDev', 'Envoyer au projet du Dev Lab', '', 'primary')}</div>`;
 }
 export async function onPanel(D, e) {

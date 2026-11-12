@@ -16,7 +16,7 @@ let ui = null; // fenêtre ouverte : { mode, detection, origin, status }
 let installing = false;
 let logLines = [];
 const LIB_MSG = 'Mise à jour des bibliothèques, patiente quelques minutes…';
-const FAIL_MSG = 'La mise à jour des bibliothèques a échoué. Réessaie dans un instant.';
+const FAIL_MSG = 'La mise à jour des bibliothèques a échoué. Réessayez dans un instant.';
 
 const autoCheck = () => settings.nxToolsAuto !== false;
 const userPathOn = () => settings.nxToolsUserPath !== false;
@@ -78,9 +78,9 @@ export function openDetection(d, origin) {
 // ---------------------------------------------------------------- gestionnaire d'outils
 function managerHtml(st) {
   const tools = st ? st.tools : [];
-  return `<div class="sheet-head"><span class="sheet-icon">${ico('download', 22)}</span><div><h2>Bibliothèques</h2><p>Mets à jour les bibliothèques dont tes projets ont besoin.</p></div></div>
+  return `<div class="sheet-head"><span class="sheet-icon">${ico('download', 22)}</span><div><h2>Bibliothèques</h2><p>Mettez à jour les bibliothèques dont vos projets ont besoin.</p></div></div>
     <div class="sheet-body nx-tl-body">
-      <div class="nx-tl-opts">${toggleRow('nxToolsAuto', 'Vérifier les bibliothèques à l’ouverture d’un projet', 'S’il faut les mettre à jour, NEXORA te le propose.', autoCheck())}</div>
+      <div class="nx-tl-opts">${toggleRow('nxToolsAuto', 'Vérifier les bibliothèques à l’ouverture d’un projet', 'S’il faut les mettre à jour, NEXORA vous le propose.', autoCheck())}</div>
       ${progressHtml()}
       <div class="nx-tl-list">${st ? libRow(tools, { manage: true, pick: true }) : '<div class="nx-tl-wait"><span class="spinner small"></span><span>Vérification des bibliothèques…</span></div>'}</div>
     </div>
@@ -186,7 +186,7 @@ function runProject() {
   }
   if (state.source && state.source.mode === 'project' && key(state.source.dir) === key(d.dir)) { startResponsiveProject(); return; }
   if (pv && state.devLab.st && key(state.devLab.st.root) === key(d.dir) && !pv.running) { pv.toggleRun(); return; }
-  toast('Bibliothèques à jour. Lance le projet depuis le Dev Lab ou le Responsive Lab.');
+  toast('Bibliothèques à jour. Lancez le projet depuis le Dev Lab ou le Responsive Lab.');
 }
 
 // ---------------------------------------------------------------- détection à l'ouverture d'un projet

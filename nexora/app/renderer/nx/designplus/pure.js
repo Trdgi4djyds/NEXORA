@@ -81,16 +81,16 @@ export function parsePsd(u8) {
   const s4 = () => { const v = dv.getInt32(p); p += 4; return v; };
   const str = (n) => { let s = ''; for (let i = 0; i < n; i += 1) s += String.fromCharCode(u8[p + i]); p += n; return s; };
   if (str(4) !== '8BPS') throw new Error('Ce fichier n’est pas un document Photoshop (PSD).');
-  if (u2() !== 1) throw new Error('Les très grands documents (PSB) ne sont pas pris en charge : enregistre-le en PSD.');
+  if (u2() !== 1) throw new Error('Les très grands documents (PSB) ne sont pas pris en charge : enregistrez-le en PSD.');
   p += 6;
   const channels = u2(); const H = u4(); const W = u4(); const depth = u2(); const mode = u2();
-  if (depth !== 8 || mode !== 3) throw new Error('NEXORA lit les PSD en couleurs RVB 8 bits : convertis le document (Image > Mode > Couleurs RVB, 8 bits).');
+  if (depth !== 8 || mode !== 3) throw new Error('NEXORA lit les PSD en couleurs RVB 8 bits : convertissez le document (Image > Mode > Couleurs RVB, 8 bits).');
   { const n = u4(); p += n; }
   { const n = u4(); p += n; }
   const decode = (comp, w, h, rowCounts) => {
     const out = new Uint8Array(w * h);
     if (comp === 0) { out.set(u8.subarray(p, p + w * h)); p += w * h; return out; }
-    if (comp !== 1) throw new Error('Compression du PSD non prise en charge (enregistre-le avec « Optimiser la compatibilité »).');
+    if (comp !== 1) throw new Error('Compression du PSD non prise en charge (enregistrez-le avec « Optimiser la compatibilité »).');
     const counts = rowCounts || Array.from({ length: h }, () => u2());
     let o = 0;
     for (let y = 0; y < h; y += 1) {

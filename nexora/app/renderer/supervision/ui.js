@@ -32,7 +32,7 @@ const SLOS = [99, 99.5, 99.9, 99.95, 99.99];
 const STEP_KINDS = [['click', 'Cliquer'], ['fill', 'Remplir'], ['press', 'Valider le formulaire'], ['expect', 'Vérifier un texte'], ['expectUrl', 'Vérifier l’adresse'], ['wait', 'Attendre'], ['goto', 'Ouvrir une adresse']];
 
 function stepsHtml(steps) {
-  if (!steps.length) return '<p class="pop-note">Aucune étape : enregistre-les en naviguant, ou ajoute-les une par une.</p>';
+  if (!steps.length) return '<p class="pop-note">Aucune étape : enregistrez-les en naviguant, ou ajoutez-les une par une.</p>';
   return steps.map((st, i) => {
     const kind = `<select class="input small" data-st="${i}|do">${STEP_KINDS.map(([v, l]) => `<option value="${v}" ${st.do === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
     let fields = '';
@@ -57,9 +57,9 @@ export function siteSheet({ cfg, site = null, url = '', server = false, type: fo
   const ready = { email: Boolean(ch.email && ch.email.enabled) };
   const wants = (k) => !e.alerts || e.alerts[k] !== false;
   const acc = account();
-  const srvHint = !acc.signedIn ? 'Connecte-toi à ton compte NEXORA (bouton Connexion du rail) pour l’activer.'
-    : !acc.orgId ? 'Choisis un espace d’équipe dans ton compte NEXORA.'
-      : !acc.canEdit ? 'Ton rôle dans cet espace ne le permet pas (éditeur au moins).'
+  const srvHint = !acc.signedIn ? 'Connectez-vous à votre compte NEXORA (bouton Connexion du rail) pour l’activer.'
+    : !acc.orgId ? 'Choisissez un espace d’équipe dans votre compte NEXORA.'
+      : !acc.canEdit ? 'Votre rôle dans cet espace ne le permet pas (éditeur au moins).'
         : `Vérifié en continu, même ordinateur éteint, avec une notification dans NEXORA pour l’équipe « ${acc.orgName} » et un e-mail si les alertes sont activées.`;
   const srvOk = acc.signedIn && acc.orgId && acc.canEdit;
   const sec = (types, html) => `<div data-tsec="${types}">${html}</div>`;
@@ -68,12 +68,12 @@ export function siteSheet({ cfg, site = null, url = '', server = false, type: fo
     let done = false;
     const finish = (v) => { if (!done) { done = true; resolve(v); } };
     const el = sheet(owner, `<form class="sup-form" autocomplete="off">
-      <div class="sheet-head"><span class="sheet-icon">${icon('globe', 22)}</span><div><h2>${site ? 'Réglages de la vérification' : 'Nouvelle vérification'}</h2><p>${site ? esc(site.name || site.url) : 'NEXORA vérifie en continu et te prévient dès qu’un problème apparaît.'}</p></div></div>
+      <div class="sheet-head"><span class="sheet-icon">${icon('globe', 22)}</span><div><h2>${site ? 'Réglages de la vérification' : 'Nouvelle vérification'}</h2><p>${site ? esc(site.name || site.url) : 'NEXORA vérifie en continu et vous prévient dès qu’un problème apparaît.'}</p></div></div>
       <div class="sheet-body sup-form-body">
-        <div class="field"><span>Que veux-tu surveiller ?</span><div class="seg sup-types" role="radiogroup">${TYPE_LIST.map(([v, l, ic]) => `<button type="button" role="radio" data-type="${v}" class="${type === v ? 'on' : ''}" aria-checked="${type === v}" ${site && site.type && site.type !== v ? 'disabled' : ''}>${icon(ic, 13)}<span>${esc(l)}</span></button>`).join('')}</div></div>
+        <div class="field"><span>Que voulez-vous surveiller ?</span><div class="seg sup-types" role="radiogroup">${TYPE_LIST.map(([v, l, ic]) => `<button type="button" role="radio" data-type="${v}" class="${type === v ? 'on' : ''}" aria-checked="${type === v}" ${site && site.type && site.type !== v ? 'disabled' : ''}>${icon(ic, 13)}<span>${esc(l)}</span></button>`).join('')}</div></div>
         <p class="sup-note" data-type-help></p>
-        ${sec('http api journey', `<label class="field"><span data-url-label>Adresse</span><input class="input" name="url" value="${esc(/^https?:/.test(e.url || '') ? e.url : '')}" placeholder="https://ton-site.com" spellcheck="false" data-autofocus></label>`)}
-        ${sec('tcp dns domain', `<div class="sup-form-grid"><label class="field"><span data-host-label>Nom d’hôte</span><input class="input" name="host" value="${esc(hostVal)}" placeholder="db.ton-site.com" spellcheck="false"></label>${sec('tcp', `<label class="field"><span>Port</span><input class="input" type="number" name="port" min="1" max="65535" value="${esc(e.port || '')}" placeholder="5432"></label>`)}${sec('dns', `<label class="field"><span>Enregistrement</span><select class="input" name="recordType">${['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'CAA'].map((t) => `<option ${String(e.recordType || 'A') === t ? 'selected' : ''}>${t}</option>`).join('')}</select></label>`)}${sec('domain', `<label class="field"><span>Prévenir avant l’expiration</span><select class="input" name="domainWarn">${[[14, '14 jours'], [30, '30 jours'], [45, '45 jours'], [60, '60 jours']].map(([v, l]) => `<option value="${v}" ${Number(e.domainWarn || 30) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`)}</div>`)}
+        ${sec('http api journey', `<label class="field"><span data-url-label>Adresse</span><input class="input" name="url" value="${esc(/^https?:/.test(e.url || '') ? e.url : '')}" placeholder="https://votre-site.com" spellcheck="false" data-autofocus></label>`)}
+        ${sec('tcp dns domain', `<div class="sup-form-grid"><label class="field"><span data-host-label>Nom d’hôte</span><input class="input" name="host" value="${esc(hostVal)}" placeholder="db.votre-site.com" spellcheck="false"></label>${sec('tcp', `<label class="field"><span>Port</span><input class="input" type="number" name="port" min="1" max="65535" value="${esc(e.port || '')}" placeholder="5432"></label>`)}${sec('dns', `<label class="field"><span>Enregistrement</span><select class="input" name="recordType">${['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'CAA'].map((t) => `<option ${String(e.recordType || 'A') === t ? 'selected' : ''}>${t}</option>`).join('')}</select></label>`)}${sec('domain', `<label class="field"><span>Prévenir avant l’expiration</span><select class="input" name="domainWarn">${[[14, '14 jours'], [30, '30 jours'], [45, '45 jours'], [60, '60 jours']].map(([v, l]) => `<option value="${v}" ${Number(e.domainWarn || 30) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`)}</div>`)}
         <label class="field"><span>Nom</span><input class="input" name="name" value="${esc(e.name)}" placeholder="Nom affiché (facultatif)"></label>
         ${sec('api', `<div class="sup-form-grid"><label class="field"><span>Méthode</span><select class="input" name="method">${['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'].map((m) => `<option ${String(e.method || 'GET') === m ? 'selected' : ''}>${m}</option>`).join('')}</select></label><label class="field"><span>Valeur JSON à vérifier</span><input class="input" name="jsonPath" value="${esc(e.jsonPath || '')}" placeholder="status ou data.items[0].id"></label></div>
           <div class="sup-form-grid"><label class="field"><span>Condition</span><select class="input" name="jsonOp">${[['equals', 'est égale à'], ['contains', 'contient'], ['not', 'est différente de'], ['exists', 'existe'], ['lt', 'est inférieure à'], ['gt', 'est supérieure à']].map(([v, l]) => `<option value="${v}" ${String(e.jsonOp || 'equals') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label><label class="field"><span>Valeur attendue</span><input class="input" name="jsonExpect" value="${esc(e.jsonExpect || '')}" placeholder="ok"></label></div>
@@ -81,7 +81,7 @@ export function siteSheet({ cfg, site = null, url = '', server = false, type: fo
           <label class="field"><span>Corps de la requête</span><textarea class="input" name="body" rows="2" placeholder='{"ping": true}'>${esc(e.body || '')}</textarea></label>`)}
         ${sec('dns', `<label class="field"><span>Valeur attendue (facultatif)</span><input class="input" name="dnsExpect" value="${esc(e.dnsExpect || '')}" placeholder="Ex. : 76.76.21.21"></label><label class="tog-row"><span class="tog-text"><span>Alerte si l’enregistrement change</span><small>Utile contre un détournement du domaine ou une erreur de configuration.</small></span><input type="checkbox" name="dnsWatch" ${e.dnsWatch !== false ? 'checked' : ''}><span class="tog" aria-hidden="true"></span></label>`)}
         ${sec('journey', `<div class="field"><span>Étapes du parcours</span><div class="sup-steps" data-steps>${stepsHtml(steps)}</div><div class="sup-steps-a"><button type="button" class="btn small primary" data-jr="record">${icon('record', 13)}<span>Enregistrer en naviguant</span></button><button type="button" class="btn small" data-jr="add">${icon('plus', 13)}<span>Ajouter une étape</span></button><button type="button" class="btn small" data-jr="test">${icon('play', 13)}<span>Tester le parcours</span></button></div><div class="sup-steps-res" data-jr-res></div></div>`)}
-        ${sec('heartbeat', `<p class="pop-note">Ta tâche planifiée, ta sauvegarde ou ton serveur appelle une adresse unique à chaque passage. Si l’appel n’arrive pas à temps, NEXORA te prévient. L’adresse apparaît dans la fiche après l’enregistrement.</p>`)}
+        ${sec('heartbeat', `<p class="pop-note">Votre tâche planifiée, votre sauvegarde ou votre serveur appelle une adresse unique à chaque passage. Si l’appel n’arrive pas à temps, NEXORA vous prévient. L’adresse apparaît dans la fiche après l’enregistrement.</p>`)}
         <div class="sup-form-grid">
           ${sec('http api tcp dns journey heartbeat', `<label class="field"><span data-iv-label>Fréquence des vérifications</span><select class="input" name="intervalSec">${INTERVALS.concat([[3600, '1 h'], [86400, '24 h']]).map(([v, l]) => `<option value="${v}" ${Number(e.intervalSec || 300) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`)}
           ${sec('http api tcp journey', `<label class="field"><span>Seuil de lenteur (ms)</span><input class="input" type="number" name="thresholdMs" min="0" step="100" value="${esc(e.thresholdMs || 2000)}"></label>`)}
@@ -105,9 +105,9 @@ export function siteSheet({ cfg, site = null, url = '', server = false, type: fo
       api: 'Une requête au choix (méthode, en-têtes, corps) et une valeur de la réponse JSON à contrôler, par exemple « status = ok ».',
       tcp: 'Ouverture d’un port : base de données, serveur de jeu, SMTP, FTP… (depuis ce PC seulement).',
       dns: 'Un enregistrement DNS attendu, et une alerte s’il change (détournement, erreur de configuration).',
-      domain: 'Date d’expiration du nom de domaine, vérifiée toutes les 6 heures : ton site et tes e-mails ne s’arrêteront pas par oubli.',
+      domain: 'Date d’expiration du nom de domaine, vérifiée toutes les 6 heures : votre site et vos e-mails ne s’arrêteront pas par oubli.',
       journey: 'Un parcours complet rejoué dans un navigateur caché : connexion, panier, formulaire… Chaque étape est chronométrée. Offre Pro.',
-      heartbeat: 'Pour tes tâches planifiées (sauvegardes, imports, cron) : elles appellent une adresse ; sans signal à temps, tu es prévenu. Vérifié par les serveurs NEXORA.',
+      heartbeat: 'Pour vos tâches planifiées (sauvegardes, imports, cron) : elles appellent une adresse ; sans signal à temps, vous êtes prévenu. Vérifié par les serveurs NEXORA.',
     };
     const applyType = () => {
       for (const b of el.querySelectorAll('[data-type]')) { const on = b.dataset.type === type; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }
@@ -137,17 +137,17 @@ export function siteSheet({ cfg, site = null, url = '', server = false, type: fo
       const start = String(form.elements.url.value || '').trim();
       const res = el.querySelector('[data-jr-res]');
       if (jr.dataset.jr === 'add') { steps.push({ do: 'click', sel: '' }); drawSteps(); return; }
-      if (!/^https?:\/\//i.test(start)) { err.hidden = false; err.textContent = 'Indique d’abord l’adresse de départ (https://…).'; return; }
+      if (!/^https?:\/\//i.test(start)) { err.hidden = false; err.textContent = 'Indiquez d’abord l’adresse de départ (https://…).'; return; }
       err.hidden = true;
       jr.disabled = true;
       try {
         if (jr.dataset.jr === 'record') {
-          res.innerHTML = `<span class="muted">${icon('record', 12)} Une fenêtre s’ouvre : fais ton parcours (clics, saisies), puis ferme-la.</span>`;
+          res.innerHTML = `<span class="muted">${icon('record', 12)} Une fenêtre s’ouvre : faites votre parcours (clics, saisies), puis fermez-la.</span>`;
           const r = await call('mon:journey-record', { url: start });
           steps = steps.concat((r && r.steps) || []);
           try { const a = new URL(start); const b = new URL(r.lastUrl); if (b.pathname !== a.pathname) steps.push({ do: 'expectUrl', text: b.pathname }); } catch { /* */ }
           drawSteps();
-          res.innerHTML = `<span class="good">${icon('check', 12)} ${(r && r.steps ? r.steps.length : 0)} étape(s) enregistrée(s). Ajoute une vérification de texte pour confirmer le résultat.</span>`;
+          res.innerHTML = `<span class="good">${icon('check', 12)} ${(r && r.steps ? r.steps.length : 0)} étape(s) enregistrée(s). Ajoutez une vérification de texte pour confirmer le résultat.</span>`;
         } else {
           res.innerHTML = '<span class="spinner small"></span> Parcours en cours…';
           const prepared = await sealSteps(steps);
@@ -176,14 +176,14 @@ export function siteSheet({ cfg, site = null, url = '', server = false, type: fo
       const fail = (m) => { err.hidden = false; err.textContent = m; };
       if (type === 'http' || type === 'api' || type === 'journey') {
         if (u && !/^https?:\/\//i.test(u)) u = `https://${u}`;
-        try { const x = new URL(u); if (!/^https?:$/.test(x.protocol)) throw new Error(); } catch { fail('Adresse invalide : indique une adresse comme https://ton-site.com.'); return; }
-        if (type === 'journey' && !steps.length) { fail('Ajoute au moins une étape au parcours.'); return; }
+        try { const x = new URL(u); if (!/^https?:$/.test(x.protocol)) throw new Error(); } catch { fail('Adresse invalide : indiquez une adresse comme https://votre-site.com.'); return; }
+        if (type === 'journey' && !steps.length) { fail('Ajoutez au moins une étape au parcours.'); return; }
       } else if (type === 'tcp') {
         const port = Number(f.get('port'));
-        if (!h || !(port > 0 && port < 65536)) { fail('Indique un nom d’hôte et un port (1 à 65535).'); return; }
+        if (!h || !(port > 0 && port < 65536)) { fail('Indiquez un nom d’hôte et un port (1 à 65535).'); return; }
         u = `tcp://${h}:${port}`;
-      } else if (type === 'dns') { if (!h) { fail('Indique le nom à vérifier.'); return; } u = `dns://${h}/${f.get('recordType') || 'A'}`; }
-      else if (type === 'domain') { if (!h) { fail('Indique le nom de domaine.'); return; } u = `domain://${h}`; }
+      } else if (type === 'dns') { if (!h) { fail('Indiquez le nom à vérifier.'); return; } u = `dns://${h}/${f.get('recordType') || 'A'}`; }
+      else if (type === 'domain') { if (!h) { fail('Indiquez le nom de domaine.'); return; } u = `domain://${h}`; }
       else if (type === 'heartbeat') { if (!srvOk) { fail(srvHint); return; } u = site && site.url ? site.url : `heartbeat://${id}`; }
       const dup = list.find((x) => x.url && siteKey(x.url) === siteKey(u) && (!site || x.id !== site.id) && (x.type || 'http') === type);
       if (dup) { fail(`« ${dup.name || dup.url} » surveille déjà cette adresse.`); return; }

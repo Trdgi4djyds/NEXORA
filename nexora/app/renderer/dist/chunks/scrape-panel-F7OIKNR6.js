@@ -13,13 +13,13 @@ import{a as l,e as u,f as h}from"./chunk-6ZWS5EFO.js";import{b as r}from"./chunk
           ${this.opt("rendered","Pages apr\xE8s ex\xE9cution du JavaScript","Indispensable pour React, Vue, Angular\u2026 Le code d\u2019origine envoy\xE9 par le serveur est aussi gard\xE9 dans _code-serveur/.")}
           ${this.opt("sourceMaps","Reconstituer le code source d\u2019origine","Si le site publie ses source maps : fichiers React/Vue/TypeScript d\u2019origine dans _sources/.")}
           ${this.opt("external","Ressources d\u2019autres domaines (CDN, polices)","Rang\xE9es dans _externe/ pour que la copie soit compl\xE8te.")}
-          ${this.opt("sitemap","Utiliser le plan du site (sitemap.xml)","Trouve aussi les pages qui ne sont reli\xE9es par aucun lien.")}
-          ${this.opt("scroll","Faire d\xE9filer chaque page","Charge les images et contenus qui n\u2019apparaissent qu\u2019au d\xE9filement.")}
-          ${this.opt("robots","Respecter robots.txt","Recommand\xE9 pour les sites qui ne t\u2019appartiennent pas.")}
+          ${this.opt("sitemap","Utiliser le plan du site (sitemap.xml)","Trouvez aussi les pages qui ne sont reli\xE9es par aucun lien.")}
+          ${this.opt("scroll","Faire d\xE9filer chaque page","Chargez les images et contenus qui n\u2019apparaissent qu\u2019au d\xE9filement.")}
+          ${this.opt("robots","Respecter robots.txt","Recommand\xE9 pour les sites qui ne vous appartiennent pas.")}
           ${this.opt("subdomains","Inclure les sous-domaines","")}
           <div class="ab-grid2"><label class="field"><span>Seulement les adresses contenant</span><input class="input mono" data-s="include" value="${i(this.o.include)}" placeholder="/blog/*, /produits/*"></label><label class="field"><span>Exclure</span><input class="input mono" data-s="exclude" value="${i(this.o.exclude)}" placeholder="/panier, *?page=*"></label></div>
           <label class="field"><span>Pause entre deux pages (ms)</span><input class="input" type="number" min="0" max="10000" step="50" data-n="delay" value="${this.o.delay}"></label>
-          <p class="bl-hint">${r("info",12)} Respecte les droits d\u2019auteur et les conditions d\u2019utilisation des sites : aspire tes propres sites, ou ceux que tu as l\u2019autorisation de copier.</p>
+          <p class="bl-hint">${r("info",12)} Respectez les droits d\u2019auteur et les conditions d\u2019utilisation des sites : aspirez vos propres sites, ou ceux que vous avez l\u2019autorisation de copier.</p>
         </details>
       </div>`}progressHtml(){let e=this.progress||{},s=this.report;return s?`<div class="sc-done">
         <div class="sc-res-head">${r(s.cancelled?"warn":"pass",18)}<b>${s.cancelled?"Aspiration arr\xEAt\xE9e":"Site aspir\xE9"}</b></div>

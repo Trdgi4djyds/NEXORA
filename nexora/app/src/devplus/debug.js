@@ -88,7 +88,7 @@ class Debugger {
     if (file) return inside(root, file);
     const pkg = readJson(path.join(root, 'package.json')) || {};
     for (const f of [pkg.main, 'server.js', 'index.js', 'src/index.js', 'src/server.js', 'app.js'].filter(Boolean)) { try { const p = inside(root, f); if (require('fs').existsSync(p)) return p; } catch { /* ignoré */ } }
-    throw new Error('Choisis le fichier à lancer (ouvre-le dans l’éditeur, puis « Déboguer ce fichier »).');
+    throw new Error('Choisissez le fichier à lancer (ouvrez-le dans l’éditeur, puis « Déboguer ce fichier »).');
   }
   fresh() {
     if (this.s) this.s.stop();
@@ -121,7 +121,7 @@ class Debugger {
   }
   async attach(port = 9229) {
     const list = await (await fetch(`http://127.0.0.1:${Number(port)}/json/list`)).json().catch(() => null);
-    if (!list || !list[0]) throw new Error(`Aucun programme en attente de débogage sur le port ${port} (lance-le avec --inspect).`);
+    if (!list || !list[0]) throw new Error(`Aucun programme en attente de débogage sur le port ${port} (lancez-le avec --inspect).`);
     const s = this.fresh();
     await s.connect(list[0].webSocketDebuggerUrl);
     return { title: list[0].title };

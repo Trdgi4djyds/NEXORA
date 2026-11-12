@@ -44,6 +44,8 @@ const GATES = {
   'android:billing-install': ['integrations', 0],
   'android:billing-products': ['integrations', 0],
   'android:billing-verify': ['integrations', 0],
+  // NEXORA #115 : modules OneSignal, AdMob, Google Analytics et Meta (même offre que les achats intégrés).
+  'android:module-install': ['integrations', 0],
   // Sécurité (NEXORA #076 : le Browser Lab est gratuit, ses canaux lab:* ne sont plus contrôlés)
   'sec:scan': ['scan', 1],
   // NEXORA #048 : audits avancés (plusieurs pages, code, applications, correctifs écrits, crochet Git, audits
@@ -180,14 +182,14 @@ async function call(method, path, body) {
       signal: timeout(10000),
     });
   } catch {
-    const e = new Error('Connexion à NEXORA impossible : vérifie ta connexion à Internet, puis réessaie.');
+    const e = new Error('Connexion à NEXORA impossible : vérifiez votre connexion à Internet, puis réessayez.');
     e.offline = true;
     throw e;
   }
   const j = await r.json().catch(() => null);
   if (r.ok) return j;
   const msg = String((j && (j.message || j.msg || j.error_description)) || `HTTP ${r.status}`);
-  if (r.status === 401 || /jwt/i.test(msg)) throw new Error('Session NEXORA expirée : reconnecte-toi à ton compte, puis réessaie.');
+  if (r.status === 401 || /jwt/i.test(msg)) throw new Error('Session NEXORA expirée : reconnectez-vous à votre compte, puis réessayez.');
   if ((j && j.code === 'PGRST202') || r.status === 404) throw new Missing(msg);
   throw new Error(msg);
 }
@@ -255,10 +257,10 @@ async function check(feature, amount, app = null) {
   const label = LABEL[feature] || 'Cette fonction';
   if (!cloud) {
     if (QUOTA.has(feature) && (!perm || amount > 0)) {
-      throw deny({ feature, reason: 'auth', need: 'free', message: `${label} demande un compte NEXORA (gratuit) : connecte-toi pour profiter de ton quota mensuel.` });
+      throw deny({ feature, reason: 'auth', need: 'free', message: `${label} demande un compte NEXORA (gratuit) : connectez-vous pour profiter de votre quota mensuel.` });
     }
     if (perm && !defaultPerms('free')[perm]) {
-      throw deny({ feature, reason: 'plan', plan: 'free', need: neededFor(perm), message: `${label} fait partie de l’offre ${NAME[neededFor(perm)]}. Connecte-toi à ton compte NEXORA, puis choisis ton offre dans Mon compte → Offre et usage.` });
+      throw deny({ feature, reason: 'plan', plan: 'free', need: neededFor(perm), message: `${label} fait partie de l’offre ${NAME[neededFor(perm)]}. Connectez-vous à votre compte NEXORA, puis choisissez votre offre dans Mon compte → Offre et usage.` });
     }
     return { ok: true, plan: 'free' };
   }
@@ -271,7 +273,7 @@ async function check(feature, amount, app = null) {
       if (!(e instanceof Missing)) throw e;
     }
     if (r) {
-      if (!r.ok) throw deny({ ...r, feature, message: r.message || `${label} n’est pas disponible avec ton offre.` });
+      if (!r.ok) throw deny({ ...r, feature, message: r.message || `${label} n’est pas disponible avec votre offre.` });
       if (status) status.at = 0; // consommation à jour au prochain plan:status
       return r;
     }
@@ -284,10 +286,10 @@ async function check(feature, amount, app = null) {
       if (!(e instanceof Missing)) throw e;
       // Serveurs sans la migration : l'offre de l'abonnement s'applique, aucun quota n'est compté.
       const s = await refresh();
-      if (perm && !s.admin && !s.perms[perm]) throw deny({ feature, reason: 'plan', plan: s.plan, need: neededFor(perm), message: `${label} fait partie de l’offre ${NAME[neededFor(perm)]}. Ton offre actuelle : ${s.plan_name}.` });
+      if (perm && !s.admin && !s.perms[perm]) throw deny({ feature, reason: 'plan', plan: s.plan, need: neededFor(perm), message: `${label} fait partie de l’offre ${NAME[neededFor(perm)]}. Votre offre actuelle : ${s.plan_name}.` });
       return { ok: true, plan: s.plan };
     }
-    if (!r || !r.ok) throw deny({ ...(r || {}), feature, message: (r && r.message) || `${label} n’est pas disponible avec ton offre.` });
+    if (!r || !r.ok) throw deny({ ...(r || {}), feature, message: (r && r.message) || `${label} n’est pas disponible avec votre offre.` });
     if (status) status.at = 0; // consommation à jour au prochain plan:status
     return r;
   }
@@ -298,7 +300,7 @@ async function check(feature, amount, app = null) {
   // NEXORA #048 : permission encore inconnue des serveurs (migration pas appliquée) : valeur par défaut de l'offre.
   const allowed = s.perms && perm in s.perms ? s.perms[perm] : defaultPerms(s.plan)[perm];
   if (s.admin || !perm || allowed) return { ok: true, plan: s.plan };
-  throw deny({ feature, reason: 'plan', plan: s.plan, plan_name: s.plan_name, need: neededFor(perm), need_name: NAME[neededFor(perm)], message: `${label} fait partie de l’offre ${NAME[neededFor(perm)]}. Ton offre actuelle : ${s.plan_name || NAME[s.plan] || s.plan}.` });
+  throw deny({ feature, reason: 'plan', plan: s.plan, plan_name: s.plan_name, need: neededFor(perm), need_name: NAME[neededFor(perm)], message: `${label} fait partie de l’offre ${NAME[neededFor(perm)]}. Votre offre actuelle : ${s.plan_name || NAME[s.plan] || s.plan}.` });
 }
 
 // Remplace ipcMain.handle avant tout enregistrement : les canaux de GATES passent d'abord par check().

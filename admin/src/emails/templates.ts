@@ -7,7 +7,7 @@ import { box, bullets, button, code, esc, layout, p, pill, rows, TONES, type Ton
 
 export const LOGO_URL = `${NEXORA_WEB_URL}logo.png`
 /** Version des modèles enregistrés dans la base (app_config.email_templates) : à augmenter à chaque changement. */
-export const TEMPLATES_VERSION = 3
+export const TEMPLATES_VERSION = 4
 
 type V = Record<string, string>
 export type Rendered = { subject: string; html: string; text?: string }
@@ -35,9 +35,9 @@ export type EmailTemplate = {
 
 const base = { webUrl: NEXORA_WEB_URL, logoUrl: LOGO_URL }
 const strong = (s: string) => `<b class="nx-ink" style="color:#0a0a0a">${esc(s)}</b>`
-const REASON_ACCOUNT = "Tu reçois cet e-mail parce qu’une action a été demandée pour ton compte NEXORA."
-const REASON_SECURITY = "Tu reçois cet e-mail pour la sécurité de ton compte NEXORA. Il ne contient aucun lien à usage unique."
-const SUPPORT = "Si ce n’est pas toi, change ton mot de passe tout de suite (écran de connexion → « Mot de passe oublié ») et réponds à cet e-mail pour prévenir le support."
+const REASON_ACCOUNT = "Vous recevez cet e-mail parce qu’une action a été demandée pour votre compte NEXORA."
+const REASON_SECURITY = "Vous recevez cet e-mail pour la sécurité de votre compte NEXORA. Il ne contient aucun lien à usage unique."
+const SUPPORT = "Si ce n’est pas vous, changez votre mot de passe tout de suite (écran de connexion → « Mot de passe oublié ») et répondez à cet e-mail pour prévenir le support."
 
 /* ---------------------------------------------------------------- Variables de Supabase */
 
@@ -83,10 +83,10 @@ function auth(o: {
 }
 
 const FEATURES = [
-  `${strong("Responsive Lab")} : tes sites dans de vrais appareils, côte à côte.`,
-  `${strong("Studio 3D & Motion")} et ${strong("NEX-DESIGN")} pour tes visuels et tes vidéos.`,
-  `${strong("App Builder")} et ${strong("Desktop Builder")} : ton site en application Android ou Windows.`,
-  `${strong("Supervision")} : tes sites surveillés, avec des alertes par e-mail.`,
+  `${strong("Responsive Lab")} : vos sites dans de vrais appareils, côte à côte.`,
+  `${strong("Studio 3D & Motion")} et ${strong("NEX-DESIGN")} pour vos visuels et vos vidéos.`,
+  `${strong("App Builder")} et ${strong("Desktop Builder")} : votre site en application Android ou Windows.`,
+  `${strong("Supervision")} : vos sites surveillés, avec des alertes par e-mail.`,
 ]
 
 /* ---------------------------------------------------------------- E-mails des comptes */
@@ -100,21 +100,21 @@ const AUTH: EmailTemplate[] = [
     icon: "user",
     when: "À la création d’un compte, depuis NEXORA pour Windows ou NEXORA web.",
     render: (v) => ({
-      subject: "Bienvenue sur NEXORA : confirme ton adresse e-mail",
+      subject: "Bienvenue sur NEXORA : confirmez votre adresse e-mail",
       html: layout({
         ...base,
         kicker: "Inscription",
         title: "Bienvenue sur NEXORA",
-        preheader: "Confirme ton adresse pour activer ton compte et synchroniser tes projets.",
+        preheader: "Confirmez votre adresse pour activer votre compte et synchroniser vos projets.",
         greeting: esc(v.greet),
         body:
-          p("Merci d’avoir créé ton compte. Confirme ton adresse e-mail pour l’activer : tes réglages et tes projets se synchroniseront entre NEXORA pour Windows et NEXORA en ligne.") +
+          p("Merci d’avoir créé votre compte. Confirmez votre adresse e-mail pour l’activer : vos réglages et vos projets se synchroniseront entre NEXORA pour Windows et NEXORA en ligne.") +
           button("Confirmer mon adresse", v.url) +
-          p(strong("Ce qui t’attend"), "margin-bottom:12px") +
+          p(strong("Ce qui vous attend"), "margin-bottom:12px") +
           bullets(FEATURES),
         fallbackUrl: v.url,
-        note: "Ce lien est valable 1 heure. Si tu n’as pas créé de compte NEXORA, ignore cet e-mail : aucun compte ne sera activé.",
-        reason: "Tu reçois cet e-mail parce que ton adresse a servi à créer un compte NEXORA.",
+        note: "Ce lien est valable 1 heure. Si vous n’avez pas créé de compte NEXORA, ignorez cet e-mail : aucun compte ne sera activé.",
+        reason: "Vous recevez cet e-mail parce que votre adresse a servi à créer un compte NEXORA.",
       }),
     }),
   }),
@@ -124,20 +124,20 @@ const AUTH: EmailTemplate[] = [
     label: "Connexion par lien",
     desc: "Lien de connexion sans mot de passe.",
     icon: "link",
-    when: "Quand tu choisis « Recevoir un lien de connexion » à l’écran de connexion.",
+    when: "Quand vous choisissez « Recevoir un lien de connexion » à l’écran de connexion.",
     render: (v) => ({
-      subject: "Ton lien de connexion à NEXORA",
+      subject: "Votre lien de connexion à NEXORA",
       html: layout({
         ...base,
         kicker: "Connexion",
-        title: "Connecte-toi à NEXORA",
+        title: "Connectez-vous à NEXORA",
         preheader: "Un clic suffit : pas de mot de passe à saisir.",
         greeting: esc(v.greet),
         body:
-          p(`Voici ton lien pour te connecter à ton compte ${strong(v.email)}. Un clic suffit, sans mot de passe.`) +
+          p(`Voici votre lien pour vous connecter à votre compte ${strong(v.email)}. Un clic suffit, sans mot de passe.`) +
           button("Me connecter", v.url),
         fallbackUrl: v.url,
-        note: "Ce lien ne sert qu’une fois et expire dans 1 heure. Si tu n’as pas demandé à te connecter, ignore cet e-mail : ton compte reste protégé.",
+        note: "Ce lien ne sert qu’une fois et expire dans 1 heure. Si vous n’avez pas demandé à vous connecter, ignorez cet e-mail : votre compte reste protégé.",
         reason: REASON_ACCOUNT,
       }),
     }),
@@ -148,20 +148,20 @@ const AUTH: EmailTemplate[] = [
     label: "Mot de passe oublié",
     desc: "Lien pour choisir un nouveau mot de passe.",
     icon: "key",
-    when: "Quand tu demandes « Mot de passe oublié », ou quand un administrateur réinitialise ton mot de passe.",
+    when: "Quand vous demandez « Mot de passe oublié », ou quand un administrateur réinitialise votre mot de passe.",
     render: (v) => ({
-      subject: "Réinitialise ton mot de passe NEXORA",
+      subject: "Réinitialisez votre mot de passe NEXORA",
       html: layout({
         ...base,
         kicker: "Mot de passe",
-        title: "Choisis un nouveau mot de passe",
-        preheader: "Ton lien pour choisir un nouveau mot de passe, valable 1 heure.",
+        title: "Choisissez un nouveau mot de passe",
+        preheader: "Votre lien pour choisir un nouveau mot de passe, valable 1 heure.",
         greeting: esc(v.greet),
         body:
-          p(`Une demande de réinitialisation du mot de passe a été faite pour ${strong(v.email)}. Clique sur le bouton pour en choisir un nouveau.`) +
+          p(`Une demande de réinitialisation du mot de passe a été faite pour ${strong(v.email)}. Cliquez sur le bouton pour en choisir un nouveau.`) +
           button("Choisir un nouveau mot de passe", v.url),
         fallbackUrl: v.url,
-        note: "Ce lien ne sert qu’une fois et expire dans 1 heure. Si tu n’es pas à l’origine de cette demande, ignore cet e-mail : ton mot de passe actuel reste valable.",
+        note: "Ce lien ne sert qu’une fois et expire dans 1 heure. Si vous n’êtes pas à l’origine de cette demande, ignorez cet e-mail : votre mot de passe actuel reste valable.",
         reason: REASON_ACCOUNT,
       }),
     }),
@@ -172,22 +172,22 @@ const AUTH: EmailTemplate[] = [
     label: "Invitation",
     desc: "Invitation à créer un compte, envoyée par un administrateur.",
     icon: "mail",
-    when: "Quand un administrateur t’invite depuis le back office.",
+    when: "Quand un administrateur vous invite depuis le back office.",
     render: (v) => ({
-      subject: "Tu es invité à rejoindre NEXORA",
+      subject: "Vous êtes invité à rejoindre NEXORA",
       html: layout({
         ...base,
         kicker: "Invitation",
-        title: "Tu es invité sur NEXORA",
-        preheader: "Accepte l’invitation pour créer ton compte en quelques secondes.",
+        title: "Vous êtes invité sur NEXORA",
+        preheader: "Acceptez l’invitation pour créer votre compte en quelques secondes.",
         greeting: "Bonjour,",
         body:
-          p(`Un compte NEXORA t’attend pour ${strong(v.email)}. Accepte l’invitation pour choisir ton mot de passe et commencer.`) +
+          p(`Un compte NEXORA vous attend pour ${strong(v.email)}. Acceptez l’invitation pour choisir votre mot de passe et commencer.`) +
           button("Accepter l’invitation", v.url) +
           bullets(FEATURES),
         fallbackUrl: v.url,
-        note: "Cette invitation expire dans 24 heures. Si tu ne t’attendais pas à la recevoir, ignore cet e-mail.",
-        reason: "Tu reçois cet e-mail parce qu’un administrateur de NEXORA t’a invité.",
+        note: "Cette invitation expire dans 24 heures. Si vous ne vous attendiez pas à la recevoir, ignorez cet e-mail.",
+        reason: "Vous recevez cet e-mail parce qu’un administrateur de NEXORA vous a invité.",
       }),
     }),
   }),
@@ -197,21 +197,21 @@ const AUTH: EmailTemplate[] = [
     label: "Changement d’adresse",
     desc: "Confirmation de la nouvelle adresse e-mail du compte.",
     icon: "mail",
-    when: "Quand tu changes l’adresse e-mail de ton compte (envoyé à l’ancienne et à la nouvelle adresse).",
+    when: "Quand vous changez l’adresse e-mail de votre compte (envoyé à l’ancienne et à la nouvelle adresse).",
     render: (v) => ({
-      subject: "Confirme ta nouvelle adresse e-mail NEXORA",
+      subject: "Confirmez votre nouvelle adresse e-mail NEXORA",
       html: layout({
         ...base,
         kicker: "Adresse e-mail",
-        title: "Confirme ta nouvelle adresse",
-        preheader: "Un dernier clic pour changer l’adresse de ton compte.",
+        title: "Confirmez votre nouvelle adresse",
+        preheader: "Un dernier clic pour changer l’adresse de votre compte.",
         greeting: esc(v.greet),
         body:
-          p("Tu as demandé à changer l’adresse e-mail de ton compte NEXORA.") +
+          p("Vous avez demandé à changer l’adresse e-mail de votre compte NEXORA.") +
           rows([["Adresse actuelle", esc(v.email)], ["Nouvelle adresse", esc(v.newEmail)]]) +
           button("Confirmer le changement", v.url),
         fallbackUrl: v.url,
-        note: "Pour ta sécurité, le changement doit être confirmé depuis les deux adresses. Si tu n’as rien demandé, ignore cet e-mail et change ton mot de passe.",
+        note: "Pour votre sécurité, le changement doit être confirmé depuis les deux adresses. Si vous n’avez rien demandé, ignorez cet e-mail et changez votre mot de passe.",
         reason: REASON_ACCOUNT,
       }),
     }),
@@ -222,17 +222,17 @@ const AUTH: EmailTemplate[] = [
     label: "Code de vérification",
     desc: "Code à saisir pour confirmer une action sensible.",
     icon: "lock",
-    when: "Quand une action sensible demande de confirmer ton identité.",
+    when: "Quand une action sensible demande de confirmer votre identité.",
     render: (v) => ({
-      subject: `${v.token} est ton code de vérification NEXORA`,
+      subject: `${v.token} est votre code de vérification NEXORA`,
       html: layout({
         ...base,
         kicker: "Vérification",
-        title: "Ton code de vérification",
-        preheader: "Saisis ce code dans NEXORA pour confirmer qu’il s’agit bien de toi.",
+        title: "Votre code de vérification",
+        preheader: "Saisissez ce code dans NEXORA pour confirmer qu’il s’agit bien de vous.",
         greeting: esc(v.greet),
-        body: p("Saisis ce code dans NEXORA pour confirmer qu’il s’agit bien de toi :") + code(v.token),
-        note: "Ce code expire dans 1 heure. Ne le communique à personne : l’équipe NEXORA ne te le demandera jamais.",
+        body: p("Saisissez ce code dans NEXORA pour confirmer qu’il s’agit bien de vous :") + code(v.token),
+        note: "Ce code expire dans 1 heure. Ne le communique à personne : l’équipe NEXORA ne vous le demandera jamais.",
         reason: REASON_ACCOUNT,
       }),
     }),
@@ -266,64 +266,64 @@ const SECURITY: EmailTemplate[] = [
     id: "password_changed_notification", label: "Mot de passe modifié", icon: "key", notify: true,
     desc: "Prévient que le mot de passe du compte vient de changer.",
     when: "Après chaque changement de mot de passe.",
-    subject: "Ton mot de passe NEXORA a été modifié",
-    title: "Ton mot de passe a été modifié",
-    preheader: "Le mot de passe de ton compte vient de changer.",
-    body: (v) => p(`Le mot de passe du compte ${strong(v.email)} vient d’être modifié. Si c’est toi, tout est en ordre : tu n’as rien à faire.`),
+    subject: "Votre mot de passe NEXORA a été modifié",
+    title: "Votre mot de passe a été modifié",
+    preheader: "Le mot de passe de votre compte vient de changer.",
+    body: (v) => p(`Le mot de passe du compte ${strong(v.email)} vient d’être modifié. Si c’est vous, tout est en ordre : vous n’avez rien à faire.`),
   }),
   notice({
     id: "email_changed_notification", label: "Adresse modifiée", icon: "mail", notify: true,
     desc: "Prévient l’ancienne adresse que l’adresse du compte a changé.",
     when: "Après chaque changement d’adresse e-mail.",
-    subject: "L’adresse e-mail de ton compte NEXORA a changé",
-    title: "L’adresse de ton compte a changé",
-    preheader: "Ton compte NEXORA utilise désormais une nouvelle adresse e-mail.",
-    body: (v) => p("L’adresse e-mail de ton compte NEXORA a été remplacée.") + rows([["Ancienne adresse", esc(v.oldEmail)], ["Nouvelle adresse", esc(v.email)]]),
+    subject: "L’adresse e-mail de votre compte NEXORA a changé",
+    title: "L’adresse de votre compte a changé",
+    preheader: "Votre compte NEXORA utilise désormais une nouvelle adresse e-mail.",
+    body: (v) => p("L’adresse e-mail de votre compte NEXORA a été remplacée.") + rows([["Ancienne adresse", esc(v.oldEmail)], ["Nouvelle adresse", esc(v.email)]]),
   }),
   notice({
     id: "mfa_factor_enrolled_notification", label: "Vérification ajoutée", icon: "shield", notify: true,
     desc: "Une méthode de vérification en deux étapes a été ajoutée.",
     when: "Quand une méthode de vérification en deux étapes est ajoutée au compte.",
-    subject: "Nouvelle méthode de vérification sur ton compte NEXORA",
+    subject: "Nouvelle méthode de vérification sur votre compte NEXORA",
     title: "Vérification en deux étapes ajoutée",
-    preheader: "Une nouvelle méthode de vérification protège ton compte.",
-    body: (v) => p("Une nouvelle méthode de vérification en deux étapes a été ajoutée à ton compte.") + rows([["Compte", esc(v.email)], ["Méthode", esc(v.factor)]]),
+    preheader: "Une nouvelle méthode de vérification protège votre compte.",
+    body: (v) => p("Une nouvelle méthode de vérification en deux étapes a été ajoutée à votre compte.") + rows([["Compte", esc(v.email)], ["Méthode", esc(v.factor)]]),
   }),
   notice({
     id: "mfa_factor_unenrolled_notification", label: "Vérification retirée", icon: "shield", notify: true,
     desc: "Une méthode de vérification en deux étapes a été retirée.",
     when: "Quand une méthode de vérification en deux étapes est retirée du compte.",
-    subject: "Une méthode de vérification a été retirée de ton compte NEXORA",
+    subject: "Une méthode de vérification a été retirée de votre compte NEXORA",
     title: "Vérification en deux étapes retirée",
-    preheader: "Une méthode de vérification ne protège plus ton compte.",
-    body: (v) => p("Une méthode de vérification en deux étapes a été retirée de ton compte.") + rows([["Compte", esc(v.email)], ["Méthode", esc(v.factor)]]),
+    preheader: "Une méthode de vérification ne protège plus votre compte.",
+    body: (v) => p("Une méthode de vérification en deux étapes a été retirée de votre compte.") + rows([["Compte", esc(v.email)], ["Méthode", esc(v.factor)]]),
   }),
   notice({
     id: "identity_linked_notification", label: "Connexion liée", icon: "link", notify: true,
     desc: "Un nouveau moyen de connexion (Google…) a été lié au compte.",
-    when: "Quand un compte Google, GitHub… est lié à ton compte NEXORA.",
-    subject: "Nouveau moyen de connexion sur ton compte NEXORA",
+    when: "Quand un compte Google, GitHub… est lié à votre compte NEXORA.",
+    subject: "Nouveau moyen de connexion sur votre compte NEXORA",
     title: "Nouveau moyen de connexion",
-    preheader: "Un nouveau moyen de connexion a été lié à ton compte.",
-    body: (v) => p(`Ton compte ${esc(v.provider)} peut désormais servir à te connecter à NEXORA.`) + rows([["Compte", esc(v.email)], ["Service", esc(v.provider)]]),
+    preheader: "Un nouveau moyen de connexion a été lié à votre compte.",
+    body: (v) => p(`Votre compte ${esc(v.provider)} peut désormais servir à vous connecter à NEXORA.`) + rows([["Compte", esc(v.email)], ["Service", esc(v.provider)]]),
   }),
   notice({
     id: "identity_unlinked_notification", label: "Connexion retirée", icon: "link", notify: true,
     desc: "Un moyen de connexion a été retiré du compte.",
-    when: "Quand un compte Google, GitHub… n’est plus lié à ton compte NEXORA.",
-    subject: "Un moyen de connexion a été retiré de ton compte NEXORA",
+    when: "Quand un compte Google, GitHub… n’est plus lié à votre compte NEXORA.",
+    subject: "Un moyen de connexion a été retiré de votre compte NEXORA",
     title: "Moyen de connexion retiré",
-    preheader: "Un moyen de connexion ne permet plus d’accéder à ton compte.",
-    body: (v) => p(`Ton compte ${esc(v.provider)} ne permet plus de te connecter à NEXORA.`) + rows([["Compte", esc(v.email)], ["Service", esc(v.provider)]]),
+    preheader: "Un moyen de connexion ne permet plus d’accéder à votre compte.",
+    body: (v) => p(`Votre compte ${esc(v.provider)} ne permet plus de vous connecter à NEXORA.`) + rows([["Compte", esc(v.email)], ["Service", esc(v.provider)]]),
   }),
   notice({
     id: "phone_changed_notification", label: "Téléphone modifié", icon: "phone", notify: false,
     desc: "Numéro de téléphone du compte modifié (NEXORA n’utilise pas la connexion par téléphone).",
     when: "Jamais pour l’instant : NEXORA n’utilise pas la connexion par téléphone (notification désactivée).",
-    subject: "Le numéro de téléphone de ton compte NEXORA a changé",
-    title: "Ton numéro de téléphone a changé",
-    preheader: "Ton compte NEXORA utilise un nouveau numéro de téléphone.",
-    body: (v) => p("Le numéro de téléphone de ton compte NEXORA a été remplacé.") + rows([["Ancien numéro", esc(v.oldPhone)], ["Nouveau numéro", esc(v.phone)]]),
+    subject: "Le numéro de téléphone de votre compte NEXORA a changé",
+    title: "Votre numéro de téléphone a changé",
+    preheader: "Votre compte NEXORA utilise un nouveau numéro de téléphone.",
+    body: (v) => p("Le numéro de téléphone de votre compte NEXORA a été remplacé.") + rows([["Ancien numéro", esc(v.oldPhone)], ["Nouveau numéro", esc(v.phone)]]),
   }),
 ]
 
@@ -365,8 +365,8 @@ const ALERT: EmailTemplate = {
         title: v.titre,
         preheader: v.apercu,
         body: p(v.message) + rows([["Type", v.niveau], ["Détecté le", v.date]]) + button("Ouvrir la supervision", v.lien, tone),
-        note: "Pour ne plus recevoir ces e-mails : NEXORA → Sécurité → Supervision &amp; alertes → Alertes, ou demande à l’administrateur de ton équipe.",
-        reason: "Tu reçois cet e-mail parce que les alertes par e-mail sont activées pour un site que tu suis dans NEXORA.",
+        note: "Pour ne plus recevoir ces e-mails : NEXORA → Sécurité → Supervision &amp; alertes → Alertes, ou demande à l’administrateur de votre équipe.",
+        reason: "Vous recevez cet e-mail parce que les alertes par e-mail sont activées pour un site que vous suivez dans NEXORA.",
         year: v.annee,
       }),
     }
@@ -388,15 +388,15 @@ export function updateEmail(d: UpdateData): Rendered {
       kicker: "Nouvelle version",
       badge: pill(`Version ${d.version}`, TONES.brand),
       title,
-      preheader: d.intro.trim().slice(0, 140) || `Découvre les nouveautés de NEXORA ${d.version}.`,
+      preheader: d.intro.trim().slice(0, 140) || `Découvrez les nouveautés de NEXORA ${d.version}.`,
       greeting: esc(greeting),
       body:
         (d.intro.trim() ? p(esc(d.intro.trim()).replace(/\n/g, "<br>")) : "") +
         (items.length ? p(strong("Les nouveautés"), "margin-bottom:12px") + bullets(items.map(esc)) : "") +
         button(`Télécharger NEXORA ${d.version}`, d.url) +
-        p(`Déjà installée ? NEXORA te propose la mise à jour au prochain lancement (Réglages → Mises à jour). Tu peux aussi utiliser <a class="nx-link" href="${esc(NEXORA_WEB_URL)}" style="color:#0a0a0a;text-decoration:underline;font-weight:600">NEXORA en ligne</a>, toujours à jour.`, "font-size:14px"),
-      note: "Tes réglages et tes projets sont conservés pendant la mise à jour.",
-      reason: "Tu reçois cet e-mail parce que tu as un compte NEXORA.",
+        p(`Déjà installée ? NEXORA vous propose la mise à jour au prochain lancement (Réglages → Mises à jour). Vous pouvez aussi utiliser <a class="nx-link" href="${esc(NEXORA_WEB_URL)}" style="color:#0a0a0a;text-decoration:underline;font-weight:600">NEXORA en ligne</a>, toujours à jour.`, "font-size:14px"),
+      note: "Vos réglages et vos projets sont conservés pendant la mise à jour.",
+      reason: "Vous recevez cet e-mail parce que vous avez un compte NEXORA.",
     }),
     text: [
       greeting,
@@ -417,7 +417,7 @@ const UPDATE_SAMPLE: UpdateData = {
   version: "1.2.2",
   title: "",
   intro: "Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.",
-  highlights: ["Nouvelle interface : noir et gris très sombre, ou blanc et gris clair, boutons et champs arrondis.", "Appareils réalistes dans le Studio : 10 modèles à taille réelle, avec ta scène ou ton image à l’écran.", "Formulaires plus lisibles et lanceur 1.0.5, qui se met à jour tout seul."],
+  highlights: ["Nouvelle interface : noir et gris très sombre, ou blanc et gris clair, boutons et champs arrondis.", "Appareils réalistes dans le Studio : 10 modèles à taille réelle, avec votre scène ou votre image à l’écran.", "Formulaires plus lisibles et lanceur 1.0.5, qui se met à jour tout seul."],
   url: NEXORA_WEB_URL,
   greeting: "Bonjour Camille,",
 }
@@ -449,7 +449,7 @@ export type InvoiceMailData = {
 }
 
 export function invoiceEmail(d: InvoiceMailData): Rendered {
-  const title = d.paid ? `Ta facture ${d.number} (payée)` : `Ta facture ${d.number}`
+  const title = d.paid ? `Votre facture ${d.number} (payée)` : `Votre facture ${d.number}`
   return {
     subject: `Facture ${d.number} · NEXORA`,
     html: layout({
@@ -460,10 +460,10 @@ export function invoiceEmail(d: InvoiceMailData): Rendered {
       preheader: `Facture ${d.number} de ${d.total}, en pièce jointe au format PDF.`,
       greeting: esc(d.greeting),
       body:
-        p(`Voici ta facture ${strong(d.number)}. Tu la trouveras en pièce jointe au format PDF.`) +
+        p(`Voici votre facture ${strong(d.number)}. Vous la trouverez en pièce jointe au format PDF.`) +
         rows([["Facture", esc(d.number)], ["Date", esc(d.issuedAt)], ...(d.paid ? [] : ([["Échéance", esc(d.dueAt)]] as [string, string][])), ["Montant", esc(d.total)]], true) +
         (d.paid
-          ? p("Merci, ton paiement est bien reçu. Garde cette facture pour ta comptabilité.")
+          ? p("Merci, votre paiement est bien reçu. Gardez cette facture pour votre comptabilité.")
           : d.payment.trim()
             ? p(strong("Modalités de paiement"), "margin-bottom:8px") + box(`<div class="nx-text" style="font-size:14.5px;line-height:1.65;color:#3d3d3d">${esc(d.payment.trim()).replace(/\n/g, "<br>")}</div>`)
             : "") +
@@ -473,19 +473,19 @@ export function invoiceEmail(d: InvoiceMailData): Rendered {
 <td class="nx-ink" style="vertical-align:middle;font-size:14.5px;font-weight:600;color:#0a0a0a">${esc(d.filename)}<div class="nx-muted" style="font-size:12.5px;font-weight:400;color:#6b6b6b">Pièce jointe · PDF</div></td></tr></table>`,
           "padding:14px 16px",
         ),
-      note: "Une question sur cette facture ? Réponds simplement à cet e-mail.",
-      reason: `Tu reçois cet e-mail parce que ${esc(d.issuerName)} t’a adressé une facture pour NEXORA.`,
+      note: "Une question sur cette facture ? Répondez simplement à cet e-mail.",
+      reason: `Vous recevez cet e-mail parce que ${esc(d.issuerName)} vous a adressé une facture pour NEXORA.`,
     }),
     text: [
       d.greeting,
       "",
-      `Voici ta facture ${d.number} (pièce jointe : ${d.filename}).`,
+      `Voici votre facture ${d.number} (pièce jointe : ${d.filename}).`,
       `Date : ${d.issuedAt}`,
       ...(d.paid ? ["Statut : payée. Merci !"] : [`Échéance : ${d.dueAt}`]),
       `Montant : ${d.total}`,
       ...(!d.paid && d.payment.trim() ? ["", "Modalités de paiement :", d.payment.trim()] : []),
       "",
-      "Une question ? Réponds à cet e-mail.",
+      "Une question ? Répondez à cet e-mail.",
       "— L’équipe NEXORA",
     ].join("\n"),
   }

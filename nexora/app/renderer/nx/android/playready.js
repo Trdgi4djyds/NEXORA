@@ -77,13 +77,13 @@ export const storeUrl = (appId) => `https://play.google.com/store/apps/details?i
 export function inviteText({ appName = 'mon application', appId = '' } = {}) {
   return `Bonjour,
 
-Je prépare la sortie de « ${appName} » sur Google Play et j'ai besoin de ton aide pendant 14 jours.
+Je prépare la sortie de « ${appName} » sur Google Play et j'ai besoin de votre aide pendant 14 jours.
 
-1. Ouvre ce lien avec le compte Google de ton téléphone Android et appuie sur « Devenir testeur » :
+1. Ouvrez ce lien avec le compte Google de votre téléphone Android et appuyez sur « Devenir testeur » :
 ${optInUrl(appId)}
 2. Installe l'application depuis Google Play :
 ${storeUrl(appId)}
-3. Garde-la installée au moins 14 jours et ouvre-la de temps en temps. Tes remarques sont les bienvenues.
+3. Gardez-la installée au moins 14 jours et ouvrez-la de temps en temps. Vos remarques sont les bienvenues.
 
 Merci beaucoup !`;
 }
@@ -108,11 +108,11 @@ export function productionAnswers({ appName = '', test, feedback = [], audience 
   const app = appName ? `« ${appName} »` : 'l’application';
   const site = appName ? `de « ${appName} »` : 'de l’entreprise';
   return [
-    ['Comment as-tu recruté les testeurs ?', `J'ai invité ${who} de mon entourage et de mes premiers clients par e-mail, avec le lien d'inscription au test fermé.`],
+    ['Comment avez-vous recruté les testeurs ?', `J'ai invité ${who} de mon entourage et de mes premiers clients par e-mail, avec le lien d'inscription au test fermé.`],
     ['Comment les testeurs ont-ils utilisé l’application ?', `Le test a duré ${days}. Les testeurs ont installé ${app} depuis Google Play et ont utilisé ses principales fonctions dans des conditions réelles.`],
-    ['Quels retours as-tu reçus ?', feedback.length ? `${feedback.length} retour(s), dont :\n${notes}` : 'Aucun retour bloquant n’a été signalé.'],
-    ['Qu’as-tu changé après le test ?', fixed.length ? `${fixed.length} point(s) corrigé(s) : ${fixed.slice(0, 5).map((f) => f.text).join(' ; ')}.` : 'Corrections mineures d’affichage ; aucun problème de stabilité constaté.'],
-    ['Comment sais-tu que l’application est prête ?', 'Les testeurs ont pu réaliser les parcours principaux sans blocage, aucun plantage n’est relevé et la fiche, la politique de confidentialité et la déclaration de sécurité des données sont complètes.'],
+    ['Quels retours avez-vous reçus ?', feedback.length ? `${feedback.length} retour(s), dont :\n${notes}` : 'Aucun retour bloquant n’a été signalé.'],
+    ['Qu’avez-vous changé après le test ?', fixed.length ? `${fixed.length} point(s) corrigé(s) : ${fixed.slice(0, 5).map((f) => f.text).join(' ; ')}.` : 'Corrections mineures d’affichage ; aucun problème de stabilité constaté.'],
+    ['Comment savez-vous que l’application est prête ?', 'Les testeurs ont pu réaliser les parcours principaux sans blocage, aucun plantage n’est relevé et la fiche, la politique de confidentialité et la déclaration de sécurité des données sont complètes.'],
     ['À qui s’adresse l’application ?', audience || `Aux clients et visiteurs qui utilisent déjà le site ${site} et veulent y accéder plus vite depuis leur téléphone.`],
   ];
 }

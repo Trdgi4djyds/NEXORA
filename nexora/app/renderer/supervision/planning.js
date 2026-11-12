@@ -36,9 +36,9 @@ export async function renderPlanning(ctx) {
       </form>`, { sub: 'Aucune alerte, et la période ne compte pas dans la disponibilité' })}
     ${card('Repères de déploiement', `${kList}
       <form class="sup-mform" data-kform autocomplete="off"><div class="sup-form-grid"><label class="field"><span>Libellé</span><input class="input" name="label" placeholder="Version 2.4 en ligne" required></label><label class="field"><span>Concerne</span><select class="input" name="siteId">${siteOpts}</select></label></div><div class="nxs-actions">${btn('Ajouter un repère', 'type="submit"', { ic: 'plus', cls: 'small' })}</div></form>
-      <div class="sup-note" data-hook-box>${icon('info', 12)} Les envois Git du Dev Lab et les constructions du Desktop Builder ajoutent un repère tout seuls. ${acc.signedIn && acc.orgId ? '<button type="button" class="link-btn small" data-hook-get>Afficher l’adresse pour ton intégration continue</button>' : 'Connecte-toi pour recevoir aussi les déploiements de ton intégration continue.'}</div>`, { sub: 'Visibles sur les graphiques : un ralentissement juste après une mise en ligne saute aux yeux' })}
+      <div class="sup-note" data-hook-box>${icon('info', 12)} Les envois Git du Dev Lab et les constructions du Desktop Builder ajoutent un repère tout seuls. ${acc.signedIn && acc.orgId ? '<button type="button" class="link-btn small" data-hook-get>Afficher l’adresse pour votre intégration continue</button>' : 'Connectez-vous pour recevoir aussi les déploiements de votre intégration continue.'}</div>`, { sub: 'Visibles sur les graphiques : un ralentissement juste après une mise en ligne saute aux yeux' })}
   </div>
-  ${card('Rapport mensuel', `<div class="sup-report"><p class="pop-note">Disponibilité de chaque site, objectifs atteints ou manqués, incidents et déploiements du mois, dans un PDF à partager avec ton équipe ou tes clients. Avec la surveillance 24 h/24, les serveurs NEXORA l’envoient aussi par e-mail le 1er de chaque mois (offre Standard).</p>
+  ${card('Rapport mensuel', `<div class="sup-report"><p class="pop-note">Disponibilité de chaque site, objectifs atteints ou manqués, incidents et déploiements du mois, dans un PDF à partager avec votre équipe ou vos clients. Avec la surveillance 24 h/24, les serveurs NEXORA l’envoient aussi par e-mail le 1er de chaque mois (offre Standard).</p>
     <div class="sup-report-a"><select class="input" data-rmonth>${months.map(([v, l], i) => `<option value="${v}" ${i === 1 ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>${btn('Créer le rapport PDF', 'data-rmake', { ic: 'download', cls: 'small primary' })}</div></div>`, { cls: 'sup-card-quiet' })}`;
 }
 
@@ -54,7 +54,7 @@ function bind(ctx, maint) {
     ev.preventDefault();
     const fd = new FormData(mf);
     const start = new Date(String(fd.get('start'))).getTime();
-    if (!start) { toast('Indique la date de début.', { kind: 'bad' }); return; }
+    if (!start) { toast('Indiquez la date de début.', { kind: 'bad' }); return; }
     try { await saveMaint([...maint, { id: Math.random().toString(36).slice(2, 10), label: String(fd.get('label')).trim(), siteId: String(fd.get('siteId') || ''), start, end: start + Number(fd.get('dur')) * 60000, recur: fd.get('recur') }]); toast('Maintenance prévue : aucune alerte pendant cette période.'); } catch (err) { toast(err.message, { kind: 'bad' }); }
   };
   for (const b of v.querySelectorAll('[data-mdel]')) b.onclick = () => saveMaint(maint.filter((w) => w.id !== b.dataset.mdel)).catch((err) => toast(err.message, { kind: 'bad' }));
@@ -73,7 +73,7 @@ function bind(ctx, maint) {
       if (!u) throw new Error('Adresse indisponible.');
       box.innerHTML = `${icon('link', 12)} À appeler à la fin de chaque déploiement : <code>curl -fsS -X POST "${esc(u)}?label=Version%201.2"</code> <button type="button" class="link-btn small" data-hook-copy>Copier</button>`;
       box.querySelector('[data-hook-copy]').onclick = () => call('clipboard:write', `curl -fsS -X POST "${u}?label=Déploiement"`).then(() => toast('Commande copiée.'));
-    } catch (err) { box.innerHTML = `${icon('info', 12)} ${esc(/pas encore disponible|outdated/i.test(err.message) ? 'Les déploiements par intégration continue ne sont pas encore disponibles. Réessaie plus tard.' : err.message)}`; }
+    } catch (err) { box.innerHTML = `${icon('info', 12)} ${esc(/pas encore disponible|outdated/i.test(err.message) ? 'Les déploiements par intégration continue ne sont pas encore disponibles. Réessayez plus tard.' : err.message)}`; }
   };
   const mk = v.querySelector('[data-rmake]');
   if (mk) mk.onclick = async () => {

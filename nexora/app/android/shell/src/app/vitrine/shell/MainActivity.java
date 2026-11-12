@@ -177,7 +177,7 @@ public class MainActivity extends Activity {
             // Le plus souvent : composant WebView d'Android absent, désactivé ou en cours de mise à jour.
             note("webview", t);
             showFatal("Impossible d'afficher l'application",
-                "Le composant « Android System WebView » est indisponible ou en cours de mise à jour. Mets-le à jour depuis le Play Store, puis relance l'application.");
+                "Le composant « Android System WebView » est indisponible ou en cours de mise à jour. Mettez-le à jour depuis le Play Store, puis relancez l'application.");
             return;
         }
         extras = new Extras(this);
@@ -249,7 +249,7 @@ public class MainActivity extends Activity {
         try { PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0); ver = Build.VERSION.SDK_INT >= 28 ? pi.getLongVersionCode() : pi.versionCode; } catch (Exception ignored) { /* version inconnue */ }
         JSONObject maint = j.optJSONObject("maintenance");
         if (maint != null && maint.optBoolean("enabled")) {
-            showFatal(maint.optString("title", "Maintenance en cours"), maint.optString("text", "L'application revient très vite. Merci de ta patience."));
+            showFatal(maint.optString("title", "Maintenance en cours"), maint.optString("text", "L'application revient très vite. Merci de votre patience."));
             return;
         }
         if (remoteShown) return;
@@ -260,7 +260,7 @@ public class MainActivity extends Activity {
             // Mise à jour non obligatoire : une notification locale reste après fermeture de la boîte de dialogue.
             if (cfg.notifyUpdate && !j.optBoolean("forceUpdate", false)) eventNotify(992, j.optString("updateTitle", "Mise à jour disponible"), j.optString("updateText", "Une nouvelle version de l'application est disponible."));
             new android.app.AlertDialog.Builder(this).setTitle(j.optString("updateTitle", "Mise à jour nécessaire"))
-                .setMessage(j.optString("updateText", "Une nouvelle version de l'application est disponible. Mets-la à jour pour continuer."))
+                .setMessage(j.optString("updateText", "Une nouvelle version de l'application est disponible. Mettez-la à jour pour continuer."))
                 .setCancelable(!j.optBoolean("forceUpdate", false))
                 .setPositiveButton("Mettre à jour", (d, w) -> { try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(store))); } catch (Exception ignored) { /* aucun magasin */ } if (j.optBoolean("forceUpdate", false)) finish(); })
                 .setNegativeButton(j.optBoolean("forceUpdate", false) ? null : "Plus tard", null).show();
@@ -852,6 +852,13 @@ public class MainActivity extends Activity {
         if (billing != null && billing.optBoolean("enabled", false)) {
             step("billing", () -> Class.forName("app.vitrine.shell.VtBilling").getMethod("attach", android.app.Activity.class, WebView.class, String.class).invoke(null, this, web, billing.toString()));
         }
+        // NEXORA #115 : modules (OneSignal, AdMob, Google Analytics, Meta), ajoutés par leurs kits ; absents sinon.
+        for (final String[] mod : new String[][] {{"onesignal", "VtOneSignal"}, {"admob", "VtAdMob"}, {"analytics", "VtAnalytics"}, {"meta", "VtMeta"}}) {
+            final org.json.JSONObject mc = cfg.raw != null ? cfg.raw.optJSONObject(mod[0]) : null;
+            if (mc != null && mc.optBoolean("enabled", false)) {
+                step(mod[0], () -> Class.forName("app.vitrine.shell." + mod[1]).getMethod("attach", android.app.Activity.class, WebView.class, String.class).invoke(null, this, web, mc.toString()));
+            }
+        }
         web.setWebViewClient(new Client());
         web.setWebChromeClient(new Chrome());
         web.setDownloadListener((url, userAgent, disposition, mime, length) -> download(url, userAgent, disposition, mime));
@@ -993,7 +1000,7 @@ public class MainActivity extends Activity {
         try {
             BiometricPrompt.Builder b = new BiometricPrompt.Builder(this)
                 .setTitle(cfg.appName.isEmpty() ? "Confirmation" : cfg.appName)
-                .setDescription(reason == null || reason.isEmpty() ? "Confirme ton identité" : reason);
+                .setDescription(reason == null || reason.isEmpty() ? "Confirmez votre identité" : reason);
             if (Build.VERSION.SDK_INT >= 30) {
                 b.setAllowedAuthenticators(android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_WEAK | android.hardware.biometrics.BiometricManager.Authenticators.DEVICE_CREDENTIAL);
             } else {
@@ -1546,7 +1553,7 @@ public class MainActivity extends Activity {
         }
         if ("confirm".equals(cfg.back) && System.currentTimeMillis() - backPressedAt > 2000) {
             backPressedAt = System.currentTimeMillis();
-            Toast.makeText(this, "Appuie encore une fois pour quitter", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Appuyez encore une fois pour quitter", Toast.LENGTH_SHORT).show();
             return;
         }
         finish();
@@ -1590,7 +1597,7 @@ public class MainActivity extends Activity {
                     ui.post(() -> {
                         boolean wasDown = !netUp;
                         netUp = true;
-                        if (wasDown && cfg.notifyNetwork) eventNotify(991, cfg.appName.isEmpty() ? "Connexion rétablie" : cfg.appName, "Tu es de nouveau en ligne.");
+                        if (wasDown && cfg.notifyNetwork) eventNotify(991, cfg.appName.isEmpty() ? "Connexion rétablie" : cfg.appName, "Vous êtes de nouveau en ligne.");
                         if (lastFailed) retry();
                     });
                 }

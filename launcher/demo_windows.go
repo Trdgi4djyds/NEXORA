@@ -65,7 +65,7 @@ func init() {
 	case "desinstallation-ouvert":
 		page(uninstallBusyPage())
 	case "desinstallation-terminee":
-		page(uninstallDonePage("NEXORA Devs Toolbox a été retiré de ce PC. Ce que tu as choisi de garder est resté en place ; une réinstallation le retrouvera."))
+		page(uninstallDonePage("NEXORA Devs Toolbox a été retiré de ce PC. Ce que vous avez choisi de garder est resté en place ; une réinstallation le retrouvera."))
 	case "integrite":
 		securityScreen("integrity", secTitle("integrity"), "", secActions("integrity"))
 	case "connexion":

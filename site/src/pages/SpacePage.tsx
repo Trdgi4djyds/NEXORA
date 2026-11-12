@@ -56,7 +56,7 @@ function PlanSplit({ space }: { space: Space }) {
     {
       id: "free",
       title: "Gratuit",
-      lead: space.limits ? space.limits.free : space.plan === "free" ? "Pour découvrir et créer" : "Ouvert pendant ton essai de 24 h, puis réservé à Pro",
+      lead: space.limits ? space.limits.free : space.plan === "free" ? "Pour découvrir et créer" : "Ouvert pendant votre essai de 24 h, puis réservé à Pro",
       items: space.plan === "free" ? space.features.filter((f) => !f.plan) : [],
     },
     {
@@ -90,11 +90,11 @@ function PlanSplit({ space }: { space: Space }) {
                 {/* #072 : un espace gratuit sans fonction Pro n'est pas « à ouvrir » : il est déjà inclus. */}
                 {c.id === "pro"
                   ? space.limits
-                    ? "Les mêmes fonctions, pour toutes tes applications : projets, membres et constructions plus larges."
+                    ? "Les mêmes fonctions, pour toutes vos applications : projets, membres et constructions plus larges."
                     : "Des limites plus larges : projets, membres et constructions."
                   : space.plan === "free"
                     ? "Cet espace est déjà complet avec l’offre Gratuite."
-                    : "Passe à Pro pour garder cet espace après ton essai."}
+                    : "Passez à Pro pour garder cet espace après votre essai."}
               </li>
             )}
           </ul>
@@ -173,7 +173,7 @@ export function SpacePage({ space }: { space: Space }) {
       <section className="section lime relative overflow-hidden" data-capture="fonctions">
         <Watermark icon={space.icon} className="wm-tr" size={520} />
         <div className="wrap relative">
-          <SectionHead eyebrow="Ce que tu peux faire" title={[space.name, "en détail."]} lead={`${space.features.length} fonctions livrées dans NEXORA ${APP_VERSION}, avec l’offre qui les ouvre.`} />
+          <SectionHead eyebrow="Ce que vous pouvez faire" title={[space.name, "en détail."]} lead={`${space.features.length} fonctions livrées dans NEXORA ${APP_VERSION}, avec l’offre qui les ouvre.`} />
           <ol className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" data-glow>
             {space.features.map((f, i) => (
               <Reveal as="li" className="glow surface feat-card flex flex-col p-7" key={f.title} delay={(i % 3) * 70}>
@@ -217,7 +217,7 @@ export function SpacePage({ space }: { space: Space }) {
 
       <section className="section-tight light" data-capture="offres">
         <div className="wrap">
-          <SectionHead eyebrow="Dans tes offres" title={["Ce qui est inclus,", "offre par offre."]}>
+          <SectionHead eyebrow="Dans vos offres" title={["Ce qui est inclus,", "offre par offre."]}>
             <a className="link-arrow" href="/tarifs/comparatif">
               Voir le comparatif complet <Icon name="nxArrowRight" size={15} stroke={2} />
             </a>

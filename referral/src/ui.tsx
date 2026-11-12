@@ -75,7 +75,7 @@ export function CopyButton({ value, label, small }: { value: string; label: stri
           toast(`${label} copié.`)
           setTimeout(() => setDone(false), 1600)
         } catch {
-          toast("Copie impossible : sélectionne le texte, puis copie-le.", true)
+          toast("Copie impossible : sélectionnez le texte, puis copiez-le.", true)
         }
       }}
     >

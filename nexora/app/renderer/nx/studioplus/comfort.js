@@ -52,9 +52,9 @@ export function wrapFlash(proto) {
     const lumas = this.sxLumas; this.sxLumas = null;
     if (r && lumas && lumas.length > 2) {
       const rate = flashRate(lumas, this.anim.fps || 30);
-      if (rate > 3) toast(`Attention : la vidéo contient jusqu’à ${String(rate).replace('.', ',')} flashs par seconde. Au-delà de 3, elle peut gêner les personnes photosensibles : allonge ou espace les flashs.`, { kind: 'bad', sticky: true });
+      if (rate > 3) toast(`Attention : la vidéo contient jusqu’à ${String(rate).replace('.', ',')} flashs par seconde. Au-delà de 3, elle peut gêner les personnes photosensibles : allongez ou espace les flashs.`, { kind: 'bad', sticky: true });
     }
-    if (r && document.hidden && 'Notification' in window) { try { new Notification('Vidéo exportée', { body: 'NEXORA a terminé le rendu de ta vidéo.' }); } catch { /* */ } }
+    if (r && document.hidden && 'Notification' in window) { try { new Notification('Vidéo exportée', { body: 'NEXORA a terminé le rendu de votre vidéo.' }); } catch { /* */ } }
     return r;
   };
 }

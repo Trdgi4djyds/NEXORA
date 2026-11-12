@@ -148,13 +148,13 @@ function analyzeDesktopSource(dir) {
     a.webDir = a.webDirs[0] || '';
     if (!p.hasIndexHtml && !p.staticDirs.length) {
       a.kind = 'unsupported';
-      a.unsupported = { title: 'Aucune page d’accueil', message: 'Ce dossier ne contient pas de fichier index.html. Choisis le dossier du site (celui qui contient index.html) ou le dossier racine d’un projet de code.' };
+      a.unsupported = { title: 'Aucune page d’accueil', message: 'Ce dossier ne contient pas de fichier index.html. Choisissez le dossier du site (celui qui contient index.html) ou le dossier racine d’un projet de code.' };
     }
   } else if (SERVER_ONLY[p.id] || ['php', 'python', 'ruby', 'dotnet', 'go', 'deno'].includes(p.kind) && !['jekyll'].includes(p.id)) {
     a.kind = 'unsupported';
     a.unsupported = {
       title: `${p.label} a besoin d’un serveur`,
-      message: 'Ce projet produit ses pages sur un serveur : il ne peut pas être intégré tel quel dans un logiciel. Publie-le en ligne (ou lance-le sur ton réseau), puis choisis la source « Site en ligne » avec son adresse.',
+      message: 'Ce projet produit ses pages sur un serveur : il ne peut pas être intégré tel quel dans un logiciel. Publiez-le en ligne (ou lancez-le sur votre réseau), puis choisissez la source « Site en ligne » avec son adresse.',
     };
   } else {
     a.kind = 'web';
@@ -170,10 +170,10 @@ function analyzeDesktopSource(dir) {
     else if (scripts.build) a.buildCmd = runCmd(a.pm, 'build');
     a.webDirs = outs;
     a.webDir = outs.find((o) => has(dir, path.join(o, 'index.html'))) || outs[0];
-    if (!a.buildCmd) a.warnings.push('Aucun script « build » dans le package.json : indique la commande qui produit le site, ou choisis directement son dossier construit.');
-    if (p.id === 'next' && !nextIsStatic(dir)) a.warnings.push('Next.js : ajoute output: \'export\' dans next.config pour produire un site statique (dossier out). Sans cela, les pages rendues par le serveur ne fonctionneront pas hors ligne.');
-    if (p.id === 'sveltekit' && !deps['@sveltejs/adapter-static']) a.warnings.push('SvelteKit : installe @sveltejs/adapter-static pour produire un site statique (dossier build).');
-    if (['remix', 'react-router'].includes(p.id)) a.warnings.push('Active le mode « SPA » (ssr: false) pour produire un site sans serveur (dossier build/client).');
+    if (!a.buildCmd) a.warnings.push('Aucun script « build » dans le package.json : indiquez la commande qui produit le site, ou choisissez directement son dossier construit.');
+    if (p.id === 'next' && !nextIsStatic(dir)) a.warnings.push('Next.js : ajoutez output: \'export\' dans next.config pour produire un site statique (dossier out). Sans cela, les pages rendues par le serveur ne fonctionneront pas hors ligne.');
+    if (p.id === 'sveltekit' && !deps['@sveltejs/adapter-static']) a.warnings.push('SvelteKit : installez @sveltejs/adapter-static pour produire un site statique (dossier build).');
+    if (['remix', 'react-router'].includes(p.id)) a.warnings.push('Activez le mode « SPA » (ssr: false) pour produire un site sans serveur (dossier build/client).');
     if (p.unsupported) a.warnings.push(p.unsupported.message);
   }
   a.icons = iconCandidates(dir, a.webDir ? [path.join(dir, a.webDir)] : []);

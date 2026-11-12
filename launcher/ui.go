@@ -29,11 +29,11 @@ var uiTones = map[string][2]string{
 // NEXORA #084 : messages fixes et sans détail technique (fichier en cause, signatures, serveurs) ; le détail reste
 // dans journal-securite.txt et dans le rapport envoyé au service de sécurité.
 var securityBodies = map[string]string{
-	"integrity": "L’installation de NEXORA a été modifiée : NEXORA ne sera pas ouvert. Clique sur Réparer pour réinstaller les fichiers officiels.",
-	"offline":   "Impossible de joindre NEXORA. Vérifie ta connexion à Internet, puis réessaie.",
-	"server":    "NEXORA est momentanément indisponible. Réessaie dans quelques minutes.",
-	"manifest":  "La vérification de la licence n’a pas abouti. Vérifie la date et l’heure de Windows, puis réessaie.",
-	"outdated":  "Cette version de NEXORA n’est plus autorisée. Mets-la à jour pour continuer.",
+	"integrity": "L’installation de NEXORA a été modifiée : NEXORA ne sera pas ouvert. Cliquez sur Réparer pour réinstaller les fichiers officiels.",
+	"offline":   "Impossible de joindre NEXORA. Vérifiez votre connexion à Internet, puis réessayez.",
+	"server":    "NEXORA est momentanément indisponible. Réessayez dans quelques minutes.",
+	"manifest":  "La vérification de la licence n’a pas abouti. Vérifiez la date et l’heure de Windows, puis réessayez.",
+	"outdated":  "Cette version de NEXORA n’est plus autorisée. Mettez-la à jour pour continuer.",
 }
 
 func securitySpec(kind, title, msg string, actions []string) uiSpec {
@@ -52,7 +52,7 @@ func securitySpec(kind, title, msg string, actions []string) uiSpec {
 	}
 	body := securityBodies[kind]
 	if body == "" {
-		body = "NEXORA ne peut pas s’ouvrir pour le moment. Réessaie dans un instant."
+		body = "NEXORA ne peut pas s’ouvrir pour le moment. Réessayez dans un instant."
 	}
 	_ = msg // message détaillé : journal seulement
 	s := uiSpec{tone: tone, icon: icon, kicker: "VÉRIFICATION DE LA LICENCE", title: title, body: body, cancel: "quit", width: 480}
@@ -110,7 +110,7 @@ var (
 func welcomePage(root string, update bool) wizPage {
 	p := wizPage{
 		step: 0, steps: installSteps, kicker: "ASSISTANT D’INSTALLATION", title: "Installer NEXORA Devs Toolbox",
-		body: "L’assistant va installer NEXORA Devs Toolbox sur ce PC. Aucun droit d’administrateur n’est nécessaire : tout est installé dans ton dossier personnel.",
+		body: "L’assistant va installer NEXORA Devs Toolbox sur ce PC. Aucun droit d’administrateur n’est nécessaire : tout est installé dans votre dossier personnel.",
 		rows: [][2]string{{"Dossier d’installation", root}, {"Espace nécessaire", "environ 450 Mo"}},
 		options: []uiOption{
 			{title: "Créer un raccourci sur le Bureau", checked: true},
@@ -120,7 +120,7 @@ func welcomePage(root string, update bool) wizPage {
 	}
 	if update {
 		p.title, p.buttons[1].label = "Mettre à jour NEXORA Devs Toolbox", "Mettre à jour"
-		p.body = "NEXORA Devs Toolbox est déjà installé sur ce PC : l’assistant va le mettre à jour. Tes réglages, projets et ton compte sont gardés."
+		p.body = "NEXORA Devs Toolbox est déjà installé sur ce PC : l’assistant va le mettre à jour. Vos réglages, projets et votre compte sont gardés."
 	}
 	return p
 }
@@ -130,7 +130,7 @@ func installProgressPage(update bool) wizPage {
 	if update {
 		t = "Mise à jour de NEXORA…"
 	}
-	return wizPage{step: 1, steps: installSteps, kicker: "INSTALLATION", title: t, body: "Patiente quelques minutes : NEXORA sera prêt dès la fin.",
+	return wizPage{step: 1, steps: installSteps, kicker: "INSTALLATION", title: t, body: "Patientez quelques minutes : NEXORA sera prêt dès la fin.",
 		progress: true, buttons: []uiButton{{"cancel", "Annuler", "secondary"}}, cancel: "cancel"}
 }
 
@@ -140,9 +140,9 @@ func installErrorPage(kind, title string, actions []string) wizPage {
 }
 
 func installDonePage(update bool) wizPage {
-	t, body := "NEXORA Devs Toolbox est installé", "Tu le retrouves sur le Bureau et dans le menu Démarrer. À chaque ouverture, il vérifie ta licence et tient NEXORA à jour."
+	t, body := "NEXORA Devs Toolbox est installé", "Vous le retrouvez sur le Bureau et dans le menu Démarrer. À chaque ouverture, il vérifie votre licence et tient NEXORA à jour."
 	if update {
-		t, body = "NEXORA Devs Toolbox est à jour", "Tes réglages, projets et ton compte sont gardés."
+		t, body = "NEXORA Devs Toolbox est à jour", "Vos réglages, projets et votre compte sont gardés."
 	}
 	return wizPage{step: 2, steps: installSteps, tone: "success", icon: "circleCheck", title: t, body: body,
 		options: []uiOption{{title: "Lancer NEXORA maintenant", checked: true}},
@@ -152,10 +152,10 @@ func installDonePage(update bool) wizPage {
 func uninstallPage(root string) wizPage {
 	return wizPage{
 		step: 0, steps: uninstallSteps, kicker: "DÉSINSTALLATION", title: "Désinstaller NEXORA Devs Toolbox",
-		body: "Le logiciel sera retiré de ce PC. Coche ce que tu veux aussi supprimer ; le reste est gardé pour une réinstallation.",
+		body: "Le logiciel sera retiré de ce PC. Cochez ce que vous voulez aussi supprimer ; le reste est gardé pour une réinstallation.",
 		options: []uiOption{
 			{title: "Mes documents et projets", desc: "Documents\\NEXORA : sites et applications construites."},
-			{title: "Mes réglages, mon compte et ma licence", desc: "Tu devras te reconnecter après une réinstallation."},
+			{title: "Mes réglages, mon compte et ma licence", desc: "Vous devrez vous reconnecter après une réinstallation."},
 			{title: "Les bibliothèques téléchargées", desc: "Plusieurs Go possibles, retéléchargées au besoin."},
 		},
 		buttons: []uiButton{{"cancel", "Annuler", "secondary"}, {"ok", "Désinstaller", "danger"}}, cancel: "cancel",
@@ -168,7 +168,7 @@ func uninstallProgressPage() wizPage {
 
 func uninstallBusyPage() wizPage {
 	return wizPage{step: 0, steps: uninstallSteps, tone: "warning", icon: "alert", title: "NEXORA est encore ouvert",
-		body: "Ferme NEXORA, puis clique sur Réessayer.", buttons: []uiButton{{"cancel", "Annuler", "secondary"}, {"retry", "Réessayer", "primary"}}, cancel: "cancel"}
+		body: "Fermez NEXORA, puis cliquez sur Réessayer.", buttons: []uiButton{{"cancel", "Annuler", "secondary"}, {"retry", "Réessayer", "primary"}}, cancel: "cancel"}
 }
 
 func uninstallDonePage(body string) wizPage {

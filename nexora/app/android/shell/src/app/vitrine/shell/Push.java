@@ -649,8 +649,8 @@ public final class Push {
     private static Notification.Style conversation(JSONObject m, JSONArray h) {
         String group = m.optString("conversation");
         Notification.MessagingStyle st = Build.VERSION.SDK_INT >= 28
-            ? new Notification.MessagingStyle(new Person.Builder().setName("Toi").build())
-            : new Notification.MessagingStyle("Toi");
+            ? new Notification.MessagingStyle(new Person.Builder().setName("Vous").build())
+            : new Notification.MessagingStyle("Vous");
         if (!group.isEmpty()) st.setConversationTitle(group);
         if (Build.VERSION.SDK_INT >= 28) st.setGroupConversation(!group.isEmpty());
         for (int i = 0; i < h.length(); i++) {
@@ -677,7 +677,7 @@ public final class Push {
     private static void addActions(Context ctx, Notification.Builder b, Config c, JSONObject m, int icon) {
         if (c.pushActionUrl.isEmpty()) return;
         int ic = icon != 0 ? icon : android.R.drawable.ic_menu_send;
-        RemoteInput ri = new RemoteInput.Builder("vt_reply").setLabel("Ta réponse").build();
+        RemoteInput ri = new RemoteInput.Builder("vt_reply").setLabel("Votre réponse").build();
         Notification.Action.Builder reply = new Notification.Action.Builder(Icon.createWithResource(ctx, ic), "Répondre", broadcast(ctx, m, "reply", 1, true))
             .addRemoteInput(ri).setAllowGeneratedReplies(true);
         if (Build.VERSION.SDK_INT >= 28) reply.setSemanticAction(Notification.Action.SEMANTIC_ACTION_REPLY);
@@ -957,7 +957,7 @@ public final class Push {
             try {
                 JSONObject o = new JSONObject(json == null || json.isEmpty() ? "{}" : json);
                 if (cfg(app).pushRegisterUrl.isEmpty()) {
-                    a.resolve(id, false, JSONObject.quote("Aucune adresse d'enregistrement : indique-la dans l'App Builder (section Notifications push)."));
+                    a.resolve(id, false, JSONObject.quote("Aucune adresse d'enregistrement : indiquez-la dans l'App Builder (section Notifications push)."));
                     return;
                 }
                 if (token == null) {

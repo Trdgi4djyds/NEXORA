@@ -743,7 +743,7 @@ final class Wtn {
     public void biometricAuthWithDismissOnCancel(String json) {
         JSONObject o = parse(json);
         if (!ok()) return;
-        a.ui.post(() -> a.biometric(o.optString("prompt", "Confirme ton identité"), success -> {
+        a.ui.post(() -> a.biometric(o.optString("prompt", "Confirmez votre identité"), success -> {
             cb(obj("type", "biometricAuthWithDismissOnCancel", "isSuccess", success, "secret", success ? readSecret() : null));
             if (!success && !o.optBoolean("isAuthenticationOptional", false)) a.finish();
         }));

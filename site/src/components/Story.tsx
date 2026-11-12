@@ -25,7 +25,7 @@ export function Story() {
             </h2>
           </div>
           <p className="lead max-w-[46ch] text-[15px]! lg:justify-self-end">
-            Conçois, code, teste, sécurise, publie et présente : chaque espace reprend ton projet là où le précédent s’est arrêté, sur ton PC.
+            Concevez, codez, testez, sécurisez, publiez et présentez : chaque espace reprend votre projet là où le précédent s’est arrêté, sur votre PC.
           </p>
         </Reveal>
         <div className="mt-14 grid gap-10 lg:mt-20 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-16">

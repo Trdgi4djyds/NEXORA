@@ -18,8 +18,8 @@ export function AiSection() {
             <SectionHead
               index="05"
               eyebrow="Assistant IA"
-              title={["Ton IA, ta clé,", "sans limite."]}
-              lead="Branche ton propre compte Claude, GPT, Gemini ou Mistral, ou fais tourner Ollama sur ton PC. NEXORA ne compte pas tes requêtes et ne facture rien pour l’IA."
+              title={["Votre IA, votre clé,", "sans limite."]}
+              lead="Branchez votre propre compte Claude, GPT, Gemini ou Mistral, ou faites tourner Ollama sur votre PC. NEXORA ne compte pas vos requêtes et ne facture rien pour l’IA."
               className="mb-10 md:mb-12"
             />
             <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">

@@ -298,6 +298,6 @@ export function cleanParts(raw) {
     color: /^#[0-9a-f]{6}$/i.test((p && p.color) || '') ? p.color.toLowerCase() : '#cccccc',
     metal: Math.min(1, Math.max(0, Number(p && p.metal) || 0)), rough: Math.min(1, Math.max(0, p && p.rough != null ? Number(p.rough) : 0.5)),
   }));
-  if (!parts.length) throw new Error('L’IA n’a proposé aucune forme. Reformule ta description.');
+  if (!parts.length) throw new Error('L’IA n’a proposé aucune forme. Reformulez votre description.');
   return { name: String((raw && raw.name) || 'Objet IA').slice(0, 40), parts };
 }

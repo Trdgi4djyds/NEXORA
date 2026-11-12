@@ -21,7 +21,7 @@ function hookScript() {
   return `#!/bin/sh
 ${MARK} (installé par NEXORA).
 # Bloque « git push » si les commits envoyés ajoutent une clé, un jeton ou un fichier .env.
-# Pour passer outre une fois (à tes risques) : git push --no-verify
+# Pour passer outre une fois (à vos risques) : git push --no-verify
 PATTERNS='${PATTERNS.join('|').replace(/'/g, "'\\''")}'
 z40=0000000000000000000000000000000000000000
 input=$(cat)
@@ -55,14 +55,14 @@ exit 0
 
 function hooksDir(dir) {
   const git = path.join(dir, '.git');
-  if (!fs.existsSync(git)) throw new Error('Ce dossier n’est pas un dépôt Git : initialise-le d’abord (git init).');
+  if (!fs.existsSync(git)) throw new Error('Ce dossier n’est pas un dépôt Git : initialisez-le d’abord (git init).');
   // Dossier réellement utilisé par Git (core.hooksPath du dépôt, de l'utilisateur ou du système compris).
   let real = '';
   try { real = require('child_process').execFileSync('git', ['-C', dir, 'rev-parse', '--git-path', 'hooks'], { encoding: 'utf8', windowsHide: true, timeout: 8000 }).trim(); } catch { real = ''; }
   if (real) {
     const abs = path.resolve(dir, real);
     const inside = !path.relative(path.resolve(dir), abs).startsWith('..');
-    if (!inside) throw new Error(`Git utilise des crochets partagés par tous tes dépôts (core.hooksPath = ${abs}) : NEXORA n’y touche pas. Retire ce réglage ou ajoute toi-même le crochet « pre-push ».`);
+    if (!inside) throw new Error(`Git utilise des crochets partagés par tous vos dépôts (core.hooksPath = ${abs}) : NEXORA n’y touche pas. Retirez ce réglage ou ajoutez vous-même le crochet « pre-push ».`);
     return abs;
   }
   let base = git;
@@ -163,7 +163,7 @@ function ciScript() {
   return `#!/usr/bin/env node
 'use strict';
 // Audit de sécurité généré par NEXORA (aucune dépendance, Node.js 18 ou plus) :
-//   node .nexora/audit-securite.cjs [--url https://ton-site.com] [--min-score 70] [--sarif fichier.sarif]
+//   node .nexora/audit-securite.cjs [--url https://votre-site.com] [--min-score 70] [--sarif fichier.sarif]
 // Code de sortie 1 : faille critique ou élevée dans les dépendances, secret dans le code, ou note du site trop basse.
 const fs = require('fs');
 const path = require('path');

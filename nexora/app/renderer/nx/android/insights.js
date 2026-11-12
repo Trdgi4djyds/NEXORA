@@ -20,9 +20,9 @@ const ago = (d) => {
 /* Message clair quand la base n'a pas encore la migration, ou que la connexion manque. */
 export function explain(err) {
   const m = String((err && (err.message || err.details)) || err || '');
-  if (/PGRST202|Could not find the function|function .* does not exist|schema cache/i.test(m)) return 'Les statistiques des applications ne sont pas encore disponibles. Réessaie plus tard.';
-  if (/JWT|Connexion requise|not authenticated|permission denied/i.test(m)) return 'Connecte-toi à ton compte NEXORA pour voir les statistiques.';
-  if (/Failed to fetch|NetworkError|network/i.test(m)) return 'Connexion à NEXORA impossible : vérifie ta connexion Internet.';
+  if (/PGRST202|Could not find the function|function .* does not exist|schema cache/i.test(m)) return 'Les statistiques des applications ne sont pas encore disponibles. Réessayez plus tard.';
+  if (/JWT|Connexion requise|not authenticated|permission denied/i.test(m)) return 'Connectez-vous à votre compte NEXORA pour voir les statistiques.';
+  if (/Failed to fetch|NetworkError|network/i.test(m)) return 'Connexion à NEXORA impossible : vérifiez votre connexion Internet.';
   return m || 'Erreur inconnue.';
 }
 
@@ -80,13 +80,13 @@ export function install(proto, SECTIONS) {
     const stale = i.enabled && i.appId && i.appId !== cfg.appId;
     const twa = cfg.engine === 'twa' && cfg.source.kind === 'url';
     let h = this.card('Statistiques de l’application', `
-      <p class="ab-hint">À chaque ouverture et à chaque plantage, l’application envoie à ton compte NEXORA : un identifiant d’installation tiré au hasard (aucun identifiant du téléphone), le modèle, la version d’Android et de l’application, la langue et, pour un plantage, la trace de l’erreur. Les données sont gardées 180 jours et visibles par toi seul.</p>
-      ${user ? '' : `<div class="ab-note">${icon('user', 15)}<span>Connecte-toi à ton compte NEXORA : les statistiques y sont rangées.</span><button class="btn small primary" data-act="insights-login">${icon('user', 13)}<span>Se connecter</span></button></div>`}
-      ${twa ? `<div class="ab-note">${icon('info', 15)}<span>En mode Trusted Web Activity, c’est Chrome qui affiche le site : seules les ouvertures de la WebView de repli seraient comptées. Choisis le moteur NEX-WEBVIEW (section Source) pour des statistiques complètes.</span></div>` : ''}
+      <p class="ab-hint">À chaque ouverture et à chaque plantage, l’application envoie à votre compte NEXORA : un identifiant d’installation tiré au hasard (aucun identifiant du téléphone), le modèle, la version d’Android et de l’application, la langue et, pour un plantage, la trace de l’erreur. Les données sont gardées 180 jours et visibles par vous seul.</p>
+      ${user ? '' : `<div class="ab-note">${icon('user', 15)}<span>Connectez-vous à votre compte NEXORA : les statistiques y sont rangées.</span><button class="btn small primary" data-act="insights-login">${icon('user', 13)}<span>Se connecter</span></button></div>`}
+      ${twa ? `<div class="ab-note">${icon('info', 15)}<span>En mode Trusted Web Activity, c’est Chrome qui affiche le site : seules les ouvertures de la WebView de repli seraient comptées. Choisissez le moteur NEX-WEBVIEW (section Source) pour des statistiques complètes.</span></div>` : ''}
       ${this.tog('Envoyer les statistiques et les plantages', 'insights.enabled', 'Pris en compte à la prochaine construction de l’application.')}
       ${i.enabled ? this.tog('Compter les ouvertures', 'insights.launches', 'Sinon, seuls les plantages et les erreurs sont envoyés.') : ''}
-      ${i.enabled && !i.key ? `<div class="ab-row"><button class="btn small primary" data-act="insights-register" ${user && idOk ? '' : 'disabled'}>${icon('cloud', 13)}<span>Inscrire l’application sur mon compte</span></button>${idOk ? '' : '<span class="ab-hint">Indique d’abord un identifiant valide (section Identité).</span>'}</div>` : ''}
-      ${stale ? `<div class="ab-note">${icon('warn', 15)}<span>L’identifiant a changé (${esc(i.appId)} → ${esc(cfg.appId)}) : inscris à nouveau l’application.</span><button class="btn small" data-act="insights-register">${icon('sync', 13)}<span>Inscrire</span></button></div>` : ''}
+      ${i.enabled && !i.key ? `<div class="ab-row"><button class="btn small primary" data-act="insights-register" ${user && idOk ? '' : 'disabled'}>${icon('cloud', 13)}<span>Inscrire l’application sur mon compte</span></button>${idOk ? '' : '<span class="ab-hint">Indiquez d’abord un identifiant valide (section Identité).</span>'}</div>` : ''}
+      ${stale ? `<div class="ab-note">${icon('warn', 15)}<span>L’identifiant a changé (${esc(i.appId)} → ${esc(cfg.appId)}) : inscrivez à nouveau l’application.</span><button class="btn small" data-act="insights-register">${icon('sync', 13)}<span>Inscrire</span></button></div>` : ''}
       ${i.enabled && i.key && !stale ? `<p class="ab-hint nxi-ok">${icon('pass', 13)}<span>Application inscrite. Les premières données arrivent après la construction et l’installation de l’application.</span></p>` : ''}
       ${i.err ? `<p class="ab-hint bad">${esc(i.err)}</p>` : ''}`);
     if (!i.app || !user) return h;
@@ -106,7 +106,7 @@ export function install(proto, SECTIONS) {
         ${kpi('Plantages', fmtN(t.crashes), `${fmtN(t.errors)} autre(s) erreur(s)`, t.crashes ? 'bad' : '')}
         ${kpi('Sans plantage', free == null ? '—' : `${free.toFixed(1).replace('.', ',')} %`, 'des installations', free != null && free < 99 ? 'warn' : '')}
       </div>
-      ${t.installs ? chart(d.daily || []) : `<p class="ab-hint">Aucune donnée sur cette période. ${t.last ? '' : 'Construis l’application avec l’option ci-dessus, installe-la et ouvre-la : la première ouverture apparaît ici.'}</p>`}
+      ${t.installs ? chart(d.daily || []) : `<p class="ab-hint">Aucune donnée sur cette période. ${t.last ? '' : 'Construisez l’application avec l’option ci-dessus, installez-la et ouvrez-la : la première ouverture apparaît ici.'}</p>`}
       ${t.last ? `<p class="ab-hint">Dernier événement reçu ${ago(t.last)}.</p>` : ''}`);
     if (t.installs) {
       h += this.card('Répartition', `<div class="nxi-tbls">${table('Versions de l’application', d.versions, ['version', 'crashes'])}${table('Appareils', d.models, ['model'])}${table('Versions d’Android', d.os, ['os'])}</div>`);
@@ -130,7 +130,7 @@ export function install(proto, SECTIONS) {
   proto.act_insights_register = async function act() {
     const cfg = this.cfg; const i = ins(cfg);
     if (!cloud.user) { await this.act_insights_login(); return; }
-    if (!ID_RE.test(cfg.appId || '')) throw new Error('Indique d’abord un identifiant d’application valide (section Identité).');
+    if (!ID_RE.test(cfg.appId || '')) throw new Error('Indiquez d’abord un identifiant d’application valide (section Identité).');
     const n = busy('Inscription de l’application…');
     try {
       const { data, error } = await supabase.rpc('app_insights_register', { p_app_id: cfg.appId, p_name: cfg.appName || '' });
@@ -140,7 +140,7 @@ export function install(proto, SECTIONS) {
       this.save();
       this.nxIns = null;
       this.renderForm();
-      toast('Application inscrite : construis-la pour qu’elle envoie ses statistiques.');
+      toast('Application inscrite : construisez-la pour qu’elle envoie ses statistiques.');
     } finally { n.close(); }
   };
   proto.act_insights_ai = async function act(btn) {
@@ -149,14 +149,14 @@ export function install(proto, SECTIONS) {
     if (!c) return;
     const ai = await import('../../dist/chunks/ai-RLNIHTXY.js');
     const { renderMd } = await import('../../dist/chunks/md-PEY42J2W.js');
-    if (!await ai.aiReady()) { toast('Configure d’abord une IA (bouton IA en haut à droite).'); ai.openAiSettings(); return; }
+    if (!await ai.aiReady()) { toast('Configurez d’abord une IA (bouton IA en haut à droite).'); ai.openAiSettings(); return; }
     const out = $(`[data-nxi-ai="${btn.dataset.i}"]`, this.el);
     out.hidden = false;
     out.innerHTML = '<div class="ab-ai-load"><span class="spinner small"></span> L’IA lit la trace…</div>';
     let txt = '';
     try {
       await ai.aiChat({
-        system: 'Tu aides le propriétaire d’une application Android construite par NEXORA (une WebView qui affiche son site, code natif fourni par NEXORA). On te donne un plantage regroupé. Explique simplement la cause probable, dis si elle vient du site (JavaScript, page trop lourde), du téléphone (mémoire, WebView ancienne) ou du code natif, et donne les actions concrètes. Réponds en français, brièvement, avec des listes.',
+        system: 'Vous aidez le propriétaire d’une application Android construite par NEXORA (une WebView qui affiche son site, code natif fourni par NEXORA). On vous donne un plantage regroupé. Expliquez simplement la cause probable, dites si elle vient du site (JavaScript, page trop lourde), du téléphone (mémoire, WebView ancienne) ou du code natif, et donnez les actions concrètes. Répondez en français, brièvement, avec des listes.',
         messages: [{ role: 'user', content: `Application : ${this.cfg.appName} (${this.cfg.appId})\nType : ${c.kind}\nEmpreinte : ${c.signature}\nOccurrences : ${c.count} sur ${c.installs} installation(s)\nVersion : ${c.version} · Appareil : ${c.model || '?'}\nMessage : ${c.detail && c.detail.message}\nTrace :\n${(c.detail && c.detail.stack || '').slice(0, 5000)}` }],
         onChunk: (p) => { txt += p; out.innerHTML = `<div class="ab-ai-md">${renderMd(txt)}</div>`; },
       });
@@ -177,7 +177,7 @@ export function install(proto, SECTIONS) {
   proto.validate = function validate() {
     const out = validate0.call(this) || [];
     const i = this.cfg.insights;
-    if (i && i.enabled && (!i.key || i.appId !== this.cfg.appId)) out.push(['insights', 'Statistiques : inscris l’application sur ton compte NEXORA (section Statistiques et plantages), ou décoche l’option.']);
+    if (i && i.enabled && (!i.key || i.appId !== this.cfg.appId)) out.push(['insights', 'Statistiques : inscrivez l’application sur votre compte NEXORA (section Statistiques et plantages), ou décochez l’option.']);
     return out;
   };
 }

@@ -50,14 +50,14 @@ const tabs = (mode) => `<div class="nxl-tabs" role="tablist" aria-label="Compte 
 const head = (title, text, badge = '') => `<div class="nxl-head">${badge ? `<span class="nxl-badge">${ico(badge, 20)}</span>` : ''}<h2>${title}</h2><p>${text}</p></div>`;
 const submit = (label, disabled = false) => `<button class="btn primary wide nx-submit nxl-submit" ${disabled ? 'disabled' : ''}><span>${label}</span>${ico('nxlArrow', 16)}</button>`;
 const msg = '<p class="nx-msg" data-msg role="status" aria-live="polite"></p>';
-const EMAIL = { label: 'Adresse e-mail', name: 'email', type: 'email', auto: 'email', icon: 'mail', placeholder: 'toi@exemple.com' };
+const EMAIL = { label: 'Adresse e-mail', name: 'email', type: 'email', auto: 'email', icon: 'mail', placeholder: 'vous@exemple.com' };
 
 // Formulaire d'un mode (appelé à la place de Z(mode) de chunk-EOM7FQDL.js). closed : inscriptions fermées.
 export function form(mode = 'login', closed = false) {
   if (mode === 'signup') {
     return `<form class="nx-auth nxl-form" data-auth="signup">
       ${tabs('signup')}
-      ${head('Crée ton compte', 'Gratuit, sans carte bancaire. Tes projets, designs et scènes te suivent sur le web et sur Windows.')}
+      ${head('Créez votre compte', 'Gratuit, sans carte bancaire. Vos projets, designs et scènes vous suivent sur le web et sur Windows.')}
       ${closed ? '<p class="nx-alert">Les inscriptions sont momentanément fermées.</p>' : ''}
       ${field({ label: 'Nom complet', name: 'name', auto: 'name', icon: 'user', placeholder: 'Camille Laurent', attrs: 'required maxlength="80" data-autofocus' })}
       ${field({ ...EMAIL, attrs: 'required' })}
@@ -71,7 +71,7 @@ export function form(mode = 'login', closed = false) {
   if (mode === 'forgot') {
     return `<form class="nx-auth nxl-form" data-auth="forgot">
       <button type="button" class="nxl-back" data-auth-go="login">${ico('nxlBack', 15)}<span>Retour à la connexion</span></button>
-      ${head('Mot de passe oublié ?', 'Indique ton adresse e-mail : tu recevras un lien pour choisir un nouveau mot de passe.', 'key')}
+      ${head('Mot de passe oublié ?', 'Indiquez votre adresse e-mail : vous recevrez un lien pour choisir un nouveau mot de passe.', 'key')}
       ${field({ ...EMAIL, attrs: 'required data-autofocus' })}
       ${submit('Envoyer le lien')}
       ${msg}
@@ -79,7 +79,7 @@ export function form(mode = 'login', closed = false) {
   }
   if (mode === 'reset') {
     return `<form class="nx-auth nxl-form" data-auth="reset">
-      ${head('Choisis un nouveau mot de passe', 'Au moins 8 caractères. Mélange majuscules, chiffres et symboles pour plus de sécurité.', 'lock')}
+      ${head('Choisissez un nouveau mot de passe', 'Au moins 8 caractères. Mélange majuscules, chiffres et symboles pour plus de sécurité.', 'lock')}
       ${password({ label: 'Nouveau mot de passe', name: 'password', auto: 'new-password', placeholder: '8 caractères minimum', attrs: 'minlength="8" required data-autofocus', meter: true })}
       ${password({ label: 'Confirmation', name: 'password2', auto: 'new-password', placeholder: 'Le même mot de passe', attrs: 'minlength="8" required' })}
       ${submit('Enregistrer le mot de passe')}
@@ -88,14 +88,14 @@ export function form(mode = 'login', closed = false) {
   }
   return `<form class="nx-auth nxl-form" data-auth="login">
     ${tabs('login')}
-    ${head('Bon retour sur NEXORA', 'Connecte-toi pour retrouver tes projets, designs et scènes 3D, sur Windows comme sur le web.')}
+    ${head('Bon retour sur NEXORA', 'Connectez-vous pour retrouver vos projets, designs et scènes 3D, sur Windows comme sur le web.')}
     ${field({ ...EMAIL, attrs: 'required data-autofocus' })}
-    ${password({ label: 'Mot de passe', name: 'password', auto: 'current-password', placeholder: 'Ton mot de passe', attrs: 'required', aside: '<button type="button" class="link-btn nxl-forgot" data-auth-go="forgot">Mot de passe oublié ?</button>' })}
+    ${password({ label: 'Mot de passe', name: 'password', auto: 'current-password', placeholder: 'Votre mot de passe', attrs: 'required', aside: '<button type="button" class="link-btn nxl-forgot" data-auth-go="forgot">Mot de passe oublié ?</button>' })}
     ${submit('Se connecter')}
     <div class="nxl-or" role="separator"><span>ou</span></div>
     <button type="button" class="btn wide nxl-alt" data-auth-magic>${ico('mail', 15)}<span>Recevoir un lien de connexion par e-mail</span></button>
     ${msg}
-    <p class="nx-switch">Pas encore de compte ? <button type="button" class="link-btn" data-auth-go="signup">Crée-le gratuitement</button></p>
+    <p class="nx-switch">Pas encore de compte ? <button type="button" class="link-btn" data-auth-go="signup">Créez-le gratuitement</button></p>
   </form>`;
 }
 
@@ -103,16 +103,16 @@ export function form(mode = 'login', closed = false) {
 export function sheet(mode = 'login') {
   const feats = [
     ['sync', 'Un seul compte', 'Réglages et projets synchronisés entre Windows et le web'],
-    ['phone', 'Responsive Lab', 'Tes sites dans de vrais appareils, côte à côte'],
-    ['cube', 'Studio 3D et NEX-DESIGN', 'Visuels, maquettes et vidéos de tes projets'],
-    ['bell', 'Supervision', 'Tes sites surveillés, alertes par e-mail'],
+    ['phone', 'Responsive Lab', 'Vos sites dans de vrais appareils, côte à côte'],
+    ['cube', 'Studio 3D et NEX-DESIGN', 'Visuels, maquettes et vidéos de vos projets'],
+    ['bell', 'Supervision', 'Vos sites surveillés, alertes par e-mail'],
   ];
   return `<div class="nxl">
     <aside class="nxl-brand">
       <div class="nxl-logo"><img src="${LOGO}" alt=""><b>NEXORA</b></div>
       <div class="nxl-art">${authArt('nxl-app')}</div>
       <div class="nxl-pitch">
-        <h3>Crée, teste et publie tes sites et applications.</h3>
+        <h3>Créez, testez et publiez vos sites et applications.</h3>
         <ul>${feats.map(([i, b, t]) => `<li><span class="nxl-ic">${ico(i, 15)}</span><span><b>${b}</b><small>${t}</small></span></li>`).join('')}</ul>
       </div>
       <p class="nxl-trust">${ico('lock', 12)}<span>Connexion chiffrée · données protégées</span></p>

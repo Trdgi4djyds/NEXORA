@@ -72,7 +72,7 @@ export async function toAndroid(D, st) {
   const { png512 } = await iconSet(D, st);
   go('android');
   const a = await until(() => state.android && state.android.set && state.android.cfg && state.android);
-  if (!a) { toast('Ouvre l’App Builder et choisis une application, puis réessaie.'); return; }
+  if (!a) { toast('Ouvrez l’App Builder et choisissez une application, puis réessayez.'); return; }
   a.set('icon.image', png512, { rerender: true });
   toast('Icône envoyée à l’application ouverte dans l’App Builder.');
 }
@@ -80,7 +80,7 @@ export async function toDesktop(D, st) {
   const { png512 } = await iconSet(D, st);
   go('desktop');
   const d = await until(() => state.desktop && state.desktop.cfg && state.desktop);
-  if (!d) { toast('Crée d’abord un logiciel dans le Desktop Builder, puis réessaie.'); return; }
+  if (!d) { toast('Créez d’abord un logiciel dans le Desktop Builder, puis réessayez.'); return; }
   // Même enregistrement que l'import d'image du Desktop Builder (nx/desktop/index.js).
   const a = d.cfg;
   a.icon = { ...(a.icon || {}), image: png512, shape: st.bg ? 'rounded' : 'none', padding: st.bg ? 0 : 4 };
@@ -107,14 +107,14 @@ export async function mockup3d(D) {
   } catch (e) { toast(String(e.message || e), { kind: 'bad' }); } finally { done(t); }
 }
 export function panel(D, st) {
-  return `<p class="dzx-hint">${D.sel().length ? 'Source : la sélection.' : 'Source : la page entière (sélectionne un logo pour n’utiliser que lui).'}</p>
+  return `<p class="dzx-hint">${D.sel().length ? 'Source : la sélection.' : 'Source : la page entière (sélectionnez un logo pour n’utiliser que lui).'}</p>
     <label class="nxd-check dzx-check"><input type="checkbox" data-spk="bg" ${st.bg ? 'checked' : ''}> Fond plein</label>${st.bg ? `<input type="color" data-spk="bgColor" value="${esc(st.bgColor || '#ffffff')}" aria-label="Couleur du fond">` : ''}
     <div class="dzp-sub">Icônes d’application</div>
     <p class="dzx-hint">Android (classique, ronde, adaptative), Play Store 512 px, Windows (.ico 16 à 256 px), web (PWA, favicon, Apple).</p>
     <div class="nx-btns">${btn('sp-zip', 'nxZip', 'Toutes les icônes (ZIP)', '', 'primary')}${btn('sp-android', 'android', 'Icône de l’app Android')}${btn('sp-desktop', 'display', 'Icône du logiciel Windows')}</div>
     <div class="dzp-sub">Maquettes et appareils</div>
     <div class="nx-btns">${btn('sp-3d', 'cube', 'Maquette 3D de la page')}${btn('sp-proto', 'phone', 'Prototype sur un téléphone')}</div>
-    <p class="dzx-hint">Pour le Responsive Lab, exporte le prototype en page HTML (onglet Prototype) et ouvre-la dans un appareil.</p>`;
+    <p class="dzx-hint">Pour le Responsive Lab, exportez le prototype en page HTML (onglet Prototype) et ouvrez-la dans un appareil.</p>`;
 }
 export async function onPanel(D, e, rerender, st) {
   const b = e.target.closest('[data-dzx]');

@@ -96,7 +96,7 @@
         });
       });
     },
-    authenticate: function (reason) { return call('authenticate', [String(reason || 'Confirme ton identité')]); },
+    authenticate: function (reason) { return call('authenticate', [String(reason || 'Confirmez votre identité')]); },
     requestPermission: function (name) { return call('requestPermission', [String(name)]); },
     pickContact: function () { return call('pickContact', []); },
     keepAwake: function (on) { N.keepAwake(!!on); },
@@ -194,7 +194,7 @@
       clear: function (tag) { try { N.pushClear(tag == null ? '' : String(tag)); } catch (e) { /* ancienne application */ } },
       register: function (opts) { return api.getToken().then(function () { return call('pushRegister', [JSON.stringify(opts || {})]); }); },
       deleteToken: function () {
-        if (!has('pushDeleteToken')) return Promise.reject(new Error('Fonction indisponible : reconstruis l’application avec NEXORA'));
+        if (!has('pushDeleteToken')) return Promise.reject(new Error('Fonction indisponible : reconstruisez l’application avec NEXORA'));
         return call('pushDeleteToken', []);
       },
       openSettings: function (what, channel) { try { N.pushSettings(String(what || 'notifications'), channel ? String(channel) : ''); } catch (e) { /* ancienne application */ } },
@@ -222,6 +222,86 @@
     acknowledge: function (token) { return callB('acknowledge', [String(token)]); },
     consume: function (token) { return callB('consume', [String(token)]); },
     onPurchase: function (cb) { window.addEventListener('nexora-billing', function (e) { if (e.detail && e.detail.type === 'purchase') cb(e.detail.purchases); }); },
+  };
+  // NEXORA #115 : modules OneSignal, AdMob, Google Analytics et Meta (si l'application a été construite avec eux).
+  function callM(obj, label, method, args) {
+    if (!obj) return Promise.reject(new Error(label + ' non activé dans cette application'));
+    return new Promise(function (res, rej) {
+      var id = 'm' + (++seq) + '_' + Date.now();
+      pending[id] = { res: res, rej: rej };
+      try { obj[method].apply(obj, args.concat([id])); } catch (e) { delete pending[id]; rej(e); }
+    });
+  }
+  function json(o) { try { return JSON.stringify(o || {}); } catch (e) { return '{}'; } }
+  function soft(obj, method, args) { try { if (obj) obj[method].apply(obj, args); } catch (e) { /* module absent */ } }
+  // OneSignal : login(idClient), logout(), tag(clé, valeur), untag(clé), email(adresse), status(), requestPermission(),
+  // optIn(), optOut(), onOpen(cb) (notification touchée : { title, body, url, data }).
+  var OS = window.VitrineOneSignal;
+  window.__vitrineOneSignal = function (d) { try { window.dispatchEvent(new CustomEvent('nexora-onesignal', { detail: d })); } catch (e) { /* ignore */ } };
+  App.onesignal = {
+    available: !!OS,
+    login: function (id) { soft(OS, 'login', [String(id || '')]); },
+    logout: function () { soft(OS, 'logout', []); },
+    tag: function (k, v) { soft(OS, 'addTag', [String(k), v == null ? '' : String(v)]); },
+    untag: function (k) { soft(OS, 'removeTag', [String(k)]); },
+    email: function (a) { soft(OS, 'addEmail', [String(a || '')]); },
+    language: function (l) { soft(OS, 'setLanguage', [String(l || '')]); },
+    optIn: function () { soft(OS, 'optIn', []); },
+    optOut: function () { soft(OS, 'optOut', []); },
+    status: function () { return callM(OS, 'OneSignal', 'status', []); },
+    requestPermission: function () { return callM(OS, 'OneSignal', 'requestPermission', []); },
+    onOpen: function (cb) { window.addEventListener('nexora-onesignal', function (e) { if (e.detail && e.detail.type === 'open') cb(e.detail); }); },
+  };
+  // AdMob : showBanner(), hideBanner(), loadInterstitial(), showInterstitial(), loadRewarded(),
+  // showRewarded() → { earned, amount, type }, privacyOptions(), status(), onBanner(cb).
+  // La hauteur de la bannière est posée dans la variable CSS --nexora-banner (0 quand elle est masquée).
+  var AD = window.VitrineAdMob;
+  window.__vitrineAds = function (d) {
+    try {
+      if (d && d.type === 'banner') document.documentElement.style.setProperty('--nexora-banner', (d.shown ? (d.height || 0) : 0) + 'px');
+      window.dispatchEvent(new CustomEvent('nexora-ads', { detail: d }));
+    } catch (e) { /* ignore */ }
+  };
+  App.ads = {
+    available: !!AD,
+    showBanner: function () { soft(AD, 'showBanner', []); },
+    hideBanner: function () { soft(AD, 'hideBanner', []); },
+    loadInterstitial: function () { return callM(AD, 'AdMob', 'loadInterstitial', []); },
+    showInterstitial: function () { return callM(AD, 'AdMob', 'showInterstitial', []); },
+    loadRewarded: function () { return callM(AD, 'AdMob', 'loadRewarded', []); },
+    showRewarded: function () { return callM(AD, 'AdMob', 'showRewarded', []); },
+    privacyOptions: function () { return callM(AD, 'AdMob', 'privacyOptions', []); },
+    status: function () { return callM(AD, 'AdMob', 'status', []); },
+    onBanner: function (cb) { window.addEventListener('nexora-ads', function (e) { if (e.detail && e.detail.type === 'banner') cb(e.detail); }); },
+  };
+  // Google Analytics : event(nom, paramètres), screen(nom), userId(id), userProperty(nom, valeur), enable(oui/non).
+  var GA = window.VitrineAnalytics;
+  App.analytics = {
+    available: !!GA,
+    event: function (name, params) { soft(GA, 'logEvent', [String(name || ''), json(params)]); },
+    screen: function (name, cls) { soft(GA, 'screen', [String(name || location.pathname), String(cls || '')]); },
+    userId: function (id) { soft(GA, 'setUserId', [id == null ? '' : String(id)]); },
+    userProperty: function (k, v) { soft(GA, 'setUserProperty', [String(k), v == null ? '' : String(v)]); },
+    enable: function (on) { soft(GA, 'setEnabled', [on !== false]); },
+  };
+  try {
+    if (GA && GA.autoScreens()) {
+      var lastScreen = '';
+      var track = function () { var s = location.pathname + location.hash; if (s === lastScreen) return; lastScreen = s; soft(GA, 'screen', [s, document.title || '']); };
+      track();
+      window.addEventListener('hashchange', track);
+      window.addEventListener('popstate', track);
+      ['pushState', 'replaceState'].forEach(function (k) { var o = history[k]; history[k] = function () { var r = o.apply(this, arguments); setTimeout(track, 0); return r; }; });
+    }
+  } catch (e) { /* suivi automatique facultatif */ }
+  // Meta : event(nom, paramètres, valeur), purchase(montant, devise, paramètres), userId(id), flush().
+  var MT = window.VitrineMeta;
+  App.meta = {
+    available: !!MT,
+    event: function (name, params, value) { soft(MT, 'logEvent', [String(name || ''), json(params), Number(value) || 0]); },
+    purchase: function (amount, currency, params) { soft(MT, 'logPurchase', [Number(amount) || 0, String(currency || 'EUR'), json(params)]); },
+    userId: function (id) { soft(MT, 'setUserId', [id == null ? '' : String(id)]); },
+    flush: function () { soft(MT, 'flush', []); },
   };
   window.NexoraApp = App;
   window.VitrineApp = App;

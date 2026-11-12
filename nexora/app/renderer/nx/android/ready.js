@@ -67,11 +67,11 @@ export function install(proto, SECTIONS) {
     if (this.key && this.key.sha256) {
       sign.push(item('ok', 'Clé de signature prête', 'Google Play signe ensuite l’application avec sa propre clé (signature d’application Play).', 'publish', 'Voir'));
       sign.push(cfg.nxKeySaved ? item('ok', 'Clé sauvegardée', `Exportée le ${new Date(cfg.nxKeySaved).toLocaleDateString('fr-FR')}.`, 'publish', 'Voir')
-        : item('warn', 'Sauvegarde ta clé de signature', 'Sans elle, impossible d’envoyer une mise à jour si le PC est perdu : exporte-la et range-la en lieu sûr.', 'publish', 'Exporter'));
-    } else sign.push(item('bad', 'Crée ou importe la clé de signature', 'Elle prouve que les mises à jour viennent bien de toi.', 'publish', 'Créer'));
+        : item('warn', 'Sauvegardez votre clé de signature', 'Sans elle, impossible d’envoyer une mise à jour si le PC est perdu : exportez-la et rangez-la en lieu sûr.', 'publish', 'Exporter'));
+    } else sign.push(item('bad', 'Créez ou importez la clé de signature', 'Elle prouve que les mises à jour viennent bien de vous.', 'publish', 'Créer'));
     const r = this.result;
     if (r && r.aab && Number(r.versionCode) === Number(cfg.versionCode)) sign.push(item('ok', `Fichier AAB construit (n° ${r.versionCode})`, 'Format exigé par Google Play pour les nouvelles applications.'));
-    else sign.push(item(cfg.outputs && cfg.outputs.aab ? 'warn' : 'bad', 'Construis l’application au format AAB', cfg.outputs && cfg.outputs.aab ? 'Case « AAB Play Store » cochée : clique sur « Construire » en bas à droite.' : 'Coche « AAB Play Store » en bas à droite, puis « Construire ».', 'publish', 'Voir'));
+    else sign.push(item(cfg.outputs && cfg.outputs.aab ? 'warn' : 'bad', 'Construisez l’application au format AAB', cfg.outputs && cfg.outputs.aab ? 'Case « AAB Play Store » cochée : cliquez sur « Construire » en bas à droite.' : 'Coche « AAB Play Store » en bas à droite, puis « Construire ».', 'publish', 'Voir'));
     groups.push(['Signature et fichier', sign]);
 
     // 4. Fiche Play Store (contrôles de listing.js).
@@ -84,11 +84,11 @@ export function install(proto, SECTIONS) {
     const rules = [];
     const pr = practices(cfg);
     rules.push(item(pr.length ? 'warn' : 'info', pr.length ? `Sécurité des données : ${pr.length} type(s) de données à déclarer` : 'Sécurité des données : rien à déclarer pour l’application elle-même',
-      pr.length ? pr.map((p) => esc(p.cat)).join(', ') + '. Déclare aussi ce que ton site collecte (comptes, formulaires, mesure d’audience).' : 'Déclare seulement ce que ton site collecte (comptes, formulaires, commandes, mesure d’audience).', 'listing', 'Réponses'));
-    if ((cfg.permissions || []).includes('location')) rules.push(item('warn', 'Position : explique son usage dans la fiche', 'Google vérifie que la description justifie chaque autorisation sensible.', 'native', 'Voir'));
+      pr.length ? pr.map((p) => esc(p.cat)).join(', ') + '. Déclarez aussi ce que votre site collecte (comptes, formulaires, mesure d’audience).' : 'Déclarez seulement ce que votre site collecte (comptes, formulaires, commandes, mesure d’audience).', 'listing', 'Réponses'));
+    if ((cfg.permissions || []).includes('location')) rules.push(item('warn', 'Position : expliquez son usage dans la fiche', 'Google vérifie que la description justifie chaque autorisation sensible.', 'native', 'Voir'));
     if (cfg.billing && cfg.billing.enabled && cfg.engine !== 'twa') {
       const n = (cfg.billing.products || []).filter((p) => p && p.id).length;
-      rules.push(item(n ? 'ok' : 'bad', n ? `Achats intégrés : ${n} produit(s)` : 'Achats intégrés activés sans produit', n ? 'Crée les mêmes identifiants dans la Play Console (Monétiser › Produits).' : 'Ajoute au moins un produit ou désactive les achats intégrés.', 'billing', 'Voir'));
+      rules.push(item(n ? 'ok' : 'bad', n ? `Achats intégrés : ${n} produit(s)` : 'Achats intégrés activés sans produit', n ? 'Créez les mêmes identifiants dans la Play Console (Monétiser › Produits).' : 'Ajoutez au moins un produit ou désactivez les achats intégrés.', 'billing', 'Voir'));
     }
     if (cfg.config && cfg.config.passcode && cfg.config.passcode.enabled) rules.push(item('warn', 'Code d’accès : à donner à Google', 'Play Console › Contenu de l’application › Accès à l’application.', 'listing', 'Voir'));
     rules.push(item('info', 'Classification, public cible, annonces', 'Questionnaires à remplir une fois dans la Play Console ; les réponses conseillées sont dans la fiche.', 'listing', 'Réponses'));
@@ -97,9 +97,9 @@ export function install(proto, SECTIONS) {
     // 6. Accès de NEXORA à Google Play.
     const st = this.playSt || {};
     const acc = [];
-    if (!st.serviceAccount) acc.push(item('warn', 'Clé d’accès Google Play absente', 'Facultatif : sans elle, envoie le fichier AAB à la main depuis la Play Console.', 'store', 'Ajouter'));
+    if (!st.serviceAccount) acc.push(item('warn', 'Clé d’accès Google Play absente', 'Facultatif : sans elle, envoyez le fichier AAB à la main depuis la Play Console.', 'store', 'Ajouter'));
     else if (this.playChecked) acc.push(item('ok', 'Accès à Google Play vérifié', this.playChecked.tracks && this.playChecked.tracks.length ? `Pistes : ${this.playChecked.tracks.map((t) => esc(t.track)).join(', ')}.` : 'Aucune version encore envoyée.', 'store', 'Voir'));
-    else acc.push(item('warn', 'Clé enregistrée, accès non vérifié', 'Vérifie l’accès avant d’envoyer.', 'store', 'Vérifier'));
+    else acc.push(item('warn', 'Clé enregistrée, accès non vérifié', 'Vérifiez l’accès avant d’envoyer.', 'store', 'Vérifier'));
     groups.push(['Accès à Google Play', acc]);
 
     // 7. Test fermé exigé des nouveaux comptes personnels.
@@ -114,9 +114,9 @@ export function install(proto, SECTIONS) {
     // 8. Version à publier.
     const rel = [];
     const s = cfg.store || {};
-    rel.push(String(s.notes || '').trim() ? item('ok', 'Nouveautés de la version rédigées', '', 'store', 'Voir') : item('warn', 'Rédige les nouveautés de la version', 'Affichées sur Google Play ; elles rassurent et aident Google à examiner la version.', 'store', 'Rédiger'));
-    if (s.track === 'production' && Number(s.rollout || 100) >= 100) rel.push(item('info', 'Déploiement progressif conseillé', 'Commence à 10 ou 20 % : en cas de plantage (section Statistiques), tu arrêtes avant que tout le monde soit touché.', 'store', 'Régler'));
-    if (!(cfg.insights && cfg.insights.enabled)) rel.push(item('info', 'Statistiques et plantages désactivés', 'Active-les pour surveiller la nouvelle version dès sa sortie.', 'insights', 'Activer'));
+    rel.push(String(s.notes || '').trim() ? item('ok', 'Nouveautés de la version rédigées', '', 'store', 'Voir') : item('warn', 'Rédigez les nouveautés de la version', 'Affichées sur Google Play ; elles rassurent et aident Google à examiner la version.', 'store', 'Rédiger'));
+    if (s.track === 'production' && Number(s.rollout || 100) >= 100) rel.push(item('info', 'Déploiement progressif conseillé', 'Commencez à 10 ou 20 % : en cas de plantage (section Statistiques), vous arrêtez avant que tout le monde soit touché.', 'store', 'Régler'));
+    if (!(cfg.insights && cfg.insights.enabled)) rel.push(item('info', 'Statistiques et plantages désactivés', 'Activez-les pour surveiller la nouvelle version dès sa sortie.', 'insights', 'Activer'));
     groups.push(['Version', rel]);
     return groups;
   };
@@ -141,7 +141,7 @@ export function install(proto, SECTIONS) {
           <div class="nxr-meter" role="img" aria-label="${pct} % des points réglés"><i style="width:${pct}%"></i></div></div>
         <button class="icon-btn small" data-act="ready-refresh" title="Relire la fiche et l’accès Google Play">${icon('refreshCw', 14)}</button>
       </div>
-      <p class="ab-hint">Ce que Google vérifie avant de publier une application, d’après tes réglages. Chaque point mène à la section où le régler.</p>`);
+      <p class="ab-hint">Ce que Google vérifie avant de publier une application, d’après vos réglages. Chaque point mène à la section où le régler.</p>`);
     const body = groups.map(([name, list]) => this.card(name, `<ul class="nxr-list">${list.map((i) => `<li class="nxr-${i.state}">
         <span class="nxr-ic">${icon(STATE_ICON[i.state], 15)}</span>
         <div class="nxr-txt"><b>${i.label}</b>${i.detail ? `<small>${i.detail}</small>` : ''}</div>
@@ -162,15 +162,15 @@ export function install(proto, SECTIONS) {
     const min = Number(rm.minVersionCode) || 0;
     let body = `<p class="ab-hint">Dernier envoi : version n° ${esc(ls.versionCode)} sur la piste « ${esc(tracks[ls.track] || ls.track)} », le ${new Date(ls.at).toLocaleString('fr-FR')}.</p>`;
     if (ls.track !== 'production') body += '<p class="ab-hint">Quand cette version sera en production, NEXORA pourra la proposer aux installations plus anciennes.</p>';
-    else if (!rm.enabled) body += `<div class="ab-note">${icon('info', 15)}<span>Active les réglages à distance pour proposer automatiquement la nouvelle version aux anciennes installations (à la prochaine construction).</span><button class="btn small" data-sec="remote">${icon('cloud', 13)}<span>Réglages à distance</span></button></div>`;
+    else if (!rm.enabled) body += `<div class="ab-note">${icon('info', 15)}<span>Activez les réglages à distance pour proposer automatiquement la nouvelle version aux anciennes installations (à la prochaine construction).</span><button class="btn small" data-sec="remote">${icon('cloud', 13)}<span>Réglages à distance</span></button></div>`;
     else if (min >= Number(ls.versionCode)) body += `<p class="ab-hint nxr-okline">${icon('pass', 13)}<span>Les installations antérieures à la version n° ${esc(min)} proposent déjà la mise à jour${rm.forceUpdate ? ' (obligatoire)' : ''}.</span></p>`;
-    else body += `<div class="ab-row"><button class="btn small primary" data-act="ready-minversion">${icon('download', 13)}<span>Proposer la version n° ${esc(ls.versionCode)} aux anciennes installations</span></button></div><p class="ab-hint">Règle la version minimale des réglages à distance (aujourd’hui n° ${min || 'aucune'}) ; publie ensuite le fichier nexora-app.json à jour sur ton site. Attends que Google ait validé la version.</p>`;
+    else body += `<div class="ab-row"><button class="btn small primary" data-act="ready-minversion">${icon('download', 13)}<span>Proposer la version n° ${esc(ls.versionCode)} aux anciennes installations</span></button></div><p class="ab-hint">Réglez la version minimale des réglages à distance (aujourd’hui n° ${min || 'aucune'}) ; publiez ensuite le fichier nexora-app.json à jour sur votre site. Attendez que Google ait validé la version.</p>`;
     return h + this.card('Après la publication', body);
   };
   proto.act_ready_minversion = async function act() {
     const ls = this.cfg.lastStore; if (!ls) return;
     this.set('remote.minVersionCode', Number(ls.versionCode), { rerender: true });
-    toast(`Version minimale réglée sur n° ${ls.versionCode} : enregistre et publie à nouveau le fichier nexora-app.json.`, { action: 'Ouvrir', onAction: () => { this.section = 'remote'; this.renderNav(); this.renderForm(); } });
+    toast(`Version minimale réglée sur n° ${ls.versionCode} : enregistrez et publiez à nouveau le fichier nexora-app.json.`, { action: 'Ouvrir', onAction: () => { this.section = 'remote'; this.renderNav(); this.renderForm(); } });
   };
 
   proto.act_ready_refresh = async function act() { this.nxReady = null; this.nxReadyLoad(true); this.renderForm(); };

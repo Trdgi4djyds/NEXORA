@@ -55,7 +55,7 @@ export function addGrid(D, key) {
   const pg = page(D); const m = Math.min(pg.w, pg.h) * 0.06; const gap = Math.min(pg.w, pg.h) * 0.02;
   const made = g[1].map(([x, y, w, h]) => addFrame(D, 'arrondi', { x: m + x * (pg.w - 2 * m) + gap / 2, y: m + y * (pg.h - 2 * m) + gap / 2, w: w * (pg.w - 2 * m) - gap, h: h * (pg.h - 2 * m) - gap }));
   D.selectList(made.filter(Boolean)); D.changed();
-  toast('Grille ajoutée : dépose une image sur chaque cadre ou utilise « Choisir une image ».');
+  toast('Grille ajoutée : déposez une image sur chaque cadre ou utilisez « Choisir une image ».');
 }
 // Boîte du cadre (en coordonnées de la page) pour un cadre vide ou une image découpée.
 export function frameBox(o) {
@@ -278,7 +278,7 @@ export async function addQr(D, text) {
   const g = await buildQr({ text: url, color: getBrand().colors[3], bg: '#ffffff' }, size);
   g.setPositionByOrigin(center(D), 'center', 'center');
   place(D, g, { name: 'Code QR' });
-  if (!text && !(state.source && state.source.url)) toast('Code QR créé : change son lien dans le panneau de droite.');
+  if (!text && !(state.source && state.source.url)) toast('Code QR créé : changez son lien dans le panneau de droite.');
 }
 export async function rebuildQr(D, o, patch) {
   const spec = { ...o.nxQr, ...patch }; const c = o.getCenterPoint(); const w = o.getScaledWidth();
@@ -320,7 +320,7 @@ export async function applyTemplate(D, id, { onNewPage = false } = {}) {
   }
   D.loading = false;
   D.canvas.requestRenderAll(); D.changed(); D.renderLeft(); D.renderProps();
-  toast(`Modèle « ${TEMPLATES[id].label} » appliqué${b.name ? ` avec la marque ${b.name}` : ''}. Remplace les textes et dépose tes photos dans les cadres.`);
+  toast(`Modèle « ${TEMPLATES[id].label} » appliqué${b.name ? ` avec la marque ${b.name}` : ''}. Remplacez les textes et déposez vos photos dans les cadres.`);
   return made;
 }
 // Aperçu d'un modèle (rendu simplifié dans une petite image).
@@ -392,14 +392,14 @@ function toHex(c) { if (/^#[0-9a-f]{6}$/i.test(c)) return c.toLowerCase(); if (/
 // ---------- Composants (éléments réutilisables) ----------
 export const comps = (D) => (D.doc.nxComponents = D.doc.nxComponents || {});
 export async function makeComponent(D) {
-  let sel = D.sel(); if (!sel.length) { toast('Sélectionne d’abord les calques du composant.', { kind: 'bad' }); return; }
+  let sel = D.sel(); if (!sel.length) { toast('Sélectionnez d’abord les calques du composant.', { kind: 'bad' }); return; }
   if (sel.length > 1) { D.group(); sel = D.sel(); }
   const o = sel[0]; const id = uid();
   o.nxComp = { id, master: true };
   comps(D)[id] = { name: o.name && o.name !== 'Groupe' ? o.name : `Composant ${Object.keys(comps(D)).length + 1}`, json: o.toObject(FabricObject.customProperties), updated: Date.now() };
   o.name = comps(D)[id].name;
   D.changed(); D.renderProps();
-  toast('Composant créé : insère des copies depuis l’onglet « Éléments ». Modifie le principal puis « Mettre à jour les copies ».');
+  toast('Composant créé : insérez des copies depuis l’onglet « Éléments ». Modifiez le principal puis « Mettre à jour les copies ».');
 }
 export async function insertComponent(D, id) {
   const c = comps(D)[id]; if (!c) return;

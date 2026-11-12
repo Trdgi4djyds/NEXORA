@@ -101,9 +101,9 @@ function analyzeNode(dir, a, pkg) {
   if (deps['react-native'] && !deps['react-native-web'] && !deps.expo) {
     a.unsupported = {
       title: 'Application React Native sans version web',
-      message: 'Ce projet cible Android et iOS uniquement. Pour l\'afficher dans NEXORA, ajoute une cible web avec react-native-web (ou migre vers Expo, qui la gère).',
+      message: 'Ce projet cible Android et iOS uniquement. Pour l\'afficher dans NEXORA, ajoutez une cible web avec react-native-web (ou migrez vers Expo, qui la gère).',
       steps: [
-        { text: 'Dans le dossier du projet, installe react-native-web :', cmd: `${a.pm === 'npm' ? 'npm install' : `${a.pm} add`} react-native-web react-dom` },
+        { text: 'Dans le dossier du projet, installez react-native-web :', cmd: `${a.pm === 'npm' ? 'npm install' : `${a.pm} add`} react-native-web react-dom` },
         { text: 'Guide de configuration :', url: 'https://necolas.github.io/react-native-web/docs/setup/', label: 'React Native for Web' },
       ],
     };
@@ -126,7 +126,7 @@ function analyzeNode(dir, a, pkg) {
   } else {
     a.unsupported = a.unsupported || {
       title: 'Aucun script de lancement',
-      message: 'Le fichier package.json ne contient aucun script (dev, start…). Ajoute un script de développement ou ouvre le dossier de build.',
+      message: 'Le fichier package.json ne contient aucun script (dev, start…). Ajoutez un script de développement ou ouvrez le dossier de build.',
       steps: [],
     };
   }
@@ -245,7 +245,7 @@ function analyzeProject(dir) {
     a.label = 'WordPress';
     a.unsupported = {
       title: 'WordPress a besoin d\'une base de données',
-      message: 'Lance le site avec un outil comme LocalWP, XAMPP ou Laragon, puis colle son adresse locale (par exemple http://monsite.local) dans NEXORA.',
+      message: 'Lancez le site avec un outil comme LocalWP, XAMPP ou Laragon, puis collez son adresse locale (par exemple http://monsite.local) dans NEXORA.',
       steps: [{ text: 'LocalWP installe WordPress, PHP et MySQL en un clic :', url: 'https://localwp.com/', label: 'Télécharger LocalWP' }],
     };
     return a;
@@ -284,7 +284,7 @@ function analyzeProject(dir) {
       a.install.push({ cmd: '{pysys} -m venv .venv', label: 'Création de l\'environnement virtuel .venv' });
       if (reqs) a.install.push({ cmd: '{py} -m pip install -r requirements.txt', label: 'Installation des dépendances Python' });
     }
-    if (!reqs) a.notes.push('Aucun requirements.txt : installe les dépendances dans .venv si le lancement échoue.');
+    if (!reqs) a.notes.push('Aucun requirements.txt : installez les dépendances dans .venv si le lancement échoue.');
     return a;
   }
 
@@ -346,7 +346,7 @@ function analyzeProject(dir) {
   if (entries.some((f) => /\.xcodeproj$|\.xcworkspace$/.test(f))) {
     a.unsupported = {
       title: 'Application iOS native',
-      message: 'Les applications Swift natives ne s\'affichent pas dans une page web. Utilise le simulateur Xcode sur Mac, ou ouvre la version web de l\'application.',
+      message: 'Les applications Swift natives ne s\'affichent pas dans une page web. Utilisez le simulateur Xcode sur Mac, ou ouvrez la version web de l\'application.',
       steps: [],
     };
     a.label = 'iOS natif';
@@ -361,7 +361,7 @@ function analyzeProject(dir) {
 
   a.unsupported = {
     title: 'Projet non reconnu',
-    message: 'Ce dossier ne contient ni package.json, ni pubspec.yaml, ni index.html, ni autre fichier de projet connu. Choisis le dossier racine du projet.',
+    message: 'Ce dossier ne contient ni package.json, ni pubspec.yaml, ni index.html, ni autre fichier de projet connu. Choisissez le dossier racine du projet.',
     steps: [],
   };
   a.label = 'Inconnu';

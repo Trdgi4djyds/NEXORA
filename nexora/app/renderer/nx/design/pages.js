@@ -63,7 +63,7 @@ async function resizeTo(D, keys, dest) {
       D.doc.pages.splice(D.pageIdx + 1, 0, ...pages); await D.openPage(D.pageIdx + 1, { save: false }); D.save();
       D.leftTab = 'pages'; D.renderLeft();
     }
-    toast(`${pages.length} format${pages.length > 1 ? 's' : ''} créé${pages.length > 1 ? 's' : ''}. Vérifie les textes longs : ils gardent leur taille relative.`);
+    toast(`${pages.length} format${pages.length > 1 ? 's' : ''} créé${pages.length > 1 ? 's' : ''}. Vérifiez les textes longs : ils gardent leur taille relative.`);
   } catch (e) { console.error(e); toast(`La déclinaison a échoué : ${e.message || e}`, { kind: 'bad' }); } finally { t.close(); }
 }
 
@@ -183,14 +183,14 @@ export async function exportSelection(D, sel, { format = 'png', scale = 2, trans
   } catch (e) { console.error(e); toast(`L’export de la sélection a échoué : ${e.message || e}`, { kind: 'bad' }); } finally { if (temp) { D.canvas.discardActiveObject(); D.canvas.requestRenderAll(); } }
 }
 export async function copySelectionPng(D, o = D.canvas.getActiveObject()) {
-  if (!o) { toast('Sélectionne d’abord ce que tu veux copier.'); return false; }
+  if (!o) { toast('Sélectionnez d’abord ce que vous voulez copier.'); return false; }
   try {
     const c = selectionCanvas(D, o, 2);
     const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-    toast('Sélection copiée en PNG : colle-la dans un autre logiciel.');
+    toast('Sélection copiée en PNG : collez-la dans un autre logiciel.');
     return true;
-  } catch (e) { toast('La copie dans le presse-papiers a échoué ici : exporte la sélection depuis « Exporter ».', { kind: 'bad' }); return false; }
+  } catch (e) { toast('La copie dans le presse-papiers a échoué ici : exportez la sélection depuis « Exporter ».', { kind: 'bad' }); return false; }
 }
 
 // ---------- Animations des pages ----------
@@ -245,7 +245,7 @@ export async function playPage(D) {
   // NEXORA #113 : frise ouverte : la lecture passe par elle (tête de lecture, boucle).
   if (D.nxMotionUi && D.nxMotionUi.isOpen()) { D.nxMotionUi.togglePlay(); return; }
   if (D.nxPlaying) { D.nxPlaying = false; return; }
-  if (!hasAnim(D)) { toast('Aucune animation sur cette page : sélectionne un calque, puis ajoute une animation (bouton Animation de la barre d’outils, ou onglet Animation du panneau de droite).'); return; }
+  if (!hasAnim(D)) { toast('Aucune animation sur cette page : sélectionnez un calque, puis ajoutez une animation (bouton Animation de la barre d’outils, ou onglet Animation du panneau de droite).'); return; }
   D.canvas.discardActiveObject(); D.nxPlaying = true;
   const tl = pageTimeline(D.page); const dur = tl.ms / 1000; const t0 = performance.now();
   await new Promise((resolve) => {
@@ -452,7 +452,7 @@ export async function jumpHistory(D, i) {
 // ---------- Commentaires ----------
 export const comments = (D) => (D.doc.nxComments = D.doc.nxComments || []);
 export async function addComment(D, p) {
-  const text = await prompt('Nouveau commentaire', { label: 'Ton commentaire', icon: 'nxComment', multiline: true, go: 'Publier' });
+  const text = await prompt('Nouveau commentaire', { label: 'Votre commentaire', icon: 'nxComment', multiline: true, go: 'Publier' });
   if (!text || !text.trim()) return;
   let author = 'Moi';
   try { const { e: cloud } = await import('../../dist/chunks/chunk-EZKHFSAB.js'); if (cloud && cloud.user) author = (cloud.profile && cloud.profile.full_name) || cloud.user.email || author; } catch { /* hors ligne */ }
@@ -530,10 +530,10 @@ export async function startRoom(D, code, created) {
       if (st.page === D.pageIdx) { D.nxRemote = true; await D.loadPage(D.page, st.json); D.updateBoard && D.updateBoard(); D.nxRemote = false; D.renderLayers(); snapshot(D); }
     },
     onCursor: (c) => { D.nxCursors = D.nxCursors || new Map(); D.nxCursors.set(c.by, { ...c, at: Date.now() }); D.nxRenderCursors && D.nxRenderCursors(); },
-    onPeers: (peers) => { D.nxPeers = peers; toast(peers.length ? `${peers.length} personne${peers.length > 1 ? 's' : ''} dans la salle ${code}.` : `Salle ${code} : tu es seul pour l’instant.`); }
+    onPeers: (peers) => { D.nxPeers = peers; toast(peers.length ? `${peers.length} personne${peers.length > 1 ? 's' : ''} dans la salle ${code}.` : `Salle ${code} : vous êtes seul pour l’instant.`); }
   });
   const t = busy('Connexion à la salle…');
-  try { await room.join(); D.nxRoom = room; snapshot(D); toast(created === 'doc' ? `Coédition de ce document ouverte (salle ${code}) : tes coéquipiers qui ouvrent ce document et choisissent « Coéditer ce document » te rejoignent.` : created ? `Salle créée : ${code}. Donne ce code à tes coéquipiers.` : `Tu as rejoint la salle ${code}.`); } catch (e) { toast(e.message || String(e), { kind: 'bad' }); } finally { t.close(); }
+  try { await room.join(); D.nxRoom = room; snapshot(D); toast(created === 'doc' ? `Coédition de ce document ouverte (salle ${code}) : vos coéquipiers qui ouvrent ce document et choisissent « Coéditer ce document » vous rejoignent.` : created ? `Salle créée : ${code}. Donnez ce code à vos coéquipiers.` : `Vous avez rejoint la salle ${code}.`); } catch (e) { toast(e.message || String(e), { kind: 'bad' }); } finally { t.close(); }
 }
 // Code de salle tiré de l'identifiant du document : le même pour toute l'équipe.
 export function docRoomCode(D) {
@@ -541,7 +541,7 @@ export function docRoomCode(D) {
   for (const ch of String(D.doc.id)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
   return h.toString(36).toUpperCase().padStart(6, '0').slice(-6);
 }
-export async function leaveRoom(D) { if (!D.nxRoom) return; await D.nxRoom.leave(); D.nxRoom = null; D.nxSent = null; D.nxCursors = new Map(); D.nxRenderCursors && D.nxRenderCursors(); toast('Tu as quitté la salle de coédition.'); }
+export async function leaveRoom(D) { if (!D.nxRoom) return; await D.nxRoom.leave(); D.nxRoom = null; D.nxSent = null; D.nxCursors = new Map(); D.nxRenderCursors && D.nxRenderCursors(); toast('Vous avez quitté la salle de coédition.'); }
 export function collab(D) {
   collabSheet({
     current: D.nxRoom ? { code: D.nxRoom.code, peers: D.nxRoom.peers } : null,
@@ -597,7 +597,7 @@ export const AI_ITEMS = (D) => [
   { id: 'layout', icon: 'grid', label: 'Choisir un modèle avec l’IA…', sub: 'Un modèle de NEX-DESIGN, titre et texte rédigés' },
   { id: 'palette', icon: 'nxPalette', label: 'Créer une palette de couleurs…' },
   { id: 'palimg', icon: 'image', label: 'Palette tirée de l’image sélectionnée', sub: 'Sans IA, directement sur ce PC', disabled: !D.sel().some((o) => o.type === 'image') },
-  { id: 'image', icon: 'sparkle', label: 'Générer une image…', sub: 'Avec ta clé OpenAI ou Google Gemini' }
+  { id: 'image', icon: 'sparkle', label: 'Générer une image…', sub: 'Avec votre clé OpenAI ou Google Gemini' }
 ];
 export async function aiMenu(D, anchor) {
   const a = await menu(anchor, 'IA de design', AI_ITEMS(D), { width: 300 });
@@ -607,13 +607,13 @@ export async function aiRun(D, anchor, a) {
   if (!a) return;
   if (a === 'palimg') { const img = D.sel().find((o) => o.type === 'image'); await paletteChoice(D, dominantColors(img.getElement(), 5)); return; }
   if (!(await needAi())) return;
-  const sys = 'Tu es un directeur artistique et rédacteur publicitaire francophone. Tu tutoies. Réponses courtes, percutantes, sans emoji.';
+  const sys = 'Vous êtes un directeur artistique et rédacteur publicitaire francophone. Vous tutoyez. Réponses courtes, percutantes, sans emoji.';
   try {
     if (a === 'write') {
       const topic = await prompt('Rédiger les textes', { label: 'Sujet, produit ou message (une phrase suffit)', icon: 'text', placeholder: 'Lancement de notre appli de recettes, offre de bienvenue', go: 'Rédiger' });
       if (!topic) return;
       const t = busy('Rédaction…');
-      let j; try { j = await aiJson(`Rédige les textes d'un visuel (${D.page.w}×${D.page.h} px) sur : « ${topic} ». Donne {"titre": "...", "sousTitre": "...", "texte": "...", "bouton": "..."} ; titre de 6 mots maximum.`, { system: sys }); } finally { t.close(); }
+      let j; try { j = await aiJson(`Rédigez les textes d'un visuel (${D.page.w}×${D.page.h} px) sur : « ${topic} ». Donne {"titre": "...", "sousTitre": "...", "texte": "...", "bouton": "..."} ; titre de 6 mots maximum.`, { system: sys }); } finally { t.close(); }
       const texts = D.canvas.getObjects().filter((o) => TEXT.includes(o.type)).sort((x, y) => y.fontSize * y.scaleY - x.fontSize * x.scaleY);
       const vals = [j.titre, j.sousTitre, j.texte, j.bouton].filter(Boolean);
       if (texts.length) texts.slice(0, vals.length).forEach((o, i) => { o.set('text', String(vals[i])); o.initDimensions && o.initDimensions(); });
@@ -627,15 +627,15 @@ export async function aiRun(D, anchor, a) {
       const t0 = D.sel().find((o) => TEXT.includes(o.type));
       const how = await menu(anchor, 'Reformuler', [{ id: 'court', label: 'Plus court' }, { id: 'fort', label: 'Plus percutant' }, { id: 'pro', label: 'Plus professionnel' }, { id: 'fun', label: 'Plus décontracté' }, { id: 'fix', label: 'Corriger l’orthographe' }, { id: 'en', label: 'Traduire en anglais' }]);
       if (!how) return;
-      const instr = { court: 'Raccourcis de moitié', fort: 'Rends-le plus percutant', pro: 'Rends-le plus professionnel', fun: 'Rends-le plus décontracté', fix: 'Corrige seulement l’orthographe et la grammaire', en: 'Traduis en anglais' }[how];
+      const instr = { court: 'Raccourcis de moitié', fort: 'Rendez-le plus percutant', pro: 'Rendez-le plus professionnel', fun: 'Rendez-le plus décontracté', fix: 'Corrigez seulement l’orthographe et la grammaire', en: 'Traduisez en anglais' }[how];
       const t = busy('Reformulation…');
-      try { const r = await aiChat(`${instr} ce texte de visuel. Réponds seulement avec le nouveau texte, sans guillemets :\n\n${t0.text}`, { system: sys, maxTokens: 400 }); t0.set('text', r.replace(/^["«\s]+|["»\s]+$/g, '')); t0.initDimensions && t0.initDimensions(); D.canvas.requestRenderAll(); D.changed(); } finally { t.close(); }
+      try { const r = await aiChat(`${instr} ce texte de visuel. Répondez seulement avec le nouveau texte, sans guillemets :\n\n${t0.text}`, { system: sys, maxTokens: 400 }); t0.set('text', r.replace(/^["«\s]+|["»\s]+$/g, '')); t0.initDimensions && t0.initDimensions(); D.canvas.requestRenderAll(); D.changed(); } finally { t.close(); }
     }
     if (a === 'layout') {
       const topic = await prompt('Proposer une mise en page', { label: 'De quoi parle le visuel ?', icon: 'grid', placeholder: 'Soirée de lancement le 12 juin au Studio 21', go: 'Proposer' });
       if (!topic) return;
       const t = busy('L’IA compose la mise en page…');
-      let j; try { j = await aiJson(`Choisis le meilleur modèle parmi ${JSON.stringify(Object.fromEntries(Object.entries(TEMPLATES).map(([k, v]) => [k, v.label])))} pour : « ${topic} ». Donne {"modele": "<identifiant>", "titre": "...", "texte": "..."} ; titre de 5 mots maximum.`, { system: sys }); } finally { t.close(); }
+      let j; try { j = await aiJson(`Choisissez le meilleur modèle parmi ${JSON.stringify(Object.fromEntries(Object.entries(TEMPLATES).map(([k, v]) => [k, v.label])))} pour : « ${topic} ». Donne {"modele": "<identifiant>", "titre": "...", "texte": "..."} ; titre de 5 mots maximum.`, { system: sys }); } finally { t.close(); }
       const id = TEMPLATES[j.modele] ? j.modele : 'promo';
       const made = await applyTemplate(D, id, { onNewPage: true });
       const texts = made.filter((o) => o.type === 'textbox').sort((x, y) => y.fontSize - x.fontSize);
@@ -647,13 +647,13 @@ export async function aiRun(D, anchor, a) {
       const mood = await prompt('Palette de couleurs', { label: 'Ambiance recherchée', icon: 'nxPalette', placeholder: 'Nature apaisante, tech premium, été pop…', go: 'Créer' });
       if (!mood) return;
       const t = busy('Création de la palette…');
-      let j; try { j = await aiJson(`Crée une palette de 5 couleurs hexadécimales pour l'ambiance « ${mood} » : principale, secondaire, accent, texte foncé, fond clair. Donne {"colors": ["#...", "#...", "#...", "#...", "#..."]}.`, { system: sys }); } finally { t.close(); }
+      let j; try { j = await aiJson(`Créez une palette de 5 couleurs hexadécimales pour l'ambiance « ${mood} » : principale, secondaire, accent, texte foncé, fond clair. Donne {"colors": ["#...", "#...", "#...", "#...", "#..."]}.`, { system: sys }); } finally { t.close(); }
       const cols = (j.colors || []).filter((c) => /^#[0-9a-f]{6}$/i.test(c));
-      if (cols.length < 3) throw new Error('Palette incomplète : réessaie.');
+      if (cols.length < 3) throw new Error('Palette incomplète : réessayez.');
       await paletteChoice(D, cols);
     }
     if (a === 'image') {
-      const what = await prompt('Générer une image', { label: 'Décris l’image', icon: 'sparkle', multiline: true, placeholder: 'Une tasse de café fumante sur une table en bois, lumière du matin, photo réaliste', go: 'Générer' });
+      const what = await prompt('Générer une image', { label: 'Décrivez l’image', icon: 'sparkle', multiline: true, placeholder: 'Une tasse de café fumante sur une table en bois, lumière du matin, photo réaliste', go: 'Générer' });
       if (!what) return;
       const t = busy('Génération de l’image…');
       try { const url = await aiImage({ prompt: what, size: D.page.w > D.page.h * 1.2 ? '1536x1024' : D.page.h > D.page.w * 1.2 ? '1024x1536' : '1024x1024' }); await D.addImage(url, 'Image générée'); D.changed(); } finally { t.close(); }

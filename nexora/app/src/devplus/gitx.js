@@ -8,7 +8,7 @@ const { run, which, inside, envFor } = require('./util');
 const SEP = '\x1f';
 function gitBin(root) {
   const g = which('git', envFor(root));
-  if (!g) { const e = new Error('Git n’est pas installé sur ce PC. Ouvre « Outils » dans le Dev Lab pour l’installer en un clic.'); e.tool = 'git'; throw e; }
+  if (!g) { const e = new Error('Git n’est pas installé sur ce PC. Ouvrez « Outils » dans le Dev Lab pour l’installer en un clic.'); e.tool = 'git'; throw e; }
   return g;
 }
 // Identité de repli pour les fusions et mises de côté quand Git n'en a aucune sur ce PC (sinon celle de l'utilisateur).
@@ -124,13 +124,13 @@ async function graph(root, { limit = 200 } = {}) {
 async function repoOf(root) {
   const r = await git(root, ['remote', 'get-url', 'origin'], { ok: [0, 2, 128] });
   const m = /github\.com[:/]([^/]+)\/(.+?)(?:\.git)?\/?$/.exec(r.stdout.trim());
-  if (!m) throw new Error('Ce projet n’est pas relié à un dépôt GitHub : utilise « Publier le dépôt » d’abord.');
+  if (!m) throw new Error('Ce projet n’est pas relié à un dépôt GitHub : utilisez « Publier le dépôt » d’abord.');
   return { owner: m[1], repo: m[2] };
 }
 class PullRequests {
   constructor(gh) { this.gh = gh; }
   async api(root, p, opts) {
-    if (!this.gh.token()) throw new Error('Connecte ton compte GitHub dans le panneau « Dépôt distant » du Dev Lab.');
+    if (!this.gh.token()) throw new Error('Connectez votre compte GitHub dans le panneau « Dépôt distant » du Dev Lab.');
     const { owner, repo } = await repoOf(root);
     return this.gh.api(`/repos/${owner}/${repo}${p}`, opts);
   }
@@ -139,7 +139,7 @@ class PullRequests {
     return rows.map((p) => ({ number: p.number, title: p.title, state: p.merged_at ? 'merged' : p.state, draft: p.draft, user: p.user && p.user.login, head: p.head && p.head.ref, base: p.base && p.base.ref, updated: p.updated_at, url: p.html_url }));
   }
   async create(root, { title, body, head, base, draft }) {
-    if (!title) throw new Error('Donne un titre à la demande de fusion.');
+    if (!title) throw new Error('Donnez un titre à la demande de fusion.');
     const p = await this.api(root, '/pulls', { method: 'POST', body: { title, body: body || '', head, base, draft: Boolean(draft) } });
     return { number: p.number, url: p.html_url };
   }

@@ -39,8 +39,8 @@ async function load(out) {
 }
 
 function empty(out) {
-  out.innerHTML = `<div class="sec-empty">${icon('code', 34)}<b>Vérifie ton code avant qu’il parte en ligne</b>
-    <p>NEXORA compare tes dépendances à la base publique des failles connues (npm, PyPI, Composer, RubyGems, Go, Rust, Dart, NuGet), cherche les clés et mots de passe écrits dans le code ou restés dans l’historique Git, et peut bloquer un « git push » qui contient un secret.</p>
+  out.innerHTML = `<div class="sec-empty">${icon('code', 34)}<b>Vérifiez votre code avant qu’il parte en ligne</b>
+    <p>NEXORA compare vos dépendances à la base publique des failles connues (npm, PyPI, Composer, RubyGems, Go, Rust, Dart, NuGet), cherche les clés et mots de passe écrits dans le code ou restés dans l’historique Git, et peut bloquer un « git push » qui contient un secret.</p>
     <div class="sec-chips">${['Dépendances vulnérables', 'Clés et jetons', 'Historique Git', '.env suivi par Git', 'Crochet pre-push', 'GitHub Actions', 'SARIF'].map((s) => `<span>${esc(s)}</span>`).join('')}</div></div>
     ${state.dir ? devTools() : ''}`;
   bindTools(out);
@@ -57,7 +57,7 @@ function devTools() {
   return `<div class="sup-grid g-1-1 nxs-tools" data-tools>
     ${card('Bloquer les secrets avant « git push »', `<p class="pop-note">Un crochet Git vérifie les commits envoyés : clé AWS, Stripe, GitHub, OpenAI, clé de service d’une base de données en ligne, clé privée ou fichier .env. L’envoi est refusé avec la liste des secrets trouvés (masqués).</p><div class="nxs-hook" data-hook>${icon('sync', 13)} Vérification…</div>`, { sub: 'Fonctionne avec Git en ligne de commande, VS Code et le Dev Lab' })}
     ${card('Contrôle à chaque envoi sur GitHub', `<p class="pop-note">NEXORA ajoute au projet un workflow GitHub Actions et un script d’audit sans dépendance : failles des dépendances, secrets et en-têtes du site publié. La construction échoue sous la note choisie.</p>
-      <div class="sup-form-grid"><label class="field"><span>Adresse du site publié (facultatif)</span><input class="input" data-ci-url placeholder="https://ton-site.com"></label><label class="field"><span>Note minimale</span><input class="input" type="number" data-ci-min min="0" max="100" step="5" value="70"></label></div>
+      <div class="sup-form-grid"><label class="field"><span>Adresse du site publié (facultatif)</span><input class="input" data-ci-url placeholder="https://votre-site.com"></label><label class="field"><span>Note minimale</span><input class="input" type="number" data-ci-min min="0" max="100" step="5" value="70"></label></div>
       <div class="nxs-actions">${btn('Ajouter le contrôle au projet', 'data-ci-write', { ic: 'download', cls: 'small primary' })}</div>`, { sub: 'Fichiers : .github/workflows/nexora-securite.yml et .nexora/audit-securite.cjs' })}
   </div>`;
 }
@@ -69,7 +69,7 @@ async function bindTools(out) {
     try { st = await call('sec:hook-status', { dir: state.dir }); } catch (err) { box.innerHTML = `<span class="muted">${esc(err.message)}</span>`; st = null; }
     if (st) {
       box.innerHTML = !st.repo ? `<span class="muted">${icon('info', 13)} Ce dossier n’est pas un dépôt Git.</span>`
-        : st.installed ? `<span class="sup-chip good">${icon('check', 11)}Crochet actif</span>${st.chained ? '<small class="muted">Ton ancien crochet pre-push est toujours appelé ensuite.</small>' : ''}${btn('Retirer', 'data-hook-act="remove"', { ic: 'trash' })}`
+        : st.installed ? `<span class="sup-chip good">${icon('check', 11)}Crochet actif</span>${st.chained ? '<small class="muted">Votre ancien crochet pre-push est toujours appelé ensuite.</small>' : ''}${btn('Retirer', 'data-hook-act="remove"', { ic: 'trash' })}`
           : `${st.other ? '<small class="muted">Un crochet pre-push existe déjà : il sera gardé et appelé ensuite.</small>' : ''}${btn('Activer le crochet', 'data-hook-act="install"', { ic: 'shield', cls: 'small primary' })}`;
       for (const b of box.querySelectorAll('[data-hook-act]')) b.onclick = async () => {
         try { await call(b.dataset.hookAct === 'install' ? 'sec:hook-install' : 'sec:hook-remove', { dir: state.dir }); toast(b.dataset.hookAct === 'install' ? 'Crochet activé : un envoi avec un secret sera refusé.' : 'Crochet retiré.'); bindTools(out); } catch (err) { toast(err.message, { kind: 'bad' }); }
@@ -80,7 +80,7 @@ async function bindTools(out) {
   if (ci) ci.onclick = async () => {
     try {
       const r = await call('sec:ci-write', { dir: state.dir, url: out.querySelector('[data-ci-url]').value.trim(), minScore: Number(out.querySelector('[data-ci-min]').value) || 70 });
-      toast(`Ajouté au projet : ${r.files.join(', ')}. Envoie-les sur GitHub pour activer le contrôle.`);
+      toast(`Ajouté au projet : ${r.files.join(', ')}. Envoyez-les sur GitHub pour activer le contrôle.`);
     } catch (err) { toast(err.message, { kind: 'bad' }); }
   };
 }

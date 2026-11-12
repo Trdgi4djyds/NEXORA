@@ -64,11 +64,11 @@ function register({
     mode, owner, repo, version, files, notes = '', staging = 100, mandatory = false, beta = false,
   } = {}) => {
     const list = (Array.isArray(files) ? files : []).map(String).filter((f) => owned(f));
-    if (!list.length) throw new Error('Aucun fichier de cette construction n’a été retrouvé : reconstruis le logiciel.');
+    if (!list.length) throw new Error('Aucun fichier de cette construction n’a été retrouvé : reconstruisez le logiciel.');
     for (const f of list.filter((x) => /\.yml$/i.test(x))) fs.writeFileSync(f, distrib.patchUpdateYml(fs.readFileSync(f, 'utf8'), { staging, mandatory, notes }));
     if (mode === 'generic') return { ok: true, dir: path.dirname(list[0]), files: list.map((f) => path.basename(f)) };
     const m = ghRead();
-    if (!m || !m.token) throw new Error('Ajoute d’abord un jeton GitHub (section Distribution).');
+    if (!m || !m.token) throw new Error('Ajoutez d’abord un jeton GitHub (section Distribution).');
     const token = await crypt.decrypt(m.token);
     return distrib.publishGithub({
       owner, repo, token, version: String(version || ''), files: list.map((f) => ({ path: f })), notes, prerelease: Boolean(beta),
@@ -129,7 +129,7 @@ function register({
     return `data:${type};base64,${buf.toString('base64')}`;
   });
   ipcMain.handle('desktop:pick-out', async () => {
-    const r = await dialog.showOpenDialog(getWin(), { title: 'Dossier où ranger tes logiciels', properties: ['openDirectory', 'createDirectory'] });
+    const r = await dialog.showOpenDialog(getWin(), { title: 'Dossier où ranger vos logiciels', properties: ['openDirectory', 'createDirectory'] });
     return r.canceled || !r.filePaths[0] ? null : r.filePaths[0];
   });
   ipcMain.handle('desktop:pick-cert', async () => {
@@ -160,7 +160,7 @@ function register({
       return true;
     }
     if (action === 'run') {
-      if (!builder.produced(f, { test: true })) throw new Error('La version de test n’existe plus : relance la construction.');
+      if (!builder.produced(f, { test: true })) throw new Error('La version de test n’existe plus : relancez la construction.');
       const child = require('child_process').spawn(f, [], { detached: true, stdio: 'ignore', cwd: path.dirname(f) });
       child.on('error', () => {});
       child.unref();

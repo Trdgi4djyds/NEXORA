@@ -7,7 +7,7 @@ export function mount(el, ctx) {
   const st = { providers: null, cfg: null, busy: false, log: '', last: null, branch: '' };
   const render = () => {
     if (!root()) { el.innerHTML = noProject(); return; }
-    if (!has('devlab_pro')) { el.innerHTML = `${head('Mise en ligne', '')}${proGate('La mise en ligne en un clic', 'Construis et publie ton site chez l’hébergeur de ton choix, avec une adresse d’aperçu pour chaque branche.')}`; return; }
+    if (!has('devlab_pro')) { el.innerHTML = `${head('Mise en ligne', '')}${proGate('La mise en ligne en un clic', 'Construisez et publiez votre site chez l’hébergeur de votre choix, avec une adresse d’aperçu pour chaque branche.')}`; return; }
     if (!st.cfg || !st.providers) { el.innerHTML = '<div class="nxd-loading"><span class="spin"></span>Chargement…</div>'; return; }
     const c = st.cfg;
     const p = st.providers.find((x) => x.id === c.provider) || st.providers[0];
@@ -32,7 +32,7 @@ export function mount(el, ctx) {
   const save = () => call('devx:deploy-save', { config: { provider: st.cfg.provider, project: st.cfg.project, outDir: st.cfg.outDir, build: st.cfg.build, checks: st.cfg.checks } }, { quiet: true }).catch(() => {});
   const creds = () => {
     const p = st.providers.find((x) => x.id === st.cfg.provider);
-    const s = sheet('nxd-creds', sheetHtml({ icon: 'key', title: `Connexion à ${p.name}`, sub: 'Chiffré sur ce PC, jamais écrit dans le projet. Crée le jeton dans les réglages de ton compte chez l’hébergeur.', body: p.fields.map((f) => `<label class="field"><span>${esc(f.label)}</span><input class="input" ${f.secret ? 'type="password"' : ''} data-k="${f.key}" placeholder="${f.set ? 'Déjà enregistré : laisse vide pour le garder' : ''}" spellcheck="false"></label>`).join(''), go: 'Enregistrer' }), {});
+    const s = sheet('nxd-creds', sheetHtml({ icon: 'key', title: `Connexion à ${p.name}`, sub: 'Chiffré sur ce PC, jamais écrit dans le projet. Créez le jeton dans les réglages de votre compte chez l’hébergeur.', body: p.fields.map((f) => `<label class="field"><span>${esc(f.label)}</span><input class="input" ${f.secret ? 'type="password"' : ''} data-k="${f.key}" placeholder="${f.set ? 'Déjà enregistré : laissez vide pour le garder' : ''}" spellcheck="false"></label>`).join(''), go: 'Enregistrer' }), {});
     s.onclick = async (e) => {
       if (!e.target.closest('[data-nx-go]')) return;
       const values = {};
@@ -59,7 +59,7 @@ export function mount(el, ctx) {
   el.addEventListener('click', async (e) => {
     const t = e.target;
     const pr = t.closest('[data-provider]');
-    if (pr) { st.cfg.provider = pr.dataset.provider; save(); render(); const p = st.providers.find((x) => x.id === st.cfg.provider); if (p.id === 'github' && !p.ready) { toast('Connecte ton compte GitHub dans le panneau « Dépôt distant ».'); const b = dev().el.querySelector('[data-side="github"]'); if (b) { ctx.close(); b.click(); } } return; }
+    if (pr) { st.cfg.provider = pr.dataset.provider; save(); render(); const p = st.providers.find((x) => x.id === st.cfg.provider); if (p.id === 'github' && !p.ready) { toast('Connectez votre compte GitHub dans le panneau « Dépôt distant ».'); const b = dev().el.querySelector('[data-side="github"]'); if (b) { ctx.close(); b.click(); } } return; }
     if (t.closest('[data-act="creds"]')) return creds();
     const d = t.closest('[data-deploy]');
     if (d) return deploy(d.dataset.deploy === 'prod');

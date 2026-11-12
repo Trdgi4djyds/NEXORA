@@ -21,7 +21,7 @@ export function openUpsell(info = {}) {
   const look = PLAN_LOOK[need] || PLAN_LOOK.standard;
   const s = current();
   const auth = info.reason === 'auth' || !cloud.user;
-  const title = info.title || (info.reason === 'quota' ? 'Quota de ton offre atteint' : auth && need === 'free' ? 'Connecte-toi à ton compte NEXORA' : `${feat[0] || 'Cette fonction'} : offre ${p.name}`);
+  const title = info.title || (info.reason === 'quota' ? 'Quota de votre offre atteint' : auth && need === 'free' ? 'Connectez-vous à votre compte NEXORA' : `${feat[0] || 'Cette fonction'} : offre ${p.name}`);
   const lim = p.limits;
   const perks = (p.features || []).slice(need === 'free' ? 0 : 1, need === 'free' ? 4 : 5);
   const el = sheet('nx-offre', `
@@ -38,7 +38,7 @@ export function openUpsell(info = {}) {
         <div class="nxo-up-price"><b>${p.price_month_cents ? esc(money(p.price_month_cents)) : '0 $'}</b><span>/ mois</span>${p.price_year_cents ? `<small>ou ${esc(money(p.price_year_cents))} par an (2 mois offerts)</small>` : ''}</div>
         <ul class="nxo-feats">${perks.map((f) => `<li>${ico('nxCheckCircle', 16)}<span>${esc(f)}</span></li>`).join('')}</ul>
         <div class="nxo-keys">${planKeys(lim).map((k) => `<span>${esc(k)}</span>`).join('')}</div>
-        ${s.plan && !auth ? `<p class="nx-muted small">Ton offre actuelle : <b>${esc(s.plan_name || s.plan)}</b>.</p>` : ''}
+        ${s.plan && !auth ? `<p class="nx-muted small">Votre offre actuelle : <b>${esc(s.plan_name || s.plan)}</b>.</p>` : ''}
       </div>
     </div>
     <div class="sheet-foot">
@@ -69,11 +69,11 @@ export async function onClick(e) {
     // en Pro au contrôle de licence suivant. Sans le canal (aperçu), demande à l'équipe comme avant.
     // NEXORA #087 : tant que le paiement en ligne n'est pas ouvert, la page indique comment l'équipe active Pro.
     // NEXORA #112 : aussi depuis Mon compte → Offre et usage (panel.js) ; même compte à reprendre sur la page.
-    try { await window.vitrine.invoke('license:open-site', 'licence?offre=pro'); closeSheet(); toast('Page « Ma licence » ouverte dans ton navigateur : connecte-toi avec ce même compte, puis choisis « Passer à Pro » pour payer.'); return true; } catch { /* sans le canal : demande à l'équipe */ }
+    try { await window.vitrine.invoke('license:open-site', 'licence?offre=pro'); closeSheet(); toast('Page « Ma licence » ouverte dans votre navigateur : connectez-vous avec ce même compte, puis choisissez « Passer à Pro » pour payer.'); return true; } catch { /* sans le canal : demande à l'équipe */ }
     ask.disabled = true;
     try {
       const t = await askPlan(ask.dataset.nxoAsk);
-      toast('Demande envoyée : l’équipe NEXORA te répond rapidement.');
+      toast('Demande envoyée : l’équipe NEXORA vous répond rapidement.');
       await openAccount('support', t.id);
     } catch (err) {
       toast(err.message || String(err), { kind: 'bad' });

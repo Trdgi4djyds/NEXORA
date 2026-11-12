@@ -157,7 +157,8 @@ const manifest = {
   // NEXORA #083 : à partir de 1.0.2, un lanceur plus ancien que min_launcher se met à jour seul (1.0.0 et 1.0.1
   // n'appliquaient pas ce champ : à retélécharger). #084 : 1.0.3 (assistants, NEXORA reconstruit réinstallé).
   // #106 : 1.0.5 (fenêtres « Horizon ») : les lanceurs 1.0.3 et 1.0.4 se mettent à jour avant d'installer la 1.2.2.
-  min_launcher: "1.0.5",
+  // #115 : 1.0.6 (textes vouvoyés) : les lanceurs 1.0.5 se mettent à jour avant d'installer la 1.2.2-r6.
+  min_launcher: "1.0.6",
   package: pkg,
   ...(launcher ? { launcher } : {}),
   files,

@@ -138,7 +138,7 @@ function clipBar(o, c, ms, thin = false) {
 function rowsHtml(D, tl, s) {
   const sel = selected(D);
   const list = ML.objs(D).slice().reverse().filter((o) => ML.animated(o) || sel.includes(o));
-  if (!list.length) return `<div class="nxm-empty">${ico('nxAnimate', 18)}<span>Sélectionne un calque, puis ajoute une animation toute faite (bouton « Animation ») ou une image clé (◇ dans l’onglet Animation du panneau de droite). La page est montrée à la tête de lecture : un calque déplacé ici reçoit une image clé si sa position en a déjà.</span></div>`;
+  if (!list.length) return `<div class="nxm-empty">${ico('nxAnimate', 18)}<span>Sélectionnez un calque, puis ajoutez une animation toute faite (bouton « Animation ») ou une image clé (◇ dans l’onglet Animation du panneau de droite). La page est montrée à la tête de lecture : un calque déplacé ici reçoit une image clé si sa position en a déjà.</span></div>`;
   let h = '';
   for (const o of list) {
     const m = ML.motionOf(o) || M.emptyMotion();
@@ -177,7 +177,7 @@ function paint(D) {
       <button class="nxm-tog${tl.loop ? ' on' : ''}" data-mo="loop" aria-pressed="${tl.loop}" aria-label="Boucle" title="Lecture en boucle (aussi dans la présentation et le prototype)">${ico('nxRepeat', 14)}<span>Boucle</span></button>
       <button class="nxm-tog rec${autoKey() ? ' on' : ''}" data-mo="auto" aria-pressed="${autoKey()}" aria-label="Enregistrement automatique" title="Enregistrement automatique : toute modification à la tête de lecture devient une image clé">${ico('record', 14)}<span>Enregistrer</span></button>
       <span class="grow"></span>
-      <button class="btn small" data-mo="lib" ${sel.length ? '' : 'disabled'} title="${sel.length ? 'Ajouter une animation toute faite au calque sélectionné, à la tête de lecture' : 'Sélectionne d’abord un calque'}" aria-label="Ajouter une animation toute faite">${ico('plus', 13)}<span>Animation</span></button>
+      <button class="btn small" data-mo="lib" ${sel.length ? '' : 'disabled'} title="${sel.length ? 'Ajouter une animation toute faite au calque sélectionné, à la tête de lecture' : 'Sélectionnez d’abord un calque'}" aria-label="Ajouter une animation toute faite">${ico('plus', 13)}<span>Animation</span></button>
       <button class="icon-btn" data-mo="code" title="Code de l’animation (CSS, SwiftUI, Compose)" aria-label="Code de l’animation">${ico('code', 15)}</button>
       <button class="icon-btn" data-mo="export" title="Exporter la vidéo, le GIF ou les images" aria-label="Exporter l’animation">${ico('film', 15)}</button>
       <button class="icon-btn" data-mo="close" title="Fermer la frise" aria-label="Fermer la frise">${ico('close', 15)}</button>
@@ -397,7 +397,7 @@ function library(D, anchor) {
   let group = settings.nxMotionGroup || 'enter';
   const body = () => `<div class="nxm-lib"><div class="seg wide small" role="tablist">${Object.entries(M.GROUPS).map(([g, l]) => `<button role="tab" class="${g === group ? 'on' : ''}" aria-selected="${g === group}" data-lg="${g}">${l} <em>${M.presetsIn(g).length}</em></button>`).join('')}</div>
     <div class="nxm-lib-grid">${M.presetsIn(group).map((p) => `<button class="nxm-tile" data-preset="${p.id}" title="${esc(`${p.name} : ${M.instantiate(p).map((c) => M.clipLabel(c).toLowerCase()).join(', ')}`)}"><span class="nxm-demo"><i></i></span><b>${esc(p.name)}</b><small>${p.speed ? esc(M.SPEEDS[p.speed]) : '500 ms'}</small></button>`).join('')}</div>
-    <p class="nxm-hint">Ajoutée à ${esc(fmtS(s.t))} (tête de lecture) sur ${selected(D).length > 1 ? 'chaque calque sélectionné' : 'le calque sélectionné'}. Survole une vignette pour la voir. Chaque animation devient des clips modifiables : direction, quantité, délai, durée, courbe, répétition.</p></div>`;
+    <p class="nxm-hint">Ajoutée à ${esc(fmtS(s.t))} (tête de lecture) sur ${selected(D).length > 1 ? 'chaque calque sélectionné' : 'le calque sélectionné'}. Survolez une vignette pour la voir. Chaque animation devient des clips modifiables : direction, quantité, délai, durée, courbe, répétition.</p></div>`;
   const pop = popover(anchor, `<div class="pop-title">Animations toutes faites</div>${body()}`, { width: 420, align: 'end', above: true });
   if (!pop) return;
   const anim = (tile) => { const p = M.findPreset(tile.dataset.preset); const d = tile.querySelector('.nxm-demo i'); if (!p || !d || d.nxAnim) return; const { frames, end } = demoFrames(p); d.nxAnim = d.animate(frames, { duration: Math.max(300, end), iterations: Infinity }); };
@@ -411,7 +411,7 @@ function library(D, anchor) {
     if (g) { group = g.dataset.lg; settings.nxMotionGroup = group; saveSettings(); pop.querySelector('.nxm-lib').outerHTML = body(); return; }
     const t = e.target.closest('[data-preset]'); if (!t) return;
     const list = selected(D);
-    if (!list.length) { toast('Sélectionne d’abord un calque.'); return; }
+    if (!list.length) { toast('Sélectionnez d’abord un calque.'); return; }
     const p = M.findPreset(t.dataset.preset);
     for (const o of list) { const m = M.normalizeMotion(o.nxMotion); M.applyPreset(m, p.id, s.t); o.nxMotion = M.normalizeMotion(m); }
     closePopover();
@@ -422,7 +422,7 @@ function library(D, anchor) {
     if (!s.open) open(D); else ML.showFrame(D, s.t);
     D.nxNextLabel = `Animation « ${p.name} »`; D.changed(); paint(D);
     const n = M.instantiate(p).length;
-    toast(`« ${p.name} » ajoutée${list.length > 1 ? ` à ${list.length} calques` : ''} : ${n > 1 ? `${n} clips` : '1 clip'} à retoucher dans la frise. Appuie sur Lecture pour la voir.`);
+    toast(`« ${p.name} » ajoutée${list.length > 1 ? ` à ${list.length} calques` : ''} : ${n > 1 ? `${n} clips` : '1 clip'} à retoucher dans la frise. Appuyez sur Lecture pour la voir.`);
   });
 }
 
@@ -500,7 +500,7 @@ function easeEditor(D, anchor, target) {
   const html = (e) => `<div class="nxm-ease">
     <div class="seg wide small">${[['hold', 'Maintien'], ['curve', 'Courbe'], ['spring', 'Ressort']].map(([f, l]) => `<button class="${f === fam ? 'on' : ''}" data-ef="${f}">${l}</button>`).join('')}</div>
     <div class="nxm-ease-main">${graph(e)}<div class="nxm-ease-list">${presets().map(([id, l]) => `<button class="${id === e ? 'on' : ''}" data-ep="${id}">${esc(l)}</button>`).join('')}${fam === 'curve' ? `<button class="${e && e.bezier ? 'on' : ''}" data-ep="custom">Personnalisée</button>` : fam === 'spring' ? `<button class="${e && typeof e === 'object' && 'spring' in e ? 'on' : ''}" data-ep="custom">Personnalisé</button>` : ''}</div></div>
-    ${fam === 'curve' && M.controlPoints(e) ? `<div class="nxm-bez">${M.controlPoints(e).map((v, i) => `<label><span>${['x1', 'y1', 'x2', 'y2'][i]}</span><input class="input small" type="number" step="0.01" ${i % 2 === 0 ? 'min="0" max="1"' : ''} data-eb="${i}" value="${num(v)}"></label>`).join('')}</div><p class="nxm-hint">Fais glisser les deux poignées. CSS : ${esc(M.timingFunction(e))}</p>` : ''}
+    ${fam === 'curve' && M.controlPoints(e) ? `<div class="nxm-bez">${M.controlPoints(e).map((v, i) => `<label><span>${['x1', 'y1', 'x2', 'y2'][i]}</span><input class="input small" type="number" step="0.01" ${i % 2 === 0 ? 'min="0" max="1"' : ''} data-eb="${i}" value="${num(v)}"></label>`).join('')}</div><p class="nxm-hint">Faites glisser les deux poignées. CSS : ${esc(M.timingFunction(e))}</p>` : ''}
     ${fam === 'spring' ? `<div class="st-field"><span>Rebond <b>${num(M.bounceOf(e) ?? M.DEFAULT_BOUNCE)}</b></span><input type="range" min="-0.8" max="0.9" step="0.01" value="${M.bounceOf(e) ?? M.DEFAULT_BOUNCE}" data-es></div><p class="nxm-hint">Le ressort dure exactement le segment : plus de rebond, plus de dépassement ; en dessous de 0, il arrive en douceur.</p>` : ''}
     ${fam === 'hold' ? '<p class="nxm-hint">La valeur reste fixe jusqu’à l’image clé suivante, puis saute (animation image par image).</p>' : ''}
     <div class="nxm-ease-demo"><i></i></div></div>`;

@@ -107,7 +107,7 @@ export function props(D, o) {
   const g = groupOf(o);
   if (!g) {
     if (!D.sel().length) return '';
-    return sec('Mise en page automatique', `<p class="dzx-hint">Range les éléments en ligne ou en colonne : le bloc s’adapte quand tu ajoutes, retires ou modifies un élément.</p><div class="nx-btns">${btn('auto-new', 'nxGridCols', 'Ajouter la mise en page auto')}</div>`);
+    return sec('Mise en page automatique', `<p class="dzx-hint">Rangez les éléments en ligne ou en colonne : le bloc s’adapte quand vous ajoutez, retires ou modifies un élément.</p><div class="nx-btns">${btn('auto-new', 'nxGridCols', 'Ajouter la mise en page auto')}</div>`);
   }
   const a = { ...DEF, ...g.nxAuto };
   const child = o !== g ? o : null;

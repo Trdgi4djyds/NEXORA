@@ -13,8 +13,8 @@ const LANGS = {
 };
 const KIND_LABEL = { icon: 'Icône', featureGraphic: 'Bannière', phoneScreenshots: 'Captures téléphone', tenInchScreenshots: 'Captures tablette 10 pouces' };
 const PERM_DATA = {
-  location: { cat: 'Position', type: 'Position approximative et position exacte', why: 'afficher ce qui est proche de toi (cartes, magasins, livraison)' },
-  camera: { cat: 'Photos et vidéos', type: 'Photos (si tu les envoies depuis l’application)', why: 'prendre une photo ou scanner un code' },
+  location: { cat: 'Position', type: 'Position approximative et position exacte', why: 'afficher ce qui est proche de vous (cartes, magasins, livraison)' },
+  camera: { cat: 'Photos et vidéos', type: 'Photos (si vous les envoyez depuis l’application)', why: 'prendre une photo ou scanner un code' },
   microphone: { cat: 'Fichiers audio', type: 'Enregistrements vocaux ou audio', why: 'appels, messages vocaux et recherche vocale' },
   contacts: { cat: 'Contacts', type: 'Contacts', why: 'choisir un contact à qui écrire ou partager' },
 };
@@ -42,7 +42,7 @@ export function practices(cfg) {
   const out = [];
   for (const p of cfg.permissions || []) {
     const d = PERM_DATA[p];
-    if (d) out.push({ id: p, cat: d.cat, type: d.type, why: d.why, collected: 'Seulement si ton site envoie ces données à son serveur', shared: 'Non', optional: true });
+    if (d) out.push({ id: p, cat: d.cat, type: d.type, why: d.why, collected: 'Seulement si votre site envoie ces données à son serveur', shared: 'Non', optional: true });
   }
   // NEXORA #018 : statistiques et plantages envoyés au compte NEXORA du propriétaire.
   if (cfg.insights && cfg.insights.enabled) {
@@ -51,7 +51,7 @@ export function practices(cfg) {
   }
   // NEXORA #019 : achats intégrés (paiement traité par Google Play ; l'application reçoit la preuve d'achat).
   if (cfg.billing && cfg.billing.enabled && cfg.engine !== 'twa') {
-    out.push({ id: 'billing', cat: 'Infos financières', type: 'Historique des achats (preuve d’achat Google Play)', why: 'activer et restaurer les achats faits dans l’application', collected: 'Oui, si ton site enregistre les achats', shared: 'Non', optional: false });
+    out.push({ id: 'billing', cat: 'Infos financières', type: 'Historique des achats (preuve d’achat Google Play)', why: 'activer et restaurer les achats faits dans l’application', collected: 'Oui, si votre site enregistre les achats', shared: 'Non', optional: false });
   }
   if (cfg.push && cfg.push.enabled && cfg.engine !== 'twa') {
     out.push({ id: 'push', cat: 'Identifiants de l’appareil ou autres', type: 'Jeton de notification de l’appareil (Firebase Cloud Messaging)', why: 'envoyer les notifications push', collected: 'Oui', shared: 'Non (Google agit comme prestataire)', optional: true });
@@ -84,7 +84,7 @@ function privacyHtml(app, cfg) {
   const site = cfg.source.kind === 'url' ? cfg.source.url : (cfg.source.publicUrl || '');
   const pr = practices(cfg);
   const perms = (cfg.permissions || []).filter((p) => PERM_DATA[p] || ['notifications', 'vibrate', 'biometric', 'nfc'].includes(p));
-  const permText = { notifications: 'Notifications : t’informer (commande, message, nouveauté). Tu peux les couper dans les réglages d’Android.', vibrate: 'Vibration : retour au toucher.', biometric: 'Empreinte ou visage : déverrouiller l’application. La vérification se fait sur le téléphone ; aucune empreinte n’est transmise.', nfc: 'NFC : lire une étiquette sans contact quand tu le demandes.' };
+  const permText = { notifications: 'Notifications : vous informer (commande, message, nouveauté). Vous pouvez les couper dans les réglages d’Android.', vibrate: 'Vibration : retour au toucher.', biometric: 'Empreinte ou visage : déverrouiller l’application. La vérification se fait sur le téléphone ; aucune empreinte n’est transmise.', nfc: 'NFC : lire une étiquette sans contact quand vous le demandez.' };
   const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
   const h = (s) => esc(s);
   return `<!doctype html>
@@ -95,18 +95,18 @@ function privacyHtml(app, cfg) {
 <h1>Politique de confidentialité de l’application ${h(name)}</h1>
 <p><small>Dernière mise à jour : ${today}</small></p>
 <h2>Qui sommes-nous</h2>
-<p>L’application ${h(name)} (identifiant ${h(cfg.appId || '')}) est éditée par ${h(own.org || own.name || name)}${own.street || own.city ? `, ${h([own.street, own.postal, own.city, own.country].filter(Boolean).join(', '))}` : ''}. Pour toute question sur tes données : ${l.contactEmail ? `<a href="mailto:${h(l.contactEmail)}">${h(l.contactEmail)}</a>` : 'l’adresse indiquée sur la fiche Google Play'}.</p>
+<p>L’application ${h(name)} (identifiant ${h(cfg.appId || '')}) est éditée par ${h(own.org || own.name || name)}${own.street || own.city ? `, ${h([own.street, own.postal, own.city, own.country].filter(Boolean).join(', '))}` : ''}. Pour toute question sur vos données : ${l.contactEmail ? `<a href="mailto:${h(l.contactEmail)}">${h(l.contactEmail)}</a>` : 'l’adresse indiquée sur la fiche Google Play'}.</p>
 <h2>Ce que fait l’application</h2>
-<p>${site ? `L’application affiche le site <a href="${h(site)}">${h(site)}</a>. Les données que tu saisis sur ce site (compte, formulaires, commandes) sont traitées par ce site selon sa propre politique de confidentialité.` : 'L’application affiche des pages intégrées à l’application.'}</p>
+<p>${site ? `L’application affiche le site <a href="${h(site)}">${h(site)}</a>. Les données que vous saisissez sur ce site (compte, formulaires, commandes) sont traitées par ce site selon sa propre politique de confidentialité.` : 'L’application affiche des pages intégrées à l’application.'}</p>
 <h2>Données traitées par l’application</h2>
 ${pr.length ? `<ul>${pr.map((p) => `<li><b>${h(p.cat)}</b> — ${h(p.type)} : pour ${h(p.why)}.</li>`).join('')}</ul>` : '<p>L’application elle-même ne collecte aucune donnée personnelle.</p>'}
 ${perms.length ? `<h2>Autorisations demandées</h2><ul>${perms.map((p) => `<li>${PERM_DATA[p] ? `${h(PERM_DATA[p].cat)} : ${h(PERM_DATA[p].why)}. Demandée seulement au moment où c’est nécessaire.` : h(permText[p])}</li>`).join('')}</ul>` : ''}
 <h2>Partage</h2>
-<p>${cfg.push && cfg.push.enabled ? 'Les notifications passent par Firebase Cloud Messaging (Google), qui agit pour notre compte. ' : ''}${cfg.billing && cfg.billing.enabled ? 'Les paiements faits dans l’application sont traités par Google Play : nous ne recevons ni ta carte ni tes coordonnées bancaires, seulement la preuve d’achat qui active ton achat. ' : ''}${cfg.insights && cfg.insights.enabled ? 'Les statistiques d’utilisation et les rapports de plantage sont hébergés par NEXORA, qui agit pour notre compte ; ils sont conservés 180 jours. ' : ''}Tes données ne sont ni vendues ni louées.</p>
+<p>${cfg.push && cfg.push.enabled ? 'Les notifications passent par Firebase Cloud Messaging (Google), qui agit pour notre compte. ' : ''}${cfg.billing && cfg.billing.enabled ? 'Les paiements faits dans l’application sont traités par Google Play : nous ne recevons ni votre carte ni vos coordonnées bancaires, seulement la preuve d’achat qui active votre achat. ' : ''}${cfg.insights && cfg.insights.enabled ? 'Les statistiques d’utilisation et les rapports de plantage sont hébergés par NEXORA, qui agit pour notre compte ; ils sont conservés 180 jours. ' : ''}Vos données ne sont ni vendues ni louées.</p>
 <h2>Conservation et sécurité</h2>
 <p>Les échanges avec nos serveurs sont chiffrés (HTTPS). Les données sont conservées le temps nécessaire au service, puis supprimées.</p>
-<h2>Tes droits</h2>
-<p>Tu peux demander à consulter, corriger ou supprimer tes données, ou t’opposer à leur traitement, en écrivant à ${l.contactEmail ? h(l.contactEmail) : 'l’adresse de contact'}. Tu peux aussi saisir l’autorité de protection des données de ton pays (en France, la CNIL).</p>
+<h2>Vos droits</h2>
+<p>Vous pouvez demander à consulter, corriger ou supprimer vos données, ou vous opposer à leur traitement, en écrivant à ${l.contactEmail ? h(l.contactEmail) : 'l’adresse de contact'}. Vous pouvez aussi saisir l’autorité de protection des données de votre pays (en France, la CNIL).</p>
 <h2>Enfants</h2>
 <p>L’application ne s’adresse pas spécialement aux enfants de moins de 13 ans et ne collecte pas sciemment leurs données.</p>
 <h2>Modifications</h2>
@@ -162,10 +162,10 @@ export function install(proto, SECTIONS) {
     const add = (act, ic, label, extra = '') => `<button class="nxa-add" data-act="${act}" ${extra}>${icon(ic, 18)}<span>${label}</span></button>`;
 
     const texts = this.card('Textes de la fiche', `
-      <div class="nxa-lang">${this.field('Langue', 'listing.lang', { type: 'select', options: LANGS })}<div class="ab-row"><button class="btn small" data-act="listing-ai">${icon('sparkle', 13)}<span>Rédiger avec l’IA</span></button><button class="btn small" data-act="listing-read" ${st.serviceAccount && idOk ? '' : 'disabled'} title="${st.serviceAccount ? 'Reprendre les textes publiés sur Google Play' : 'Importe d’abord la clé du compte de service (section Publication Play Store)'}">${icon('download', 13)}<span>Reprendre la fiche en ligne</span></button></div></div>
+      <div class="nxa-lang">${this.field('Langue', 'listing.lang', { type: 'select', options: LANGS })}<div class="ab-row"><button class="btn small" data-act="listing-ai">${icon('sparkle', 13)}<span>Rédiger avec l’IA</span></button><button class="btn small" data-act="listing-read" ${st.serviceAccount && idOk ? '' : 'disabled'} title="${st.serviceAccount ? 'Reprendre les textes publiés sur Google Play' : 'Importez d’abord la clé du compte de service (section Publication Play Store)'}">${icon('download', 13)}<span>Reprendre la fiche en ligne</span></button></div></div>
       <label class="field"><span>Nom sur Google Play ${counter('listing.title', l.title, 30)}</span><input class="input" data-k="listing.title" value="${esc(l.title)}" placeholder="${esc(cfg.appName || 'Mon application')}"></label>
-      <label class="field"><span>Description courte ${counter('listing.shortDescription', l.shortDescription, 80)}</span><input class="input" data-k="listing.shortDescription" value="${esc(l.shortDescription)}" placeholder="Ce que l’application t’apporte, en une phrase"></label>
-      <label class="field"><span>Description complète ${counter('listing.fullDescription', l.fullDescription, 4000)}</span><textarea class="input" rows="9" data-k="listing.fullDescription" placeholder="Présente l’application : ce qu’elle permet, pour qui, ses points forts. Évite les superlatifs (« la meilleure ») et les appels au vote : Google les refuse.">${esc(l.fullDescription)}</textarea></label>
+      <label class="field"><span>Description courte ${counter('listing.shortDescription', l.shortDescription, 80)}</span><input class="input" data-k="listing.shortDescription" value="${esc(l.shortDescription)}" placeholder="Ce que l’application vous apporte, en une phrase"></label>
+      <label class="field"><span>Description complète ${counter('listing.fullDescription', l.fullDescription, 4000)}</span><textarea class="input" rows="9" data-k="listing.fullDescription" placeholder="Présentez l’application : ce qu’elle permet, pour qui, ses points forts. Évitez les superlatifs (« la meilleure ») et les appels au vote : Google les refuse.">${esc(l.fullDescription)}</textarea></label>
       ${this.field('Vidéo YouTube (facultatif)', 'listing.video', { placeholder: 'https://www.youtube.com/watch?v=…' })}`, ' <small>Visibles par tous sur Google Play</small>');
 
     const contact = this.card('Coordonnées et confidentialité', `
@@ -173,7 +173,7 @@ export function install(proto, SECTIONS) {
       ${this.field('Téléphone (facultatif)', 'listing.contactPhone', { placeholder: '+33 1 23 45 67 89' })}
       <label class="field"><span>Adresse de la politique de confidentialité</span><input class="input" data-k="listing.privacyUrl" value="${esc(l.privacyUrl)}" placeholder="https://www.monsite.com/confidentialite.html"></label>
       <div class="ab-row"><button class="btn small" data-act="listing-privacy">${icon('file', 13)}<span>Créer la page de confidentialité</span></button><button class="btn small" data-act="listing-privacy-check" ${/^https?:\/\//.test(l.privacyUrl) ? '' : 'disabled'}>${icon('globe', 13)}<span>Vérifier en ligne</span></button><span class="ab-hint" data-nxa-privacy></span></div>
-      <p class="ab-hint">Google exige une politique de confidentialité en ligne. NEXORA la rédige d’après ton application (autorisations, notifications, propriétaire) : enregistre le fichier, publie-le sur ton site, puis colle son adresse ci-dessus.</p>`);
+      <p class="ab-hint">Google exige une politique de confidentialité en ligne. NEXORA la rédige d’après votre application (autorisations, notifications, propriétaire) : enregistrez le fichier, publiez-le sur votre site, puis collez son adresse ci-dessus.</p>`);
 
     const banner = a && a.featureGraphic && a.featureGraphic[0];
     const iconImg = a && a.icon && a.icon[0];
@@ -186,11 +186,11 @@ export function install(proto, SECTIONS) {
         </div>
         <div class="nxa-gfx-col grow">
           <b class="nxa-sub">Bannière <small>1024 × 500, en haut de la fiche</small></b>
-          <div class="nxa-banner">${banner ? `<img src="${banner.dataUrl}" alt="">` : `<span class="nxa-empty">${icon('image', 22)}<small>Générée aux couleurs de ton icône</small></span>`}</div>
+          <div class="nxa-banner">${banner ? `<img src="${banner.dataUrl}" alt="">` : `<span class="nxa-empty">${icon('image', 22)}<small>Générée aux couleurs de votre icône</small></span>`}</div>
           <div class="ab-row">${this.segK('listing.bannerStyle', { logo: 'Logo et nom', center: 'Centrée', capture: 'Avec l’écran' })}</div>
-          ${this.field('Accroche de la bannière', 'listing.tagline', { placeholder: l.shortDescription || 'Commande en deux gestes, livrée chez toi' })}
+          ${this.field('Accroche de la bannière', 'listing.tagline', { placeholder: l.shortDescription || 'Commande en deux gestes, livrée chez vous' })}
           <div class="ab-row"><button class="btn small primary" data-act="listing-banner-gen">${icon('sparkle', 13)}<span>${banner ? 'Regénérer' : 'Générer la bannière'}</span></button><button class="btn small" data-act="listing-banner-pick">${icon('upload', 13)}<span>Importer</span></button>${banner ? `<button class="btn small" data-act="listing-img-del" data-kind="featureGraphic" data-id="${esc(banner.id)}" title="Retirer">${icon('trash', 13)}</button>` : ''}</div>
-          ${l.bannerStyle === 'capture' && !raw ? '<p class="ab-hint">Le style « Avec l’écran » utilise la dernière capture de l’aperçu : capture d’abord un écran ci-dessous.</p>' : ''}
+          ${l.bannerStyle === 'capture' && !raw ? '<p class="ab-hint">Le style « Avec l’écran » utilise la dernière capture de l’aperçu : capturez d’abord un écran ci-dessous.</p>' : ''}
         </div>
       </div>
       <div class="nxa-sep"></div>
@@ -198,20 +198,20 @@ export function install(proto, SECTIONS) {
       <div class="ab-grid2">${this.field('Présentation', 'listing.shotStyle', { type: 'select', options: { framed: 'Habillée : appareil, légende et fond', plain: 'Écran seul' } })}${l.shotStyle === 'framed' ? this.field('Fond', 'listing.shotBg', { type: 'select', options: { brand: 'Couleurs de l’icône', light: 'Clair', dark: 'Sombre' } }) : '<span></span>'}</div>
       ${l.shotStyle === 'framed' ? this.field('Légende de la prochaine capture', 'listing.caption', { placeholder: 'Commande en deux gestes' }) : ''}
       ${thumbs(this, 'phoneScreenshots', a.phoneScreenshots, { actions: add('listing-shot-capture', 'camera', 'Capturer l’aperçu', `title="Capture l’écran affiché à droite, à la définition de l’appareil (${esc(this.previewDevice().dev.name)})"`) + add('listing-shot-pick', 'upload', 'Importer une image') })}
-      <p class="ab-hint">Navigue dans le site à droite jusqu’à l’écran voulu, puis « Capturer l’aperçu » : NEXORA reprend la barre d’état, les onglets et l’appareil choisi. Change d’appareil ou de couleur dans la liste au-dessus du téléphone.</p>
+      <p class="ab-hint">Naviguez dans le site à droite jusqu’à l’écran voulu, puis « Capturer l’aperçu » : NEXORA reprend la barre d’état, les onglets et l’appareil choisi. Change d’appareil ou de couleur dans la liste au-dessus du téléphone.</p>
       <div class="nxa-sep"></div>
       <b class="nxa-sub">Captures de tablette <small>facultatif, recommandé si l’application s’adapte aux tablettes</small></b>
       ${thumbs(this, 'tenInchScreenshots', a.tenInchScreenshots, { wide: true, actions: add('listing-tab-pick', 'upload', 'Importer (10 pouces)') })}`);
 
     const content = this.card('Contenu de l’application (Play Console)', `
-      <p class="ab-hint">Ces formulaires se remplissent une fois dans la Play Console (Règles › Contenu de l’application). Voici les réponses qui correspondent à ce que NEXORA met dans ton application.</p>
+      <p class="ab-hint">Ces formulaires se remplissent une fois dans la Play Console (Règles › Contenu de l’application). Voici les réponses qui correspondent à ce que NEXORA met dans votre application.</p>
       <ol class="ab-psteps">
-        <li class="ab-pstep ${/^https:\/\//.test(l.privacyUrl) ? 'ok' : ''}"><i>${/^https:\/\//.test(l.privacyUrl) ? icon('check', 12) : 1}</i><div><b>Règles de confidentialité</b><p>${l.privacyUrl ? `Adresse : ${esc(l.privacyUrl)}` : 'Crée et publie la page ci-dessus, puis colle son adresse.'}</p></div></li>
-        <li class="ab-pstep"><i>2</i><div><b>Sécurité des données</b>${pr.length ? `<p>Données liées aux fonctions de l’application (chiffrées pendant le transfert : oui ; suppression sur demande : selon ton site) :</p><ul class="nxa-ds">${pr.map((p) => `<li><b>${esc(p.cat)}</b> › ${esc(p.type)}<small>Collectée : ${esc(p.collected)} · Partagée : ${esc(p.shared)} · Finalité : ${esc(p.why)}</small></li>`).join('')}</ul>` : '<p>L’application elle-même ne collecte aucune donnée : réponds « Non » à la collecte, <b>sauf</b> pour ce que ton site collecte (comptes, formulaires, commandes, mesure d’audience), à déclarer aussi.</p>'}</div></li>
-        <li class="ab-pstep"><i>3</i><div><b>Annonces</b><p>NEXORA n’ajoute aucune publicité. Réponds « Oui » seulement si ton site en affiche.</p></div></li>
-        <li class="ab-pstep"><i>4</i><div><b>Accès à l’application</b><p>${cfg.config && cfg.config.passcode && cfg.config.passcode.enabled ? 'Ton application demande un code : donne-le à Google dans les instructions d’accès.' : 'Si une partie du site demande un compte, fournis un identifiant de test à Google ; sinon, « Toutes les fonctionnalités sont disponibles sans restriction ».'}</p></div></li>
-        <li class="ab-pstep"><i>5</i><div><b>Classification du contenu</b><p>Questionnaire IARC (violence, achats, partage de position…) : réponds pour le contenu de ton site.${(cfg.permissions || []).includes('location') ? ' Indique que l’application peut partager la position.' : ''}</p></div></li>
-        <li class="ab-pstep"><i>6</i><div><b>Public cible</b><p>Ne choisis les moins de 13 ans que si l’application leur est destinée : les règles « Famille » s’appliquent alors.</p></div></li>
+        <li class="ab-pstep ${/^https:\/\//.test(l.privacyUrl) ? 'ok' : ''}"><i>${/^https:\/\//.test(l.privacyUrl) ? icon('check', 12) : 1}</i><div><b>Règles de confidentialité</b><p>${l.privacyUrl ? `Adresse : ${esc(l.privacyUrl)}` : 'Créez et publiez la page ci-dessus, puis collez son adresse.'}</p></div></li>
+        <li class="ab-pstep"><i>2</i><div><b>Sécurité des données</b>${pr.length ? `<p>Données liées aux fonctions de l’application (chiffrées pendant le transfert : oui ; suppression sur demande : selon votre site) :</p><ul class="nxa-ds">${pr.map((p) => `<li><b>${esc(p.cat)}</b> › ${esc(p.type)}<small>Collectée : ${esc(p.collected)} · Partagée : ${esc(p.shared)} · Finalité : ${esc(p.why)}</small></li>`).join('')}</ul>` : '<p>L’application elle-même ne collecte aucune donnée : répondez « Non » à la collecte, <b>sauf</b> pour ce que votre site collecte (comptes, formulaires, commandes, mesure d’audience), à déclarer aussi.</p>'}</div></li>
+        <li class="ab-pstep"><i>3</i><div><b>Annonces</b><p>NEXORA n’ajoute aucune publicité. Répondez « Oui » seulement si votre site en affiche.</p></div></li>
+        <li class="ab-pstep"><i>4</i><div><b>Accès à l’application</b><p>${cfg.config && cfg.config.passcode && cfg.config.passcode.enabled ? 'Votre application demande un code : donnez-le à Google dans les instructions d’accès.' : 'Si une partie du site demande un compte, fournissez un identifiant de test à Google ; sinon, « Toutes les fonctionnalités sont disponibles sans restriction ».'}</p></div></li>
+        <li class="ab-pstep"><i>5</i><div><b>Classification du contenu</b><p>Questionnaire IARC (violence, achats, partage de position…) : répondez pour le contenu de votre site.${(cfg.permissions || []).includes('location') ? ' Indiquez que l’application peut partager la position.' : ''}</p></div></li>
+        <li class="ab-pstep"><i>6</i><div><b>Public cible</b><p>Ne choisissez les moins de 13 ans que si l’application leur est destinée : les règles « Famille » s’appliquent alors.</p></div></li>
         <li class="ab-pstep"><i>7</i><div><b>Autorisations sensibles</b><p>NEXORA n’ajoute aucune autorisation soumise à déclaration (SMS, journal d’appels, position en arrière-plan, accès à tous les fichiers).</p></div></li>
       </ol>
       <div class="ab-row"><button class="btn small" data-external="https://play.google.com/console">${icon('external', 13)}<span>Ouvrir la Play Console</span></button></div>`);
@@ -243,7 +243,7 @@ export function install(proto, SECTIONS) {
     this.renderForm();
   };
   proto.nxNeedId = function nxNeedId() {
-    if (!/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/.test(this.cfg.appId || '')) throw new Error('Indique d’abord un identifiant d’application valide (section Identité) : les images de la fiche sont rangées par application.');
+    if (!/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/.test(this.cfg.appId || '')) throw new Error('Indiquez d’abord un identifiant d’application valide (section Identité) : les images de la fiche sont rangées par application.');
   };
 
   proto.act_listing_icon_gen = async function act() {
@@ -260,7 +260,7 @@ export function install(proto, SECTIONS) {
     this.nxNeedId();
     const l = L(this, this.cfg);
     const raw = this.nxRaw && this.nxRaw[this.nxRaw.length - 1];
-    if (l.bannerStyle === 'capture' && !raw) throw new Error('Capture d’abord un écran de l’aperçu (Captures d’écran du téléphone), ou choisis un autre style.');
+    if (l.bannerStyle === 'capture' && !raw) throw new Error('Capturez d’abord un écran de l’aperçu (Captures d’écran du téléphone), ou choisissez un autre style.');
     await this.nxPutImage('featureGraphic', await D.banner(this.cfg, { style: l.bannerStyle, title: l.title || this.cfg.appName, tagline: l.tagline || l.shortDescription, screen: raw }));
     toast('Bannière 1024 × 500 générée.');
   };
@@ -280,7 +280,7 @@ export function install(proto, SECTIONS) {
       await new Promise((r) => setTimeout(r, 300));
     }
     const screen = $('.ab-screen', this.el);
-    if (!this.wv || !this.wvId) throw new Error(this.cfg.source.kind === 'url' ? 'Indique l’adresse du site (section Source) et attends son affichage dans l’aperçu.' : 'Pour un projet local, lance le site dans le Responsive Lab puis reviens ici, ou importe une image.');
+    if (!this.wv || !this.wvId) throw new Error(this.cfg.source.kind === 'url' ? 'Indiquez l’adresse du site (section Source) et attendez son affichage dans l’aperçu.' : 'Pour un projet local, lancez le site dans le Responsive Lab puis revenez ici, ou importez une image.');
     const k = (this.phoneL && this.phoneL.dpr) || 3;
     const shot = await api.invoke('capture:shot', { wcId: this.wvId, fullPage: false, dpr: k });
     if (!shot || !shot.tiles || !shot.tiles.length) throw new Error(shot && shot.error ? `Capture impossible : ${shot.error}` : 'Capture impossible : la page n’est pas encore affichée.');
@@ -324,7 +324,7 @@ export function install(proto, SECTIONS) {
 
   proto.act_listing_privacy = async function act() {
     const file = await api.invoke('lab:save-text', { name: 'confidentialite.html', text: privacyHtml(this, this.cfg), filters: [{ name: 'Page web', extensions: ['html'] }] });
-    if (file) toast('Page enregistrée : publie-la sur ton site, puis colle son adresse.', { action: 'Afficher', onAction: () => api.invoke('lab:reveal', file) });
+    if (file) toast('Page enregistrée : publiez-la sur votre site, puis collez son adresse.', { action: 'Afficher', onAction: () => api.invoke('lab:reveal', file) });
   };
   proto.act_listing_privacy_check = async function act() {
     const out = $('[data-nxa-privacy]', this.el);
@@ -334,7 +334,7 @@ export function install(proto, SECTIONS) {
 
   proto.act_listing_ai = async function act(btn) {
     const ai = await import('../../dist/chunks/ai-RLNIHTXY.js');
-    if (!await ai.aiReady()) { toast('Configure d’abord une IA (bouton IA en haut à droite).'); ai.openAiSettings(); return; }
+    if (!await ai.aiReady()) { toast('Configurez d’abord une IA (bouton IA en haut à droite).'); ai.openAiSettings(); return; }
     const cfg = this.cfg; const l = L(this, cfg);
     const lang = LANGS[l.lang] || l.lang;
     const n = busy('L’IA rédige la fiche…');
@@ -347,13 +347,13 @@ export function install(proto, SECTIONS) {
       });
       const m = /\{[\s\S]*\}/.exec(out);
       const j = m ? JSON.parse(m[0]) : null;
-      if (!j || !j.title) throw new Error('Réponse de l’IA illisible : réessaie.');
+      if (!j || !j.title) throw new Error('Réponse de l’IA illisible : réessayez.');
       const before = { title: l.title, shortDescription: l.shortDescription, fullDescription: l.fullDescription };
       this.set('listing.title', String(j.title).slice(0, 30));
       this.set('listing.shortDescription', String(j.shortDescription || '').slice(0, 80));
       this.set('listing.fullDescription', String(j.fullDescription || '').slice(0, 4000));
       this.renderForm();
-      toast('Textes rédigés par l’IA : relis-les avant l’envoi.', { action: 'Annuler', onAction: () => { for (const [k, v] of Object.entries(before)) this.set(`listing.${k}`, v); this.renderForm(); } });
+      toast('Textes rédigés par l’IA : relisez-les avant l’envoi.', { action: 'Annuler', onAction: () => { for (const [k, v] of Object.entries(before)) this.set(`listing.${k}`, v); this.renderForm(); } });
     } finally { n.close(); if (btn) btn.blur(); }
   };
 
@@ -388,7 +388,7 @@ export function install(proto, SECTIONS) {
       this.save();
       this.renderForm();
       const imgs = Object.entries(r.images || {}).map(([k, v]) => `${v} ${KIND_LABEL[k] ? KIND_LABEL[k].toLowerCase() : k}`).join(', ');
-      toast(`Fiche envoyée${imgs ? ` (${imgs})` : ''}.${r.sentForReview === false ? ' Lance l’examen depuis la Play Console (Vue d’ensemble des publications).' : ' Google l’examine avant de la publier.'}`);
+      toast(`Fiche envoyée${imgs ? ` (${imgs})` : ''}.${r.sentForReview === false ? ' Lancez l’examen depuis la Play Console (Vue d’ensemble des publications).' : ' Google l’examine avant de la publier.'}`);
     } finally { n.close(); }
   };
 }

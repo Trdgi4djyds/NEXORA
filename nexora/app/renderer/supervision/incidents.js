@@ -51,7 +51,7 @@ export async function renderIncidents(ctx) {
   }).join('');
   ctx.afterRender = () => bind(ctx, q, names);
   return `<div class="sup-kpis k5">${kpis}</div>
-    ${card('Frise des incidents', `${legend}${tl || '<p class="sup-none">Aucun site.</p>'}`, { sub: 'Chaque bloc est un incident ; clique pour l’ouvrir' })}
+    ${card('Frise des incidents', `${legend}${tl || '<p class="sup-none">Aucun site.</p>'}`, { sub: 'Chaque bloc est un incident ; cliquez pour l’ouvrir' })}
     ${card('Liste des incidents', `${filters}<div class="sup-table-wrap"><table class="sup-table"><thead><tr><th>État</th><th>Type</th><th>Site</th><th>Cause</th><th>Début</th><th class="num">Durée</th><th class="num">Alertes</th><th>Suivi</th></tr></thead><tbody>${rows || `<tr><td colspan="8" class="sup-none">${icon('pass', 14)} Aucun incident ne correspond.</td></tr>`}</tbody></table></div>`)}`;
 }
 

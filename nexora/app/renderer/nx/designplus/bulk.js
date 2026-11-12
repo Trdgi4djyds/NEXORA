@@ -16,7 +16,7 @@ export function panel(D, st) {
   const ph = placeholders(D);
   const d = st.data;
   const missing = d ? ph.filter((p) => !d.head.includes(p)) : [];
-  return `<p class="dzx-hint">1. Dans la page modèle, écris <code>{{nom}}</code>, <code>{{prix}}</code>… dans les textes, et nomme <code>@photo</code> une image à remplacer (adresse web de l’image dans le tableau).<br>2. Choisis un fichier CSV (exporté d’un tableur) dont la première ligne porte les noms des colonnes.</p>
+  return `<p class="dzx-hint">1. Dans la page modèle, écrivez <code>{{nom}}</code>, <code>{{prix}}</code>… dans les textes, et nomme <code>@photo</code> une image à remplacer (adresse web de l’image dans le tableau).<br>2. Choisissez un fichier CSV (exporté d’un tableur) dont la première ligne porte les noms des colonnes.</p>
     <p class="dzx-hint">Champs trouvés dans cette page : ${ph.length ? ph.map((p) => `<code>${esc(p)}</code>`).join(' ') : '<i>aucun pour l’instant</i>'}</p>
     <div class="nx-btns">${btn('bulk-csv', 'file', d ? `${d.name || 'Tableau'} · ${pl(d.rows.length, 'ligne', 'lignes')}` : 'Choisir le fichier CSV', '', d ? '' : 'primary')}</div>
     ${d ? `${missing.length ? `<p class="dzx-hint bad">${ico('warn', 12)} Colonnes absentes du tableau : ${missing.map((m) => `<code>${esc(m)}</code>`).join(' ')}</p>` : ''}

@@ -128,24 +128,24 @@
 
     const imgs = Array.from(document.images);
     const wideImgs = imgs.filter((im) => im.getBoundingClientRect().width > vw + 1);
-    if (wideImgs.length) add({ id: 'wide-img', cat: 'responsive', level: 'warn', title: `${wideImgs.length} image${wideImgs.length > 1 ? 's' : ''} plus large${wideImgs.length > 1 ? 's' : ''} que l'écran`, detail: 'Ajoute max-width: 100% et height: auto aux images.', count: wideImgs.length, samples: sample(wideImgs) });
+    if (wideImgs.length) add({ id: 'wide-img', cat: 'responsive', level: 'warn', title: `${wideImgs.length} image${wideImgs.length > 1 ? 's' : ''} plus large${wideImgs.length > 1 ? 's' : ''} que l'écran`, detail: 'Ajoutez max-width: 100% et height: auto aux images.', count: wideImgs.length, samples: sample(wideImgs) });
 
     // ----- Accessibilité
     const noAlt = imgs.filter((im) => !im.hasAttribute('alt'));
-    if (noAlt.length) add({ id: 'alt', cat: 'a11y', level: 'error', title: `${noAlt.length} image${noAlt.length > 1 ? 's' : ''} sans texte alternatif`, detail: 'Ajoute un attribut alt décrivant l\'image (alt="" si elle est décorative).', count: noAlt.length, samples: sample(noAlt) });
+    if (noAlt.length) add({ id: 'alt', cat: 'a11y', level: 'error', title: `${noAlt.length} image${noAlt.length > 1 ? 's' : ''} sans texte alternatif`, detail: 'Ajoutez un attribut alt décrivant l\'image (alt="" si elle est décorative).', count: noAlt.length, samples: sample(noAlt) });
     else if (imgs.length) add({ id: 'alt', cat: 'a11y', level: 'pass', title: 'Toutes les images ont un attribut alt' });
 
     const accName = (el) => (el.getAttribute('aria-label') || el.getAttribute('aria-labelledby') || el.getAttribute('title') || (el.innerText || '').trim() || Array.from(el.querySelectorAll('img[alt],svg title')).map((i) => i.getAttribute('alt') || i.textContent).join('').trim());
     const links = Array.from(document.querySelectorAll('a[href]')).filter(visible).filter((a) => !accName(a));
-    if (links.length) add({ id: 'link-name', cat: 'a11y', level: 'error', title: `${links.length} lien${links.length > 1 ? 's' : ''} sans intitulé`, detail: 'Un lecteur d\'écran ne peut pas annoncer ces liens : ajoute un texte ou un aria-label.', count: links.length, samples: sample(links) });
+    if (links.length) add({ id: 'link-name', cat: 'a11y', level: 'error', title: `${links.length} lien${links.length > 1 ? 's' : ''} sans intitulé`, detail: 'Un lecteur d\'écran ne peut pas annoncer ces liens : ajoutez un texte ou un aria-label.', count: links.length, samples: sample(links) });
     const buttons = Array.from(document.querySelectorAll('button, [role="button"]')).filter(visible).filter((b) => !accName(b));
-    if (buttons.length) add({ id: 'button-name', cat: 'a11y', level: 'error', title: `${buttons.length} bouton${buttons.length > 1 ? 's' : ''} sans intitulé`, detail: 'Ajoute un texte visible ou un aria-label aux boutons qui n\'ont qu\'une icône.', count: buttons.length, samples: sample(buttons) });
+    if (buttons.length) add({ id: 'button-name', cat: 'a11y', level: 'error', title: `${buttons.length} bouton${buttons.length > 1 ? 's' : ''} sans intitulé`, detail: 'Ajoutez un texte visible ou un aria-label aux boutons qui n\'ont qu\'une icône.', count: buttons.length, samples: sample(buttons) });
 
     const fields = Array.from(document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]), select, textarea')).filter(visible);
     const unlabeled = fields.filter((f) => !(f.labels && f.labels.length) && !f.getAttribute('aria-label') && !f.getAttribute('aria-labelledby') && !f.getAttribute('title'));
     if (unlabeled.length) add({ id: 'label', cat: 'a11y', level: 'warn', title: `${unlabeled.length} champ${unlabeled.length > 1 ? 's' : ''} de formulaire sans étiquette`, detail: 'Le placeholder ne remplace pas une étiquette : il disparaît dès que l\'on tape.', count: unlabeled.length, samples: sample(unlabeled) });
 
-    if (!document.documentElement.getAttribute('lang')) add({ id: 'lang', cat: 'a11y', level: 'warn', title: 'Langue de la page non déclarée', detail: 'Ajoute lang="fr" sur la balise <html> pour que la synthèse vocale prononce correctement.' });
+    if (!document.documentElement.getAttribute('lang')) add({ id: 'lang', cat: 'a11y', level: 'warn', title: 'Langue de la page non déclarée', detail: 'Ajoutez lang="fr" sur la balise <html> pour que la synthèse vocale prononce correctement.' });
 
     const heads = Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,h6')).filter(visible);
     let prev = 0;
@@ -188,7 +188,7 @@
 
     // ----- Référencement
     const title = document.title.trim();
-    if (!title) add({ id: 'title', cat: 'seo', level: 'error', title: 'Titre de page absent', detail: 'Ajoute une balise <title> : c\'est le titre affiché dans Google et dans l\'onglet.' });
+    if (!title) add({ id: 'title', cat: 'seo', level: 'error', title: 'Titre de page absent', detail: 'Ajoutez une balise <title> : c\'est le titre affiché dans Google et dans l\'onglet.' });
     else if (title.length > 65) add({ id: 'title', cat: 'seo', level: 'info', title: `Titre long (${title.length} caractères)`, detail: 'Google coupe généralement les titres au-delà de 60 caractères environ.' });
     else add({ id: 'title', cat: 'seo', level: 'pass', title: `Titre : « ${title} »` });
     const desc = document.querySelector('meta[name="description"]');
@@ -197,7 +197,7 @@
     const h1 = document.querySelectorAll('h1').length;
     if (!h1) add({ id: 'h1', cat: 'seo', level: 'warn', title: 'Aucun titre principal (h1)', detail: 'Chaque page devrait avoir un titre h1 qui résume son contenu.' });
     else if (h1 > 1) add({ id: 'h1', cat: 'seo', level: 'info', title: `${h1} titres h1`, detail: 'Un seul h1 par page est recommandé.' });
-    if (!document.querySelector('meta[property="og:title"]') || !document.querySelector('meta[property="og:image"]')) add({ id: 'og', cat: 'seo', level: 'info', title: 'Aperçu de partage incomplet', detail: 'Ajoute og:title et og:image pour un bel aperçu sur WhatsApp, Facebook et LinkedIn.' });
+    if (!document.querySelector('meta[property="og:title"]') || !document.querySelector('meta[property="og:image"]')) add({ id: 'og', cat: 'seo', level: 'info', title: 'Aperçu de partage incomplet', detail: 'Ajoutez og:title et og:image pour un bel aperçu sur WhatsApp, Facebook et LinkedIn.' });
     const robots = document.querySelector('meta[name="robots"]');
     if (robots && /noindex/i.test(robots.content)) add({ id: 'noindex', cat: 'seo', level: 'warn', title: 'Page exclue des moteurs de recherche', detail: 'La balise robots contient noindex.' });
     if (!document.querySelector('link[rel~="icon"]')) add({ id: 'favicon', cat: 'seo', level: 'info', title: 'Icône de site (favicon) absente' });
@@ -233,21 +233,21 @@
       else add({ id: 'lcp', cat: 'perf', level: 'pass', title: `Contenu principal en ${(lcp / 1000).toFixed(1)} s` });
     }
     if (cls != null) {
-      if (cls > 0.25) add({ id: 'cls', cat: 'perf', level: 'error', title: `La mise en page saute (CLS ${cls.toFixed(2)})`, detail: 'Des éléments bougent pendant le chargement. Réserve la place des images et des publicités (width et height).' });
+      if (cls > 0.25) add({ id: 'cls', cat: 'perf', level: 'error', title: `La mise en page saute (CLS ${cls.toFixed(2)})`, detail: 'Des éléments bougent pendant le chargement. Réservez la place des images et des publicités (width et height).' });
       else if (cls > 0.1) add({ id: 'cls', cat: 'perf', level: 'warn', title: `Mise en page instable (CLS ${cls.toFixed(2)})`, detail: 'Objectif : moins de 0,1.' });
       else add({ id: 'cls', cat: 'perf', level: 'pass', title: `Mise en page stable (CLS ${cls.toFixed(2)})` });
     }
-    if (bytes > 3e6) add({ id: 'weight', cat: 'perf', level: bytes > 6e6 ? 'error' : 'warn', title: `Page lourde : ${(bytes / 1e6).toFixed(1)} Mo transférés`, detail: 'Sur une connexion 3G, chaque Mo prend plusieurs secondes. Compresse les images et allège les scripts.' });
+    if (bytes > 3e6) add({ id: 'weight', cat: 'perf', level: bytes > 6e6 ? 'error' : 'warn', title: `Page lourde : ${(bytes / 1e6).toFixed(1)} Mo transférés`, detail: 'Sur une connexion 3G, chaque Mo prend plusieurs secondes. Compressez les images et allégez les scripts.' });
     const bigImgs = res.filter((e) => e.initiatorType === 'img' && (e.transferSize || e.encodedBodySize) > 300000);
-    if (bigImgs.length) add({ id: 'big-img', cat: 'perf', level: 'warn', title: `${bigImgs.length} image${bigImgs.length > 1 ? 's' : ''} de plus de 300 Ko`, detail: 'Convertis-les en WebP ou AVIF et adapte leur taille à l\'écran.', count: bigImgs.length, samples: bigImgs.slice(0, 8).map((e) => ({ selector: `img[src="${new URL(e.name).pathname.split('/').pop()}"]`, text: `${e.name.split('/').pop().slice(0, 50)} (${Math.round((e.transferSize || e.encodedBodySize) / 1024)} Ko)`, url: e.name })) });
+    if (bigImgs.length) add({ id: 'big-img', cat: 'perf', level: 'warn', title: `${bigImgs.length} image${bigImgs.length > 1 ? 's' : ''} de plus de 300 Ko`, detail: 'Convertissez-les en WebP ou AVIF et adaptez leur taille à l\'écran.', count: bigImgs.length, samples: bigImgs.slice(0, 8).map((e) => ({ selector: `img[src="${new URL(e.name).pathname.split('/').pop()}"]`, text: `${e.name.split('/').pop().slice(0, 50)} (${Math.round((e.transferSize || e.encodedBodySize) / 1024)} Ko)`, url: e.name })) });
     const blocking = Array.from(document.head ? document.head.querySelectorAll('script[src]:not([async]):not([defer]):not([type="module"])') : []);
-    if (blocking.length) add({ id: 'blocking', cat: 'perf', level: 'warn', title: `${blocking.length} script${blocking.length > 1 ? 's' : ''} bloquant${blocking.length > 1 ? 's' : ''} l'affichage`, detail: 'Ajoute defer ou async aux scripts du <head>.', count: blocking.length, samples: blocking.slice(0, 6).map((s) => ({ selector: '', text: s.src.split('/').pop() })) });
+    if (blocking.length) add({ id: 'blocking', cat: 'perf', level: 'warn', title: `${blocking.length} script${blocking.length > 1 ? 's' : ''} bloquant${blocking.length > 1 ? 's' : ''} l'affichage`, detail: 'Ajoutez defer ou async aux scripts du <head>.', count: blocking.length, samples: blocking.slice(0, 6).map((s) => ({ selector: '', text: s.src.split('/').pop() })) });
     if (all.length > 1500) add({ id: 'dom', cat: 'perf', level: all.length > 3000 ? 'warn' : 'info', title: `${all.length} éléments dans la page`, detail: 'Un DOM très grand ralentit l\'affichage et les interactions sur les téléphones modestes.' });
     const lazyMissing = imgs.filter((im) => im.getBoundingClientRect().top > vh * 1.5 && im.loading !== 'lazy');
-    if (lazyMissing.length > 2) add({ id: 'lazy', cat: 'perf', level: 'info', title: `${lazyMissing.length} images hors écran chargées immédiatement`, detail: 'Ajoute loading="lazy" aux images situées plus bas dans la page.', count: lazyMissing.length, samples: sample(lazyMissing) });
+    if (lazyMissing.length > 2) add({ id: 'lazy', cat: 'perf', level: 'info', title: `${lazyMissing.length} images hors écran chargées immédiatement`, detail: 'Ajoutez loading="lazy" aux images situées plus bas dans la page.', count: lazyMissing.length, samples: sample(lazyMissing) });
 
     // ----- Sécurité et bonnes pratiques
-    if (location.protocol === 'http:' && !/^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname)) add({ id: 'https', cat: 'best', level: 'error', title: 'Site non sécurisé (http)', detail: 'Passe le site en HTTPS : les navigateurs l\'affichent « Non sécurisé ».' });
+    if (location.protocol === 'http:' && !/^(localhost|127\.|192\.168\.|10\.)/.test(location.hostname)) add({ id: 'https', cat: 'best', level: 'error', title: 'Site non sécurisé (http)', detail: 'Passez le site en HTTPS : les navigateurs l\'affichent « Non sécurisé ».' });
     if (location.protocol === 'https:') {
       const mixed = res.filter((e) => e.name.startsWith('http:'));
       if (mixed.length) add({ id: 'mixed', cat: 'best', level: 'error', title: `${mixed.length} ressource${mixed.length > 1 ? 's' : ''} chargée${mixed.length > 1 ? 's' : ''} en http`, detail: 'Contenu mixte : ces fichiers peuvent être bloqués par le navigateur.', count: mixed.length, samples: mixed.slice(0, 6).map((e) => ({ selector: '', text: e.name })) });

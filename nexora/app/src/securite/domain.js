@@ -103,7 +103,7 @@ function spfLookups(record) {
 
 async function audit(host, { fetchImpl, onStep = () => {} } = {}) {
   const domain = registrable(host);
-  if (!domain || !domain.includes('.')) throw new Error('Indique un nom de domaine, par exemple ton-site.com.');
+  if (!domain || !domain.includes('.')) throw new Error('Indiquez un nom de domaine, par exemple votre-site.com.');
   const { findings, add } = collector();
   const rec = { domain, host };
   // Sous-domaine d'une plateforme (workers.dev, github.io, vercel.app…) : messagerie, DNS et renouvellement du
@@ -111,10 +111,10 @@ async function audit(host, { fetchImpl, onStep = () => {} } = {}) {
   const plat = platformOf(host);
   if (plat) {
     rec.platform = plat;
-    add('info', 'Domaine', `Site hébergé sur un sous-domaine de ${plat}`, `Le nom de domaine, sa messagerie et son renouvellement appartiennent à la plateforme ${plat}. Avec ton propre nom de domaine, tu gardes ton adresse si tu changes d’hébergeur et tu peux envoyer des e-mails à ton nom.`, 'Facultatif : relie un nom de domaine à toi (quelques euros par an) depuis les réglages de ton hébergeur.', { who: 'toi' });
+    add('info', 'Domaine', `Site hébergé sur un sous-domaine de ${plat}`, `Le nom de domaine, sa messagerie et son renouvellement appartiennent à la plateforme ${plat}. Avec votre propre nom de domaine, vous gardez votre adresse si vous changez d’hébergeur et vous pouvez envoyer des e-mails à votre nom.`, 'Facultatif : reliez un nom de domaine à vous (quelques euros par an) depuis les réglages de votre hébergeur.', { who: 'vous' });
     const st0 = await grab(fetchImpl, `https://${host}/.well-known/security.txt`, { timeout: 8000, max: 20000 });
     rec.securityTxt = st0.ok && /contact:/i.test(st0.body);
-    if (!rec.securityTxt) add('info', 'Bonnes pratiques', 'Fichier security.txt absent', 'Ce fichier indique comment te signaler une faille de sécurité.', 'Crée /.well-known/security.txt avec « Contact: mailto:… » et une date « Expires: ».', { who: 'toi' });
+    if (!rec.securityTxt) add('info', 'Bonnes pratiques', 'Fichier security.txt absent', 'Ce fichier indique comment vous signaler une faille de sécurité.', 'Créez /.well-known/security.txt avec « Contact: mailto:… » et une date « Expires: ».', { who: 'vous' });
     onStep({ label: 'Terminé', progress: 1 });
     return finish(findings, { kind: 'domain', target: domain, host, domain, records: rec });
   }
@@ -124,7 +124,7 @@ async function audit(host, { fetchImpl, onStep = () => {} } = {}) {
     doh(fetchImpl, `_dmarc.${domain}`, 'TXT'), doh(fetchImpl, domain, 'CAA'), doh(fetchImpl, domain, 'DS'),
     doh(fetchImpl, `_mta-sts.${domain}`, 'TXT'), doh(fetchImpl, `_smtp._tls.${domain}`, 'TXT'),
   ]);
-  if (a.status === -1) throw new Error('Impossible d’interroger les serveurs DNS : vérifie ta connexion à Internet.');
+  if (a.status === -1) throw new Error('Impossible d’interroger les serveurs DNS : vérifiez votre connexion à Internet.');
   if (a.status === 3 && !ns.answers.length) throw new Error(`Le domaine ${domain} n’existe pas (aucun enregistrement DNS).`);
   rec.ns = ns.answers.map((x) => x.replace(/\.$/, ''));
   rec.mx = mx.answers.map((x) => x.replace(/\.$/, '').replace(/^\d+\s+/, ''));
@@ -134,28 +134,28 @@ async function audit(host, { fetchImpl, onStep = () => {} } = {}) {
   const spf = txtR.answers.map(txt).filter((t) => /^v=spf1\b/i.test(t));
   rec.spf = spf[0] || '';
   if (!spf.length) {
-    add('high', 'Messagerie', 'Aucun enregistrement SPF', `N’importe qui peut envoyer des e-mails qui semblent venir de @${domain} : tes clients peuvent recevoir de faux messages (hameçonnage).`, hasMail ? 'Ajoute un enregistrement TXT « v=spf1 include:<ton fournisseur d’e-mail> -all » chez ton hébergeur DNS.' : 'Tu n’envoies pas d’e-mails depuis ce domaine : ajoute « v=spf1 -all » pour interdire tout envoi en ton nom.', { who: 'dns' });
+    add('high', 'Messagerie', 'Aucun enregistrement SPF', `N’importe qui peut envoyer des e-mails qui semblent venir de @${domain} : vos clients peuvent recevoir de faux messages (hameçonnage).`, hasMail ? 'Ajoutez un enregistrement TXT « v=spf1 include:<ton fournisseur d’e-mail> -all » chez votre hébergeur DNS.' : 'Vous n’envoyez pas d’e-mails depuis ce domaine : ajoutez « v=spf1 -all » pour interdire tout envoi en votre nom.', { who: 'dns' });
   } else if (spf.length > 1) {
-    add('high', 'Messagerie', 'Plusieurs enregistrements SPF', 'Un domaine ne doit avoir qu’un seul SPF : avec plusieurs, les messageries considèrent le SPF comme invalide.', 'Fusionne-les en un seul enregistrement TXT « v=spf1 … -all ».', { who: 'dns' });
+    add('high', 'Messagerie', 'Plusieurs enregistrements SPF', 'Un domaine ne doit avoir qu’un seul SPF : avec plusieurs, les messageries considèrent le SPF comme invalide.', 'Fusionnez-les en un seul enregistrement TXT « v=spf1 … -all ».', { who: 'dns' });
   } else {
     const s = spf[0];
-    if (/[+]all\b/i.test(s)) add('critical', 'Messagerie', 'SPF « +all » : tout le monde est autorisé', 'Ce SPF autorise explicitement n’importe quel serveur à envoyer en ton nom.', 'Remplace « +all » par « -all » (ou « ~all » le temps de vérifier).', { who: 'dns' });
-    else if (/\?all\b/i.test(s)) add('medium', 'Messagerie', 'SPF neutre (« ?all »)', 'Les messages envoyés par d’autres serveurs ne sont pas rejetés.', 'Termine ton SPF par « -all » une fois tes services d’envoi listés.', { who: 'dns' });
-    else if (!/[-~]all\b|redirect=/i.test(s)) add('medium', 'Messagerie', 'SPF sans règle finale', 'Ton SPF ne dit pas quoi faire des autres serveurs.', 'Ajoute « -all » à la fin de l’enregistrement.', { who: 'dns' });
+    if (/[+]all\b/i.test(s)) add('critical', 'Messagerie', 'SPF « +all » : tout le monde est autorisé', 'Ce SPF autorise explicitement n’importe quel serveur à envoyer en votre nom.', 'Remplacez « +all » par « -all » (ou « ~all » le temps de vérifier).', { who: 'dns' });
+    else if (/\?all\b/i.test(s)) add('medium', 'Messagerie', 'SPF neutre (« ?all »)', 'Les messages envoyés par d’autres serveurs ne sont pas rejetés.', 'Terminez votre SPF par « -all » une fois vos services d’envoi listés.', { who: 'dns' });
+    else if (!/[-~]all\b|redirect=/i.test(s)) add('medium', 'Messagerie', 'SPF sans règle finale', 'Votre SPF ne dit pas quoi faire des autres serveurs.', 'Ajoutez « -all » à la fin de l’enregistrement.', { who: 'dns' });
     const n = spfLookups(s);
-    if (n > 10) add('medium', 'Messagerie', `SPF trop long (${n} recherches DNS)`, 'Au-delà de 10 recherches, le SPF est considéré comme invalide par les messageries.', 'Retire les « include » inutiles ou regroupe tes services d’envoi.', { who: 'dns' });
+    if (n > 10) add('medium', 'Messagerie', `SPF trop long (${n} recherches DNS)`, 'Au-delà de 10 recherches, le SPF est considéré comme invalide par les messageries.', 'Retirez les « include » inutiles ou regroupez vos services d’envoi.', { who: 'dns' });
   }
 
   // --- DMARC ---
   const dm = dmarc.answers.map(txt).find((t) => /^v=DMARC1/i.test(t)) || '';
   rec.dmarc = dm;
   if (!dm) {
-    add('high', 'Messagerie', 'Aucune politique DMARC', 'Sans DMARC, les messageries ne savent pas quoi faire d’un faux e-mail à ton nom, et tu ne reçois aucun rapport.', `Ajoute un TXT sur _dmarc.${domain} : « v=DMARC1; p=quarantine; rua=mailto:dmarc@${domain} », puis passe à p=reject.`, { who: 'dns' });
+    add('high', 'Messagerie', 'Aucune politique DMARC', 'Sans DMARC, les messageries ne savent pas quoi faire d’un faux e-mail à votre nom, et vous ne recevez aucun rapport.', `Ajoutez un TXT sur _dmarc.${domain} : « v=DMARC1; p=quarantine; rua=mailto:dmarc@${domain} », puis passez à p=reject.`, { who: 'dns' });
   } else {
     const p = (/;\s*p=(\w+)/i.exec(`;${dm}`) || [])[1] || '';
-    if (/^none$/i.test(p)) add('medium', 'Messagerie', 'DMARC en observation seulement (p=none)', 'Les faux e-mails à ton nom sont encore livrés : la politique ne fait que les compter.', 'Après quelques semaines de rapports, passe à « p=quarantine » puis « p=reject ».', { who: 'dns' });
-    else if (/^quarantine$/i.test(p)) add('low', 'Messagerie', 'DMARC en quarantaine', 'Les faux e-mails vont dans les indésirables : c’est bien, « reject » les bloque complètement.', 'Passe à « p=reject » quand tes rapports ne montrent plus d’envoi légitime en échec.', { who: 'dns' });
-    if (!/rua=/i.test(dm)) add('low', 'Messagerie', 'DMARC sans adresse de rapports', 'Tu ne reçois pas les rapports qui montrent qui envoie des e-mails à ton nom.', 'Ajoute « rua=mailto:dmarc@ton-domaine » à l’enregistrement DMARC.', { who: 'dns' });
+    if (/^none$/i.test(p)) add('medium', 'Messagerie', 'DMARC en observation seulement (p=none)', 'Les faux e-mails à votre nom sont encore livrés : la politique ne fait que les compter.', 'Après quelques semaines de rapports, passez à « p=quarantine » puis « p=reject ».', { who: 'dns' });
+    else if (/^quarantine$/i.test(p)) add('low', 'Messagerie', 'DMARC en quarantaine', 'Les faux e-mails vont dans les indésirables : c’est bien, « reject » les bloque complètement.', 'Passez à « p=reject » quand vos rapports ne montrent plus d’envoi légitime en échec.', { who: 'dns' });
+    if (!/rua=/i.test(dm)) add('low', 'Messagerie', 'DMARC sans adresse de rapports', 'Vous ne recevez pas les rapports qui montrent qui envoie des e-mails à votre nom.', 'Ajoutez « rua=mailto:dmarc@votre-domaine » à l’enregistrement DMARC.', { who: 'dns' });
     const pct = Number((/pct=(\d+)/i.exec(dm) || [])[1] || 100);
     if (pct < 100) add('low', 'Messagerie', `DMARC appliqué à ${pct} % des messages`, 'Une partie des faux e-mails échappe à la politique.', 'Monte « pct » à 100.', { who: 'dns' });
   }
@@ -169,32 +169,32 @@ async function audit(host, { fetchImpl, onStep = () => {} } = {}) {
     return v ? s : null;
   });
   rec.dkim = dk.filter((x) => typeof x === 'string');
-  if (hasMail && !rec.dkim.length) add('low', 'Messagerie', 'Signature DKIM non trouvée', 'Aucune clé DKIM sur les sélecteurs courants : tes e-mails sont peut-être signés avec un autre sélecteur, sinon ils arrivent plus souvent dans les indésirables.', 'Active la signature DKIM chez ton fournisseur d’e-mail et publie la clé qu’il te donne.', { who: 'messagerie' });
-  if (hasMail && !mtasts.answers.length) add('info', 'Messagerie', 'MTA-STS absent', 'MTA-STS oblige les autres serveurs à t’envoyer les e-mails de façon chiffrée.', 'Facultatif : publie une politique MTA-STS et un enregistrement _mta-sts.', { who: 'messagerie' });
+  if (hasMail && !rec.dkim.length) add('low', 'Messagerie', 'Signature DKIM non trouvée', 'Aucune clé DKIM sur les sélecteurs courants : vos e-mails sont peut-être signés avec un autre sélecteur, sinon ils arrivent plus souvent dans les indésirables.', 'Activez la signature DKIM chez votre fournisseur d’e-mail et publiez la clé qu’il vous donne.', { who: 'messagerie' });
+  if (hasMail && !mtasts.answers.length) add('info', 'Messagerie', 'MTA-STS absent', 'MTA-STS oblige les autres serveurs à vous envoyer les e-mails de façon chiffrée.', 'Facultatif : publiez une politique MTA-STS et un enregistrement _mta-sts.', { who: 'messagerie' });
   if (hasMail && !tlsrpt.answers.length) add('info', 'Messagerie', 'Rapports TLS (TLS-RPT) absents', 'Ces rapports signalent les problèmes de chiffrement des e-mails reçus.', `Facultatif : TXT « v=TLSRPTv1; rua=mailto:tls@${domain} » sur _smtp._tls.${domain}.`, { who: 'messagerie' });
-  if (!hasMail) add('info', 'Messagerie', 'Aucun serveur de messagerie (MX)', 'Ce domaine ne reçoit pas d’e-mails. Pense quand même à SPF « -all » et DMARC « p=reject » pour empêcher les envois en ton nom.', '', { who: 'dns' });
+  if (!hasMail) add('info', 'Messagerie', 'Aucun serveur de messagerie (MX)', 'Ce domaine ne reçoit pas d’e-mails. Pensez quand même à SPF « -all » et DMARC « p=reject » pour empêcher les envois en votre nom.', '', { who: 'dns' });
 
   // --- CAA et DNSSEC ---
   rec.caa = caa.answers;
-  if (!caa.answers.length) add('low', 'DNS', 'Aucun enregistrement CAA', 'N’importe quelle autorité peut émettre un certificat pour ton domaine.', `Ajoute un enregistrement CAA, par exemple « 0 issue "letsencrypt.org" » (selon l’autorité de ton hébergeur).`, { who: 'dns' });
+  if (!caa.answers.length) add('low', 'DNS', 'Aucun enregistrement CAA', 'N’importe quelle autorité peut émettre un certificat pour votre domaine.', `Ajoutez un enregistrement CAA, par exemple « 0 issue "letsencrypt.org" » (selon l’autorité de votre hébergeur).`, { who: 'dns' });
   rec.dnssec = Boolean(ds.answers.length || a.ad);
-  if (!rec.dnssec) add('low', 'DNS', 'DNSSEC non activé', 'Les réponses DNS de ton domaine ne sont pas signées : une redirection vers un faux serveur est plus facile.', 'Active DNSSEC chez ton registraire (souvent une simple case à cocher).', { who: 'registraire' });
+  if (!rec.dnssec) add('low', 'DNS', 'DNSSEC non activé', 'Les réponses DNS de votre domaine ne sont pas signées : une redirection vers un faux serveur est plus facile.', 'Active DNSSEC chez votre registraire (souvent une simple case à cocher).', { who: 'registraire' });
 
   // --- Expiration du domaine ---
   onStep({ label: 'Date d’expiration du domaine', progress: 0.45 });
   const exp = await rdap(fetchImpl, domain);
   rec.expiry = exp;
   if (exp && exp.days != null) {
-    if (exp.days < 0) add('critical', 'Domaine', 'Nom de domaine expiré', 'Ton site et tes e-mails vont s’arrêter, et le domaine peut être racheté par quelqu’un d’autre.', 'Renouvelle-le tout de suite chez ton registraire.', { who: 'registraire' });
-    else if (exp.days <= 30) add('high', 'Domaine', `Le domaine expire dans ${exp.days} jour(s)`, 'S’il n’est pas renouvelé, ton site et tes e-mails s’arrêtent.', 'Renouvelle le domaine et active le renouvellement automatique.', { who: 'registraire' });
-    else if (exp.days <= 60) add('medium', 'Domaine', `Le domaine expire dans ${exp.days} jours`, 'Pense au renouvellement.', 'Active le renouvellement automatique chez ton registraire.', { who: 'registraire' });
-    if (exp.status && !exp.status.some((s) => /transfer ?prohibited/i.test(s))) add('low', 'Domaine', 'Verrou de transfert non activé', 'Quelqu’un qui accède à ton compte de registraire peut transférer le domaine plus facilement.', 'Active le verrou de transfert (« transfer lock ») chez ton registraire.', { who: 'registraire' });
+    if (exp.days < 0) add('critical', 'Domaine', 'Nom de domaine expiré', 'Votre site et vos e-mails vont s’arrêter, et le domaine peut être racheté par quelqu’un d’autre.', 'Renouvelez-le tout de suite chez votre registraire.', { who: 'registraire' });
+    else if (exp.days <= 30) add('high', 'Domaine', `Le domaine expire dans ${exp.days} jour(s)`, 'S’il n’est pas renouvelé, votre site et vos e-mails s’arrêtent.', 'Renouvelez le domaine et activez le renouvellement automatique.', { who: 'registraire' });
+    else if (exp.days <= 60) add('medium', 'Domaine', `Le domaine expire dans ${exp.days} jours`, 'Pensez au renouvellement.', 'Activez le renouvellement automatique chez votre registraire.', { who: 'registraire' });
+    if (exp.status && !exp.status.some((s) => /transfer ?prohibited/i.test(s))) add('low', 'Domaine', 'Verrou de transfert non activé', 'Quelqu’un qui accède à votre compte de registraire peut transférer le domaine plus facilement.', 'Activez le verrou de transfert (« transfer lock ») chez votre registraire.', { who: 'registraire' });
   }
 
   // --- security.txt ---
   const st = await grab(fetchImpl, `https://${host}/.well-known/security.txt`, { timeout: 8000, max: 20000 });
   rec.securityTxt = st.ok && /contact:/i.test(st.body);
-  if (!rec.securityTxt) add('info', 'Bonnes pratiques', 'Fichier security.txt absent', 'Ce fichier indique comment te signaler une faille de sécurité.', `Crée /.well-known/security.txt avec « Contact: mailto:securite@${domain} » et une date « Expires: ».`, { who: 'toi' });
+  if (!rec.securityTxt) add('info', 'Bonnes pratiques', 'Fichier security.txt absent', 'Ce fichier indique comment vous signaler une faille de sécurité.', `Créez /.well-known/security.txt avec « Contact: mailto:securite@${domain} » et une date « Expires: ».`, { who: 'vous' });
 
   // --- Sous-domaines ---
   const subs = await subdomains(fetchImpl, domain, onStep);
@@ -202,8 +202,8 @@ async function audit(host, { fetchImpl, onStep = () => {} } = {}) {
   rec.subChecked = subs.checked;
   rec.ctOk = subs.ctOk;
   for (const s of subs.list) {
-    if (s.state === 'takeover') add('critical', 'Sous-domaines', `${s.name} peut être repris (${s.service})`, `Ce sous-domaine pointe vers ${s.cname}, un service ${s.service} supprimé : n’importe qui peut le recréer et publier ce qu’il veut sous ton nom.`, `Supprime l’enregistrement DNS de ${s.name}, ou recrée le service chez ${s.service}.`, { who: 'dns' });
-    else if (s.state === 'orphan') add('high', 'Sous-domaines', `${s.name} pointe vers une adresse qui n’existe plus`, `L’alias ${s.cname} n’existe plus : si ce nom se libère, quelqu’un peut le réserver et prendre la main sur ${s.name}.`, `Supprime l’enregistrement CNAME de ${s.name} s’il ne sert plus.`, { who: 'dns' });
+    if (s.state === 'takeover') add('critical', 'Sous-domaines', `${s.name} peut être repris (${s.service})`, `Ce sous-domaine pointe vers ${s.cname}, un service ${s.service} supprimé : n’importe qui peut le recréer et publier ce qu’il veut sous votre nom.`, `Supprimez l’enregistrement DNS de ${s.name}, ou recréez le service chez ${s.service}.`, { who: 'dns' });
+    else if (s.state === 'orphan') add('high', 'Sous-domaines', `${s.name} pointe vers une adresse qui n’existe plus`, `L’alias ${s.cname} n’existe plus : si ce nom se libère, quelqu’un peut le réserver et prendre la main sur ${s.name}.`, `Supprimez l’enregistrement CNAME de ${s.name} s’il ne sert plus.`, { who: 'dns' });
   }
   onStep({ label: 'Terminé', progress: 1 });
   return finish(findings, { kind: 'domain', target: domain, host, domain, records: rec });

@@ -69,7 +69,7 @@ function AuthCard({ onSession }: { onSession: (s: Session) => void }) {
         if (password.length < 8) throw new Error("Le mot de passe doit contenir au moins 8 caractères.")
         const s = await signUp(email.trim(), password)
         if (s) onSession(s)
-        else setMsg({ kind: "ok", text: "Compte créé. Ouvre le lien reçu par e-mail pour le confirmer : ta licence s’affichera ici." })
+        else setMsg({ kind: "ok", text: "Compte créé. Ouvrez le lien reçu par e-mail pour le confirmer : votre licence s’affichera ici." })
       } else {
         onSession(await signIn(email.trim(), password))
       }
@@ -102,7 +102,7 @@ function AuthCard({ onSession }: { onSession: (s: Session) => void }) {
         <h2 className="relative text-[20px] font-semibold">Mot de passe oublié</h2>
       )}
       <Field id="lic-email" label="Adresse e-mail" icon="mail">
-        <Input id="lic-email" className="pl-10" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="toi@exemple.com" />
+        <Input id="lic-email" className="pl-10" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vous@exemple.com" />
       </Field>
       {mode !== "forgot" && (
         <Field id="lic-pass" label="Mot de passe" icon="lock">
@@ -152,7 +152,7 @@ function KeyCard({ lic }: { lic: Lic }) {
           </span>
         )}
       </div>
-      <small className="relative mt-6 block text-[13px] font-medium text-muted-foreground">Ta clé de licence</small>
+      <small className="relative mt-6 block text-[13px] font-medium text-muted-foreground">Votre clé de licence</small>
       <code className="hud relative mt-3 block px-5 py-4 text-[clamp(16px,2.2vw,24px)] font-semibold tracking-[0.08em] break-all text-primary" aria-label="Clé de licence">
         {lic.key}
       </code>
@@ -177,10 +177,10 @@ function KeyCard({ lic }: { lic: Lic }) {
       </div>
       <p className="relative mt-5 text-[14px] text-muted-foreground">
         {lic.trial
-          ? `Ton premier jour est un essai complet de Pro, jusqu’au ${date(lic.trial_ends_at, true)}. Ensuite, l’offre Gratuite s’applique : Responsive Lab et Browser Lab complets, et 2 applications Android ou Windows.`
+          ? `Votre premier jour est un essai complet de Pro, jusqu’au ${date(lic.trial_ends_at, true)}. Ensuite, l’offre Gratuite s’applique : Responsive Lab et Browser Lab complets, et 2 applications Android ou Windows.`
           : lic.activated_at
-            ? `Activée le ${date(lic.activated_at)}. NEXORA vérifie ta licence auprès du serveur à chaque démarrage.`
-            : "Lance NEXORA Devs Toolbox et connecte-toi avec ce compte : la licence s’active toute seule. Tu peux aussi coller la clé."}
+            ? `Activée le ${date(lic.activated_at)}. NEXORA vérifie votre licence auprès du serveur à chaque démarrage.`
+            : "Lancez NEXORA Devs Toolbox et connectez-vous avec ce compte : la licence s’active toute seule. Vous pouvez aussi coller la clé."}
       </p>
     </Reveal>
   )
@@ -188,8 +188,8 @@ function KeyCard({ lic }: { lic: Lic }) {
 
 // NEXORA #090 : refus du rattachement d'un code de parrain (nx_referral_attach).
 const REF_REFUSED: Record<string, string> = {
-  unknown: "Ce code n’existe pas ou n’est plus actif : vérifie-le auprès de ton parrain.",
-  self: "Tu ne peux pas utiliser ton propre code de parrainage.",
+  unknown: "Ce code n’existe pas ou n’est plus actif : vérifiez-le auprès de votre parrain.",
+  self: "Vous ne pouvez pas utiliser votre propre code de parrainage.",
   customer: "Le parrainage s’applique à un premier abonnement Pro.",
 }
 
@@ -284,10 +284,10 @@ function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
       <span className="sp-ic solid">
         <Icon name="nxCrown" size={20} />
       </span>
-      <h3 className="text-[20px] font-semibold">{prolong ? "Offre Pro active" : "Passe à Pro"}</h3>
+      <h3 className="text-[20px] font-semibold">{prolong ? "Offre Pro active" : "Passez à Pro"}</h3>
       <p className="text-[14.5px] text-muted-foreground">
         {prolong && b?.current_period_end
-          ? `Payée jusqu’au ${date(b.current_period_end)}. Prolonge d’un mois ou d’un an quand tu veux : la durée s’ajoute à cette date.`
+          ? `Payée jusqu’au ${date(b.current_period_end)}. Prolongez d’un mois ou d’un an quand vous voulez : la durée s’ajoute à cette date.`
           : "Dev Lab complet, jusqu’à 50 applications sans limite par application, Studio et NEX-DESIGN complets, et des limites larges."}
       </p>
       <ToggleGroup type="single" value={period} onValueChange={(v) => v && setPeriod(v as "month" | "year")} aria-label="Périodicité" className="w-fit">
@@ -334,7 +334,7 @@ function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
             </a>
           </Button>
           <small className="text-[12.5px] text-muted-foreground">
-            Le paiement en ligne arrive bientôt. En attendant, l’équipe NEXORA active ton offre sur demande, en général sous 24 h : écris à {supportEmail} ou depuis NEXORA (Mon compte → Support).
+            Le paiement en ligne arrive bientôt. En attendant, l’équipe NEXORA active votre offre sur demande, en général sous 24 h : écrivez à {supportEmail} ou depuis NEXORA (Mon compte → Support).
           </small>
         </>
       ) : (
@@ -398,7 +398,7 @@ function Devices({ lic, s, onChange }: { lic: Lic; s: Session; onChange: () => v
         <p className="text-[14px] text-muted-foreground">Aucun ordinateur pour l’instant : ils apparaissent ici dès le premier démarrage de NEXORA.</p>
       )}
       {err && <Msg kind="bad">{err}</Msg>}
-      <p className="text-[12.5px] text-muted-foreground">Libère un ordinateur que tu n’utilises plus pour en ajouter un autre. Un ordinateur inconnu ? Change ton mot de passe et écris à l’assistance.</p>
+      <p className="text-[12.5px] text-muted-foreground">Libérez un ordinateur que vous n’utilisez plus pour en ajouter un autre. Un ordinateur inconnu ? Changez votre mot de passe et écrivez à l’assistance.</p>
     </Reveal>
   )
 }
@@ -432,7 +432,7 @@ function Verifier() {
       <h3 className="flex items-center gap-2.5 text-[18px] font-semibold">
         <Icon name="shield" size={18} className="text-primary" /> Vérifier une clé
       </h3>
-      <p className="text-[14px] text-muted-foreground">Pour t’assurer qu’une clé est authentique avant de l’utiliser. Le titulaire n’est jamais affiché en entier.</p>
+      <p className="text-[14px] text-muted-foreground">Pour vous assurer qu’une clé est authentique avant de l’utiliser. Le titulaire n’est jamais affiché en entier.</p>
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Icon name="key" size={16} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -448,7 +448,7 @@ function Verifier() {
           {res.valid
             ? `Clé authentique et active · offre ${res.plan_name || res.plan} · titulaire ${res.holder} · créée le ${date(res.created_at)}${res.activated ? "" : " · pas encore activée"}.`
             : res.reason === "unknown"
-              ? "Cette clé n’existe pas. Vérifie chaque caractère."
+              ? "Cette clé n’existe pas. Vérifiez chaque caractère."
               : "Cette clé existe mais a été révoquée : elle ne permet plus de démarrer NEXORA."}
         </Msg>
       )}
@@ -474,8 +474,8 @@ function PayNotice({ state, err, onRetry }: { state: PayStatus | null; err: stri
           : ok
             ? `Paiement confirmé. Pro est ouvert${state?.period_end ? ` jusqu’au ${date(state.period_end)}` : ""} ; NEXORA le prend en compte au prochain contrôle de licence.`
             : wait
-              ? "Vérification de ton paiement… Si tu dois encore le valider sur ton téléphone, fais-le : Pro s’active dès la confirmation."
-              : "Le paiement n’a pas abouti : rien n’a été activé. Tu peux réessayer ci-dessous."}
+              ? "Vérification de votre paiement… Si vous devez encore le valider sur votre téléphone, faites-le : Pro s’active dès la confirmation."
+              : "Le paiement n’a pas abouti : rien n’a été activé. Vous pouvez réessayer ci-dessous."}
       </span>
       {(err || wait) && (
         <Button type="button" variant="outline" size="sm" onClick={onRetry}>
@@ -487,10 +487,10 @@ function PayNotice({ state, err, onRetry }: { state: PayStatus | null; err: stri
 }
 
 const POINTS: [string, string, string][] = [
-  ["key", "Une licence gratuite par compte", "Générée tout de suite, liée à ton adresse e-mail."],
+  ["key", "Une licence gratuite par compte", "Générée tout de suite, liée à votre adresse e-mail."],
   ["star", "24 h d’essai complet", "Le premier jour, tout Pro est ouvert. Ensuite, Responsive Lab, Browser Lab et 2 applications restent gratuits."],
   ["shield", "Vérifiée à chaque démarrage", "Connexion signée avec nos serveurs : sans licence valide, NEXORA ne s’ouvre pas."],
-  ["download", "Un lanceur léger", "Il télécharge, vérifie et met à jour NEXORA pour toi."],
+  ["download", "Un lanceur léger", "Il télécharge, vérifie et met à jour NEXORA pour vous."],
 ]
 
 export function Licence({ query }: { query: string }) {
@@ -565,8 +565,8 @@ export function Licence({ query }: { query: string }) {
           as="h1"
           align="left"
           eyebrow="Ma licence"
-          title={["Ta licence NEXORA,", "toujours à portée."]}
-          lead="NEXORA Devs Toolbox démarre avec une licence vérifiée par nos serveurs. Elle est gratuite : crée ton compte, récupère ta clé, puis passe à Pro quand tu en as besoin."
+          title={["Votre licence NEXORA,", "toujours à portée."]}
+          lead="NEXORA Devs Toolbox démarre avec une licence vérifiée par nos serveurs. Elle est gratuite : créez votre compte, récupérez votre clé, puis passez à Pro quand vous en avez besoin."
           className="mb-10 md:mb-12"
         />
         {paiement === "retour" && payRef && s && (payErr || payState) && (
@@ -575,7 +575,7 @@ export function Licence({ query }: { query: string }) {
         <div className="grid gap-5 lg:grid-cols-2">
           {loading ? (
             <div className={cn(card, "flex items-center gap-3 text-muted-foreground")}>
-              <span className="size-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary" aria-hidden="true" /> Lecture de ta licence…
+              <span className="size-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary" aria-hidden="true" /> Lecture de votre licence…
             </div>
           ) : !s ? (
             <>
@@ -625,10 +625,10 @@ export function Licence({ query }: { query: string }) {
       <StepCards
         className="lime"
         eyebrow="Comment ça marche"
-        title={["Ta licence,", "en trois temps."]}
+        title={["Votre licence,", "en trois temps."]}
         steps={[
-          { icon: "user", title: "Crée ton compte", text: "Le même compte que dans NEXORA, sur Windows comme sur le web." },
-          { icon: "key", title: "Récupère ta clé", text: "Générée tout de suite, liée à ton adresse e-mail et à tes ordinateurs." },
+          { icon: "user", title: "Créez votre compte", text: "Le même compte que dans NEXORA, sur Windows comme sur le web." },
+          { icon: "key", title: "Récupérez votre clé", text: "Générée tout de suite, liée à votre adresse e-mail et à vos ordinateurs." },
           { icon: "shield", title: "NEXORA la vérifie", text: "À chaque démarrage, une connexion signée avec nos serveurs." },
         ]}
       />

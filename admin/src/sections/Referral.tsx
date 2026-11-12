@@ -54,7 +54,7 @@ async function copy(text: string, ui: ReturnType<typeof useUi>, what: string) {
     await navigator.clipboard.writeText(text)
     ui.toast(`${what} copié.`)
   } catch {
-    ui.toast("Copie impossible : sélectionne le texte puis copie-le.", "bad")
+    ui.toast("Copie impossible : sélectionnez le texte puis copiez-le.", "bad")
   }
 }
 
@@ -192,7 +192,7 @@ function PartnersTab({ q, refresh }: { q: string; refresh: number }) {
                 <Icon name="plus" size={14} /> Inviter un parrain
               </button>
             </div>
-            <Table head={["Parrain", "État", "Code du mois", "Filleuls", "Revenus récurrents", "Disponible", ""]} count={shown.length} empty="Aucun parrain : invite le premier.">
+            <Table head={["Parrain", "État", "Code du mois", "Filleuls", "Revenus récurrents", "Disponible", ""]} count={shown.length} empty="Aucun parrain : invitez le premier.">
               {shown.map((p) => (
                 <tr key={p.id}>
                   <td className="click" onClick={() => setOpen(p.id)}>
@@ -242,11 +242,11 @@ function InviteModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
   if (created) {
     return (
       <Modal title={`Invitation de ${created.partner.name}`} onClose={onClose} width={620}>
-        <p className="muted">Transmets ces deux informations à {created.partner.email}, de préférence par deux canaux différents (le lien par e-mail, le code par SMS ou WhatsApp). Le parrain ouvre le lien, se connecte avec son adresse e-mail, puis saisit le code.</p>
-        <Secret label="Lien d’invitation" value={inviteLink(created.invite_token)} hint="Valable jusqu’à son utilisation ; tu peux en créer un nouveau tant que le parrain n’a pas activé son accès." />
+        <p className="muted">Transmettez ces deux informations à {created.partner.email}, de préférence par deux canaux différents (le lien par e-mail, le code par SMS ou WhatsApp). Le parrain ouvre le lien, se connecte avec son adresse e-mail, puis saisit le code.</p>
+        <Secret label="Lien d’invitation" value={inviteLink(created.invite_token)} hint="Valable jusqu’à son utilisation ; vous pouvez en créer un nouveau tant que le parrain n’a pas activé son accès." />
         <Secret label={`Code d’accès de ${monthName.format(new Date(created.month))}`} value={created.code} code hint={`Valable jusqu’au ${fmtDate(endOfMonth())} : un nouveau code est demandé chaque mois (onglet « Codes du mois »).`} />
         <div className="actions">
-          <a className="btn" href={`mailto:${created.partner.email}?subject=${encodeURIComponent("Ton accès à NEXORA REFERRAL")}&body=${encodeURIComponent(`Bonjour ${created.partner.name.split(" ")[0]},\n\nTu es invité au programme de parrainage NEXORA REFERRAL. Ouvre ce lien, puis connecte-toi avec cette adresse e-mail :\n${inviteLink(created.invite_token)}\n\nTon code d’accès t’est envoyé séparément.\n\nL’équipe NEXORA`)}`}>
+          <a className="btn" href={`mailto:${created.partner.email}?subject=${encodeURIComponent("Votre accès à NEXORA REFERRAL")}&body=${encodeURIComponent(`Bonjour ${created.partner.name.split(" ")[0]},\n\nVous êtes invité au programme de parrainage NEXORA REFERRAL. Ouvrez ce lien, puis connectez-vous avec cette adresse e-mail :\n${inviteLink(created.invite_token)}\n\nVotre code d’accès vous est envoyé séparément.\n\nL’équipe NEXORA`)}`}>
             <Icon name="mail" size={14} /> Préparer l’e-mail (lien seulement)
           </a>
           <button className="btn primary" onClick={onClose}>Terminé</button>
@@ -370,7 +370,7 @@ function CodesTab({ refresh }: { refresh: number }) {
           <>
             <div className="toolbar">
               <span className="muted small">
-                Codes de {monthName.format(new Date())}, valables jusqu’au {fmtDate(endOfMonth())}. Un nouveau code est créé le 1ᵉʳ de chaque mois : transmets-le à chaque parrain.
+                Codes de {monthName.format(new Date())}, valables jusqu’au {fmtDate(endOfMonth())}. Un nouveau code est créé le 1ᵉʳ de chaque mois : transmettez-le à chaque parrain.
               </span>
               <span className="grow" />
               <button className="btn" disabled={!live.length} onClick={() => downloadCsv(`codes-parrains-${new Date().toISOString().slice(0, 7)}`, live.map((p) => ({ nom: p.name, email: p.email, code: p.month_code, saisi: p.unlocked ? "oui" : "non" })))}>
@@ -644,7 +644,7 @@ function SettingsForm({ initial, onSaved }: { initial: Rules; onSaved: () => voi
           <label className="field"><span>Remise du filleul (%)</span><input className="input" type="number" min={0} max={90} step="0.5" value={v.discount_pct} onChange={(e) => set("discount_pct", Number(e.target.value))} /><small>Sur chaque paiement Pro, tant que l’abonnement continue.</small></label>
           <label className="field"><span>Commission du parrain (%)</span><input className="input" type="number" min={0} max={90} step="0.1" value={v.commission_pct} onChange={(e) => set("commission_pct", Number(e.target.value))} /><small>De ce que paie le filleul, remise déduite.</small></label>
           <label className="field"><span>Retrait minimum ($)</span><input className="input" type="number" min={0} step="1" value={v.min_payout} onChange={(e) => set("min_payout", Number(e.target.value))} /></label>
-          <label className="field"><span>Délai avant disponibilité (jours)</span><input className="input" type="number" min={0} max={365} value={v.hold_days} onChange={(e) => set("hold_days", Number(e.target.value))} /><small>Laisse le temps des remboursements.</small></label>
+          <label className="field"><span>Délai avant disponibilité (jours)</span><input className="input" type="number" min={0} max={365} value={v.hold_days} onChange={(e) => set("hold_days", Number(e.target.value))} /><small>Laissez le temps des remboursements.</small></label>
           <label className="field"><span>Codes promo par parrain</span><input className="input" type="number" min={1} max={100} value={v.max_codes} onChange={(e) => set("max_codes", Number(e.target.value))} /></label>
           <label className="field"><span>Lien mémorisé (jours)</span><input className="input" type="number" min={1} max={365} value={v.cookie_days} onChange={(e) => set("cookie_days", Number(e.target.value))} /><small>Durée pendant laquelle le site garde le lien d’un parrain.</small></label>
         </div>

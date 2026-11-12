@@ -71,7 +71,7 @@ jobs:
       - run: npm test --if-present
 `;
   }
-  return `# Workflow minimal : vérifie que le dépôt se récupère correctement.
+  return `# Workflow minimal : vérifiez que le dépôt se récupère correctement.
 name: Vérification
 on: [ push, pull_request ]
 jobs:
@@ -138,16 +138,16 @@ self.addEventListener('fetch', (e) => {
     let html = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
     html = html.replace('</main>', `  <section class="cta">
       <h2>Prêt à commencer ?</h2>
-      <p>Inscris-toi en quelques secondes. Sans engagement.</p>
+      <p>Inscrivez-vous en quelques secondes. Sans engagement.</p>
       <form class="signup" onsubmit="event.preventDefault(); this.innerHTML='<p>Merci ! À très vite.</p>';">
-        <input type="email" required placeholder="Ton adresse e-mail">
+        <input type="email" required placeholder="Votre adresse e-mail">
         <button class="btn" type="submit">Je m'inscris</button>
       </form>
     </section>
     <section class="faq">
       <h2>Questions fréquentes</h2>
-      <details><summary>Combien ça coûte ?</summary><p>Réponds ici à la question la plus posée.</p></details>
-      <details><summary>Comment ça marche ?</summary><p>Explique les étapes en deux phrases.</p></details>
+      <details><summary>Combien ça coûte ?</summary><p>Répondez ici à la question la plus posée.</p></details>
+      <details><summary>Comment ça marche ?</summary><p>Expliquez les étapes en deux phrases.</p></details>
     </section>
   </main>`);
     fs.writeFileSync(path.join(dir, 'index.html'), html);
@@ -326,7 +326,7 @@ function register({
   });
   ipcMain.handle('dev:new-project', (_e, { parent, name, template }) => {
     const clean = String(name || '').trim().replace(/[<>:"/\\|?*]+/g, '-');
-    if (!clean) throw new Error('Donne un nom au projet.');
+    if (!clean) throw new Error('Donnez un nom au projet.');
     // NEXORA #005 : on vérifie le dossier que le modèle créera vraiment (Flutter : minuscules et soulignés).
     const dir = path.join(parent, projectFolder(template, clean));
     if (folderTaken(dir)) throw new Error('Un dossier non vide porte déjà ce nom.');
@@ -416,7 +416,7 @@ app.listen(port, () => console.log(\`Serveur prêt sur http://localhost:\${port}
     return { oid };
   });
   ipcMain.handle('git:push', async (_e, { dir }) => {
-    if (!gh.token()) throw new Error('Connecte d’abord ton compte GitHub.');
+    if (!gh.token()) throw new Error('Connectez d’abord votre compte GitHub.');
     return gitops.push(dir, gh, progress('Envoi'));
   });
   ipcMain.handle('git:pull', async (_e, { dir }) => gitops.pull(dir, gh, progress('Récupération')));
@@ -472,7 +472,7 @@ app.listen(port, () => console.log(\`Serveur prêt sur http://localhost:\${port}
   ipcMain.handle('git:publish', async (_e, {
     dir, name, isPrivate, description, pages, message,
   }) => {
-    if (!gh.token()) throw new Error('Connecte d’abord ton compte GitHub.');
+    if (!gh.token()) throw new Error('Connectez d’abord votre compte GitHub.');
     const me = await gh.me();
     send('git:progress', { label: 'Préparation du dépôt local' });
     let st = await gitops.status(dir);

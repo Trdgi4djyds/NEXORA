@@ -61,16 +61,16 @@ async function openExport(projectId) {
     ? docs.slice(0, 60).map((doc) => `<label class="nxv-doc"><input type="checkbox" data-nxv-doc="${esc(doc.id)}"><span>${esc(doc.name || 'Sans titre')}</span><small>${plural((doc.pages || []).length, 'page', 'pages')}</small></label>`).join('')
     : '<p class="nxv-muted">Aucun document NEX-DESIGN sur ce PC.</p>';
   const driveHtml = d.folders.length
-    ? `<label class="nxv-opt"><input type="radio" name="nxv-dest" value="drive" checked><span><b>Google Drive</b><small>${esc(d.folders[0])} : le fichier se synchronise avec ton Drive.</small></span></label>
+    ? `<label class="nxv-opt"><input type="radio" name="nxv-dest" value="drive" checked><span><b>Google Drive</b><small>${esc(d.folders[0])} : le fichier se synchronise avec votre Drive.</small></span></label>
        <label class="nxv-opt"><input type="radio" name="nxv-dest" value="docs"><span><b>Dossier Documents</b><small>Documents\\NEXORA\\Projets</small></span></label>`
     : `<label class="nxv-opt"><input type="radio" name="nxv-dest" value="docs" checked><span><b>Dossier Documents</b><small>Documents\\NEXORA\\Projets</small></span></label>
-       <p class="nxv-hint">${ico('info', 13)}<span>Google Drive pour ordinateur n’est pas installé sur ce PC. Après l’export, tu pourras déposer le fichier sur Google Drive depuis ton navigateur.</span></p>`;
-  const el = sheet(SHEET, `<div class="sheet-head"><span class="sheet-icon">${ico('download', 22)}</span><div><h2>Exporter « ${esc(p.name)} » en .novx</h2><p>Un seul fichier pour sauvegarder ton projet, le transférer sur un autre PC ou le partager.</p></div></div>
+       <p class="nxv-hint">${ico('info', 13)}<span>Google Drive pour ordinateur n’est pas installé sur ce PC. Après l’export, vous pourrez déposer le fichier sur Google Drive depuis votre navigateur.</span></p>`;
+  const el = sheet(SHEET, `<div class="sheet-head"><span class="sheet-icon">${ico('download', 22)}</span><div><h2>Exporter « ${esc(p.name)} » en .novx</h2><p>Un seul fichier pour sauvegarder votre projet, le transférer sur un autre PC ou le partager.</p></div></div>
     <div class="sheet-body nxv-body">
       <section class="nxv-sec"><h3>Contenu</h3>
         <label class="nxv-opt"><input type="checkbox" checked disabled><span><b>Fiche et réglages du projet</b><small>Nom, adresse en ligne, logo, applications liées.</small></span></label>
         <label class="nxv-opt${p.dir ? '' : ' off'}"><input type="checkbox" data-nxv-code ${p.dir ? 'checked' : 'disabled'}><span><b>Code du projet</b><small>${p.dir ? `${esc(p.dir)} · sans dépendances (node_modules…) ni sorties de construction, qui se régénèrent.` : 'Ce projet n’a pas de dossier de code.'}</small></span></label>
-        <label class="nxv-opt${p.dir ? '' : ' off'}"><input type="checkbox" data-nxv-env ${p.dir ? '' : 'disabled'}><span><b>Fichiers de secrets .env</b><small>Déconseillé : quiconque reçoit le fichier pourrait lire tes clés.</small></span></label>
+        <label class="nxv-opt${p.dir ? '' : ' off'}"><input type="checkbox" data-nxv-env ${p.dir ? '' : 'disabled'}><span><b>Fichiers de secrets .env</b><small>Déconseillé : quiconque reçoit le fichier pourrait lire vos clés.</small></span></label>
       </section>
       <section class="nxv-sec"><h3>Documents NEX-DESIGN</h3><div class="nxv-docs">${docsHtml}</div></section>
       <section class="nxv-sec"><h3>Enregistrer dans</h3>${driveHtml}</section>

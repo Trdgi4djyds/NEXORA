@@ -33,12 +33,12 @@ function message(body: unknown, status: number): string {
   const b = (body || {}) as Record<string, unknown>
   const raw = String(b.msg || b.error_description || b.message || b.error || `HTTP ${status}`)
   if (/invalid login credentials/i.test(raw)) return "Adresse e-mail ou mot de passe incorrect."
-  if (/email not confirmed/i.test(raw)) return "Confirme d’abord ton adresse : ouvre le lien reçu par e-mail."
-  if (/already registered|already exists/i.test(raw)) return "Un compte existe déjà avec cette adresse : connecte-toi."
+  if (/email not confirmed/i.test(raw)) return "Confirmez d’abord votre adresse : ouvrez le lien reçu par e-mail."
+  if (/already registered|already exists/i.test(raw)) return "Un compte existe déjà avec cette adresse : connectez-vous."
   if (/password should be at least/i.test(raw)) return "Le mot de passe doit contenir au moins 8 caractères."
-  if (/rate limit|too many/i.test(raw)) return "Trop d’essais rapprochés : patiente une minute, puis réessaie."
-  if (/connexion requise|jwt/i.test(raw)) return "Ta session a expiré : reconnecte-toi."
-  if (status === 404 || /PGRST202|could not find the function/i.test(raw)) return "Le service des licences est en cours de mise en service : réessaie un peu plus tard."
+  if (/rate limit|too many/i.test(raw)) return "Trop d’essais rapprochés : patientez une minute, puis réessayez."
+  if (/connexion requise|jwt/i.test(raw)) return "Votre session a expiré : reconnectez-vous."
+  if (status === 404 || /PGRST202|could not find the function/i.test(raw)) return "Le service des licences est en cours de mise en service : réessayez un peu plus tard."
   return raw
 }
 
@@ -55,7 +55,7 @@ async function call(url: string, init: RequestInit & { token?: string } = {}) {
     if (!res.ok) throw new Error(message(body, res.status))
     return body
   } catch (e) {
-    if (e instanceof DOMException || (e instanceof TypeError && /fetch/i.test(e.message))) throw new Error("Serveurs de NEXORA injoignables : vérifie ta connexion, puis réessaie.")
+    if (e instanceof DOMException || (e instanceof TypeError && /fetch/i.test(e.message))) throw new Error("Serveurs de NEXORA injoignables : vérifiez votre connexion, puis réessayez.")
     throw e
   } finally {
     window.clearTimeout(timer)
@@ -189,7 +189,7 @@ async function payCall<T>(route: string, s: Session, body: unknown): Promise<{ r
       body: JSON.stringify(body),
     })
   } catch {
-    throw new Error("Le service de paiement est injoignable : réessaie dans un instant.")
+    throw new Error("Le service de paiement est injoignable : réessayez dans un instant.")
   }
   return { res, b: (await res.json().catch(() => null)) as T | null }
 }

@@ -1,0 +1,18 @@
+{
+  "android": {
+    "current": "nx-demo-kora",
+    "section": "modules",
+    "apps": [
+      {
+        "id": "nx-demo-kora",
+        "appName": "Kora Market",
+        "appId": "fr.kora.market",
+        "source": { "kind": "url", "url": "https://kora.example/" },
+        "onesignal": { "enabled": true, "appId": "5f0c9a2e-1b2c-4d3e-8f90-123456789abc", "ask": true },
+        "admob": { "enabled": true, "test": true, "appId": "", "consent": true, "webview": false, "banner": { "unit": "", "position": "bottom", "auto": true }, "interstitial": { "unit": "" }, "rewarded": { "unit": "" } },
+        "analytics": { "enabled": false },
+        "meta": { "enabled": false }
+      }
+    ]
+  }
+}

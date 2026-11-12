@@ -34,7 +34,7 @@ function html() {
   }
   return `<section class="nxg" aria-labelledby="nxg-title">
     <div class="nxg-head">
-      <div><small class="nxg-kicker">Par quoi commencer ?</small><h2 id="nxg-title">Que veux-tu faire aujourd’hui ?</h2></div>
+      <div><small class="nxg-kicker">Par quoi commencer ?</small><h2 id="nxg-title">Que voulez-vous faire aujourd’hui ?</h2></div>
       <span class="grow"></span>${notes}
       <button type="button" class="nxg-link" data-nxg="hide" title="Masquer cette carte">${ico('eyeOff', 13)}<span>Masquer</span></button>
     </div>

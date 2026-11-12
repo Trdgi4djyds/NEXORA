@@ -177,7 +177,7 @@ export async function onPanel(D, e, rerender, s) {
   if (b.dataset.dzx === 'resp-guess') {
     let n = 0;
     for (const o of D.canvas.getObjects()) if (o.id !== '__board' && !(o.nxCons && o.nxCons.h && o.nxCons.v)) { o.nxCons = consOf(o, D.page.w, D.page.h); n += 1; }
-    D.changed(); D.renderProps(); toast(n ? `Contraintes fixées pour ${pl(n, 'élément', 'éléments')} : modifie-les dans le panneau de droite.` : 'Tous les éléments ont déjà leurs contraintes.');
+    D.changed(); D.renderProps(); toast(n ? `Contraintes fixées pour ${pl(n, 'élément', 'éléments')} : modifiez-les dans le panneau de droite.` : 'Tous les éléments ont déjà leurs contraintes.');
     return true;
   }
   if (b.dataset.dzx === 'resp-make') {
@@ -191,7 +191,7 @@ export async function onPanel(D, e, rerender, s) {
       D.doc.pages.splice(D.pageIdx + 1, 0, ...pages);
       await D.openPage(D.pageIdx + 1, { save: false }); D.save();
       D.leftTab = 'pages'; D.renderLeft();
-      toast(`${pl(pages.length, 'page créée', 'pages créées')}. Vérifie-les : tu peux ajuster chaque déclinaison à la main.`);
+      toast(`${pl(pages.length, 'page créée', 'pages créées')}. Vérifiez-les : vous pouvez ajuster chaque déclinaison à la main.`);
     } finally { if (t && t.close) t.close(); }
     return true;
   }

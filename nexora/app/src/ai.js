@@ -8,12 +8,12 @@ const path = require('path');
 const PROVIDERS = {
   anthropic: { label: 'Anthropic (Claude)', base: 'https://api.anthropic.com/v1', kind: 'anthropic', models: ['claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-5-5'], keyUrl: 'https://console.anthropic.com/settings/keys', hint: 'Excellent pour le code et les textes longs. Payant à l’usage.' },
   openai: { label: 'OpenAI', base: 'https://api.openai.com/v1', kind: 'openai', models: [], keyUrl: 'https://platform.openai.com/api-keys', hint: 'Modèles GPT. Payant à l’usage.' },
-  gemini: { label: 'Google Gemini', base: 'https://generativelanguage.googleapis.com/v1beta', kind: 'gemini', models: [], keyUrl: 'https://aistudio.google.com/apikey', free: 'Gratuit, sans carte', hint: 'Clé gratuite en 1 minute avec ton compte Google.' },
+  gemini: { label: 'Google Gemini', base: 'https://generativelanguage.googleapis.com/v1beta', kind: 'gemini', models: [], keyUrl: 'https://aistudio.google.com/apikey', free: 'Gratuit, sans carte', hint: 'Clé gratuite en 1 minute avec votre compte Google.' },
   mistral: { label: 'Mistral AI', base: 'https://api.mistral.ai/v1', kind: 'openai', models: ['mistral-large-latest', 'mistral-small-latest', 'codestral-latest'], keyUrl: 'https://console.mistral.ai/api-keys', free: 'Gratuit (plan Experiment)', hint: 'Plan gratuit « Experiment » : vérification par téléphone.' },
-  openrouter: { label: 'OpenRouter (tous les modèles)', base: 'https://openrouter.ai/api/v1', kind: 'openai', models: ['openrouter/auto'], keyUrl: 'https://openrouter.ai/keys', free: 'Modèles « :free » gratuits', hint: 'Choisis un modèle dont le nom finit par « :free » pour ne rien payer.' },
+  openrouter: { label: 'OpenRouter (tous les modèles)', base: 'https://openrouter.ai/api/v1', kind: 'openai', models: ['openrouter/auto'], keyUrl: 'https://openrouter.ai/keys', free: 'Modèles « :free » gratuits', hint: 'Choisissez un modèle dont le nom finit par « :free » pour ne rien payer.' },
   groq: { label: 'Groq', base: 'https://api.groq.com/openai/v1', kind: 'openai', models: [], keyUrl: 'https://console.groq.com/keys', free: 'Gratuit, sans carte', hint: 'Très rapide. Connexion avec Google, puis « Create API Key ».' },
   deepseek: { label: 'DeepSeek', base: 'https://api.deepseek.com/v1', kind: 'openai', models: ['deepseek-chat', 'deepseek-reasoner'], keyUrl: 'https://platform.deepseek.com/api_keys', hint: 'Très bon en code, prix bas. Payant à l’usage.' },
-  ollama: { label: 'Ollama (sur ce PC, sans clé)', base: 'http://127.0.0.1:11434/v1', kind: 'openai', models: [], keyless: true, keyUrl: 'https://ollama.com/download', free: 'Gratuit, hors ligne', hint: 'Installe Ollama puis un modèle (ex. ollama pull qwen2.5-coder) : rien ne quitte ton PC.' },
+  ollama: { label: 'Ollama (sur ce PC, sans clé)', base: 'http://127.0.0.1:11434/v1', kind: 'openai', models: [], keyless: true, keyUrl: 'https://ollama.com/download', free: 'Gratuit, hors ligne', hint: 'Installez Ollama puis un modèle (ex. ollama pull qwen2.5-coder) : rien ne quitte votre PC.' },
   custom: { label: 'Compatible OpenAI (adresse personnalisée)', base: '', kind: 'openai', models: [], keyUrl: '', hint: 'Tout service compatible OpenAI (LM Studio, Together, Cerebras, serveur d’entreprise…).' },
 };
 
@@ -90,12 +90,12 @@ class AI {
   conf(provider) {
     const id = provider || this.data.active;
     const def = PROVIDERS[id];
-    if (!def) throw new Error("Aucune IA n'est connectée : ajoute une clé dans les réglages de l'IA.");
+    if (!def) throw new Error("Aucune IA n'est connectée : ajoutez une clé dans les réglages de l'IA.");
     const p = this.data.providers[id] || {};
     const key = this.decrypt(p.key);
     if (!key && !def.keyless) throw new Error(`Aucune clé pour ${def.label}.`);
     const base = (p.baseUrl || def.base).replace(/\/+$/, '');
-    if (!base) throw new Error("Indique l'adresse du service (compatible OpenAI).");
+    if (!base) throw new Error("Indiquez l'adresse du service (compatible OpenAI).");
     return {
       id, def, key, base, model: p.model || def.models[0] || '',
     };
@@ -147,7 +147,7 @@ class AI {
   }) {
     const c = this.conf(provider);
     const mdl = model || c.model;
-    if (!mdl) throw new Error('Choisis un modèle dans les réglages de l’IA.');
+    if (!mdl) throw new Error('Choisissez un modèle dans les réglages de l’IA.');
     const ctrl = new AbortController();
     this.runs.set(id, ctrl);
     let url;
@@ -236,17 +236,17 @@ class AI {
       const mdl = list.find((m) => /image/.test(m) && /flash/.test(m)) || 'gemini-2.5-flash-image';
       const parts = [{ text: prompt }];
       if (image) parts.push({ inlineData: { mimeType: 'image/png', data: String(image).split(',')[1] } });
-      if (mask) parts.push({ text: 'Le second visuel est un masque : ne modifie que les zones blanches.' }, { inlineData: { mimeType: 'image/png', data: String(mask).split(',')[1] } });
+      if (mask) parts.push({ text: 'Le second visuel est un masque : ne modifiez que les zones blanches.' }, { inlineData: { mimeType: 'image/png', data: String(mask).split(',')[1] } });
       const r = await this.fetch(`${c.base}/models/${encodeURIComponent(mdl)}:generateContent?key=${encodeURIComponent(c.key)}`, {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseModalities: ['TEXT', 'IMAGE'] } }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(`${c.def.label} : ${(j.error && j.error.message) || `HTTP ${r.status}`}`);
       const part = ((((j.candidates || [])[0] || {}).content || {}).parts || []).find((p) => p.inlineData && p.inlineData.data);
-      if (!part) throw new Error('Le modèle n’a pas renvoyé d’image : choisis un modèle Gemini « image ».');
+      if (!part) throw new Error('Le modèle n’a pas renvoyé d’image : choisissez un modèle Gemini « image ».');
       return { dataUrl: `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}` };
     }
-    if (c.id !== 'openai' && c.id !== 'openrouter') throw new Error(`${c.def.label} ne génère pas d’images : connecte OpenAI ou Google Gemini dans les réglages de l’IA.`);
+    if (c.id !== 'openai' && c.id !== 'openrouter') throw new Error(`${c.def.label} ne génère pas d’images : connectez OpenAI ou Google Gemini dans les réglages de l’IA.`);
     let r;
     if (image) {
       const form = new FormData();
@@ -274,7 +274,7 @@ class AI {
   // OpenAI (whisper-1) et Groq (whisper-large-v3) ; horodatage par segment et par mot.
   async transcribe({ data, mime = 'audio/wav', name = 'audio.wav', language = 'fr' }) {
     const c = this.conf();
-    if (c.id !== 'openai' && c.id !== 'groq') throw new Error(`${c.def.label} ne transcrit pas l’audio : connecte OpenAI ou Groq (gratuit) dans les réglages de l’IA.`);
+    if (c.id !== 'openai' && c.id !== 'groq') throw new Error(`${c.def.label} ne transcrit pas l’audio : connectez OpenAI ou Groq (gratuit) dans les réglages de l’IA.`);
     const form = new FormData();
     form.append('model', c.id === 'groq' ? 'whisper-large-v3' : 'whisper-1');
     form.append('response_format', 'verbose_json');
@@ -297,12 +297,12 @@ class AI {
 function friendly(msg) {
   const m = String(msg || '');
   const d = m.length > 160 ? `${m.slice(0, 160)}…` : m;
-  if (/\b401\b|\b403\b|invalid.{0,20}(api )?key|api key not valid|incorrect api key|unauthori[sz]ed|authentication/i.test(m)) return `Clé refusée par le fournisseur : copie-la à nouveau, en entier. (${d})`;
-  if (/\b429\b|quota|rate.?limit|resource_exhausted|too many requests/i.test(m)) return `Limite atteinte (quota gratuit ou nombre de requêtes par minute) : patiente un peu ou choisis un autre modèle. (${d})`;
-  if (/location is not supported|not available in your (country|region)|unsupported_country/i.test(m)) return `Ce fournisseur n'est pas disponible dans ton pays : essaie Groq, OpenRouter ou Ollama. (${d})`;
-  if (/insufficient|billing|credit|payment|balance/i.test(m)) return `Crédit insuffisant : ce modèle est payant sur ton compte. Choisis un modèle gratuit ou ajoute du crédit. (${d})`;
-  if (/model.{0,30}(not found|does not exist|not supported)|model_not_found|\b404\b/i.test(m)) return `Modèle introuvable chez ce fournisseur : actualise la liste et choisis-en un autre. (${d})`;
-  if (/ECONNREFUSED|ENOTFOUND|ETIMEDOUT|fetch failed|net::ERR|Failed to fetch/i.test(m)) return `Service injoignable : vérifie ta connexion Internet (ou qu'Ollama est bien lancé). (${d})`;
+  if (/\b401\b|\b403\b|invalid.{0,20}(api )?key|api key not valid|incorrect api key|unauthori[sz]ed|authentication/i.test(m)) return `Clé refusée par le fournisseur : copiez-la à nouveau, en entier. (${d})`;
+  if (/\b429\b|quota|rate.?limit|resource_exhausted|too many requests/i.test(m)) return `Limite atteinte (quota gratuit ou nombre de requêtes par minute) : patientez un peu ou choisissez un autre modèle. (${d})`;
+  if (/location is not supported|not available in your (country|region)|unsupported_country/i.test(m)) return `Ce fournisseur n'est pas disponible dans votre pays : essayez Groq, OpenRouter ou Ollama. (${d})`;
+  if (/insufficient|billing|credit|payment|balance/i.test(m)) return `Crédit insuffisant : ce modèle est payant sur votre compte. Choisissez un modèle gratuit ou ajoutez du crédit. (${d})`;
+  if (/model.{0,30}(not found|does not exist|not supported)|model_not_found|\b404\b/i.test(m)) return `Modèle introuvable chez ce fournisseur : actualisez la liste et choisissez-en un autre. (${d})`;
+  if (/ECONNREFUSED|ENOTFOUND|ETIMEDOUT|fetch failed|net::ERR|Failed to fetch/i.test(m)) return `Service injoignable : vérifiez votre connexion Internet (ou qu'Ollama est bien lancé). (${d})`;
   return m;
 }
 
@@ -338,7 +338,7 @@ function register({
   const test = async (provider) => {
     try {
       const r = await ai.chat({
-        id: `test-${Date.now()}`, provider, messages: [{ role: 'user', content: 'Réponds seulement : OK' }], maxTokens: 16,
+        id: `test-${Date.now()}`, provider, messages: [{ role: 'user', content: 'Répondez seulement : OK' }], maxTokens: 16,
       });
       ai.mark(provider, null);
       return { ok: true, reply: r.text.trim().slice(0, 60), model: r.model };

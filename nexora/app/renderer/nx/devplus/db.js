@@ -14,7 +14,7 @@ export function mount(el) {
   };
   const render = () => {
     if (!root()) { el.innerHTML = noProject(); return; }
-    if (!has('devlab_pro')) { el.innerHTML = `${head('Bases de données', '')}${proGate('L’explorateur de bases de données', 'Parcours les tables de SQLite, Postgres ou Supabase, lance des requêtes et ajoute des données de test.')}`; return; }
+    if (!has('devlab_pro')) { el.innerHTML = `${head('Bases de données', '')}${proGate('L’explorateur de bases de données', 'Parcourez les tables de SQLite, Postgres ou Supabase, lancez des requêtes et ajoutez des données de test.')}`; return; }
     const c = st.conn;
     const t = st.tables && st.table ? st.tables.find((x) => x.name === st.table) : null;
     const detected = st.detected.filter((d) => !(st.list || []).some((x) => x.type === d.type && (x.file || x.url) === (d.file || d.url)));
@@ -25,13 +25,13 @@ export function mount(el) {
     } else {
       let main;
       if (st.view === 'sql') main = `<textarea class="input nxd-code nxd-sql" data-sql spellcheck="false" placeholder="select * from produits where prix > 10000">${esc(st.sql)}</textarea><div class="nxd-row">${btn(st.busy ? 'Exécution…' : 'Exécuter', `data-act="run" ${st.busy ? 'disabled' : ''}`, 'play', 'primary')}<small class="nxd-muted">Ctrl+Entrée</small></div>${st.result ? `<p class="nxd-muted">${st.result.changes != null ? `${st.result.changes} ligne(s) modifiée(s)` : `${st.result.total ?? st.result.rows.length} ligne(s)`} · ${fmtMs(st.result.ms)}</p>${grid(st.result.rows)}` : ''}`;
-      else if (!t) main = '<p class="nxd-muted">Choisis une table.</p>';
+      else if (!t) main = '<p class="nxd-muted">Choisissez une table.</p>';
       else if (st.view === 'cols') main = `<div class="nxd-table">${t.columns.map((col) => `<div class="nxd-tr"><b>${esc(col.name)}</b><code>${esc(col.type || '')}</code>${col.pk ? pill('clé', 'ok') : ''}${col.nullable === false ? pill('obligatoire') : ''}</div>`).join('')}</div>`;
       else main = `<div class="nxd-row">${btn('Données de test…', 'data-act="seed"', 'sparkle')}<span class="grow"></span>${st.rows ? `<small class="nxd-muted">${st.rows.rows.length ? `${st.offset + 1}–${st.offset + st.rows.rows.length}` : '0'}${st.rows.total != null ? ` sur ${st.rows.total}` : ''}</small>${iconBtn('chevronLeft', 'Page précédente', `data-page="-1" ${st.offset ? '' : 'disabled'}`)}${iconBtn('chevronRight', 'Page suivante', `data-page="1" ${st.rows.total != null && st.offset + 100 >= st.rows.total ? 'disabled' : ''}`)}` : ''}</div>${st.rows ? grid(st.rows.rows) : spinner()}`;
       body = `<div class="nxd-db"><aside class="nxd-db-side">${st.tables ? st.tables.map((x) => `<button class="nxd-item ${x.name === st.table ? 'on' : ''}" data-table="${esc(x.name)}">${ico('nxTable', 13)}<span class="nxd-item-t">${esc(x.name)}</span>${x.count != null ? `<small>${x.count}</small>` : ''}</button>`).join('') || '<p class="nxd-muted">Aucune table.</p>' : spinner()}</aside>`
         + `<div class="nxd-db-main"><div class="seg nxd-seg nxd-subtabs">${[['rows', 'Lignes'], ['cols', 'Colonnes'], ['sql', 'Requête SQL']].map(([k, l]) => `<button class="${st.view === k ? 'on' : ''}" data-view="${k}">${l}</button>`).join('')}</div>${main}</div></div>`;
     }
-    el.innerHTML = `${head('Bases de données', c ? `${esc(TYPES[c.type][0])} · ${esc(c.name)}` : 'Connecte la base du projet : fichier SQLite, adresse Postgres ou projet Supabase.', `${c ? btn('Connexions', 'data-act="back"', 'chevronLeft') : ''}${btn('Ajouter une connexion', 'data-act="add"', 'plus', c ? '' : 'primary')}`)}${body}`;
+    el.innerHTML = `${head('Bases de données', c ? `${esc(TYPES[c.type][0])} · ${esc(c.name)}` : 'Connectez la base du projet : fichier SQLite, adresse Postgres ou projet Supabase.', `${c ? btn('Connexions', 'data-act="back"', 'chevronLeft') : ''}${btn('Ajouter une connexion', 'data-act="add"', 'plus', c ? '' : 'primary')}`)}${body}`;
   };
   const load = async () => {
     if (!root() || !has('devlab_pro')) return render();
@@ -64,8 +64,8 @@ export function mount(el) {
       if (b) { type = b.dataset.type; sync(); return; }
       if (!e.target.closest('[data-nx-go]')) return;
       const conn = { type, name: s.querySelector('[data-name]').value.trim() || TYPES[type][0], file: s.querySelector('[data-file]').value.trim(), url: type === 'supabase' ? s.querySelector('[data-url]').value.trim() : '', secret: type === 'postgres' ? s.querySelector('[data-secret-pg]').value.trim() : type === 'supabase' ? s.querySelector('[data-secret-sb]').value.trim() : '' };
-      if (type === 'sqlite' && !conn.file) { toast('Indique le fichier SQLite.'); return; }
-      if (type === 'supabase' && !/^https:\/\//.test(conn.url)) { toast('Indique l’adresse du projet (https://…).'); return; }
+      if (type === 'sqlite' && !conn.file) { toast('Indiquez le fichier SQLite.'); return; }
+      if (type === 'supabase' && !/^https:\/\//.test(conn.url)) { toast('Indiquez l’adresse du projet (https://…).'); return; }
       try { st.list = await call('devx:db-save', { conn }); closeSheet('nxd-db'); render(); } catch { /* message affiché */ }
     };
   };

@@ -22,7 +22,7 @@ function register({ ipcMain }) {
   ipcMain.handle('tts:speak', async (_e, { text, voice, rate = 0 }) => {
     if (process.platform !== 'win32') throw new Error('La voix-off utilise les voix de Windows : disponible sur un PC Windows.');
     const clean = String(text || '').trim();
-    if (!clean) throw new Error('Écris d’abord le texte de la voix-off.');
+    if (!clean) throw new Error('Écrivez d’abord le texte de la voix-off.');
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexora-voix-'));
     const txt = path.join(dir, 'texte.txt'); const wav = path.join(dir, 'voix.wav');
     fs.writeFileSync(txt, clean, 'utf8');

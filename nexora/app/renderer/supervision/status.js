@@ -10,11 +10,11 @@ const slugify = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[
 export async function renderStatus(ctx) {
   const acc = account();
   if (!acc.signedIn || !acc.orgId) {
-    return card('Page de statut publique', `<p class="sup-note">${icon('cloud', 13)} Une page publique, par exemple <b>statut de ta boutique</b>, qui montre à tes clients si tout fonctionne, l’historique sur 90 jours et les incidents en cours. Connecte-toi à ton compte NEXORA, puis active la surveillance 24 h/24 de tes sites.</p><div class="nxs-actions">${btn('Se connecter', 'data-st-login', { ic: 'user', cls: 'small primary' })}</div>`, { sub: 'Offre Standard' }) + bindLater(ctx);
+    return card('Page de statut publique', `<p class="sup-note">${icon('cloud', 13)} Une page publique, par exemple <b>statut de votre boutique</b>, qui montre à vos clients si tout fonctionne, l’historique sur 90 jours et les incidents en cours. Connectez-vous à votre compte NEXORA, puis activez la surveillance 24 h/24 de vos sites.</p><div class="nxs-actions">${btn('Se connecter', 'data-st-login', { ic: 'user', cls: 'small primary' })}</div>`, { sub: 'Offre Standard' }) + bindLater(ctx);
   }
   let data;
   try { data = await statusPages(); } catch (err) {
-    return card('Page de statut publique', `<p class="sup-note">${esc(outdated(err) || /pas encore disponible/.test(err.message) ? 'Les pages de statut ne sont pas encore disponibles. Réessaie plus tard.' : err.message)}</p>`);
+    return card('Page de statut publique', `<p class="sup-note">${esc(outdated(err) || /pas encore disponible/.test(err.message) ? 'Les pages de statut ne sont pas encore disponibles. Réessayez plus tard.' : err.message)}</p>`);
   }
   ctx.state.statusData = data;
   const mons = data.monitors.filter((m) => m.kind !== 'heartbeat');
@@ -22,17 +22,17 @@ export async function renderStatus(ctx) {
   const editing = ctx.state.statusEdit !== undefined ? ctx.state.statusEdit : page;
   const e = editing || { title: acc.orgName ? `Statut de ${acc.orgName}` : 'Statut des services', slug: slugify(acc.orgName || 'mes-services'), intro: '', monitor_ids: mons.map((m) => m.id), published: true, show_incidents: true };
   ctx.afterRender = () => bind(ctx, e);
-  const list = data.list.length ? `<div class="sup-list">${data.list.map((p) => `<div class="sup-mrow"><span class="sup-chip ${p.published ? 'good' : ''}">${p.published ? 'Publiée' : 'Brouillon'}</span><div><b>${esc(p.title)}</b><small>${esc(statusUrl(p.slug))} · ${(p.monitor_ids || []).length} service(s)</small></div>${iconBtn('external', 'Ouvrir la page', `data-external="${esc(statusUrl(p.slug))}"`)}${iconBtn('copy', 'Copier le lien', `data-st-copy="${esc(statusUrl(p.slug))}"`)}${iconBtn('pen', 'Modifier', `data-st-edit="${esc(p.id)}"`)}${iconBtn('trash', 'Supprimer', `data-st-del="${esc(p.id)}"`)}</div>`).join('')}</div>` : '<p class="pop-note">Aucune page pour l’instant : crée la première ci-dessous.</p>';
+  const list = data.list.length ? `<div class="sup-list">${data.list.map((p) => `<div class="sup-mrow"><span class="sup-chip ${p.published ? 'good' : ''}">${p.published ? 'Publiée' : 'Brouillon'}</span><div><b>${esc(p.title)}</b><small>${esc(statusUrl(p.slug))} · ${(p.monitor_ids || []).length} service(s)</small></div>${iconBtn('external', 'Ouvrir la page', `data-external="${esc(statusUrl(p.slug))}"`)}${iconBtn('copy', 'Copier le lien', `data-st-copy="${esc(statusUrl(p.slug))}"`)}${iconBtn('pen', 'Modifier', `data-st-edit="${esc(p.id)}"`)}${iconBtn('trash', 'Supprimer', `data-st-del="${esc(p.id)}"`)}</div>`).join('')}</div>` : '<p class="pop-note">Aucune page pour l’instant : créez la première ci-dessous.</p>';
   return `<div class="sup-grid g-2-1 g-top">
     ${card(e.id ? 'Modifier la page' : 'Nouvelle page de statut', mons.length ? `<form class="sup-form sup-stform" data-st-form autocomplete="off">
       <div class="sup-form-grid"><label class="field"><span>Titre</span><input class="input" name="title" value="${esc(e.title)}" required></label><label class="field"><span>Adresse</span><div class="sup-slug"><small>${esc(statusUrl('').replace(/=$/, '='))}</small><input class="input" name="slug" value="${esc(e.slug)}" pattern="[a-z0-9-]{3,40}" required></div></label></div>
-      <label class="field"><span>Message d’accueil (facultatif)</span><textarea class="input" name="intro" rows="2" placeholder="Ex. : Suis ici l’état de nos services en temps réel.">${esc(e.intro || '')}</textarea></label>
+      <label class="field"><span>Message d’accueil (facultatif)</span><textarea class="input" name="intro" rows="2" placeholder="Ex. : Suivez ici l’état de nos services en temps réel.">${esc(e.intro || '')}</textarea></label>
       <div class="field"><span>Services affichés</span><div class="sup-checks sup-checks-col">${mons.map((m) => `<label class="sup-check"><input type="checkbox" name="m" value="${esc(m.id)}" ${(e.monitor_ids || []).includes(m.id) ? 'checked' : ''}><span>${esc(m.name || m.url)}</span><small>${esc(m.kind && m.kind !== 'http' ? m.kind.toUpperCase() : (m.url || '').replace(/^https?:\/\//, ''))}</small></label>`).join('')}</div></div>
       <label class="tog-row"><span class="tog-text"><span>Afficher les incidents</span><small>Incidents en cours et des 90 derniers jours, avec leur durée.</small></span><input type="checkbox" name="show_incidents" ${e.show_incidents !== false ? 'checked' : ''}><span class="tog" aria-hidden="true"></span></label>
-      <label class="tog-row"><span class="tog-text"><span>Publier</span><small>Sinon, la page reste un brouillon visible seulement par toi.</small></span><input type="checkbox" name="published" ${e.published !== false ? 'checked' : ''}><span class="tog" aria-hidden="true"></span></label>
+      <label class="tog-row"><span class="tog-text"><span>Publier</span><small>Sinon, la page reste un brouillon visible seulement par vous.</small></span><input type="checkbox" name="published" ${e.published !== false ? 'checked' : ''}><span class="tog" aria-hidden="true"></span></label>
       <div class="nxs-actions">${btn(e.id ? 'Enregistrer' : 'Créer la page', 'type="submit"', { ic: 'check', cls: 'small primary' })}${e.id ? btn('Nouvelle page', 'data-st-new', { ic: 'plus' }) : ''}</div>
-    </form>` : `<p class="sup-note">${icon('cloud', 13)} Une page de statut montre les sites surveillés <b>24 h/24 par les serveurs NEXORA</b>. Ouvre la fiche d’un site et active « Surveiller aussi 24 h/24 », puis reviens ici.</p>`, { sub: 'Tes visiteurs peuvent s’abonner aux incidents par e-mail' })}
-    ${card('Tes pages', list, { sub: `Équipe « ${esc(acc.orgName)} »` })}
+    </form>` : `<p class="sup-note">${icon('cloud', 13)} Une page de statut montre les sites surveillés <b>24 h/24 par les serveurs NEXORA</b>. Ouvrez la fiche d’un site et activez « Surveiller aussi 24 h/24 », puis revenez ici.</p>`, { sub: 'Vos visiteurs peuvent s’abonner aux incidents par e-mail' })}
+    ${card('Vos pages', list, { sub: `Équipe « ${esc(acc.orgName)} »` })}
   </div>`;
 }
 

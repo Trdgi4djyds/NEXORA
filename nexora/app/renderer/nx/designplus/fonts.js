@@ -36,7 +36,7 @@ export function panel(D, st) {
   const q = (st.q || '').toLowerCase();
   const lib = LIBRARY.filter((f) => f.toLowerCase().includes(q));
   const local = (st.local || []).filter((f) => f.toLowerCase().includes(q)).slice(0, 80);
-  return `<p class="dzx-hint">${D.sel().length ? 'Clique sur une police pour l’appliquer aux textes sélectionnés.' : 'Sélectionne des textes, puis clique sur une police.'}</p>
+  return `<p class="dzx-hint">${D.sel().length ? 'Cliquez sur une police pour l’appliquer aux textes sélectionnés.' : 'Sélectionnez des textes, puis cliquez sur une police.'}</p>
     <input class="input" data-fk="q" value="${esc(st.q || '')}" placeholder="Rechercher une police" aria-label="Rechercher une police">
     <div class="dzp-sub">Associations titre + texte</div>
     <div class="dzp-pairs">${PAIRS.map(([a, b, l], i) => `<button class="dzp-pair" data-fpair="${i}"><b style="font-family:'${esc(a)}'">${esc(a)}</b><small style="font-family:'${esc(b)}'">${esc(b)} · ${esc(l)}</small></button>`).join('')}</div>
@@ -49,11 +49,11 @@ export async function onPanel(D, e, rerender, st) {
   const t = e.target;
   if (t.closest('[data-dzx="font-local"]')) {
     if (!window.queryLocalFonts) { toast('La liste des polices du PC n’est pas disponible ici.'); return true; }
-    try { const fonts = await window.queryLocalFonts(); st.local = [...new Set(fonts.map((f) => f.family))].sort((a, b) => a.localeCompare(b)); } catch { toast('Autorise l’accès aux polices du PC pour les lister.'); st.local = []; }
+    try { const fonts = await window.queryLocalFonts(); st.local = [...new Set(fonts.map((f) => f.family))].sort((a, b) => a.localeCompare(b)); } catch { toast('Autorisez l’accès aux polices du PC pour les lister.'); st.local = []; }
     rerender(); return true;
   }
   const fam = t.closest('[data-ffam]');
-  if (fam) { const sel = texts(D.sel()); if (!sel.length) { toast('Sélectionne d’abord un ou plusieurs textes.'); return true; } if (fam.dataset.local) { for (const o of sel) { o.set('fontFamily', fam.dataset.ffam); if (o.initDimensions) o.initDimensions(); } commit(D, 'Police'); } else await apply(D, fam.dataset.ffam, sel); rerender(); return true; }
+  if (fam) { const sel = texts(D.sel()); if (!sel.length) { toast('Sélectionnez d’abord un ou plusieurs textes.'); return true; } if (fam.dataset.local) { for (const o of sel) { o.set('fontFamily', fam.dataset.ffam); if (o.initDimensions) o.initDimensions(); } commit(D, 'Police'); } else await apply(D, fam.dataset.ffam, sel); rerender(); return true; }
   const pair = t.closest('[data-fpair]');
   if (pair) {
     const [a, b] = PAIRS[+pair.dataset.fpair];

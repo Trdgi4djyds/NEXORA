@@ -77,7 +77,7 @@ class Vault {
     const d = this.load(root);
     const keys = Object.keys(d.vars).sort();
     for (const f of ['.env', '.env.local']) { const p = path.join(root, f); if (fs.existsSync(p)) for (const [k] of parseDotenv(fs.readFileSync(p, 'utf8'))) if (!keys.includes(k)) keys.push(k); }
-    const lines = ['# Variables d’environnement du projet (générées par NEXORA).', '# Copie ce fichier en .env et remplis les valeurs. Ne mets jamais de vraie valeur ici.', ''];
+    const lines = ['# Variables d’environnement du projet (générées par NEXORA).', '# Copiez ce fichier en .env et remplissez les valeurs. Ne mettez jamais de vraie valeur ici.', ''];
     for (const k of keys) {
       const v = d.vars[k];
       const val = v && !v.secret ? this.dec(v) : '';

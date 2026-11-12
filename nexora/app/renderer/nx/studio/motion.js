@@ -21,7 +21,7 @@ export const CAM_MOVES = {
   orbit360: ['Orbite complète', 'Un tour entier autour de la scène, en boucle parfaite'],
   spiral: ['Spirale', 'S’enroule autour du sujet en s’approchant'],
   dive: ['Plongée', 'Part au-dessus du sujet et descend à hauteur d’yeux'],
-  vertigo: ['Effet vertigo', 'Avance en élargissant le champ : le sujet garde sa taille, le décor s’étire']
+  vertigo: ['Effet vertigo', 'Avancez en élargissant le champ : le sujet garde sa taille, le décor s’étire']
 };
 export function cameraMove(S, kind) {
   const cam = S.three.camera; const T = S.controls.target.clone(); const off = cam.position.clone().sub(T);
@@ -61,7 +61,7 @@ export function physicsDrop(S, ids, { height = 30, bounce = 0.5, stagger = 0.2 }
     }
     S.anim.tracks[id].sort((a, b) => a.t - b.t); made++;
   });
-  if (!made) { toast('Sélectionne d’abord un ou plusieurs objets de la scène.', { kind: 'bad' }); return; }
+  if (!made) { toast('Sélectionnez d’abord un ou plusieurs objets de la scène.', { kind: 'bad' }); return; }
   S.time = 0; S.applyTime(); S.timeline.render(); S.commit(); drawPath(S);
   toast(`Chute avec rebonds créée pour ${made} objet${made > 1 ? 's' : ''} : les clés restent modifiables sur la frise.`);
 }

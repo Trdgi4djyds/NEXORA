@@ -100,9 +100,9 @@ async function gates() {
     }
   }
   ok(
-    Object.keys(plan.GATES).length === 57 &&
+    Object.keys(plan.GATES).length === 58 &&
       plan.PREFIX_GATES.map((g) => g.join("=")).join() === "dev:=devlab,git:=devlab,gh:=devlab",
-    "57 canaux contrôlés et préfixes dev:, git:, gh: du Dev Lab (#076 : Responsive Lab et Browser Lab libres)",
+    "58 canaux contrôlés (#115 : android:module-install) et préfixes dev:, git:, gh: du Dev Lab (#076 : Responsive Lab et Browser Lab libres)",
     Object.keys(plan.GATES).length,
   )
   let r = await inv("lab:fetch")

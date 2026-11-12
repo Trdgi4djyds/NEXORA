@@ -42,7 +42,7 @@ export function readModel(name, bytes) {
   if (ext === 'stl') return parseStl(bytes);
   if (ext === 'ply') { const m = parsePly(bytes); return m.indices ? m : { ...m, points: true }; }
   if (ext === 'splat') return parseSplat(bytes);
-  throw new Error('Format non pris en charge : utilise OBJ, STL, PLY, SPLAT ou GLB.');
+  throw new Error('Format non pris en charge : utilisez OBJ, STL, PLY, SPLAT ou GLB.');
 }
 export async function importModel(S) {
   const f = await pickFile({ title: 'Importer un modèle 3D', name: 'Modèles 3D', extensions: MODEL_EXTS, as: 'bytes' });
@@ -89,7 +89,7 @@ export async function aiObject(S, text) {
   if (!allowed('L’objet composé par l’IA') || !(await needAi())) return;
   const t = busy('L’IA compose l’objet…');
   try {
-    const raw = await aiJson(`Compose un objet 3D simple à partir de formes de base pour une scène de présentation produit. Description : « ${text} ».
+    const raw = await aiJson(`Composez un objet 3D simple à partir de formes de base pour une scène de présentation produit. Description : « ${text} ».
 Formes possibles : box, sphere, cylinder, cone, torus, capsule (taille 1 avant mise à l'échelle). Unités : centimètres, objet d'environ 10 à 25 de haut, posé sur y = 0.
 Format : {"name":"…","parts":[{"shape":"box","pos":[x,y,z],"rot":[degX,degY,degZ],"size":[sx,sy,sz],"color":"#rrggbb","metal":0..1,"rough":0..1}]} ; 3 à 25 formes.`, { maxTokens: 1800 });
     const plan = cleanParts(raw);

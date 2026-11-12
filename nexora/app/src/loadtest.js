@@ -218,12 +218,12 @@ function normalizeUrls(opts) {
   const list = (Array.isArray(opts.urls) && opts.urls.length ? opts.urls : [opts.url]).map((u) => String(u || '').trim()).filter(Boolean).slice(0, 10);
   const out = list.map((u) => (/^https?:\/\//i.test(u) ? u : `https://${u}`));
   for (const u of out) { try { new URL(u); } catch { throw new Error(`Adresse invalide : ${u}`); } }
-  if (!out.length) throw new Error('Indique l’adresse à tester.');
+  if (!out.length) throw new Error('Indiquez l’adresse à tester.');
   return out;
 }
 
 async function run(app, fetchImpl, opts, onStep = () => {}) {
-  if (current) throw new Error('Un test de charge est déjà en cours : attends sa fin ou arrête-le.');
+  if (current) throw new Error('Un test de charge est déjà en cours : attendez sa fin ou arrêtez-le.');
   const urls = normalizeUrls(opts || {});
   const scenario = SCENARIOS[opts.scenario] ? opts.scenario : 'load';
   const stages = plan({ ...opts, scenario });
@@ -317,7 +317,7 @@ function stop() {
 // --- Prometheus + Grafana : fichiers prêts à lancer avec Docker (l'utilisateur a Docker installé). ---
 function prometheusStack(targets) {
   const list = targets.map((t) => `          - ${JSON.stringify(t)}`).join('\n');
-  const prometheus = `# prometheus.yml — supervise tes sites via le Blackbox Exporter
+  const prometheus = `# prometheus.yml — supervisez vos sites via le Blackbox Exporter
 global:
   scrape_interval: 30s
 scrape_configs:
@@ -387,7 +387,7 @@ function register({ ipcMain, app, net, send, dialog, shell, getWin }) {
     fs.writeFileSync(path.join(d, 'prometheus.yml'), prometheus);
     fs.writeFileSync(path.join(d, 'docker-compose.yml'), compose);
     fs.writeFileSync(path.join(d, 'grafana-dashboard.json'), dashboard);
-    fs.writeFileSync(path.join(d, 'LISEZ-MOI.txt'), 'Lance : docker compose up\nPrometheus : http://localhost:9090\nGrafana : http://localhost:3000 (admin / admin)\nImporte grafana-dashboard.json dans Grafana.\n');
+    fs.writeFileSync(path.join(d, 'LISEZ-MOI.txt'), 'Lancez : docker compose up\nPrometheus : http://localhost:9090\nGrafana : http://localhost:3000 (admin / admin)\nImportez grafana-dashboard.json dans Grafana.\n');
     shell.showItemInFolder(path.join(d, 'docker-compose.yml'));
     return d;
   });

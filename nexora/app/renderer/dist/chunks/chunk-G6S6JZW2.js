@@ -5,7 +5,7 @@ import{b as f,c as b}from"./chunk-TA22IXIF.js";import{a as c,e as h,g as d,i as 
       ${v("officialFrames","Utiliser les cadres officiels","Sinon, tous les appareils gardent le cadre dessin\xE9 par NEXORA.",m.officialFrames!==!1)}
       <section class="sk-sec">
         <h3>Samsung Galaxy</h3>
-        <p class="sk-note">Samsung publie ses cadres sur Samsung Developers, r\xE9serv\xE9s aux personnes connect\xE9es avec un compte Samsung (gratuit). Ouvre une gamme, connecte-toi, puis clique sur \xAB Download \xBB : chaque cadre t\xE9l\xE9charg\xE9 est import\xE9 tout seul.</p>
+        <p class="sk-note">Samsung publie ses cadres sur Samsung Developers, r\xE9serv\xE9s aux personnes connect\xE9es avec un compte Samsung (gratuit). Ouvrez une gamme, connectez-vous, puis cliquez sur \xAB Download \xBB : chaque cadre t\xE9l\xE9charg\xE9 est import\xE9 tout seul.</p>
         <div class="sk-row" style="margin-top:8px">${$.map(([s,a])=>`<button class="btn" data-samsung="${s}">${i("download",14)}<span>${n(a)}</span></button>`).join("")}</div>
         ${l.length?`<div class="sk-log" style="margin-top:8px">${l.map(s=>`<div class="${s.cls}">${n(s.text)}</div>`).join("")}</div>`:""}
       </section>
@@ -15,7 +15,7 @@ import{b as f,c as b}from"./chunk-TA22IXIF.js";import{a as c,e as h,g as d,i as 
         <div class="sk-row" style="margin-top:8px"><button class="btn" data-act="import">${i("upload",14)}<span>Importer un cadre (.zip)</span></button></div>
       </section>
       <section class="sk-sec">
-        <h3>Fournis avec NEXORA (${Object.keys(t).length})</h3>
+        <h3>Fournissez avec NEXORA (${Object.keys(t).length})</h3>
         <div class="sk-grid">${Object.entries(t).map(([s,a])=>`<div class="sk-chip"><span>${n(x(s))}</span><small>${Object.keys(a.variants).length>1?`${Object.keys(a.variants).length} vues`:"Google"}</small></div>`).join("")}</div>
         <p class="sk-note" style="margin-top:6px">Cadres d'Android Studio (Android Open Source Project, licence Apache 2.0) : Pixel, Pixel Fold, Pixel Tablet, Wear OS, Android Automotive, Google TV.</p>
       </section>

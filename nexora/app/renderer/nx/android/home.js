@@ -315,7 +315,7 @@ export function install(proto) {
       </div>
       <button class="btn wide" data-wall="import">${ico('upload', 14)}<span>Importer mon fond d’écran…</span></button>
       ${cur.kind === 'image' ? `<button class="btn wide" data-wall="reset">${ico('trash', 14)}<span>Retirer l’image importée</span></button>` : ''}
-      <p class="pop-note">Photos sous licence Unsplash, choisies dans le style des fonds actuels d’iOS, de Pixel et de One UI. Les fonds officiels d’Apple, de Google et de Samsung sont protégés : pour un aperçu identique à ton téléphone, importe le tien.</p>`;
+      <p class="pop-note">Photos sous licence Unsplash, choisies dans le style des fonds actuels d’iOS, de Pixel et de One UI. Les fonds officiels d’Apple, de Google et de Samsung sont protégés : pour un aperçu identique à votre téléphone, importez le vôtre.</p>`;
     const pop = popover(anchor, html, { width: 344 });
     if (!pop) return;
     pop.onclick = async (e) => {

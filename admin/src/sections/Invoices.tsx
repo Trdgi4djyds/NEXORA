@@ -29,7 +29,7 @@ const STATUS: Record<string, [string, string]> = {
 const CURRENCIES: [string, string][] = [["EUR", "Euro (€)"], ["XOF", "Franc CFA (F CFA)"], ["USD", "Dollar US ($)"]]
 const DEFAULT_ISSUER: Issuer = {
   name: "NEXORA", address: "", email: "", phone: "", website: NEXORA_WEB_URL, tax_id: "",
-  vat_note: "TVA non applicable", currency: "EUR", tax_rate: 0, due_days: 30, prefix: "NX", payment: "", footer: "Merci de ta confiance.",
+  vat_note: "TVA non applicable", currency: "EUR", tax_rate: 0, due_days: 30, prefix: "NX", payment: "", footer: "Merci de votre confiance.",
 }
 const MIGRATION = "20261104000006_emails_factures.sql"
 const missing = (e: unknown) => /does not exist|schema cache|PGRST20[25]|42P01|42883/.test(errMsg(e))
@@ -249,7 +249,7 @@ function InvoiceList() {
                 </div>
               )}
               {shown.length === 0 ? (
-                <div className="card"><Empty icon="pdf">{list.length ? "Aucune facture pour ce filtre." : "Aucune facture pour l’instant : crée la première avec « Nouvelle facture »."}</Empty></div>
+                <div className="card"><Empty icon="pdf">{list.length ? "Aucune facture pour ce filtre." : "Aucune facture pour l’instant : créez la première avec « Nouvelle facture »."}</Empty></div>
               ) : groups.map((g) => (
                 <section key={g.key} className="inv-group">
                   {g.title && (
@@ -347,8 +347,8 @@ function Editor({ inv, issuer, people, orgs, plans, outcome, setOutcome, onReloa
   }
 
   async function issue() {
-    if (!customer.name?.trim()) return ui.toast("Indique le nom du client.", "bad")
-    if (!lines.length) return ui.toast("Ajoute au moins une ligne.", "bad")
+    if (!customer.name?.trim()) return ui.toast("Indiquez le nom du client.", "bad")
+    if (!lines.length) return ui.toast("Ajoutez au moins une ligne.", "bad")
     if (!(await ui.confirm({ title: "Émettre la facture ?", body: <>Elle reçoit le numéro suivant ({issuer.prefix || "NX"}-{new Date().getFullYear()}-…), la date du jour et l’échéance, puis ne peut plus être modifiée. Total : <b>{money(t.total, d.currency)}</b>.</>, confirm: "Émettre" }))) return
     if (await act.run(async () => { if (dirty) await save(); must(await sb.rpc("nx_invoice_issue", { p_id: inv.id })) }, "Facture émise.")) onReload()
   }
@@ -357,7 +357,7 @@ function Editor({ inv, issuer, people, orgs, plans, outcome, setOutcome, onReloa
     if (await act.run(async () => must(await sb.from("invoices").update(patch).eq("id", inv.id)), ok)) onReload()
   }
   async function cancel() {
-    if (!(await ui.confirm({ title: `Annuler la facture ${inv.number} ?`, body: "Elle reste dans la liste avec la mention « Annulée » (son numéro n’est pas réutilisé). Crée une nouvelle facture si besoin.", confirm: "Annuler la facture", danger: true }))) return
+    if (!(await ui.confirm({ title: `Annuler la facture ${inv.number} ?`, body: "Elle reste dans la liste avec la mention « Annulée » (son numéro n’est pas réutilisé). Créez une nouvelle facture si besoin.", confirm: "Annuler la facture", danger: true }))) return
     await setStatus("annulee", "Facture annulée.")
   }
   async function remove() {
@@ -442,7 +442,7 @@ function Editor({ inv, issuer, people, orgs, plans, outcome, setOutcome, onReloa
                   ) : <span />}
                 </div>
               ))}
-              {!lines.length && <p className="muted small" style={{ margin: "4px 0" }}>Aucune ligne : ajoute un abonnement ou une ligne libre.</p>}
+              {!lines.length && <p className="muted small" style={{ margin: "4px 0" }}>Aucune ligne : ajoutez un abonnement ou une ligne libre.</p>}
             </div>
             {!locked && <div><button className="btn sm" onClick={() => setLines([...lines, { label: "", qty: 1, unit_cents: 0 }])}><Icon name="plus" size={13} /> Ajouter une ligne</button></div>}
             <div className="inv-totals">
@@ -618,7 +618,7 @@ function IssuerForm({ issuer, busy, onSave, onCancel }: { issuer: Issuer; busy: 
       </div>
       {f("vat_note", "Mention si TVA à 0 %", { ph: "TVA non applicable, art. 293 B du CGI" })}
       {f("payment", "Modalités de paiement", { area: true, ph: "Virement : IBAN …\nMobile Money : +229 …", hint: "Reprises dans le PDF et dans l’e-mail tant que la facture n’est pas payée." })}
-      {f("footer", "Remerciement en pied de page", { ph: "Merci de ta confiance." })}
+      {f("footer", "Remerciement en pied de page", { ph: "Merci de votre confiance." })}
       <div className="actions">
         <button className="btn" onClick={onCancel}>Annuler</button>
         <button className="btn primary" disabled={busy || !String(v.name || "").trim()} onClick={() => onSave(v)}>Enregistrer</button>

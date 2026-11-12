@@ -45,17 +45,17 @@ export function errText(error: unknown): string {
   const m = String((e && (e.message || e.error_description || e.msg)) || error || "")
   if (/Invalid login credentials/i.test(m)) return "Adresse e-mail ou mot de passe incorrect."
   if (/Email not confirmed/i.test(m))
-    return "Confirme d’abord ton adresse e-mail (lien reçu par e-mail)."
+    return "Confirmez d’abord votre adresse e-mail (lien reçu par e-mail)."
   if (/User already registered|already been registered/i.test(m))
     return "Un compte existe déjà avec cette adresse e-mail."
   if (/Password should be at least/i.test(m))
     return "Le mot de passe doit contenir au moins 8 caractères."
-  if (/rate limit|too many/i.test(m)) return "Trop de tentatives : patiente quelques minutes."
+  if (/rate limit|too many/i.test(m)) return "Trop de tentatives : patientez quelques minutes."
   if (/Failed to fetch|NetworkError|network/i.test(m))
-    return "Connexion impossible : vérifie ton accès Internet."
-  if (/JWT expired/i.test(m)) return "Ta session a expiré : reconnecte-toi."
+    return "Connexion impossible : vérifiez votre accès Internet."
+  if (/JWT expired/i.test(m)) return "Votre session a expiré : reconnectez-vous."
   if (/row-level security|permission denied/i.test(m))
-    return "Tu n’as pas les droits pour cette action."
+    return "Vous n’avez pas les droits pour cette action."
   return m.replace(/^Error:\s*/, "") || "Une erreur est survenue."
 }
 

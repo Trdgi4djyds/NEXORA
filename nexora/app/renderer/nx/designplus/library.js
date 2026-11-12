@@ -83,7 +83,7 @@ export async function check(D, { libraries, onOpen }) {
   const key = `${D.doc.id}:${list.map((l) => `${l.id}@${l.updated_at}`).join(',')}`;
   if (list.length && !told.has(key)) {
     told.add(key);
-    toast(list.length === 1 ? `La bibliothèque « ${list[0].name} » de ton équipe a changé.` : `${list.length} bibliothèques de ton équipe ont changé.`, { action: 'Mettre à jour', onAction: onOpen });
+    toast(list.length === 1 ? `La bibliothèque « ${list[0].name} » de votre équipe a changé.` : `${list.length} bibliothèques de votre équipe ont changé.`, { action: 'Mettre à jour', onAction: onOpen });
   }
   return list;
 }

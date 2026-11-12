@@ -18,23 +18,23 @@ const LEAKS = [
   [/Django Version:|DisallowedHost at/i, 'page de débogage Django'],
 ];
 const PROBES = [
-  ['/server-status', /Apache Server Status/i, 'high', 'Page d’état d’Apache publique', 'Elle montre les adresses et les pages consultées par tes visiteurs.', 'Restreins /server-status à 127.0.0.1 (Require local).'],
-  ['/actuator/env', /"propertySources"|"activeProfiles"/, 'critical', 'Variables de configuration Spring exposées', 'Mots de passe et clés de configuration lisibles par tous.', 'N’expose pas les endpoints actuator sensibles (management.endpoints.web.exposure.include=health).'],
-  ['/actuator/heapdump', /JAVA PROFILE|HPROF/, 'critical', 'Mémoire de l’application téléchargeable', 'Le contenu de la mémoire (sessions, secrets) peut être récupéré.', 'Désactive l’endpoint heapdump.'],
-  ['/_profiler/', /Symfony Profiler/i, 'high', 'Profileur Symfony public', 'Il affiche les requêtes, la configuration et les variables d’environnement.', 'Désactive le profileur en production (APP_ENV=prod).'],
-  ['/telescope', /Laravel Telescope|telescope/i, 'high', 'Laravel Telescope public', 'Il montre les requêtes, les e-mails et les exceptions de ton application.', 'Limite Telescope à l’environnement local ou protège-le par une autorisation.'],
-  ['/phpinfo.php', /phpinfo\(\)|PHP Version/i, 'medium', 'phpinfo() public', 'Toute la configuration PHP du serveur est lisible.', 'Supprime ce fichier du serveur.'],
-  ['/adminer.php', /Adminer|Login - Adminer/i, 'high', 'Adminer accessible', 'Une page de connexion à ta base de données est ouverte à tous.', 'Supprime Adminer du serveur ou protège-le par une liste d’adresses autorisées.'],
-  ['/phpmyadmin/', /phpMyAdmin/i, 'medium', 'phpMyAdmin accessible', 'La page de connexion à la base est publique : cible de choix pour les robots.', 'Restreins phpMyAdmin à ton adresse IP ou passe par un VPN.'],
-  ['/backup.sql', /CREATE TABLE|INSERT INTO/i, 'critical', 'Sauvegarde de base de données téléchargeable', 'Toutes tes données peuvent être récupérées.', 'Supprime le fichier du dossier public et garde les sauvegardes hors du site.'],
-  ['/dump.sql', /CREATE TABLE|INSERT INTO/i, 'critical', 'Sauvegarde de base de données téléchargeable', 'Toutes tes données peuvent être récupérées.', 'Supprime le fichier du dossier public.'],
-  ['/db.sql', /CREATE TABLE|INSERT INTO/i, 'critical', 'Sauvegarde de base de données téléchargeable', 'Toutes tes données peuvent être récupérées.', 'Supprime le fichier du dossier public.'],
-  ['/wp-config.php.bak', /DB_PASSWORD|DB_NAME/, 'critical', 'Copie de wp-config.php lisible', 'Le mot de passe de ta base WordPress est lisible.', 'Supprime la copie et change le mot de passe de la base.'],
-  ['/config.php.bak', /password|\$db/i, 'critical', 'Copie d’un fichier de configuration lisible', 'Des identifiants peuvent être lus.', 'Supprime la copie et change les mots de passe concernés.'],
-  ['/.DS_Store', /Bud1/, 'low', 'Fichier .DS_Store exposé', 'Il révèle la liste des fichiers d’un dossier.', 'Supprime les fichiers .DS_Store avant la mise en ligne.'],
-  ['/swagger.json', /"swagger"|"openapi"/, 'low', 'Documentation de l’API publique', 'La liste complète des routes de ton API est lisible : vérifie qu’aucune n’est sans protection.', 'Rends la documentation privée si l’API n’est pas publique.'],
-  ['/openapi.json', /"openapi"/, 'low', 'Documentation de l’API publique', 'La liste complète des routes de ton API est lisible.', 'Rends la documentation privée si l’API n’est pas publique.'],
-  ['/graphql?query=%7B__schema%7Btypes%7Bname%7D%7D%7D', /"__schema"/, 'medium', 'Introspection GraphQL ouverte', 'Tout le schéma de ton API GraphQL est lisible par n’importe qui.', 'Désactive l’introspection en production.'],
+  ['/server-status', /Apache Server Status/i, 'high', 'Page d’état d’Apache publique', 'Elle montre les adresses et les pages consultées par vos visiteurs.', 'Restreignez /server-status à 127.0.0.1 (Require local).'],
+  ['/actuator/env', /"propertySources"|"activeProfiles"/, 'critical', 'Variables de configuration Spring exposées', 'Mots de passe et clés de configuration lisibles par tous.', 'N’exposez pas les endpoints actuator sensibles (management.endpoints.web.exposure.include=health).'],
+  ['/actuator/heapdump', /JAVA PROFILE|HPROF/, 'critical', 'Mémoire de l’application téléchargeable', 'Le contenu de la mémoire (sessions, secrets) peut être récupéré.', 'Désactivez l’endpoint heapdump.'],
+  ['/_profiler/', /Symfony Profiler/i, 'high', 'Profileur Symfony public', 'Il affiche les requêtes, la configuration et les variables d’environnement.', 'Désactivez le profileur en production (APP_ENV=prod).'],
+  ['/telescope', /Laravel Telescope|telescope/i, 'high', 'Laravel Telescope public', 'Il montre les requêtes, les e-mails et les exceptions de votre application.', 'Limite Telescope à l’environnement local ou protège-le par une autorisation.'],
+  ['/phpinfo.php', /phpinfo\(\)|PHP Version/i, 'medium', 'phpinfo() public', 'Toute la configuration PHP du serveur est lisible.', 'Supprimez ce fichier du serveur.'],
+  ['/adminer.php', /Adminer|Login - Adminer/i, 'high', 'Adminer accessible', 'Une page de connexion à votre base de données est ouverte à tous.', 'Supprimez Adminer du serveur ou protégez-le par une liste d’adresses autorisées.'],
+  ['/phpmyadmin/', /phpMyAdmin/i, 'medium', 'phpMyAdmin accessible', 'La page de connexion à la base est publique : cible de choix pour les robots.', 'Restreignez phpMyAdmin à votre adresse IP ou passez par un VPN.'],
+  ['/backup.sql', /CREATE TABLE|INSERT INTO/i, 'critical', 'Sauvegarde de base de données téléchargeable', 'Toutes vos données peuvent être récupérées.', 'Supprimez le fichier du dossier public et gardez les sauvegardes hors du site.'],
+  ['/dump.sql', /CREATE TABLE|INSERT INTO/i, 'critical', 'Sauvegarde de base de données téléchargeable', 'Toutes vos données peuvent être récupérées.', 'Supprimez le fichier du dossier public.'],
+  ['/db.sql', /CREATE TABLE|INSERT INTO/i, 'critical', 'Sauvegarde de base de données téléchargeable', 'Toutes vos données peuvent être récupérées.', 'Supprimez le fichier du dossier public.'],
+  ['/wp-config.php.bak', /DB_PASSWORD|DB_NAME/, 'critical', 'Copie de wp-config.php lisible', 'Le mot de passe de votre base WordPress est lisible.', 'Supprimez la copie et changez le mot de passe de la base.'],
+  ['/config.php.bak', /password|\$db/i, 'critical', 'Copie d’un fichier de configuration lisible', 'Des identifiants peuvent être lus.', 'Supprimez la copie et changez les mots de passe concernés.'],
+  ['/.DS_Store', /Bud1/, 'low', 'Fichier .DS_Store exposé', 'Il révèle la liste des fichiers d’un dossier.', 'Supprimez les fichiers .DS_Store avant la mise en ligne.'],
+  ['/swagger.json', /"swagger"|"openapi"/, 'low', 'Documentation de l’API publique', 'La liste complète des routes de votre API est lisible : vérifiez qu’aucune n’est sans protection.', 'Rendez la documentation privée si l’API n’est pas publique.'],
+  ['/openapi.json', /"openapi"/, 'low', 'Documentation de l’API publique', 'La liste complète des routes de votre API est lisible.', 'Rendez la documentation privée si l’API n’est pas publique.'],
+  ['/graphql?query=%7B__schema%7Btypes%7Bname%7D%7D%7D', /"__schema"/, 'medium', 'Introspection GraphQL ouverte', 'Tout le schéma de votre API GraphQL est lisible par n’importe qui.', 'Désactivez l’introspection en production.'],
 ];
 const ADMIN = ['/admin', '/administrator/', '/wp-admin/', '/wp-login.php', '/user/login', '/login', '/backoffice', '/dashboard'];
 
@@ -81,7 +81,7 @@ async function audit(start, { fetchImpl, max = 25, onStep = () => {} } = {}) {
   const queue = [startUrl];
   const pages = [];
   const issuesBy = new Map(); // titre → pages concernées (constats regroupés)
-  const note = (sev, title, detail, fix, page, who = 'toi') => {
+  const note = (sev, title, detail, fix, page, who = 'vous') => {
     const k = title;
     if (!issuesBy.has(k)) issuesBy.set(k, { sev, title, detail, fix, who, pages: [] });
     const it = issuesBy.get(k);
@@ -104,25 +104,25 @@ async function audit(start, { fetchImpl, max = 25, onStep = () => {} } = {}) {
       for (const f of forms(html)) {
         let actionUrl = null;
         try { actionUrl = new URL(f.action || u, u); } catch { actionUrl = null; }
-        if (f.password && (!https || (actionUrl && actionUrl.protocol === 'http:'))) note('critical', 'Mot de passe envoyé sans chiffrement', 'Un formulaire avec un mot de passe est envoyé en HTTP : il peut être lu sur le réseau (Wi-Fi public…).', 'Sers toutes les pages en HTTPS et fais pointer le formulaire vers une adresse https://.', path);
-        if (f.method === 'post' && !f.token && (!actionUrl || actionUrl.origin === origin)) note('medium', 'Formulaire sans jeton anti-CSRF', 'Un autre site peut faire envoyer ce formulaire à ton visiteur connecté sans qu’il le sache (falsification de requête).', 'Ajoute un jeton anti-CSRF caché (la plupart des frameworks le font : csrf_token, @csrf, antiforgery…) et des cookies SameSite.', path);
-        if (f.password && f.method === 'get') note('high', 'Mot de passe envoyé dans l’adresse', 'Le formulaire utilise GET : le mot de passe apparaît dans l’adresse, l’historique et les journaux du serveur.', 'Utilise method="post" pour les formulaires de connexion.', path);
+        if (f.password && (!https || (actionUrl && actionUrl.protocol === 'http:'))) note('critical', 'Mot de passe envoyé sans chiffrement', 'Un formulaire avec un mot de passe est envoyé en HTTP : il peut être lu sur le réseau (Wi-Fi public…).', 'Servez toutes les pages en HTTPS et faites pointer le formulaire vers une adresse https://.', path);
+        if (f.method === 'post' && !f.token && (!actionUrl || actionUrl.origin === origin)) note('medium', 'Formulaire sans jeton anti-CSRF', 'Un autre site peut faire envoyer ce formulaire à votre visiteur connecté sans qu’il le sache (falsification de requête).', 'Ajoutez un jeton anti-CSRF caché (la plupart des frameworks le font : csrf_token, @csrf, antiforgery…) et des cookies SameSite.', path);
+        if (f.password && f.method === 'get') note('high', 'Mot de passe envoyé dans l’adresse', 'Le formulaire utilise GET : le mot de passe apparaît dans l’adresse, l’historique et les journaux du serveur.', 'Utilisez method="post" pour les formulaires de connexion.', path);
       }
       if (https) {
         const mixed = (html.match(/<(?:script|img|iframe|link|audio|video|source)\b[^>]*\b(?:src|href)\s*=\s*["']http:\/\/[^"']+/gi) || []).length;
-        if (mixed) note('high', 'Contenu mixte', 'Des ressources sont chargées en HTTP sur une page HTTPS : elles peuvent être modifiées en route, et le navigateur les bloque souvent.', 'Charge toutes les ressources en https:// (ou en adresse relative).', path);
+        if (mixed) note('high', 'Contenu mixte', 'Des ressources sont chargées en HTTP sur une page HTTPS : elles peuvent être modifiées en route, et le navigateur les bloque souvent.', 'Chargez toutes les ressources en https:// (ou en adresse relative).', path);
       }
-      for (const [re, what] of LEAKS) if (re.test(html)) { note('medium', 'Message d’erreur détaillé', `La page affiche une ${what} : elle révèle des chemins de fichiers, des versions ou des requêtes internes.`, 'Désactive le mode débogage en production et affiche une page d’erreur générique.', path, 'toi'); break; }
+      for (const [re, what] of LEAKS) if (re.test(html)) { note('medium', 'Message d’erreur détaillé', `La page affiche une ${what} : elle révèle des chemins de fichiers, des versions ou des requêtes internes.`, 'Désactivez le mode débogage en production et affichez une page d’erreur générique.', path, 'vous'); break; }
       const comments = (html.match(/<!--[\s\S]*?-->/g) || []).filter((c) => /(password|mot de passe|api[_ -]?key|secret|token|TODO.*(auth|secur)|identifiant)/i.test(c));
-      if (comments.length) note('low', 'Commentaires sensibles dans le code HTML', 'Des commentaires visibles dans le code source parlent de mots de passe, de clés ou de sécurité.', 'Retire ces commentaires du HTML publié (étape de minification).', path);
+      if (comments.length) note('low', 'Commentaires sensibles dans le code HTML', 'Des commentaires visibles dans le code source parlent de mots de passe, de clés ou de sécurité.', 'Retirez ces commentaires du HTML publié (étape de minification).', path);
       for (const c of r.setCookies || []) {
         const name = c.split('=')[0].trim();
         const low = c.toLowerCase();
         const sess = /sess|sid|auth|token|jwt|login|remember/i.test(name);
         if (!sess) continue;
-        if (https && !/;\s*secure/.test(low)) note('high', `Cookie de session « ${name} » sans Secure`, 'Il peut partir en HTTP et être intercepté.', 'Ajoute l’attribut Secure au cookie.', path);
-        if (!/;\s*httponly/.test(low)) note('medium', `Cookie de session « ${name} » sans HttpOnly`, 'Un script injecté dans la page peut le lire et voler la session.', 'Ajoute l’attribut HttpOnly au cookie.', path);
-        if (!/;\s*samesite/.test(low)) note('low', `Cookie de session « ${name} » sans SameSite`, 'Il est envoyé avec les requêtes venues d’autres sites.', 'Ajoute SameSite=Lax (ou Strict).', path);
+        if (https && !/;\s*secure/.test(low)) note('high', `Cookie de session « ${name} » sans Secure`, 'Il peut partir en HTTP et être intercepté.', 'Ajoutez l’attribut Secure au cookie.', path);
+        if (!/;\s*httponly/.test(low)) note('medium', `Cookie de session « ${name} » sans HttpOnly`, 'Un script injecté dans la page peut le lire et voler la session.', 'Ajoutez l’attribut HttpOnly au cookie.', path);
+        if (!/;\s*samesite/.test(low)) note('low', `Cookie de session « ${name} » sans SameSite`, 'Il est envoyé avec les requêtes venues d’autres sites.', 'Ajoutez SameSite=Lax (ou Strict).', path);
       }
       const after = issuesBy.size + [...issuesBy.values()].reduce((a, x) => a + x.pages.length, 0);
       page.issues = after - before;
@@ -137,13 +137,13 @@ async function audit(start, { fetchImpl, max = 25, onStep = () => {} } = {}) {
     const r = await grab(fetchImpl, origin + p, { timeout: 9000, max: 60000, redirect: 'manual' });
     return r.status === 200 && re.test(r.body) ? { p, sev, title, detail, fix } : null;
   });
-  for (const x of probes) if (x && x.p) add(x.sev, 'Diagnostic exposé', `${x.title} (${x.p})`, x.detail, x.fix, { who: 'toi' });
+  for (const x of probes) if (x && x.p) add(x.sev, 'Diagnostic exposé', `${x.title} (${x.p})`, x.detail, x.fix, { who: 'vous' });
   const admins = await pool(ADMIN, 6, async (p) => {
     const r = await grab(fetchImpl, origin + p, { timeout: 9000, max: 60000 });
     return r.status === 200 && /<input\b[^>]*type\s*=\s*["']?password/i.test(r.body) ? p : null;
   });
   const open = admins.filter((x) => typeof x === 'string');
-  if (open.length) add('info', 'Diagnostic exposé', `Page de connexion d’administration trouvée (${open.join(', ')})`, 'C’est normal pour un site géré, mais ces pages sont attaquées en permanence par des robots.', 'Active la double authentification, limite les tentatives de connexion et, si possible, restreins l’accès par adresse IP.', { who: 'toi' });
+  if (open.length) add('info', 'Diagnostic exposé', `Page de connexion d’administration trouvée (${open.join(', ')})`, 'C’est normal pour un site géré, mais ces pages sont attaquées en permanence par des robots.', 'Activez la double authentification, limitez les tentatives de connexion et, si possible, restreignez l’accès par adresse IP.', { who: 'vous' });
   onStep({ label: 'Terminé', progress: 1 });
   return finish(findings, { kind: 'pages', target: origin, url: startUrl, host: new URL(origin).hostname, pages, https });
 }

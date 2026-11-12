@@ -10,10 +10,10 @@ const SCOPE = 'https://www.googleapis.com/auth/androidpublisher';
 
 function explain(status, j) {
   const msg = (j && j.error && (j.error.message || j.error.status)) || '';
-  if (status === 401 || /invalid_grant/i.test(msg)) return 'Clé du compte de service refusée : vérifie le fichier importé.';
-  if (status === 403 || /permission/i.test(msg)) return 'Ce compte de service n’a pas accès à l’application dans la Play Console (Utilisateurs et autorisations › Inviter : donne-lui le droit de publier).';
-  if (status === 404 || /not found|Package not found/i.test(msg)) return 'Application introuvable dans la Play Console : crée-la d’abord une fois à la main (Play Console › Créer une application) avec cet identifiant, et envoie le premier AAB depuis la Console.';
-  if (/version code.*already/i.test(msg) || /APK specifies a version code that has already been used/i.test(msg)) return 'Ce numéro de version a déjà été envoyé : augmente le « Numéro de version » (section Identité) et reconstruis.';
+  if (status === 401 || /invalid_grant/i.test(msg)) return 'Clé du compte de service refusée : vérifiez le fichier importé.';
+  if (status === 403 || /permission/i.test(msg)) return 'Ce compte de service n’a pas accès à l’application dans la Play Console (Utilisateurs et autorisations › Inviter : donnez-lui le droit de publier).';
+  if (status === 404 || /not found|Package not found/i.test(msg)) return 'Application introuvable dans la Play Console : créez-la d’abord une fois à la main (Play Console › Créer une application) avec cet identifiant, et envoyez le premier AAB depuis la Console.';
+  if (/version code.*already/i.test(msg) || /APK specifies a version code that has already been used/i.test(msg)) return 'Ce numéro de version a déjà été envoyé : augmentez le « Numéro de version » (section Identité) et reconstruisez.';
   if (/signature|signing/i.test(msg)) return 'La clé de signature ne correspond pas à celle enregistrée sur Google Play pour cette application.';
   return msg ? `Google Play a refusé l’envoi : ${msg}` : `Google Play a refusé l’envoi (erreur ${status}).`;
 }
@@ -41,7 +41,7 @@ async function publish({
 }, fetchImpl, onStep = () => {}) {
   const sa = parseServiceAccount(serviceAccount);
   if (!sa.ok) throw new Error(sa.error.replace('Firebase', 'Google Cloud'));
-  if (!aab || !fs.existsSync(aab)) throw new Error('Construis d’abord l’application au format AAB (case « AAB Play Store »).');
+  if (!aab || !fs.existsSync(aab)) throw new Error('Construisez d’abord l’application au format AAB (case « AAB Play Store »).');
   onStep('Connexion à Google Play', 0.05);
   const tok = await accessToken(sa.json, fetchImpl, SCOPE);
   const id = encodeURIComponent(appId);

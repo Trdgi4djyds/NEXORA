@@ -30,8 +30,8 @@ function readReply(sock, timeoutMs = 20000) {
 function smtpError(r, what) {
   const last = r.text.trim().split(/\r?\n/).pop() || '';
   const msg = last.slice(4, 220);
-  if (r.code === 535 || r.code === 534) return new Error(`Identifiant ou mot de passe refusé (${r.code}). Gmail, Outlook, Yahoo : crée un « mot de passe d’application » et utilise-le ici.`);
-  if (r.code === 530) return new Error(`Le serveur exige une connexion sécurisée (${r.code}) : utilise le port 587 ou 465.`);
+  if (r.code === 535 || r.code === 534) return new Error(`Identifiant ou mot de passe refusé (${r.code}). Gmail, Outlook, Yahoo : créez un « mot de passe d’application » et utilisez-le ici.`);
+  if (r.code === 530) return new Error(`Le serveur exige une connexion sécurisée (${r.code}) : utilisez le port 587 ou 465.`);
   if ([550, 551, 553, 554].includes(r.code)) return new Error(`Adresse refusée par le serveur (${r.code}) : ${msg}`);
   return new Error(`SMTP ${r.code}${what ? ` pendant ${what}` : ''} : ${msg}`);
 }
@@ -58,7 +58,7 @@ async function connect(host, port, implicit) {
   } catch (e) {
     try { sock.destroy(); } catch { /* déjà fermé */ }
     const hint = e.code === 'ENOTFOUND' ? 'serveur introuvable' : e.code === 'ECONNREFUSED' ? 'connexion refusée' : e.code === 'ETIMEDOUT' ? 'pas de réponse' : (e.code || e.message);
-    throw new Error(`Impossible de joindre ${host}:${port} (${hint}). Vérifie l’adresse du serveur et le port (587 ou 465).`);
+    throw new Error(`Impossible de joindre ${host}:${port} (${hint}). Vérifiez l’adresse du serveur et le port (587 ou 465).`);
   }
 }
 
@@ -67,9 +67,9 @@ async function sendMail({
 }) {
   host = String(host || '').trim();
   user = String(user || '').trim();
-  if (!host || !user || !pass) throw new Error('Renseigne le serveur, l’identifiant et le mot de passe SMTP.');
+  if (!host || !user || !pass) throw new Error('Renseignez le serveur, l’identifiant et le mot de passe SMTP.');
   const rcpts = String(to || '').split(/[,;]/).map((x) => x.trim()).filter(Boolean);
-  if (!rcpts.length) throw new Error('Indique au moins un destinataire.');
+  if (!rcpts.length) throw new Error('Indiquez au moins un destinataire.');
   port = Number(port) || 587;
   const implicit = Boolean(secure) || port === 465;
   let sock = await connect(host, port, implicit);

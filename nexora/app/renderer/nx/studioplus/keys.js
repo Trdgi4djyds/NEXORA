@@ -11,7 +11,7 @@ export const hasClip = () => Boolean(clip);
 export function copy(S, id) {
   const tr = track(S, id); if (!tr.length) { toast('Cet objet n’a pas encore de clé.', { kind: 'bad' }); return; }
   clip = { from: id, keys: JSON.parse(JSON.stringify(tr)) };
-  toast(`${tr.length} clé(s) copiée(s). Sélectionne un autre objet, place la tête de lecture puis « Coller les clés ».`);
+  toast(`${tr.length} clé(s) copiée(s). Sélectionnez un autre objet, placez la tête de lecture puis « Coller les clés ».`);
 }
 // Les écarts (position, rotation, taille) sont rejoués à partir de la place actuelle de l'objet cible.
 export function paste(S, id) {

@@ -132,7 +132,7 @@ class Share {
     const r = this.route(req);
     if (!r) {
       res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(`<!doctype html><meta charset="utf-8"><title>Adresse inconnue</title><body style="font:15px system-ui;padding:40px;color:#333"><h1 style="font-size:20px">Adresse inconnue dans NEXORA</h1><p>${String(req.headers.host || '').replace(/[<>&]/g, '')} n’est associée à aucun projet. Ouvre le Dev Lab pour la créer.</p>`);
+      res.end(`<!doctype html><meta charset="utf-8"><title>Adresse inconnue</title><body style="font:15px system-ui;padding:40px;color:#333"><h1 style="font-size:20px">Adresse inconnue dans NEXORA</h1><p>${String(req.headers.host || '').replace(/[<>&]/g, '')} n’est associée à aucun projet. Ouvrez le Dev Lab pour la créer.</p>`);
       return;
     }
     const opts = {
@@ -145,7 +145,7 @@ class Share {
     });
     up.on('error', (e) => {
       if (!res.headersSent) res.writeHead(502, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(`<!doctype html><meta charset="utf-8"><body style="font:15px system-ui;padding:40px;color:#333"><h1 style="font-size:20px">Le serveur du projet ne répond pas</h1><p>${r.target.href} : ${String(e.message).replace(/[<>&]/g, '')}</p><p>Lance le projet dans le Dev Lab, puis recharge cette page.</p>`);
+      res.end(`<!doctype html><meta charset="utf-8"><body style="font:15px system-ui;padding:40px;color:#333"><h1 style="font-size:20px">Le serveur du projet ne répond pas</h1><p>${r.target.href} : ${String(e.message).replace(/[<>&]/g, '')}</p><p>Lancez le projet dans le Dev Lab, puis rechargez cette page.</p>`);
     });
     req.pipe(up);
   }
@@ -214,7 +214,7 @@ class Share {
       await new Promise((res, rej) => execFile('osascript', ['-e', cmd], (e) => (e ? rej(new Error('Autorisation refusée.')) : res())));
       return true;
     }
-    throw new Error(`Ajoute ces lignes à /etc/hosts (avec sudo) :\n${lines}`);
+    throw new Error(`Ajoutez ces lignes à /etc/hosts (avec sudo) :\n${lines}`);
   }
 
   list() {

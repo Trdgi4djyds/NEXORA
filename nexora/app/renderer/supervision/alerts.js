@@ -19,10 +19,10 @@ export async function renderAlerts(ctx) {
   const channels = `<div class="sup-chs sup-chs-one">
     <div class="sup-ch ${ready ? 'on' : ''}">
       <div class="sup-ch-h">${icon('mail', 15)}<b>E-mail</b>${chip}</div>
-      <p class="pop-note">${acc.signedIn ? `Les alertes sont envoyées à <b>${esc(acc.email)}</b>, l’adresse de ton compte.` : 'Connecte-toi à ton compte NEXORA : les alertes sont envoyées à l’adresse de ton compte.'}</p>
+      <p class="pop-note">${acc.signedIn ? `Les alertes sont envoyées à <b>${esc(acc.email)}</b>, l’adresse de votre compte.` : 'Connectez-vous à votre compte NEXORA : les alertes sont envoyées à l’adresse de votre compte.'}</p>
       <label class="tog-row"><span class="tog-text"><span>Recevoir les alertes par e-mail</span><small>Panne, lenteur, erreurs de page, certificat et retour à la normale, selon les règles ci-dessous.</small></span><input type="checkbox" data-email-enabled ${em.enabled ? 'checked' : ''}><span class="tog" aria-hidden="true"></span></label>
       <div class="sup-ch-f">${acc.signedIn ? btn('Envoyer un e-mail de test', 'data-al-test="email"', { ic: 'bell' }) : btn('Se connecter', 'data-al-login', { ic: 'user', cls: 'primary' })}<span class="sup-ch-res" data-res="email"></span></div>
-      <details><summary>Comment ça marche ?</summary><ul class="mon-steps"><li>Rien à configurer : les alertes arrivent à l’adresse de ton compte.</li><li>Jusqu’à 20 alertes par heure et 60 par jour ; au-delà, elles restent dans NEXORA.</li><li>Les alertes partent tant que NEXORA est ouverte. Pour être prévenu même NEXORA fermée, active « Surveiller aussi 24 h/24, même ordinateur éteint » dans les réglages du site.</li></ul></details>
+      <details><summary>Comment ça marche ?</summary><ul class="mon-steps"><li>Rien à configurer : les alertes arrivent à l’adresse de votre compte.</li><li>Jusqu’à 20 alertes par heure et 60 par jour ; au-delà, elles restent dans NEXORA.</li><li>Les alertes partent tant que NEXORA est ouverte. Pour être prévenu même NEXORA fermée, active « Surveiller aussi 24 h/24, même ordinateur éteint » dans les réglages du site.</li></ul></details>
     </div>
   </div>`;
   const now = Date.now();
@@ -47,23 +47,23 @@ export async function renderAlerts(ctx) {
       <td><b>${esc(a.siteName)}</b></td>
       <td><span class="sup-chip ${a.level === 'ok' ? 'good' : a.level === 'critique' ? 'bad' : 'warn'}">${esc(ALERT_KIND[a.kind] || a.kind)}</span></td>
       <td class="sup-reason">${esc(a.text.replace(/^\S+\s/u, (m) => (/^[\p{Extended_Pictographic}\u2705]/u.test(m) ? '' : m)))}</td>
-      <td>${a.muted ? '<span class="sup-chip">Sourdine</span>' : a.quiet && !(a.results && a.results.length) ? '<span class="sup-chip">Heures calmes</span>' : a.results == null ? '<span class="muted">Envoi…</span>' : a.results.length ? a.results.map((r) => `<span class="sup-chip ${r.ok ? 'good' : 'bad'}" ${r.ok ? '' : `data-tip="${esc(r.error || '')}"`}>${esc(channelLabel(r.channel, hooks))}</span>`).join('') : '<span class="muted" data-tip="Active les alertes par e-mail ou ajoute un webhook pour les recevoir.">Aucun envoi</span>'}</td>
+      <td>${a.muted ? '<span class="sup-chip">Sourdine</span>' : a.quiet && !(a.results && a.results.length) ? '<span class="sup-chip">Heures calmes</span>' : a.results == null ? '<span class="muted">Envoi…</span>' : a.results.length ? a.results.map((r) => `<span class="sup-chip ${r.ok ? 'good' : 'bad'}" ${r.ok ? '' : `data-tip="${esc(r.error || '')}"`}>${esc(channelLabel(r.channel, hooks))}</span>`).join('') : '<span class="muted" data-tip="Activez les alertes par e-mail ou ajoutez un webhook pour les recevoir.">Aucun envoi</span>'}</td>
     </tr>`).join('');
   // NEXORA #048 : webhooks (messagerie d'équipe, outil d'astreinte, automatisation…).
   const hooksHtml = `<div class="sup-hooks">${hooks.length ? hooks.map((h) => `<div class="sup-hook ${h.enabled ? '' : 'off'}" data-hook="${esc(h.id)}">
       <span class="sup-hook-i">${icon('link', 14)}</span><span class="sup-hook-t"><b>${esc(h.name)}</b><small>${esc(hookKindLabel(h.url))} · ${esc({ all: 'toutes les alertes', critical: 'alertes critiques seulement', escalation: 'escalades seulement' }[h.events] || '')}</small></span>
       <label class="tog-row tiny" title="Activer"><input type="checkbox" data-hook-on ${h.enabled ? 'checked' : ''}><span class="tog" aria-hidden="true"></span></label>
       <button type="button" class="icon-btn small" title="Envoyer un test" aria-label="Envoyer un test" data-hook-test>${icon('bell', 13)}</button>
-      <button type="button" class="icon-btn small" title="Retirer" aria-label="Retirer" data-hook-del>${icon('trash', 13)}</button></div>`).join('') : '<p class="pop-note">Aucun webhook. Colle l’adresse fournie par Slack, Discord, Microsoft Teams, Google Chat, ntfy, ou celle de ton outil (format JSON).</p>'}
+      <button type="button" class="icon-btn small" title="Retirer" aria-label="Retirer" data-hook-del>${icon('trash', 13)}</button></div>`).join('') : '<p class="pop-note">Aucun webhook. Collez l’adresse fournie par Slack, Discord, Microsoft Teams, Google Chat, ntfy, ou celle de votre outil (format JSON).</p>'}
     <form class="sup-hook-add" data-hook-add autocomplete="off"><input class="input" name="url" placeholder="https://hooks.slack.com/services/…" spellcheck="false"><select class="input" name="events"><option value="all">Toutes les alertes</option><option value="critical">Critiques seulement</option><option value="escalation">Escalades seulement</option></select><button class="btn small primary">${icon('plus', 13)}<span>Ajouter</span></button></form>
   </div>`;
   ctx.afterRender = () => bind(ctx);
-  return `<div class="sup-grid g-1-1 g-top">${card('Alertes par e-mail', channels, { sub: ready ? 'Prêt · les alertes partent tant que NEXORA est ouverte' : 'Active les alertes par e-mail pour être prévenu' })}${card('Webhooks', hooksHtml, { sub: `${hooks.filter((h) => h.enabled).length} actif${hooks.filter((h) => h.enabled).length > 1 ? 's' : ''} · Slack, Discord, Teams, Google Chat, ntfy ou JSON` })}</div>
+  return `<div class="sup-grid g-1-1 g-top">${card('Alertes par e-mail', channels, { sub: ready ? 'Prêt · les alertes partent tant que NEXORA est ouverte' : 'Activez les alertes par e-mail pour être prévenu' })}${card('Webhooks', hooksHtml, { sub: `${hooks.filter((h) => h.enabled).length} actif${hooks.filter((h) => h.enabled).length > 1 ? 's' : ''} · Slack, Discord, Teams, Google Chat, ntfy ou JSON` })}</div>
     <div class="sup-grid g-2-1 g-top">
       ${card('Journal des alertes', rows ? `<div class="sup-table-wrap sup-scroll"><table class="sup-table"><thead><tr><th>Date</th><th>Site</th><th>Type</th><th>Message</th><th>Envoi</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="sup-none">${icon('bell', 14)} Aucune alerte pour l’instant.</p>`, { sub: `${num(log.length)} alerte${log.length > 1 ? 's' : ''} (500 gardées au plus)` })}
       ${card('Règles', rules, { sub: 'Valables pour tous les sites (la confirmation se règle aussi site par site)' })}
     </div>
-    ${card('Exporter vers Prometheus et Grafana', `<p class="pop-note">Pour suivre tes sites depuis ton propre serveur : NEXORA génère une configuration Prometheus, un tableau de bord Grafana et un fichier docker-compose, avec les instructions.</p>`, { actions: btn('Générer la configuration', 'data-al-export', { ic: 'download' }), cls: 'sup-card-quiet' })}`;
+    ${card('Exporter vers Prometheus et Grafana', `<p class="pop-note">Pour suivre vos sites depuis votre propre serveur : NEXORA génère une configuration Prometheus, un tableau de bord Grafana et un fichier docker-compose, avec les instructions.</p>`, { actions: btn('Générer la configuration', 'data-al-export', { ic: 'download' }), cls: 'sup-card-quiet' })}`;
 }
 
 function hookKindLabel(url) {
@@ -91,7 +91,7 @@ function bind(ctx) {
     const fd = new FormData(add);
     const url = String(fd.get('url') || '').trim();
     if (!/^https:\/\//i.test(url)) { toast('L’adresse du webhook doit commencer par https://.', { kind: 'bad' }); return; }
-    try { await saveHooks(ctx, (l) => [...l, { id: Math.random().toString(36).slice(2, 9), name: hookKindLabel(url), url, events: fd.get('events'), enabled: true }]); toast('Webhook ajouté. Envoie un test pour vérifier.'); } catch (err) { toast(err.message, { kind: 'bad' }); }
+    try { await saveHooks(ctx, (l) => [...l, { id: Math.random().toString(36).slice(2, 9), name: hookKindLabel(url), url, events: fd.get('events'), enabled: true }]); toast('Webhook ajouté. Envoyez un test pour vérifier.'); } catch (err) { toast(err.message, { kind: 'bad' }); }
   };
   for (const row of v.querySelectorAll('[data-hook]')) {
     const id = row.dataset.hook;
@@ -104,7 +104,7 @@ function bind(ctx) {
         const cfg = await call('mon:config');
         const h = ((cfg.channels || {}).webhooks || []).find((x) => x.id === id);
         await call('mon:test-webhook', { url: h.url });
-        toast('Message de test envoyé : vérifie sa réception.');
+        toast('Message de test envoyé : vérifiez sa réception.');
       } catch (err) { toast(err.message, { kind: 'bad' }); } finally { b.disabled = false; }
     };
   }
@@ -128,7 +128,7 @@ function bind(ctx) {
     if (out) { out.className = 'sup-ch-res busy'; out.innerHTML = '<span class="spinner small"></span> Envoi de l’e-mail de test…'; }
     let r;
     try { r = await call('mon:test-alert', k); } catch (err) { r = { ok: false, error: err.message }; } finally { b.disabled = false; }
-    if (out) { out.className = `sup-ch-res ${r.ok ? 'good' : 'bad'}`; out.innerHTML = r.ok ? `${icon('check', 12)} ${esc(r.note || 'E-mail de test envoyé : vérifie sa réception.')}` : `${icon('warn', 12)} ${esc(r.error)}`; }
+    if (out) { out.className = `sup-ch-res ${r.ok ? 'good' : 'bad'}`; out.innerHTML = r.ok ? `${icon('check', 12)} ${esc(r.note || 'E-mail de test envoyé : vérifiez sa réception.')}` : `${icon('warn', 12)} ${esc(r.error)}`; }
   };
   for (const s of v.querySelectorAll('[data-rule]')) s.onchange = async () => {
     const val = s.type === 'checkbox' ? s.checked : Number(s.value);
@@ -147,7 +147,7 @@ function bind(ctx) {
     try {
       const cfg = await call('mon:config');
       const dir = await call('mon:export-stack', { targets: (cfg.endpoints || []).map((e) => e.url).filter(Boolean) });
-      if (dir) toast('Configuration générée. Ouvre le fichier d’instructions (LISEZ-MOI) du dossier.');
+      if (dir) toast('Configuration générée. Ouvrez le fichier d’instructions (LISEZ-MOI) du dossier.');
     } catch (err) { toast(err.message, { kind: 'bad' }); }
   };
 }

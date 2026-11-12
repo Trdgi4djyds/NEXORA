@@ -79,7 +79,7 @@ async function aiMenu(D, anchor) {
     { head: 'Images' }, ...pick(['image']),
     { id: 'retouch', icon: 'nxBrush', label: 'Retoucher l’image sélectionnée…', sub: `Effacer un objet, remplacer le fond, agrandir${pro ? '' : ' · offre Pro'}`, disabled: !(one && one.type === 'image') },
     { head: 'Maquettes' }, ...pick(['layout']),
-    { id: 'design', icon: 'sparkle', label: 'Créer un design complet…', sub: `Depuis une description, aux couleurs de ta marque${pro ? '' : ' · offre Pro'}` },
+    { id: 'design', icon: 'sparkle', label: 'Créer un design complet…', sub: `Depuis une description, aux couleurs de votre marque${pro ? '' : ' · offre Pro'}` },
     { id: 'variants', icon: 'layers', label: 'Proposer des variantes de la sélection…', sub: `Couleurs et polices${pro ? '' : ' · offre Pro'}`, disabled: !D.sel().length }
   ], { width: 330, align: 'end' });
   if (!a) return;
@@ -105,10 +105,10 @@ async function shareMenu(D, anchor) {
   const open = PG.comments(D).filter((c) => !c.done).length;
   const pro = has(PRO);
   const a = await menu(anchor, 'Partager', [
-    { head: 'Avec ton client' },
+    { head: 'Avec votre client' },
     { id: 'review', icon: 'pass', label: n.reviews ? `Validation client · ${pl(n.reviews, 'nouvel avis', 'nouveaux avis')}` : 'Validation client…', sub: `Lien sans compte : avis épinglés, approbation${pro ? '' : ' · offre Pro'}` },
     { id: 'view', icon: 'link', label: 'Copier un lien en lecture seule', sub: 'Toutes les pages, sans compte, sans avis' },
-    { head: 'Avec ton équipe' },
+    { head: 'Avec votre équipe' },
     ...(D.nxRoom ? [{ id: 'collab', icon: 'nxUsers', label: `Coédition en direct (salle ${D.nxRoom.code})…`, sub: 'Voir les personnes connectées, quitter' }]
       : [{ id: 'collab-doc', icon: 'nxUsers', label: 'Coéditer ce document en direct', sub: 'Toute l’équipe qui ouvre ce document rejoint la même salle' }, { id: 'collab', icon: 'nxUsers', label: 'Coéditer avec un code de salle…' }]),
     { id: 'comment', icon: 'nxComment', label: 'Ajouter un commentaire', kbd: 'Clic sur la page' },
@@ -249,7 +249,7 @@ async function restore(D, id, openIt = false) {
   const S = await store();
   await S.f(doc); await trash.del(id);
   if (openIt) { await D.save(); await D.openDoc(await S.e(id)); }
-  toast(`« ${doc.name} » est de retour dans tes documents.`);
+  toast(`« ${doc.name} » est de retour dans vos documents.`);
 }
 
 // ---------- Tous les documents ----------

@@ -1,13 +1,12 @@
 // NEXORA #059 : version de NEXORA.
 //  - « Nouveautés » : fenêtre montrée une fois après une mise à jour (réglage nxSeenVersion), jamais au premier
 //    lancement (la visite guidée s'en charge) ; rouverte par openNotes().
-//  - Mises à jour : quand l'utilisateur n'a choisi aucun dépôt, celui de l'adresse de téléchargement publiée
-//    (app_config.desktop_download_url, lisible sans compte) est pris s'il est sur GitHub ; un dépôt choisi à la main
-//    n'est jamais remplacé (nxAutoRepo garde celui posé ici).
+//  - Mises à jour : NEXORA #115 : la source des mises à jour est interne au processus principal (src/maint.js) ;
+//    les anciens réglages updateRepo et nxAutoRepo (nom du dépôt GitHub, visible dans les sauvegardes et la
+//    synchronisation des réglages) sont effacés au démarrage.
 // Chargé par nx/boot.js une fois les réglages lus.
-import { b as sb } from '../../dist/chunks/chunk-EZKHFSAB.js';
 import { api, settings, saveSettings, esc, ico, sheet, closeSheet } from '../core.js';
-import { NOTES, repoFromUrl } from './notes.js';
+import { NOTES } from './notes.js';
 
 const SHEET = 'nx-version-notes';
 let version = '';
@@ -60,23 +59,13 @@ function maybeShowNotes() {
   setTimeout(tryOpen, 1200);
 }
 
+// NEXORA #115 : plus aucun nom de dépôt dans les réglages de l'utilisateur (la vérification des mises à jour n'en a
+// plus besoin depuis le #114) ; ceux posés par les versions précédentes sont effacés.
 async function autoRepo() {
-  if (window.__NEXORA_WEB__) return;
-  let url = '';
-  try {
-    const { data } = await sb.from('app_config').select('value').eq('key', 'desktop_download_url').maybeSingle();
-    url = data && typeof data.value === 'string' ? data.value : '';
-  } catch { return; }
-  const repo = repoFromUrl(url);
-  if (!repo || settings.updateRepo === repo) return;
-  if (settings.updateRepo && settings.updateRepo !== settings.nxAutoRepo) return;
-  settings.updateRepo = repo;
-  settings.nxAutoRepo = repo;
+  if (!('updateRepo' in settings) && !('nxAutoRepo' in settings)) return;
+  delete settings.updateRepo;
+  delete settings.nxAutoRepo;
   saveSettings();
-  // La vérification du démarrage est déjà passée (aucun dépôt à ce moment-là) : on la lance ici.
-  if (settings.updateAuto === false) return;
-  const m = await import('../../dist/chunks/maintenance-MDTLNMUF.js');
-  setTimeout(() => m.checkUpdates().catch(() => {}), 15000);
 }
 
 export async function install() {

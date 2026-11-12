@@ -408,5 +408,44 @@ ok(true, "Migration 20261111000001 (SasPay) rejouée deux fois sans erreur")
   } finally { globalThis.fetch = realFetch }
 }
 
+// ---------- #115 : vouvoiement des textes écrits par la base ----------
+{
+  // Types de la base d'origine absents de la base d'essai (factures, supervision) : tables minimales.
+  await db.exec(`create table if not exists public.invoices (id uuid primary key, status text);
+create table if not exists public.monitors (id uuid primary key);
+create table if not exists public.nx_private_config (key text primary key, value jsonb);
+insert into public.nx_private_config values ('invoice_issuer', '{"name":"NEXORA","footer":"Merci de ta confiance."}') on conflict (key) do nothing;`)
+  const tutoie = "(?:\\m(?:tu|te|toi|ton|ta|tes)\\M|\\mt[’'])"
+  const before = (await q(`select count(*)::int as n from plans where description ~* $1 or features::text ~* $1`, [tutoie]))[0].n
+  const MV = mig("20261112000001_vouvoiement.sql")
+  // Tables de la base d'origine (supervision, pages de statut…) absentes de la base d'essai : créées vides à la demande.
+  const stubs = []
+  for (let k = 0; k < 30; k++) {
+    try { await db.exec(MV); break } catch (e) {
+      const m = /(?:type|relation) "(public\.\w+)" does not exist/.exec(e.message)
+      if (!m) throw e
+      stubs.push(m[1])
+      await db.exec(`create table if not exists ${m[1]} (id uuid primary key)`)
+    }
+  }
+  await db.exec(MV)
+  ok(true, "Migration 20261112000001 (vouvoiement) rejouée deux fois sans erreur", stubs.length ? `tables minimales : ${stubs.join(", ")}` : undefined)
+  const names = [...MV.matchAll(/create or replace function public\.(\w+)\s*\(/gi)].map((m) => m[1])
+  const srcs = await q("select proname, prosrc from pg_proc where proname = any($1)", [names])
+  const left = srcs.filter((r) => [...r.prosrc.matchAll(/'((?:[^']|'')*)'/g)].some((m) => new RegExp(tutoie, "i").test(m[1])))
+  ok(names.length === 31 && srcs.length >= 31 && !left.length, "Vouvoiement : 31 fonctions redéfinies, plus aucun tutoiement dans leurs textes", left.map((r) => r.proname))
+  const uf = srcs.find((r) => r.proname === "nx_use_feature").prosrc
+  ok(/Connectez-vous à votre compte NEXORA \(gratuit\)/.test(uf) && /Votre offre actuelle/.test(uf) && !/Connecte-toi/.test(uf), "Vouvoiement : messages des offres (« Connectez-vous à votre compte NEXORA », « Votre offre actuelle »)")
+  const after = (await q(`select count(*)::int as n from plans where description ~* $1 or features::text ~* $1`, [tutoie]))[0].n
+  ok(before > 0 && after === 0, "Vouvoiement : descriptions et avantages des offres convertis (textes d'origine seulement)", { before, after })
+  const foot = (await q("select value->>'footer' as f from nx_private_config where key = 'invoice_issuer'"))[0].f
+  ok(foot === "Merci de votre confiance.", "Vouvoiement : pied des factures d'origine remplacé", foot)
+  await db.exec("update nx_private_config set value = jsonb_set(value, '{footer}', '\"Merci !\"') where key = 'invoice_issuer'")
+  await db.exec(MV)
+  ok((await q("select value->>'footer' as f from nx_private_config where key = 'invoice_issuer'"))[0].f === "Merci !", "Vouvoiement : pied de facture personnalisé gardé")
+  const pro = (await q("select price_month_cents from plans where id = 'pro'"))[0]
+  ok(pro.price_month_cents === 2500, "Vouvoiement : prix des offres inchangés", pro)
+}
+
 console.log(`\n${count} vérifications, ${fails ? `${fails} échec(s)` : "aucun échec"}.`)
 process.exit(fails ? 1 : 0)

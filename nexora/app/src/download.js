@@ -21,7 +21,7 @@ async function resumableDownload(fetchImpl, url, file, {
   try { have = fs.statSync(tmp).size; } catch { have = 0; }
   let res = await fetchImpl(url, { redirect: 'follow', headers: have ? { ...headers, Range: `bytes=${have}-` } : headers });
   if (have && res.status === 416) { have = 0; fs.rmSync(tmp, { force: true }); res = await fetchImpl(url, { redirect: 'follow', headers }); }
-  if (!res.ok) throw new Error(`Téléchargement impossible (erreur ${res.status}). Vérifie ta connexion, puis réessaie : il reprendra là où il s'est arrêté.`);
+  if (!res.ok) throw new Error(`Téléchargement impossible (erreur ${res.status}). Vérifiez votre connexion, puis réessayez : il reprendra là où il s'est arrêté.`);
   const resumed = have > 0 && res.status === 206;
   if (!resumed) have = 0;
   const h1 = crypto.createHash('sha1');
@@ -58,8 +58,8 @@ async function resumableDownload(fetchImpl, url, file, {
   } finally {
     await new Promise((r) => ws.end(r));
   }
-  if (sha1 && h1.digest('hex') !== String(sha1).toLowerCase()) { fs.rmSync(tmp, { force: true }); throw new Error(`Fichier corrompu (empreinte SHA-1 différente) : ${path.basename(file)}. Relance le téléchargement.`); }
-  if (sha256 && h256.digest('hex') !== String(sha256).toLowerCase()) { fs.rmSync(tmp, { force: true }); throw new Error(`Fichier corrompu (empreinte SHA-256 différente) : ${path.basename(file)}. Relance le téléchargement.`); }
+  if (sha1 && h1.digest('hex') !== String(sha1).toLowerCase()) { fs.rmSync(tmp, { force: true }); throw new Error(`Fichier corrompu (empreinte SHA-1 différente) : ${path.basename(file)}. Relancez le téléchargement.`); }
+  if (sha256 && h256.digest('hex') !== String(sha256).toLowerCase()) { fs.rmSync(tmp, { force: true }); throw new Error(`Fichier corrompu (empreinte SHA-256 différente) : ${path.basename(file)}. Relancez le téléchargement.`); }
   fs.renameSync(tmp, file);
   return { file, resumed, bytes: got };
 }

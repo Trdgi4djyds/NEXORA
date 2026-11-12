@@ -4,17 +4,17 @@
 import { api, esc, ico, root, call, noProject, head, btn, iconBtn, pill, toast, has, proGate, dev, relPath, openFile, clean, uid } from './api-ui.js';
 import { diffHtml } from './diff.js';
 
-const SYSTEM = `Tu es l’assistant de développement intégré au Dev Lab de NEXORA. Tu travailles sur le projet de l’utilisateur.
-Réponds en français, avec le tutoiement, de façon claire et concise.
-Format obligatoire de ta réponse :
-<reponse>ce que tu proposes et pourquoi (quelques lignes)</reponse>
+const SYSTEM = `Vous êtes l’assistant de développement intégré au Dev Lab de NEXORA. Vous travaillez sur le projet de l’utilisateur.
+Répondez en français, avec le tutoiement, de façon claire et concise.
+Format obligatoire de votre réponse :
+<reponse>ce que vous proposez et pourquoi (quelques lignes)</reponse>
 puis, pour chaque fichier à créer ou modifier, son contenu COMPLET :
 <fichier chemin="chemin/relatif/au/projet" action="ecrire">
 contenu complet du fichier
 </fichier>
 et pour supprimer un fichier : <fichier chemin="chemin" action="supprimer"></fichier>
 Si la demande est une question ou une explication, n’écris aucun bloc <fichier>.
-Ne modifie que les fichiers nécessaires, garde le style du projet et respecte ses consignes. N’invente pas de fichier que tu n’as pas vu sans le créer entièrement.`;
+Ne modifiez que les fichiers nécessaires, gardez le style du projet et respectez ses consignes. N’inventez pas de fichier que vous n’avez pas vu sans le créer entièrement.`;
 
 function parse(text) {
   const m = /<reponse>([\s\S]*?)(?:<\/reponse>|$)/.exec(text);
@@ -33,15 +33,15 @@ export function mount(el, ctx) {
   const st = { turns: [], busy: false, live: '', runId: null, consignes: null, editRules: false, lastError: '', lastProblems: null, undo: [] };
   const render = () => {
     if (!root()) { el.innerHTML = noProject(); return; }
-    if (!has('devlab_pro')) { el.innerHTML = `${head('Assistant IA du projet', '')}${proGate('L’assistant IA sur tout le projet', 'Il lit ton projet, propose des changements sur plusieurs fichiers que tu acceptes un par un, et explique les erreurs du terminal.')}`; return; }
+    if (!has('devlab_pro')) { el.innerHTML = `${head('Assistant IA du projet', '')}${proGate('L’assistant IA sur tout le projet', 'Il lit votre projet, propose des changements sur plusieurs fichiers que vous acceptez un par un, et explique les erreurs du terminal.')}`; return; }
     const d = dev();
     const open = (d.st.open || []).map(relPath);
-    el.innerHTML = `${head('Assistant IA du projet', `Il lit les consignes du projet, l’arborescence et les fichiers utiles${open.length ? ` (dont ${open.length} ouvert(s))` : ''}. Tu acceptes chaque changement fichier par fichier.`, `${btn(st.editRules ? 'Fermer les consignes' : 'Consignes du projet', 'data-act="rules"', 'pen')}${st.turns.length ? iconBtn('trash', 'Nouvelle conversation', 'data-act="clear"') : ''}`)}
+    el.innerHTML = `${head('Assistant IA du projet', `Il lit les consignes du projet, l’arborescence et les fichiers utiles${open.length ? ` (dont ${open.length} ouvert(s))` : ''}. Vous acceptez chaque changement fichier par fichier.`, `${btn(st.editRules ? 'Fermer les consignes' : 'Consignes du projet', 'data-act="rules"', 'pen')}${st.turns.length ? iconBtn('trash', 'Nouvelle conversation', 'data-act="clear"') : ''}`)}
       ${st.editRules ? `<div class="nxd-rules"><small>${esc(st.consignes ? st.consignes.file : '.nexora/consignes.md')} : style, framework, règles à respecter. Lu à chaque demande.</small><textarea class="input nx-ta" data-rules rows="5" placeholder="Exemple : React 19 et TypeScript strict. Textes en français. Pas de nouvelle dépendance sans le demander.">${esc(st.consignes ? st.consignes.text : '')}</textarea><div class="nxd-row">${btn('Enregistrer les consignes', 'data-act="save-rules"', 'check', 'primary')}</div></div>` : ''}
-      <div class="nxd-chat" data-chat>${st.turns.length ? st.turns.map((t, ti) => t.role === 'user' ? `<div class="nxd-msg me"><p>${esc(t.text)}</p></div>` : `<div class="nxd-msg ai">${ico('sparkle', 15)}<div><p>${esc(t.answer).replace(/\n/g, '<br>')}</p>${t.files.map((f, fi) => `<div class="nxd-prop ${f.state || ''}"><div class="nxd-prop-h">${ico(f.action === 'delete' ? 'trash' : f.existed ? 'pen' : 'plus', 13)}<b>${esc(f.path)}</b>${f.action === 'delete' ? pill('suppression', 'bad') : f.existed ? '' : pill('nouveau', 'ok')}<small><span class="nxd-add">+${f.add || 0}</span> <span class="nxd-del">−${f.del || 0}</span></small><span class="grow"></span>${f.state === 'done' ? `${pill('appliqué', 'ok')}${iconBtn('external', 'Ouvrir le fichier', `data-open="${esc(f.path)}"`)}` : f.state === 'refused' ? pill('refusé') : `${btn('Refuser', `data-refuse="${ti}:${fi}"`, 'close')}${btn('Accepter', `data-accept="${ti}:${fi}"`, 'check', 'primary')}`}</div>${f.state ? '' : f.diff || ''}</div>`).join('')}${t.files.filter((f) => !f.state).length > 1 ? `<div class="nxd-row">${btn('Tout accepter', `data-accept-all="${ti}"`, 'pass', 'primary')}</div>` : ''}${t.undoId ? `<div class="nxd-row">${btn('Annuler ces changements', `data-undo="${ti}"`, 'restart')}</div>` : ''}</div></div>`).join('') : `<div class="nxd-empty">${ico('sparkle', 26)}<b>Demande ce que tu veux en langage courant</b><p>« Ajoute une page contact avec validation », « Pourquoi ce test échoue ? », « Passe ce composant en TypeScript ».</p></div>`}
+      <div class="nxd-chat" data-chat>${st.turns.length ? st.turns.map((t, ti) => t.role === 'user' ? `<div class="nxd-msg me"><p>${esc(t.text)}</p></div>` : `<div class="nxd-msg ai">${ico('sparkle', 15)}<div><p>${esc(t.answer).replace(/\n/g, '<br>')}</p>${t.files.map((f, fi) => `<div class="nxd-prop ${f.state || ''}"><div class="nxd-prop-h">${ico(f.action === 'delete' ? 'trash' : f.existed ? 'pen' : 'plus', 13)}<b>${esc(f.path)}</b>${f.action === 'delete' ? pill('suppression', 'bad') : f.existed ? '' : pill('nouveau', 'ok')}<small><span class="nxd-add">+${f.add || 0}</span> <span class="nxd-del">−${f.del || 0}</span></small><span class="grow"></span>${f.state === 'done' ? `${pill('appliqué', 'ok')}${iconBtn('external', 'Ouvrir le fichier', `data-open="${esc(f.path)}"`)}` : f.state === 'refused' ? pill('refusé') : `${btn('Refuser', `data-refuse="${ti}:${fi}"`, 'close')}${btn('Accepter', `data-accept="${ti}:${fi}"`, 'check', 'primary')}`}</div>${f.state ? '' : f.diff || ''}</div>`).join('')}${t.files.filter((f) => !f.state).length > 1 ? `<div class="nxd-row">${btn('Tout accepter', `data-accept-all="${ti}"`, 'pass', 'primary')}</div>` : ''}${t.undoId ? `<div class="nxd-row">${btn('Annuler ces changements', `data-undo="${ti}"`, 'restart')}</div>` : ''}</div></div>`).join('') : `<div class="nxd-empty">${ico('sparkle', 26)}<b>Demande ce que vous voulez en langage courant</b><p>« Ajoutez une page contact avec validation », « Pourquoi ce test échoue ? », « Passez ce composant en TypeScript ».</p></div>`}
         ${st.busy ? `<div class="nxd-msg ai">${ico('sparkle', 15)}<div><p class="nxd-muted"><span class="spin"></span> L’IA prépare sa réponse${st.live ? ` (${st.live.length.toLocaleString('fr-FR')} caractères)` : '…'}</p></div></div>` : ''}</div>
       <div class="nxd-chips">${st.lastError ? `<button class="nxd-chip" data-quick="error">${ico('error', 12)}Expliquer et corriger la dernière erreur</button>` : ''}${st.lastProblems ? `<button class="nxd-chip" data-quick="problems">${ico('warn', 12)}Corriger les problèmes du projet</button>` : ''}${d.active ? `<button class="nxd-chip" data-quick="tests">${ico('pass', 12)}Écrire les tests de ${esc(relPath(d.active).split('/').pop())}</button><button class="nxd-chip" data-quick="explain">${ico('info', 12)}Expliquer ce fichier</button>` : ''}</div>
-      <div class="nxd-ask"><textarea class="input" data-q rows="2" placeholder="Que veux-tu faire dans ce projet ? (Ctrl+Entrée pour envoyer)" ${st.busy ? 'disabled' : ''}></textarea>${st.busy ? btn('Arrêter', 'data-act="stop"', 'stop') : btn('Envoyer', 'data-act="send"', 'nxSend', 'primary')}</div>`;
+      <div class="nxd-ask"><textarea class="input" data-q rows="2" placeholder="Que voulez-vous faire dans ce projet ? (Ctrl+Entrée pour envoyer)" ${st.busy ? 'disabled' : ''}></textarea>${st.busy ? btn('Arrêter', 'data-act="stop"', 'stop') : btn('Envoyer', 'data-act="send"', 'nxSend', 'primary')}</div>`;
     const chat = el.querySelector('[data-chat]');
     if (chat) chat.scrollTop = chat.scrollHeight;
   };
@@ -71,7 +71,7 @@ export function mount(el, ctx) {
       st.turns.push({ role: 'ai', answer: p.answer || (p.files.length ? 'Voici les changements proposés.' : r.canceled ? 'Réponse arrêtée.' : ''), files: p.files, raw: r.text || '' });
     } catch (e) {
       const msg = clean(e);
-      st.turns.push({ role: 'ai', answer: /Aucune IA n'est connectée|clé/.test(msg) ? 'Aucune IA n’est connectée : ajoute ta clé API dans les réglages de l’IA, puis renvoie ta demande.' : msg, files: [], raw: '', needsAi: /Aucune IA/.test(msg) });
+      st.turns.push({ role: 'ai', answer: /Aucune IA n'est connectée|clé/.test(msg) ? 'Aucune IA n’est connectée : ajoutez votre clé API dans les réglages de l’IA, puis renvoyez votre demande.' : msg, files: [], raw: '', needsAi: /Aucune IA/.test(msg) });
       if (/Aucune IA/.test(msg)) import('../../dist/chunks/ai-RLNIHTXY.js').then((m) => m.openAiSettings()).catch(() => {});
     }
     st.busy = false; st.runId = null; render();
@@ -104,7 +104,7 @@ export function mount(el, ctx) {
     if (q) {
       const d = dev();
       const f = d.active ? relPath(d.active) : '';
-      const prompts = { error: `Explique cette erreur et corrige-la :\n${st.lastError}`, problems: `Corrige ces problèmes du projet :\n${(st.lastProblems || []).map((i) => `- ${i.rel}:${i.line} ${i.message}`).join('\n')}`, tests: `Écris des tests pour ${f}, avec l’outil de test déjà utilisé par le projet.`, explain: `Explique le rôle de ${f} et signale ce qui pourrait poser problème.` };
+      const prompts = { error: `Expliquez cette erreur et corrigez-la :\n${st.lastError}`, problems: `Corrigez ces problèmes du projet :\n${(st.lastProblems || []).map((i) => `- ${i.rel}:${i.line} ${i.message}`).join('\n')}`, tests: `Écrivez des tests pour ${f}, avec l’outil de test déjà utilisé par le projet.`, explain: `Expliquez le rôle de ${f} et signalez ce qui pourrait poser problème.` };
       return send(prompts[q.dataset.quick]);
     }
     const ac = t.closest('[data-accept]');

@@ -38,9 +38,9 @@ class BillingKit extends PushKit {
   }
 
   async installInner(tools, onStep = () => {}) {
-    if (!tools || !tools.buildTools || !tools.platform || !tools.java) throw new Error('Installe d’abord les outils Android (bouton « Installer » de l’App Builder).');
+    if (!tools || !tools.buildTools || !tools.platform || !tools.java) throw new Error('Installez d’abord les outils Android (bouton « Installer » de l’App Builder).');
     const javac = path.join(tools.java.home, 'bin', `javac${EXE}`);
-    if (!fs.existsSync(javac)) throw new Error('Le Java installé ne contient pas le compilateur (javac) : installe le JDK proposé par l’App Builder.');
+    if (!fs.existsSync(javac)) throw new Error('Le Java installé ne contient pas le compilateur (javac) : installez le JDK proposé par l’App Builder.');
     onStep({ label: 'Vérification de l’emplacement du kit', progress: 0.01 });
     const w = await this.checkWritable();
     if (!w.ok) { const e = new Error(w.error); e.code = w.code || 'EPERM'; throw e; }
@@ -186,7 +186,7 @@ class BillingKit extends PushKit {
     const chosen = [];
     for (const it of k.items) {
       if (have.has(it.ga)) {
-        if (cmpVer(have.get(it.ga), it.v) < 0) log(`Achats intégrés : ${it.ga} ${have.get(it.ga)} vient du kit de notifications (le kit d’achats attend ${it.v}). Mets à jour le kit de notifications si un achat échoue.`);
+        if (cmpVer(have.get(it.ga), it.v) < 0) log(`Achats intégrés : ${it.ga} ${have.get(it.ga)} vient du kit de notifications (le kit d’achats attend ${it.v}). Mettez à jour le kit de notifications si un achat échoue.`);
         continue;
       }
       chosen.push(it);

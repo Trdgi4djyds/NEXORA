@@ -26,18 +26,18 @@ export function install(proto, SECTIONS) {
     const t = T(cfg);
     const s = P.closedTest(t);
     const idOk = ID_RE.test(cfg.appId || '');
-    const name = cfg.appName || 'ton application';
+    const name = cfg.appName || 'votre application';
 
-    const account = this.card('Ton compte développeur', `
+    const account = this.card('Votre compte développeur', `
       ${this.segK('testers.account', P.ACCOUNTS)}
       <p class="ab-hint">${s.applies
     ? `Google exige un <b>test fermé</b> avec au moins <b>${P.REQUIRED.testers} testeurs</b> inscrits sans interruption pendant <b>${P.REQUIRED.days} jours</b> avant de pouvoir demander l’accès à la production.`
-    : 'Pas de test fermé obligatoire : tu peux publier directement en production. Un court test fermé reste utile pour repérer les problèmes avant tout le monde.'}</p>`);
+    : 'Pas de test fermé obligatoire : vous pouvez publier directement en production. Un court test fermé reste utile pour repérer les problèmes avant tout le monde.'}</p>`);
 
     const meter = (v, max) => `<div class="nxr-meter"><i style="width:${Math.round(Math.min(1, v / max) * 100)}%"></i></div>`;
-    const status = s.state === 'ready' ? ['ok', 'Test terminé : tu peux demander l’accès à la production.']
+    const status = s.state === 'ready' ? ['ok', 'Test terminé : vous pouvez demander l’accès à la production.']
       : s.started ? (s.future ? ['warn', `Le test commencera le ${fmt(s.startDate)}.`] : ['warn', `Encore ${s.daysLeft} jour(s)${s.testersOk ? '' : ` et ${P.REQUIRED.testers - s.optedIn} testeur(s) inscrit(s) de plus`} : production possible à partir du ${fmt(s.endDate)}${s.testersOk ? '' : ' si l’effectif est atteint'}.`])
-        : ['bad', 'Test pas encore commencé : envoie une version sur la piste « Test fermé », puis indique la date ici (NEXORA la note seul quand il publie sur cette piste).'];
+        : ['bad', 'Test pas encore commencé : envoyez une version sur la piste « Test fermé », puis indiquez la date ici (NEXORA la note seul quand il publie sur cette piste).'];
     const follow = this.card('Suivi du test fermé', `
       <div class="nxt-kpis">
         <div class="nxt-kpi"><small>Durée</small><b>${s.started ? `Jour ${s.day}` : '—'}<span> / ${P.REQUIRED.days}</span></b>${meter(s.day, P.REQUIRED.days)}</div>
@@ -49,7 +49,7 @@ export function install(proto, SECTIONS) {
         <label class="field"><span>Testeurs inscrits</span><input class="input" type="number" min="0" max="1000" data-k="testers.optedIn" value="${esc(t.optedIn ?? '')}" placeholder="0"><small class="ab-hint">Nombre affiché par la Play Console (Tester et publier › Tests › Test fermé). Google ne le communique pas aux outils.</small></label>
       </div>
       <div class="ab-row">${t.startedAt ? '' : `<button class="btn small" data-act="testers-start">${icon('nxCalendar', 13)}<span>Commencer aujourd’hui</span></button>`}<button class="btn small" data-sec="store">${icon('rocket', 13)}<span>Publier sur la piste « Test fermé »</span></button></div>
-      <p class="ab-hint">Un testeur qui se désinscrit ne compte plus : invite-en 15 à 20 pour garder une marge. Envoyer une mise à jour pendant le test montre à Google que l’application évolue.</p>`);
+      <p class="ab-hint">Un testeur qui se désinscrit ne compte plus : invitez-en 15 à 20 pour garder une marge. Envoyer une mise à jour pendant le test montre à Google que l’application évolue.</p>`);
 
     const chips = t.list.map((x) => `<span class="nxt-chip" title="${esc(x.email)}">${esc(x.email)}<button class="icon-btn small" data-act="testers-del" data-email="${esc(x.email)}" title="Retirer" aria-label="Retirer ${esc(x.email)}">${icon('close', 11)}</button></span>`).join('');
     const list = this.card('Testeurs invités', `
@@ -61,33 +61,33 @@ export function install(proto, SECTIONS) {
         <button class="btn small" data-act="testers-csv" ${t.list.length ? '' : 'disabled'}>${icon('download', 13)}<span>Exporter la liste (CSV)</span></button>
         <button class="btn small" data-copy="${esc(t.list.map((x) => x.email).join(', '))}" ${t.list.length ? '' : 'disabled'}>${icon('copy', 13)}<span>Copier les adresses</span></button>
       </div>
-      <p class="ab-hint">Play Console › Tester et publier › Tests › Test fermé › Testeurs › <b>Créer une liste d’adresses e-mail</b> : importe le fichier CSV.</p>`);
+      <p class="ab-hint">Play Console › Tester et publier › Tests › Test fermé › Testeurs › <b>Créer une liste d’adresses e-mail</b> : importez le fichier CSV.</p>`);
 
-    const invite = t.invite || P.inviteText({ appName: name, appId: cfg.appId || 'identifiant.de.ton.app' });
+    const invite = t.invite || P.inviteText({ appName: name, appId: cfg.appId || 'identifiant.de.votre.app' });
     const inv = this.card('Inviter les testeurs', `
       ${idOk ? `<div class="nxt-links">
         <div><small>Lien d’inscription au test</small><code>${esc(P.optInUrl(cfg.appId))}</code><button class="icon-btn small" data-copy="${esc(P.optInUrl(cfg.appId))}" title="Copier">${icon('copy', 13)}</button></div>
         <div><small>Page Google Play (après l’inscription)</small><code>${esc(P.storeUrl(cfg.appId))}</code><button class="icon-btn small" data-copy="${esc(P.storeUrl(cfg.appId))}" title="Copier">${icon('copy', 13)}</button></div>
-      </div>` : '<div class="ab-note">' + icon('info', 15) + '<span>Indique d’abord un identifiant valide (section Identité) : il fait partie du lien d’inscription.</span></div>'}
+      </div>` : '<div class="ab-note">' + icon('info', 15) + '<span>Indiquez d’abord un identifiant valide (section Identité) : il fait partie du lien d’inscription.</span></div>'}
       <label class="field"><span>Message d’invitation</span><textarea class="input" rows="9" data-k="testers.invite">${esc(invite)}</textarea></label>
       <div class="ab-row">
         <button class="btn small" data-copy="${esc(invite)}">${icon('copy', 13)}<span>Copier le message</span></button>
-        <button class="btn small primary" data-external="${esc(P.mailto(t.list, `Teste « ${name} » avant sa sortie`, invite))}" ${t.list.length && idOk ? '' : 'disabled'}>${icon('mail', 13)}<span>Écrire aux testeurs</span></button>
+        <button class="btn small primary" data-external="${esc(P.mailto(t.list, `Testez « ${name} » avant sa sortie`, invite))}" ${t.list.length && idOk ? '' : 'disabled'}>${icon('mail', 13)}<span>Écrire aux testeurs</span></button>
         ${t.invite ? `<button class="btn small" data-act="testers-invite-reset">${icon('refreshCw', 13)}<span>Message d’origine</span></button>` : ''}
       </div>
-      <p class="ab-hint">« Écrire aux testeurs » ouvre ta messagerie avec tous les testeurs en copie cachée. Le lien d’inscription ne fonctionne qu’après l’envoi d’une version sur la piste « Test fermé ».</p>`);
+      <p class="ab-hint">« Écrire aux testeurs » ouvre votre messagerie avec tous les testeurs en copie cachée. Le lien d’inscription ne fonctionne qu’après l’envoi d’une version sur la piste « Test fermé ».</p>`);
 
     const fb = this.card('Retours des testeurs', `
       <div class="nxt-add"><input class="input" data-nxt-fb placeholder="Ex. : le bouton Commander est caché sur les petits écrans" maxlength="300"><button class="btn small" data-act="testers-fb-add">${icon('plus', 13)}<span>Noter</span></button></div>
       ${t.feedback.length ? `<ul class="nxt-fb">${t.feedback.map((f, i) => `<li class="${f.done ? 'done' : ''}">
         <label class="ab-check"><input type="checkbox" data-act-fb="${i}" ${f.done ? 'checked' : ''}><span>${esc(f.text)}</span></label>
         <small>${new Date(f.at).toLocaleDateString('fr-FR')}</small>
-        <button class="icon-btn small" data-act="testers-fb-del" data-i="${i}" title="Retirer">${icon('trash', 12)}</button></li>`).join('')}</ul>` : '<p class="ab-hint">Note ici les remarques reçues et coche-les une fois corrigées : elles servent à répondre aux questions de Google.</p>'}`);
+        <button class="icon-btn small" data-act="testers-fb-del" data-i="${i}" title="Retirer">${icon('trash', 12)}</button></li>`).join('')}</ul>` : '<p class="ab-hint">Notez ici les remarques reçues et cochez-les une fois corrigées : elles servent à répondre aux questions de Google.</p>'}`);
 
     const answers = P.productionAnswers({ appName: cfg.appName || '', test: s, feedback: t.feedback, audience: t.audience });
     const all = answers.map(([q, a]) => `${q}\n${a}`).join('\n\n');
     const prod = this.card('Demander l’accès à la production', `
-      <p class="ab-hint">${s.state === 'ready' || !s.applies ? 'Play Console › Tableau de bord › <b>Demander l’accès à la production</b>.' : `Le bouton apparaît dans la Play Console une fois les ${P.REQUIRED.days} jours écoulés avec ${P.REQUIRED.testers} testeurs inscrits.`} Google pose des questions sur le test : voici un brouillon d’après tes réglages, à relire et à adapter avec tes propres mots.</p>
+      <p class="ab-hint">${s.state === 'ready' || !s.applies ? 'Play Console › Tableau de bord › <b>Demander l’accès à la production</b>.' : `Le bouton apparaît dans la Play Console une fois les ${P.REQUIRED.days} jours écoulés avec ${P.REQUIRED.testers} testeurs inscrits.`} Google pose des questions sur le test : voici un brouillon d’après vos réglages, à relire et à adapter avec vos propres mots.</p>
       <label class="field"><span>Public de l’application (facultatif)</span><textarea class="input" rows="2" data-k="testers.audience" placeholder="Ex. : les clients du restaurant qui commandent à emporter">${esc(t.audience || '')}</textarea></label>
       <div class="nxt-qa">${answers.map(([q, a]) => `<div><b>${esc(q)}</b><p>${esc(a).replace(/\n/g, '<br>')}</p><button class="icon-btn small" data-copy="${esc(a)}" title="Copier la réponse">${icon('copy', 13)}</button></div>`).join('')}</div>
       <div class="ab-row"><button class="btn small" data-copy="${esc(all)}">${icon('copy', 13)}<span>Copier toutes les réponses</span></button><button class="btn small" data-external="https://play.google.com/console">${icon('external', 13)}<span>Ouvrir la Play Console</span></button></div>`);
@@ -112,7 +112,7 @@ export function install(proto, SECTIONS) {
   proto.act_testers_csv = async function act() {
     const t = T(this.cfg);
     const file = await api.invoke('lab:save-text', { name: `testeurs-${(this.cfg.appId || 'application').replace(/[^a-z0-9.-]/gi, '')}.csv`, text: P.testersCsv(t.list), filters: [{ name: 'CSV', extensions: ['csv'] }] });
-    if (file) toast('Liste enregistrée : importe-la dans la Play Console.', { action: 'Afficher', onAction: () => api.invoke('lab:reveal', file) });
+    if (file) toast('Liste enregistrée : importez-la dans la Play Console.', { action: 'Afficher', onAction: () => api.invoke('lab:reveal', file) });
   };
   proto.act_testers_invite_reset = async function act() { delete T(this.cfg).invite; this.save(); this.renderForm(); };
   proto.act_testers_fb_add = async function act() {

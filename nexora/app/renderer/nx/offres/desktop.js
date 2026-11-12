@@ -47,7 +47,7 @@ export function banner(a) {
     ${btn}
   </div>`;
   if (row && row.status !== 'active' && row.status !== 'trial') {
-    return box('bad', 'lock', 'Ce logiciel dépasse ton offre', `L’offre Gratuite comprend ${max} applications au total : celui-ci a été créé en plus, pendant ton premier jour ou avec Pro. Sa construction reste bloquée jusqu’à ton passage à Pro.`, '', pro);
+    return box('bad', 'lock', 'Ce logiciel dépasse votre offre', `L’offre Gratuite comprend ${max} applications au total : celui-ci a été créé en plus, pendant votre premier jour ou avec Pro. Sa construction reste bloquée jusqu’à votre passage à Pro.`, '', pro);
   }
   if (row) {
     const n = Math.min(perN, Number(row.builds_month) || 0), full = n >= perN;
@@ -55,8 +55,8 @@ export function banner(a) {
       `${full ? 'Le compteur de ce logiciel repart le 1ᵉʳ du mois. ' : ''}${apps}.`, `<i class="nxo-bar"><em style="width:${((n / perN) * 100).toFixed(0)}%"></em></i>`, full ? pro : '<button type="button" class="nxo-btn ghost small" data-nxo-offers>Voir les offres</button>');
   }
   if (!known && used >= max) {
-    return box('bad', 'lock', `Tes ${max} applications gratuites sont créées`, `Ce logiciel ne peut pas être construit avec l’offre Gratuite (${apps}). Passe à Pro pour en créer d’autres, jusqu’à ${FALLBACK.pro.limits.apps}.`, '', pro);
+    return box('bad', 'lock', `Vos ${max} applications gratuites sont créées`, `Ce logiciel ne peut pas être construit avec l’offre Gratuite (${apps}). Passez à Pro pour en créer d’autres, jusqu’à ${FALLBACK.pro.limits.apps}.`, '', pro);
   }
   return box('', 'display', `Offre Gratuite : ${plural(max, 'application', 'applications')} au total`,
-    `${known ? 'Ce logiciel garde sa place parmi tes applications.' : `Ce logiciel comptera parmi elles à sa première construction, puis ${perN} constructions par mois.`} ${apps}.`, '', '<button type="button" class="nxo-btn ghost small" data-nxo-offers>Voir les offres</button>');
+    `${known ? 'Ce logiciel garde sa place parmi vos applications.' : `Ce logiciel comptera parmi elles à sa première construction, puis ${perN} constructions par mois.`} ${apps}.`, '', '<button type="button" class="nxo-btn ghost small" data-nxo-offers>Voir les offres</button>');
 }

@@ -15,7 +15,7 @@ async function outdated(root, pm, env) {
 }
 async function audit(root, pm, env) {
   const lock = pm === 'pnpm' ? 'pnpm-lock.yaml' : 'package-lock.json';
-  if (!fs.existsSync(path.join(root, lock))) return { items: [], skipped: `Pas de ${lock} : installe les dépendances pour vérifier les failles.` };
+  if (!fs.existsSync(path.join(root, lock))) return { items: [], skipped: `Pas de ${lock} : installez les dépendances pour vérifier les failles.` };
   const r = await run(pm === 'pnpm' ? 'pnpm' : 'npm', ['audit', '--json'], { cwd: root, env, timeout: 3 * 60 * 1000 });
   const j = parse(r.stdout) || {};
   const items = [];

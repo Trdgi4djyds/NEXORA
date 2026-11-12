@@ -69,7 +69,7 @@ if (toolbox) {
 const notes = toolbox
   ? releaseNotes(version).replace(
       /Version portable : .*$/m,
-      "Installation : télécharge NEXORA-Devs-Toolbox.exe puis lance-le. Il vérifie la signature et chaque fichier, installe NEXORA sans droits d’administrateur et le tient à jour. Tes réglages, projets et ton compte sont gardés.",
+      "Installation : téléchargez NEXORA-Devs-Toolbox.exe puis lancez-le. Il vérifie la signature et chaque fichier, installe NEXORA sans droits d’administrateur et le tient à jour. Vos réglages, vos projets et votre compte sont gardés.",
     )
   : releaseNotes(version)
 

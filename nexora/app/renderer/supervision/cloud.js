@@ -77,9 +77,9 @@ function row(site, orgId, extended = true) {
 // Active (ou met à jour) la surveillance par le serveur d'un site de ce PC.
 export async function link(site) {
   const a = account();
-  if (!a.signedIn) throw new Error('Connecte-toi à ton compte NEXORA pour activer la surveillance 24 h/24.');
-  if (!a.orgId) throw new Error('Choisis d’abord un espace d’équipe dans ton compte NEXORA.');
-  if (!a.canEdit) throw new Error('Ton rôle dans cet espace ne permet pas d’ajouter des sites surveillés (éditeur au moins).');
+  if (!a.signedIn) throw new Error('Connectez-vous à votre compte NEXORA pour activer la surveillance 24 h/24.');
+  if (!a.orgId) throw new Error('Choisissez d’abord un espace d’équipe dans votre compte NEXORA.');
+  if (!a.canEdit) throw new Error('Votre rôle dans cet espace ne permet pas d’ajouter des sites surveillés (éditeur au moins).');
   const found = await sb.from('monitors').select('id').eq('org_id', a.orgId).eq('app_site_id', site.id).limit(1);
   if (found.error) throw serverError(found.error);
   const existing = (found.data || [])[0];
@@ -89,7 +89,7 @@ export async function link(site) {
   let res = await save(row(site, a.orgId, true));
   // Serveurs sans la migration 20261105000008 : colonnes d'origine seulement (page web).
   if (res.error && /column|kind|schema cache|42703|PGRST204/i.test(`${res.error.code || ''} ${res.error.message || ''}`)) {
-    if ((site.type || 'http') !== 'http') throw Object.assign(new Error('Ce type de vérification par les serveurs NEXORA n’est pas encore disponible. Réessaie plus tard.'), { outdated: true });
+    if ((site.type || 'http') !== 'http') throw Object.assign(new Error('Ce type de vérification par les serveurs NEXORA n’est pas encore disponible. Réessayez plus tard.'), { outdated: true });
     res = await save(row(site, a.orgId, false));
   }
   if (res.error) throw serverError(res.error);
@@ -112,10 +112,10 @@ export async function series(monitorId, range) {
 
 function serverError(err) {
   const m = String((err && err.message) || err || '');
-  if (outdated(err)) return Object.assign(new Error('La surveillance 24 h/24 n’est pas encore disponible. Réessaie plus tard.'), { outdated: true });
-  if (/quota|limit|plan/i.test(m)) return new Error(/Limite de ton offre/.test(m) ? m : 'Limite de ton offre atteinte pour les sites surveillés.');
-  if (/row-level security|permission denied/i.test(m)) return new Error('Tu n’as pas les droits pour modifier les sites surveillés de cet espace.');
-  return new Error(m || 'NEXORA n’a pas répondu : réessaie dans un instant.');
+  if (outdated(err)) return Object.assign(new Error('La surveillance 24 h/24 n’est pas encore disponible. Réessayez plus tard.'), { outdated: true });
+  if (/quota|limit|plan/i.test(m)) return new Error(/Limite de ton offre/.test(m) ? m : 'Limite de votre offre atteinte pour les sites surveillés.');
+  if (/row-level security|permission denied/i.test(m)) return new Error('Vous n’avez pas les droits pour modifier les sites surveillés de cet espace.');
+  return new Error(m || 'NEXORA n’a pas répondu : réessayez dans un instant.');
 }
 
 // ---------- NEXORA #048 : signal de vie, déploiements, pages de statut, visiteurs réels ----------
@@ -146,7 +146,7 @@ export async function saveStatusPage(page) {
   const values = { org_id: a.orgId, slug: String(page.slug || '').toLowerCase(), title: String(page.title || '').slice(0, 120), intro: String(page.intro || '').slice(0, 600), monitor_ids: page.monitor_ids || [], published: page.published !== false, show_incidents: page.show_incidents !== false };
   const res = page.id ? await sb.from('status_pages').update(values).eq('id', page.id).select('*').single() : await sb.from('status_pages').insert({ ...values, created_by: cloud.user.id }).select('*').single();
   if (res.error) {
-    if (/duplicate|unique/i.test(res.error.message || '')) throw new Error('Cette adresse est déjà prise : choisis un autre nom.');
+    if (/duplicate|unique/i.test(res.error.message || '')) throw new Error('Cette adresse est déjà prise : choisissez un autre nom.');
     throw serverError(res.error);
   }
   return res.data;

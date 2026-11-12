@@ -69,6 +69,9 @@ function register({
   // NEXORA #019 : kit d'achats intégrés (Google Play Billing), même principe et mêmes emplacements de repli.
   const billing = require('./billing');
   const billingKit = new billing.BillingKit({ home, fetch: fetchImpl, log: (l) => send('android:log', l) });
+  // NEXORA #115 : un kit par module (OneSignal, AdMob, Google Analytics, Meta), même principe.
+  const modules = require('./modules');
+  const moduleKits = Object.fromEntries(modules.MODULE_IDS.map((id) => [id, new modules.ModuleKit(id, { home, fetch: fetchImpl, log: (l) => send('android:log', l) })]));
   let tools = null;
   let busy = false;
   const detect = async () => { tools = await toolchain.detect(); return tools; };
@@ -96,7 +99,7 @@ function register({
     let dir = r.filePaths[0];
     try { if (fs.readdirSync(dir).length) dir = path.join(dir, 'nexora-push'); } catch { /* dossier neuf */ }
     const w = await pushKit.checkWritable(dir);
-    if (!w.ok) throw new Error(`Impossible d’écrire dans ce dossier (${w.code || w.error}). Choisis-en un autre, par exemple C:\\NEXORA-kit.`);
+    if (!w.ok) throw new Error(`Impossible d’écrire dans ce dossier (${w.code || w.error}). Choisissez-en un autre, par exemple C:\\NEXORA-kit.`);
     pushKit.setBase(dir);
     fs.writeFileSync(pushLocFile, JSON.stringify({ dir }));
     return { ...pushKit.status(), dir, customDir: true };
@@ -143,11 +146,11 @@ function register({
   });
   ipcMain.handle('android:play-sa-remove', (_e, appId) => { fs.rmSync(playFile(appId), { force: true }); return true; });
   ipcMain.handle('android:play-check', async (_e, { appId }) => {
-    if (!fs.existsSync(playFile(appId))) throw new Error('Importe d’abord la clé du compte de service Google Play.');
+    if (!fs.existsSync(playFile(appId))) throw new Error('Importez d’abord la clé du compte de service Google Play.');
     return play.check({ serviceAccount: readSa(playFile(appId)), appId }, fetchImpl);
   });
   ipcMain.handle('android:play-publish', async (_e, opts) => {
-    if (!fs.existsSync(playFile(opts.appId))) throw new Error('Importe d’abord la clé du compte de service Google Play.');
+    if (!fs.existsSync(playFile(opts.appId))) throw new Error('Importez d’abord la clé du compte de service Google Play.');
     return play.publish({ ...opts, serviceAccount: readSa(playFile(opts.appId)) }, fetchImpl, (label, progress) => send('android:step', { label, progress }));
   });
 
@@ -164,11 +167,11 @@ function register({
     appId, kind, id, delta,
   }) => listingAssets.move(appId, kind, id, delta));
   ipcMain.handle('android:listing-read', async (_e, { appId, lang }) => {
-    if (!fs.existsSync(playFile(appId))) throw new Error('Importe d’abord la clé du compte de service (section Publication Play Store).');
+    if (!fs.existsSync(playFile(appId))) throw new Error('Importez d’abord la clé du compte de service (section Publication Play Store).');
     return listing.read({ serviceAccount: readSa(playFile(appId)), appId, lang }, fetchImpl);
   });
   ipcMain.handle('android:listing-push', async (_e, opts) => {
-    if (!fs.existsSync(playFile(opts.appId))) throw new Error('Importe d’abord la clé du compte de service (section Publication Play Store).');
+    if (!fs.existsSync(playFile(opts.appId))) throw new Error('Importez d’abord la clé du compte de service (section Publication Play Store).');
     return listing.push({ ...opts, serviceAccount: readSa(playFile(opts.appId)), assets: listingAssets }, fetchImpl, (label, progress) => send('android:step', { label, progress }));
   });
 
@@ -183,12 +186,24 @@ function register({
     } finally { busy = false; }
   });
   ipcMain.handle('android:billing-products', async (_e, { appId }) => {
-    if (!fs.existsSync(playFile(appId))) throw new Error('Importe d’abord la clé du compte de service (section Publication Play Store).');
+    if (!fs.existsSync(playFile(appId))) throw new Error('Importez d’abord la clé du compte de service (section Publication Play Store).');
     return billing.products({ serviceAccount: readSa(playFile(appId)), appId }, fetchImpl);
   });
   ipcMain.handle('android:billing-verify', async (_e, opts) => {
-    if (!fs.existsSync(playFile(opts.appId))) throw new Error('Importe d’abord la clé du compte de service (section Publication Play Store).');
+    if (!fs.existsSync(playFile(opts.appId))) throw new Error('Importez d’abord la clé du compte de service (section Publication Play Store).');
     return billing.verify({ ...opts, serviceAccount: readSa(playFile(opts.appId)) }, fetchImpl);
+  });
+
+  // ---------------------------------------------------------------- NEXORA #115 : modules (OneSignal, AdMob, Analytics, Meta)
+  ipcMain.handle('android:module-status', () => Object.fromEntries(modules.MODULE_IDS.map((id) => [id, { ...moduleKits[id].status(), label: modules.MODULES[id].label, size: modules.MODULES[id].size }])));
+  ipcMain.handle('android:module-install', async (_e, { id } = {}) => {
+    if (!moduleKits[id]) throw new Error('Module inconnu.');
+    if (busy) throw new Error('Une opération Android est déjà en cours.');
+    busy = true;
+    try {
+      if (!tools || !tools.ready) await detect();
+      return await moduleKits[id].install(tools, (p) => send('android:progress', { part: `module-${id}`, label: p.label, progress: p.progress }));
+    } finally { busy = false; }
   });
 
   // ---------------------------------------------------------------- centre de notifications : historique et envois programmés
@@ -238,7 +253,7 @@ function register({
       const r = await sendTest({ ...msg, appId, serviceAccount: json }, fetchImpl);
       try { const h = readHist(appId); h.sent.unshift({ ...msg, at: Date.now(), ok: true, topic: r.topic }); h.sent = h.sent.slice(0, 200); writeHist(appId, h); } catch { /* historique facultatif */ }
       return r;
-    } catch (e) { return { ok: false, error: e.code === 'ENOENT' ? 'Ajoute d’abord la clé du compte de service (étape « Envoyer un test »).' : e.message }; }
+    } catch (e) { return { ok: false, error: e.code === 'ENOENT' ? 'Ajoutez d’abord la clé du compte de service (étape « Envoyer un test »).' : e.message }; }
   });
 
   ipcMain.handle('android:install', async (_e, parts) => {
@@ -273,7 +288,7 @@ function register({
       const sounds = {};
       for (const [k, v] of Object.entries(spec.sounds || {})) sounds[k] = Buffer.from(v);
       const r = await build({ ...spec, images, sounds, outDir }, {
-        tools, keystores, fetch: fetchImpl, owner: spec.owner, pushKit, billingKit,
+        tools, keystores, fetch: fetchImpl, owner: spec.owner, pushKit, billingKit, moduleKits,
         log: (l) => send('android:log', l),
         step: (label, progress) => send('android:step', { label, progress }),
       });
@@ -293,7 +308,7 @@ function register({
   ipcMain.handle('android:key-create', async (_e, { appId, owner }) => {
     await cryptReady;
     if (!tools || !tools.java) await detect();
-    if (!tools.java) throw new Error('Java est nécessaire pour créer une clé (installe les outils Android).');
+    if (!tools.java) throw new Error('Java est nécessaire pour créer une clé (installez les outils Android).');
     if (keystores.info(appId)) throw new Error('Une clé existe déjà pour cette application.');
     const k = await keystores.create(appId, tools.java, owner);
     return { file: k.file, alias: k.alias, sha256: k.sha256, sha1: k.sha1 };
@@ -321,7 +336,7 @@ function register({
     fs.copyFileSync(k.file, r.filePath);
     const pass = keystores.password(k);
     const keyPass = keystores.keyPassword(k);
-    const note = `Clé de signature de ${appId}\n\nFichier : ${path.basename(r.filePath)}\nAlias : ${k.alias}\nMot de passe du fichier : ${pass}\nMot de passe de la clé : ${keyPass}\nSHA-256 : ${k.sha256}\nSHA-1 : ${k.sha1}\n\nConserve ce fichier et ces mots de passe en lieu sûr : sans eux, tu ne pourras plus publier de mise à jour de l'application.\n`;
+    const note = `Clé de signature de ${appId}\n\nFichier : ${path.basename(r.filePath)}\nAlias : ${k.alias}\nMot de passe du fichier : ${pass}\nMot de passe de la clé : ${keyPass}\nSHA-256 : ${k.sha256}\nSHA-1 : ${k.sha1}\n\nConservez ce fichier et ces mots de passe en lieu sûr : sans eux, vous ne pourrez plus publier de mise à jour de l'application.\n`;
     fs.writeFileSync(`${r.filePath}.txt`, note);
     return { file: r.filePath };
   });
@@ -340,7 +355,7 @@ function register({
     return { adb: true, devices };
   });
   ipcMain.handle('android:install-apk', async (_e, { serial, apk, appId, launch }) => {
-    if (!adb()) throw new Error("L'installation sur téléphone n'est pas encore prête : installe les outils Android.");
+    if (!adb()) throw new Error("L'installation sur téléphone n'est pas encore prête : installez les outils Android.");
     const r = await run(adb(), ['-s', serial, 'install', '-r', '-d', apk]);
     if (r.code || !/Success/.test(r.stdout)) throw new Error((r.stdout + r.stderr).trim().split('\n').slice(-3).join(' ') || "L'installation a échoué.");
     if (launch && appId) await run(adb(), ['-s', serial, 'shell', 'monkey', '-p', appId, '-c', 'android.intent.category.LAUNCHER', '1']);
@@ -350,7 +365,7 @@ function register({
   // Test réel sur un téléphone branché en USB : installation, ouverture, surveillance pendant quelques secondes,
   // puis lecture du journal d'Android pour expliquer un éventuel plantage.
   ipcMain.handle('android:test-run', async (_e, { serial, apk, appId, seconds = 15 }) => {
-    if (!adb()) throw new Error("L'installation sur téléphone n'est pas encore prête : installe les outils Android.");
+    if (!adb()) throw new Error("L'installation sur téléphone n'est pas encore prête : installez les outils Android.");
     const A = (args, o) => run(adb(), ['-s', serial, ...args], o);
     const prop = async (k) => ((await A(['shell', 'getprop', k])).stdout || '').trim();
     const device = { model: await prop('ro.product.model'), brand: await prop('ro.product.brand'), release: await prop('ro.build.version.release'), sdk: Number(await prop('ro.build.version.sdk')) || 0 };
@@ -362,8 +377,8 @@ function register({
       const why = /INSTALL_FAILED_UPDATE_INCOMPATIBLE|signatures do not match/i.test(out) ? "Une version signée avec une autre clé est déjà installée : désinstalle l'ancienne application du téléphone, puis recommence."
         : /INSTALL_FAILED_OLDER_SDK/i.test(out) ? `Ce téléphone (Android ${device.release}) est trop ancien : il faut Android 7 ou plus.`
           : /INSUFFICIENT_STORAGE/i.test(out) ? "Pas assez d'espace libre sur le téléphone."
-            : /INSTALL_FAILED_VERSION_DOWNGRADE/i.test(out) ? 'Une version plus récente est installée : augmente le numéro de version ou désinstalle-la.'
-              : /USER_RESTRICTED|INSTALL_CANCELED_BY_USER/i.test(out) ? "Le téléphone a refusé l'installation : autorise « Installer via USB » dans les options pour les développeurs."
+            : /INSTALL_FAILED_VERSION_DOWNGRADE/i.test(out) ? 'Une version plus récente est installée : augmentez le numéro de version ou désinstalle-la.'
+              : /USER_RESTRICTED|INSTALL_CANCELED_BY_USER/i.test(out) ? "Le téléphone a refusé l'installation : autorisez « Installer via USB » dans les options pour les développeurs."
                 : "L'installation a été refusée par le téléphone.";
       return { ok: false, stage: 'install', device, message: why };
     }
@@ -389,13 +404,13 @@ function register({
     const crash = fatal.join('\n');
     const exc = (/([\w.$]+(?:Exception|Error))(?::\s*([^\n]*))?/.exec(crash) || []);
     const known = [
-      [/Canvas: trying to draw too large/i, 'Une image (logo, écran de démarrage ou d’accueil) est trop grande pour ce téléphone : réduis-la et reconstruis.'],
-      [/OutOfMemoryError/i, 'Le téléphone manque de mémoire : réduis la taille des images intégrées et ferme d’autres applications.'],
-      [/MissingWebViewPackage|No WebView installed|WebView.*not installed/i, 'Le composant « Android System WebView » est absent ou désactivé sur ce téléphone : active-le ou mets-le à jour depuis le Play Store.'],
-      [/SecurityException.*RECEIVER_(NOT_)?EXPORTED/i, 'Fonction incompatible avec Android 14 : mets NEXORA à jour puis reconstruis l’application.'],
-      [/ClassNotFoundException|NoClassDefFoundError/i, 'Une partie du code de l’application est manquante : reconstruis l’application (si les notifications push sont activées, prépare à nouveau leur kit).'],
-      [/FirebaseApp|google_app_id|Firebase/i, 'Configuration des notifications push incorrecte : vérifie le fichier google-services.json (il doit correspondre à l’identifiant de l’application).'],
-      [/Resources\$NotFoundException/i, 'Une ressource (image, icône) est introuvable : reconstruis l’application.'],
+      [/Canvas: trying to draw too large/i, 'Une image (logo, écran de démarrage ou d’accueil) est trop grande pour ce téléphone : réduisez-la et reconstruisez.'],
+      [/OutOfMemoryError/i, 'Le téléphone manque de mémoire : réduisez la taille des images intégrées et ferme d’autres applications.'],
+      [/MissingWebViewPackage|No WebView installed|WebView.*not installed/i, 'Le composant « Android System WebView » est absent ou désactivé sur ce téléphone : activez-le ou mettez-le à jour depuis le Play Store.'],
+      [/SecurityException.*RECEIVER_(NOT_)?EXPORTED/i, 'Fonction incompatible avec Android 14 : mettez NEXORA à jour puis reconstruisez l’application.'],
+      [/ClassNotFoundException|NoClassDefFoundError/i, 'Une partie du code de l’application est manquante : reconstruisez l’application (si les notifications push sont activées, préparez à nouveau leur kit).'],
+      [/FirebaseApp|google_app_id|Firebase/i, 'Configuration des notifications push incorrecte : vérifiez le fichier google-services.json (il doit correspondre à l’identifiant de l’application).'],
+      [/Resources\$NotFoundException/i, 'Une ressource (image, icône) est introuvable : reconstruisez l’application.'],
       [/NetworkOnMainThread/i, 'Opération réseau bloquante au démarrage.'],
     ];
     const cause = (known.find(([re]) => re.test(crash)) || [])[1] || '';
@@ -430,7 +445,7 @@ function register({
     try { return JSON.parse(zlib.gunzipSync(Buffer.concat([d.update(buf.slice(49)), d.final()])).toString('utf8')); } catch { throw new Error('Mot de passe incorrect, ou fichier abîmé.'); }
   };
   ipcMain.handle('backup:create', async (_e, { password }) => {
-    if (!password || String(password).length < 6) throw new Error('Choisis un mot de passe d’au moins 6 caractères.');
+    if (!password || String(password).length < 6) throw new Error('Choisissez un mot de passe d’au moins 6 caractères.');
     const r = await dialog.showSaveDialog(getWin(), { title: 'Enregistrer la sauvegarde de NEXORA', defaultPath: path.join(app.getPath('documents'), `Sauvegarde NEXORA ${new Date().toISOString().slice(0, 10)}.nexora-backup`), filters: [{ name: 'Sauvegarde NEXORA', extensions: ['nexora-backup'] }] });
     if (r.canceled || !r.filePath) return null;
     let settings = {};

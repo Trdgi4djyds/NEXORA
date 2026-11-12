@@ -102,7 +102,7 @@ export function panel(D) {
     <div class="dzx-grid2"><label class="dzx-num"><span>Largeur (mm)</span><input class="input" type="number" data-pk="wmm" value="${c.wmm}" min="10"></label><label class="dzx-num"><span>Hauteur (mm)</span><input class="input" type="number" data-pk="hmm" value="${c.hmm}" min="10"></label>
     <label class="dzx-num"><span>Fonds perdus (mm)</span><input class="input" type="number" data-pk="bleed" value="${c.bleed}" min="0" max="10"></label><label class="dzx-num"><span>Résolution (dpi)</span><input class="input" type="number" data-pk="dpi" value="${c.dpi}" min="150" max="600" step="50"></label></div>
     <label class="nxd-check dzx-check"><input type="checkbox" data-pk="marks" ${c.marks ? 'checked' : ''}> Traits de coupe</label>
-    <p class="dzx-hint">Les fonds perdus prolongent les bords de la page : garde les textes à 5 mm au moins du bord. Formats courants : carte de visite 85 × 55, A5 148 × 210, A4 210 × 297.</p>
+    <p class="dzx-hint">Les fonds perdus prolongent les bords de la page : gardez les textes à 5 mm au moins du bord. Formats courants : carte de visite 85 × 55, A5 148 × 210, A4 210 × 297.</p>
     <div class="dzp-sub">Couleurs à vérifier</div>
     ${r.length ? `<div class="dzp-list">${r.map(([h, names]) => `<div class="dzp-item bad"><span class="dzp-sw" style="background:${esc(h)}"></span><span><b>${esc(h)}</b><small>Couleur très vive : elle paraîtra plus terne à l’impression · ${esc(names.slice(0, 3).join(', '))}</small></span></div>`).join('')}</div>` : `<p class="dzx-hint">${ico('pass', 12)} Aucune couleur hors de portée de l’impression courante.</p>`}
     <div class="nx-btns">${btn('print-pdf', 'pdf', 'PDF de cette page', '', 'primary')}${btn('print-all', 'pdf', 'PDF de toutes les pages')}</div>`;

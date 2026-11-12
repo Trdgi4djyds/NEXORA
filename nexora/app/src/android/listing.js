@@ -67,13 +67,13 @@ function checkImage(kind, buf) {
 
 function checkTexts(l = {}) {
   const out = [];
-  if (!String(l.title || '').trim()) out.push('Indique le nom de l’application sur Google Play.');
+  if (!String(l.title || '').trim()) out.push('Indiquez le nom de l’application sur Google Play.');
   for (const [k, n] of Object.entries(LIMITS)) {
     const len = [...String(l[k] || '')].length;
     if (len > n) out.push(`${{ title: 'Nom', shortDescription: 'Description courte', fullDescription: 'Description complète' }[k]} : ${len} caractères pour ${n} au maximum.`);
   }
-  if (!String(l.shortDescription || '').trim()) out.push('Écris la description courte (80 caractères au plus).');
-  if (!String(l.fullDescription || '').trim()) out.push('Écris la description complète.');
+  if (!String(l.shortDescription || '').trim()) out.push('Écrivez la description courte (80 caractères au plus).');
+  if (!String(l.fullDescription || '').trim()) out.push('Écrivez la description complète.');
   return out;
 }
 

@@ -9,7 +9,7 @@
  * commande de version. Les dépendances passent d'abord (Git avant Flutter, PHP avant Composer…).
  *
  * La détection (detect) relie l'analyse d'un projet (frameworks.js) aux outils présents (sdk.js). */
-const { LIB_MSG } = require('./plain');
+const { LIB_MSG, techLog } = require('./plain');
 const fs = require('fs');
 const path = require('path');
 const EventEmitter = require('events');
@@ -27,7 +27,8 @@ const ORDER = ['node', 'pnpm', 'yarn', 'bun', 'deno', 'python', 'php', 'composer
 const ghLatest = async (ctx, repo, re) => {
   const rel = await ctx.json(`https://api.github.com/repos/${repo}/releases/latest`);
   const asset = (rel.assets || []).find((a) => re.test(a.name));
-  if (!asset) throw new Error(`Aucun fichier pour Windows dans la dernière version publiée (${repo}).`);
+  // NEXORA #115 : le nom du dépôt n'apparaît pas dans le message (il reste dans le journal technique).
+  if (!asset) { techLog('bibliotheque', `Aucun fichier pour Windows dans ${repo}`); throw new Error('Cet outil n’a pas encore de version pour Windows : réessayez plus tard.'); }
   const digest = String(asset.digest || '');
   return {
     version: String(rel.tag_name || '').replace(/^v/, '').replace(/^RubyInstaller-/, ''),
@@ -147,7 +148,7 @@ const RECIPES = {
         ctx.step('Runtime Visual C++ de Microsoft (nécessaire à PHP)', 0.9);
         const file = path.join(ctx.downloads, 'vc_redist.x64.exe');
         await ctx.download('https://aka.ms/vs/17/release/vc_redist.x64.exe', file, {}, 0.9, 0.94);
-        ctx.log('Windows va demander ton accord pour installer le runtime Visual C++.');
+        ctx.log('Windows va demander votre accord pour installer le runtime Visual C++.');
         await ctx.exec(file, ['/install', '/quiet', '/norestart'], 'Installation du runtime Visual C++', { allowFail: true });
       }
     },
@@ -264,7 +265,7 @@ class Tools extends EventEmitter {
 
   async json(url) {
     const res = await this.fetch(url, { headers: { 'User-Agent': 'NEXORA', Accept: 'application/json' }, signal: this.abort && this.abort.signal });
-    if (!res.ok) throw new Error(`Source de téléchargement indisponible (erreur ${res.status}). Vérifie ta connexion, puis réessaie.`);
+    if (!res.ok) throw new Error(`Source de téléchargement indisponible (erreur ${res.status}). Vérifiez votre connexion, puis réessayez.`);
     return res.json();
   }
 
@@ -354,7 +355,7 @@ class Tools extends EventEmitter {
   }
 
   async installMany(ids, { userPath = this.manifest.userPath } = {}) {
-    if (!IS_WIN) throw new Error('L\'installation automatique est prévue pour Windows. Suis les étapes indiquées pour ton système.');
+    if (!IS_WIN) throw new Error('L\'installation automatique est prévue pour Windows. Suivez les étapes indiquées pour votre système.');
     if (this.busy) throw new Error('Une installation est déjà en cours.');
     this.manifest.userPath = userPath !== false;
     const list = await this.plan(ids.filter((id) => RECIPES[id]));
@@ -454,7 +455,7 @@ class Tools extends EventEmitter {
         fs.rmSync(tmp, { recursive: true, force: true });
         await extract(file, tmp, { strip: rel.strip || 0, onProgress: (p) => emit({ phase: 'extract', progress: 0.72 + p * 0.16 }) });
         try { fs.rmSync(dir, { recursive: true, force: true }); } catch {
-          throw new Error(`L'ancienne version de ${label} est en cours d'utilisation. Ferme les terminaux et serveurs qui l'utilisent, puis réessaie.`);
+          throw new Error(`L'ancienne version de ${label} est en cours d'utilisation. Fermez les terminaux et serveurs qui l'utilisent, puis réessayez.`);
         }
         fs.renameSync(tmp, dir);
       } else if (recipe.kind === 'file') {
@@ -481,12 +482,12 @@ class Tools extends EventEmitter {
       await recipe.configure(ctx, dir);
     }
     if (userPath && dir) {
-      step('Ajout au PATH de ton compte Windows', 0.96);
+      step('Ajout au PATH de votre compte Windows', 0.96);
       await this.userPath(this.manifest.tools[id].bins, this.manifest.tools[id].env).catch((e) => log(`PATH de Windows non modifié : ${e.message}`));
     }
     step('Vérification', 0.98);
     const check = await sdk.checkSdk(id, { fresh: true });
-    if (!check.ok) throw new Error(`${label} est installé${dir ? ` dans ${dir}` : ''}, mais sa commande ne répond pas. Consulte le journal de l'installation.`);
+    if (!check.ok) throw new Error(`${label} est installé${dir ? ` dans ${dir}` : ''}, mais sa commande ne répond pas. Consultez le journal de l'installation.`);
     if (dir && check.version) { this.manifest.tools[id].version = check.version; this.save(); }
     emit({ phase: 'done', progress: 1, version: check.version });
     return { id, label, version: check.version, dir };
@@ -518,7 +519,7 @@ class Tools extends EventEmitter {
     const m = this.manifest.tools[id];
     if (!m) throw new Error('Cet outil n\'a pas été installé par NEXORA.');
     try { fs.rmSync(m.dir, { recursive: true, force: true }); } catch {
-      throw new Error('Des fichiers de cet outil sont en cours d\'utilisation. Ferme les terminaux et serveurs qui l\'utilisent, puis réessaie.');
+      throw new Error('Des fichiers de cet outil sont en cours d\'utilisation. Fermez les terminaux et serveurs qui l\'utilisent, puis réessayez.');
     }
     delete this.manifest.tools[id];
     this.save();

@@ -177,7 +177,7 @@ function GrantModal({ onClose, onDone }: { onClose: () => void; onDone: () => vo
     <Modal title="Attribuer une licence" onClose={onClose} width={560}>
       <form className="form" onSubmit={submit}>
         <label className="field"><span>Adresse e-mail du compte NEXORA</span><input className="input" name="email" type="email" required placeholder="prenom@exemple.com" autoFocus /><small>Le compte doit exister (inscription dans NEXORA ou sur le site, page « Ma licence »). Sa clé est créée si besoin.</small></label>
-        <div className="field"><span>Offre</span><Seg value={plan} onChange={setPlan} options={[["pro", "Pro offert"], ["free", "Gratuit imposé"], ["auto", "Automatique (abonnement)"]]} /><small>{plan === "pro" ? "Tout NEXORA, sans paiement." : plan === "free" ? "Offre Gratuite même avec un abonnement payé (suspension)." : "Retire l’offre attribuée : l’abonnement et l’essai s’appliquent."}</small></div>
+        <div className="field"><span>Offre</span><Seg value={plan} onChange={setPlan} options={[["pro", "Pro offert"], ["free", "Gratuit imposé"], ["auto", "Automatique (abonnement)"]]} /><small>{plan === "pro" ? "Tout NEXORA, sans paiement." : plan === "free" ? "Offre Gratuite même avec un abonnement payé (suspension)." : "Retirez l’offre attribuée : l’abonnement et l’essai s’appliquent."}</small></div>
         {plan !== "auto" && (
           <div className="grid2">
             <label className="field"><span>Durée</span><select className="input" value={dur} onChange={(e) => setDur(e.target.value)}>{DURATIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
@@ -238,7 +238,7 @@ function ManageDrawer({ lic, person, onClose, onChanged }: { lic: Licence; perso
         </div>
         <div className="field"><span>Offre attribuée</span><Seg value={plan} onChange={setPlan} options={[["pro", "Pro offert"], ["free", "Gratuit imposé"], ["auto", "Automatique"]]} /></div>
         {plan !== "auto" && <label className="field"><span>Jusqu’au</span><input className="input" type="datetime-local" value={until} onChange={(e) => setUntil(e.target.value)} /><small>Vide : sans date de fin.</small></label>}
-        <label className="field"><span>Fin de l’essai complet</span><input className="input" type="datetime-local" value={trial} onChange={(e) => setTrial(e.target.value)} /><small>Avance ou prolonge l’essai Pro (premier jour par défaut).</small></label>
+        <label className="field"><span>Fin de l’essai complet</span><input className="input" type="datetime-local" value={trial} onChange={(e) => setTrial(e.target.value)} /><small>Avancez ou prolongez l’essai Pro (premier jour par défaut).</small></label>
         <label className="field"><span>Ordinateurs au plus</span><input className="input" type="number" min={1} max={100} value={max} onChange={(e) => setMax(e.target.value)} placeholder="Selon les réglages" /></label>
         <label className="field"><span>Note</span><textarea className="input" rows={2} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} /></label>
         <div className="actions"><button className="btn primary" disabled={act.busy} onClick={save}>Enregistrer</button></div>
@@ -324,7 +324,7 @@ function SettingsForms({ lic, rel, service, busy, save }: {
         <div className="card-head"><Icon name="download" size={16} /><h3 className="grow">Versions autorisées</h3></div>
         <div className="grid2">
           <label className="field"><span>Version minimale de NEXORA</span><input className="input" value={r.min_version} onChange={(e) => setR({ ...r, min_version: e.target.value.trim() })} placeholder="1.2.0" /><small>Plus ancienne : ouverture refusée, mise à jour par le lanceur.</small></label>
-          <label className="field"><span>Numéro de manifeste minimal</span><input className="input" type="number" min={0} value={r.min_manifest_version} onChange={(e) => setR({ ...r, min_manifest_version: Number(e.target.value) })} /><small>Refuse les publications plus anciennes (retours en arrière). 0 : aucun minimum.</small></label>
+          <label className="field"><span>Numéro de manifeste minimal</span><input className="input" type="number" min={0} value={r.min_manifest_version} onChange={(e) => setR({ ...r, min_manifest_version: Number(e.target.value) })} /><small>Refusez les publications plus anciennes (retours en arrière). 0 : aucun minimum.</small></label>
         </div>
         <div className="row" style={{ gap: 10 }}>
           <Switch checked={r.block_outdated} onChange={(v: boolean) => setR({ ...r, block_outdated: v })} label="Refuser les versions obsolètes" />

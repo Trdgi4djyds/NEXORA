@@ -28,7 +28,7 @@ export function defaults(cfg) {
   if (!Number(p.callTimeout)) p.callTimeout = 45;
   if (!p.msgTest || typeof p.msgTest !== 'object') {
     p.msgTest = {
-      kind: 'message', sender: 'Awa', conversation: '', tag: 'conv_42', body: 'Salut ! Tu es dispo ce soir ?', avatar: '', channel: '', url: '', target: 'topic', topic: '', token: '',
+      kind: 'message', sender: 'Awa', conversation: '', tag: 'conv_42', body: 'Salut ! Vous êtes dispo ce soir ?', avatar: '', channel: '', url: '', target: 'topic', topic: '', token: '',
     };
   }
   return p;
@@ -68,7 +68,7 @@ export function problems(cfg) {
   if (!p.enabled) return out;
   const url = String(p.actionUrl || '').trim();
   if (url && !/^https:\/\/[^/\s]+/i.test(url)) out.push(['messaging', 'Messagerie : l’adresse des actions doit commencer par https:// (les cookies de session ne partent qu’en https).']);
-  if (p.messaging && p.calls && !(cfg.permissions || []).includes('microphone')) out.push(['messaging', 'Appels entrants : ajoute l’autorisation « Micro » (section Messagerie et appels, bouton « Ajouter le micro et l’appareil photo »).']);
+  if (p.messaging && p.calls && !(cfg.permissions || []).includes('microphone')) out.push(['messaging', 'Appels entrants : ajoutez l’autorisation « Micro » (section Messagerie et appels, bouton « Ajouter le micro et l’appareil photo »).']);
   const names = (p.channels || []).map((c) => String((c && c.name) || '').trim()).filter(Boolean);
   const ids = names.map(channelId);
   if (new Set(ids).size !== ids.length) out.push(['messaging', 'Catégories de notifications : deux catégories portent le même nom.']);
@@ -89,7 +89,7 @@ export function serverExamples(cfg) {
       message: {
         token: '<jeton de l’appareil du destinataire>',
         data: {
-          type: 'message', tag: 'conv_42', sender: 'Awa', avatar: 'https://ton-site.com/avatars/awa.jpg', body: 'Salut ! Tu es dispo ce soir ?', url: '/conversations/42', ...(ch ? { channel: ch.name } : {}), badge: '3', key: '<signature facultative, renvoyée avec la réponse>',
+          type: 'message', tag: 'conv_42', sender: 'Awa', avatar: 'https://votre-site.com/avatars/awa.jpg', body: 'Salut ! Vous êtes dispo ce soir ?', url: '/conversations/42', ...(ch ? { channel: ch.name } : {}), badge: '3', key: '<signature facultative, renvoyée avec la réponse>',
         },
         android,
       },
@@ -107,7 +107,7 @@ export function serverExamples(cfg) {
       message: {
         token: '<jeton>',
         data: {
-          type: 'call', tag: 'appel_981', sender: 'Awa', avatar: 'https://ton-site.com/avatars/awa.jpg', body: 'Appel vidéo', url: '/appels/981', timeout: '45',
+          type: 'call', tag: 'appel_981', sender: 'Awa', avatar: 'https://votre-site.com/avatars/awa.jpg', body: 'Appel vidéo', url: '/appels/981', timeout: '45',
         },
         android: { ...android, ttl: '45s' },
       },
@@ -116,7 +116,7 @@ export function serverExamples(cfg) {
     event: json({
       message: {
         topic: `${topicPrefix(app)}all`,
-        notification: { title: 'Commande prête', body: 'Ta commande n° 1052 t’attend au comptoir.' },
+        notification: { title: 'Commande prête', body: 'Votre commande n° 1052 vous attend au comptoir.' },
         data: { url: '/commandes/1052' },
         android: { priority: 'high', restricted_package_name: app, notification: { channel_id: ch ? ch.id : 'vt_default', tag: 'commande_1052' } },
       },
@@ -125,13 +125,13 @@ export function serverExamples(cfg) {
       event: 'register', token: '<jeton>', platform: 'android', package: app, app: cfg.appName || 'Mon application', model: 'Pixel 9', sdk: 35, locale: 'fr-FR', user: '<champs passés à register({ fields })>',
     }),
     action: json({
-      action: 'reply', tag: 'conv_42', text: 'Oui, à 20 h !', key: '<valeur « key » du message>', token: '<jeton>', package: app, app: cfg.appName || 'Mon application', at: 1767225600000, message: { id: '…', type: 'message', sender: 'Awa', body: 'Salut ! Tu es dispo ce soir ?', data: { '…': '…' } },
+      action: 'reply', tag: 'conv_42', text: 'Oui, à 20 h !', key: '<valeur « key » du message>', token: '<jeton>', package: app, app: cfg.appName || 'Mon application', at: 1767225600000, message: { id: '…', type: 'message', sender: 'Awa', body: 'Salut ! Vous êtes dispo ce soir ?', data: { '…': '…' } },
     }),
   };
 }
 
 /** Exemple d'utilisation dans la page d'une messagerie (window.NexoraApp.push). */
-export const PAGE_EXAMPLE = `// Après la connexion : le jeton part vers ton serveur avec la session (cookies) ou des en-têtes.
+export const PAGE_EXAMPLE = `// Après la connexion : le jeton part vers votre serveur avec la session (cookies) ou des en-têtes.
 await NexoraApp.push.requestPermission();               // Android 13 et plus
 await NexoraApp.push.register({ fields: { user: moi.id } });
 NexoraApp.push.onToken(() => NexoraApp.push.register());   // jeton renouvelé par Firebase
@@ -152,5 +152,5 @@ NexoraApp.push.onOpen((m, action) => ouvrir(m.url, action), { navigate: false })
 NexoraApp.push.onAction((a) => conversations.marquer(a.tag, a.action, a.text));
 NexoraApp.push.onMissed(() => conversations.toutRelire());   // messages perdus (longtemps hors ligne)
 
-// Déconnexion : jeton supprimé, notifications retirées, désinscription auprès de ton serveur.
+// Déconnexion : jeton supprimé, notifications retirées, désinscription auprès de votre serveur.
 await NexoraApp.push.deleteToken();`;

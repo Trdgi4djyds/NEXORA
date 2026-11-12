@@ -15,43 +15,43 @@ export const SEV = {
 };
 
 export const WHO = {
-  toi: 'Toi (code ou réglages du site)',
-  hebergeur: 'Ton hébergeur',
-  dns: 'Chez ton hébergeur DNS',
-  registraire: 'Chez ton registraire',
-  messagerie: 'Ton service d’e-mail',
+  toi: 'Vous (code ou réglages du site)',
+  hebergeur: 'Votre hébergeur',
+  dns: 'Chez votre hébergeur DNS',
+  registraire: 'Chez votre registraire',
+  messagerie: 'Votre service d’e-mail',
 };
 
 // Catégorie → qui agit et risque concret, quand le constat ne le précise pas.
 const CAT = {
-  Transport: ['hebergeur', 'Les échanges avec tes visiteurs (mots de passe, formulaires) peuvent être lus ou modifiés en route.'],
-  'En-têtes': ['toi', 'Ton site est plus exposé aux scripts injectés, à l’affichage dans un faux site et aux fuites d’informations.'],
-  Cookies: ['toi', 'Les sessions de tes visiteurs peuvent être volées.'],
-  Contenu: ['toi', 'Une ressource externe modifiée peut prendre la main sur ta page.'],
-  'Fichiers exposés': ['toi', 'Des fichiers internes (mots de passe, code source) sont lisibles par n’importe qui.'],
+  Transport: ['hebergeur', 'Les échanges avec vos visiteurs (mots de passe, formulaires) peuvent être lus ou modifiés en route.'],
+  'En-têtes': ['vous', 'Votre site est plus exposé aux scripts injectés, à l’affichage dans un faux site et aux fuites d’informations.'],
+  Cookies: ['vous', 'Les sessions de vos visiteurs peuvent être volées.'],
+  Contenu: ['vous', 'Une ressource externe modifiée peut prendre la main sur votre page.'],
+  'Fichiers exposés': ['vous', 'Des fichiers internes (mots de passe, code source) sont lisibles par n’importe qui.'],
   Divulgation: ['hebergeur', 'Les robots savent exactement quelles failles essayer.'],
   Configuration: ['hebergeur', 'Des fonctions de diagnostic du serveur sont ouvertes au public.'],
-  'Bonnes pratiques': ['toi', 'Rien d’urgent, mais c’est un plus pour la confiance et le référencement.'],
-  Messagerie: ['messagerie', 'Des e-mails frauduleux peuvent être envoyés à ton nom à tes clients.'],
-  DNS: ['dns', 'Ton domaine peut être détourné plus facilement.'],
-  Domaine: ['registraire', 'Ton site et tes e-mails peuvent s’arrêter du jour au lendemain.'],
-  'Sous-domaines': ['dns', 'Quelqu’un peut publier des pages sous ton nom.'],
-  Pages: ['toi', 'Des visiteurs connectés peuvent être piégés ou leurs données exposées.'],
-  'Diagnostic exposé': ['toi', 'Des informations internes de ton application sont accessibles à tous.'],
-  Secrets: ['toi', 'Une clé volée permet d’agir à ta place, et parfois de te facturer.'],
-  'Dépendances': ['toi', 'Les failles publiées sont exploitées automatiquement par des robots.'],
-  Fenêtres: ['toi', 'Une page piégée pourrait agir sur l’ordinateur de tes utilisateurs.'],
-  Navigation: ['toi', 'Ton logiciel peut être détourné vers un site malveillant.'],
-  Construction: ['toi', 'Ton logiciel est plus facile à modifier ou inspire moins confiance.'],
-  Electron: ['toi', 'Les failles corrigées depuis dans Chromium restent ouvertes.'],
-  'Mises à jour': ['toi', 'Une fausse mise à jour pourrait être installée.'],
-  Réseau: ['toi', 'Les données de l’application peuvent être lues sur un Wi-Fi public.'],
-  Données: ['toi', 'Les données de l’application peuvent être copiées.'],
-  Permissions: ['toi', 'Les utilisateurs et le Play Store se méfient des applications trop gourmandes.'],
-  Composants: ['toi', 'D’autres applications du téléphone peuvent l’utiliser.'],
-  Signature: ['toi', 'Le Play Store refuse l’application, ou une fausse mise à jour devient possible.'],
+  'Bonnes pratiques': ['vous', 'Rien d’urgent, mais c’est un plus pour la confiance et le référencement.'],
+  Messagerie: ['messagerie', 'Des e-mails frauduleux peuvent être envoyés à votre nom à vos clients.'],
+  DNS: ['dns', 'Votre domaine peut être détourné plus facilement.'],
+  Domaine: ['registraire', 'Votre site et vos e-mails peuvent s’arrêter du jour au lendemain.'],
+  'Sous-domaines': ['dns', 'Quelqu’un peut publier des pages sous votre nom.'],
+  Pages: ['vous', 'Des visiteurs connectés peuvent être piégés ou leurs données exposées.'],
+  'Diagnostic exposé': ['vous', 'Des informations internes de votre application sont accessibles à tous.'],
+  Secrets: ['vous', 'Une clé volée permet d’agir à votre place, et parfois de vous facturer.'],
+  'Dépendances': ['vous', 'Les failles publiées sont exploitées automatiquement par des robots.'],
+  Fenêtres: ['vous', 'Une page piégée pourrait agir sur l’ordinateur de vos utilisateurs.'],
+  Navigation: ['vous', 'Votre logiciel peut être détourné vers un site malveillant.'],
+  Construction: ['vous', 'Votre logiciel est plus facile à modifier ou inspire moins confiance.'],
+  Electron: ['vous', 'Les failles corrigées depuis dans Chromium restent ouvertes.'],
+  'Mises à jour': ['vous', 'Une fausse mise à jour pourrait être installée.'],
+  Réseau: ['vous', 'Les données de l’application peuvent être lues sur un Wi-Fi public.'],
+  Données: ['vous', 'Les données de l’application peuvent être copiées.'],
+  Permissions: ['vous', 'Les utilisateurs et le Play Store se méfient des applications trop gourmandes.'],
+  Composants: ['vous', 'D’autres applications du téléphone peuvent l’utiliser.'],
+  Signature: ['vous', 'Le Play Store refuse l’application, ou une fausse mise à jour devient possible.'],
 };
-export const whoOf = (f) => f.who || (CAT[f.cat] || ['toi'])[0];
+export const whoOf = (f) => f.who || (CAT[f.cat] || ['vous'])[0];
 export const riskOf = (f) => (CAT[f.cat] || [null, ''])[1];
 
 export function grade(score) {

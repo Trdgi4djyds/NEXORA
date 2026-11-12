@@ -189,7 +189,7 @@ async function securityReport(req, env) {
 
 // ---------- Contrôle de licence ----------
 async function licenseCheck(req, env) {
-  if (!env.NX_LICENSE_SIGNING_KEY) return json(503, { error: "not_configured", message: "Le serveur de licences de NEXORA n’est pas encore configuré. Réessaie dans quelques minutes." })
+  if (!env.NX_LICENSE_SIGNING_KEY) return json(503, { error: "not_configured", message: "Le serveur de licences de NEXORA n’est pas encore configuré. Réessayez dans quelques minutes." })
   let a
   try { a = await req.json() } catch { return json(400, { error: "bad_request" }) }
   const token = bearer(req)
@@ -213,9 +213,9 @@ async function licenseCheck(req, env) {
     }
   }
   // Sans session (ou session expirée) : réponse signée « connexion requise », jamais une réponse non signée.
-  const body = !token ? { ok: false, reason: "auth", message: "Connecte-toi à ton compte NEXORA pour ouvrir le logiciel." }
-    : r.status === 401 || (r.body && /jwt/i.test(String(r.body.message || ""))) ? { ok: false, reason: "auth", message: "Ta session NEXORA a expiré : reconnecte-toi." }
-    : !r.ok ? { ok: false, reason: "server", message: "Le serveur de licences n’a pas pu vérifier ta licence. Réessaie dans un instant." }
+  const body = !token ? { ok: false, reason: "auth", message: "Connectez-vous à votre compte NEXORA pour ouvrir le logiciel." }
+    : r.status === 401 || (r.body && /jwt/i.test(String(r.body.message || ""))) ? { ok: false, reason: "auth", message: "Votre session NEXORA a expiré : reconnectez-vous." }
+    : !r.ok ? { ok: false, reason: "server", message: "Le serveur de licences n’a pas pu vérifier votre licence. Réessayez dans un instant." }
     : r.body
   const { publication } = await latestPublication()
   const payload = { ...body, publication, nonce: args.p_nonce, device: args.p_device, signed_at: new Date().toISOString(), country: req.cf && req.cf.country ? req.cf.country : "" }
@@ -251,30 +251,30 @@ async function saspay(env, method, path, body) {
   return b && b.success === true && b.data && typeof b.data === "object" ? b.data : b || {}
 }
 const payReady = (env) => Boolean(env.SASPAY_API_KEY && env.NX_PROBE_SECRET)
-const NOT_READY = "Le paiement en ligne arrive très bientôt. En attendant, écris à nexoradevstoolbox@gmail.com ou depuis Mon compte → Support : l’équipe NEXORA active ton offre Pro."
+const NOT_READY = "Le paiement en ligne arrive très bientôt. En attendant, écrivez à nexoradevstoolbox@gmail.com ou depuis Mon compte → Support : l’équipe NEXORA active votre offre Pro."
 export const decimal = (cents) => `${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`
 // Erreurs de SasPay traduites pour le client, sans détail interne (clé, compte).
 function payError(e) {
   if (!(e instanceof SasPayError)) throw e
-  if (e.status === 429) return new Response(JSON.stringify({ error: "busy", message: "Le service de paiement est très sollicité : réessaie dans une minute." }), { status: 503, headers: { "content-type": "application/json", "cache-control": "no-store", "retry-after": "60" } })
+  if (e.status === 429) return new Response(JSON.stringify({ error: "busy", message: "Le service de paiement est très sollicité : réessayez dans une minute." }), { status: 503, headers: { "content-type": "application/json", "cache-control": "no-store", "retry-after": "60" } })
   // 401 : clé absente, invalide ou expirée ; 403 : compte suspendu, portée de la clé : à corriger par l'équipe, ne pas réessayer.
-  if (e.status === 401 || e.status === 403) return json(503, { error: "not_configured", message: "Le paiement en ligne est momentanément indisponible. Écris à nexoradevstoolbox@gmail.com : l’équipe NEXORA active ton offre Pro." })
-  if (e.status === 404 || e.status === 410) return json(404, { error: "not_found", message: "Ce paiement est introuvable ou a expiré : relance un nouveau paiement." })
-  if (e.status === 409) return json(409, { error: "conflict", message: "Ce paiement est déjà en cours de traitement : patiente quelques secondes, puis actualise la page." })
-  if (e.status === 400 || e.status === 422) return json(422, { error: "refused", message: "Le service de paiement a refusé la demande. Réessaie, ou écris à l’équipe NEXORA si le problème continue." })
-  return json(502, { error: "provider", message: "Le service de paiement n’a pas répondu. Réessaie dans un instant." })
+  if (e.status === 401 || e.status === 403) return json(503, { error: "not_configured", message: "Le paiement en ligne est momentanément indisponible. Écrivez à nexoradevstoolbox@gmail.com : l’équipe NEXORA active votre offre Pro." })
+  if (e.status === 404 || e.status === 410) return json(404, { error: "not_found", message: "Ce paiement est introuvable ou a expiré : relancez un nouveau paiement." })
+  if (e.status === 409) return json(409, { error: "conflict", message: "Ce paiement est déjà en cours de traitement : patientez quelques secondes, puis actualisez la page." })
+  if (e.status === 400 || e.status === 422) return json(422, { error: "refused", message: "Le service de paiement a refusé la demande. Réessayez, ou écrivez à l’équipe NEXORA si le problème continue." })
+  return json(502, { error: "provider", message: "Le service de paiement n’a pas répondu. Réessayez dans un instant." })
 }
 const REFERRAL_REFUSED = {
   unknown: "Ce code de parrainage n’existe pas ou n’est plus actif.",
-  self: "Tu ne peux pas utiliser ton propre code de parrainage.",
+  self: "Vous ne pouvez pas utiliser votre propre code de parrainage.",
   customer: "Le parrainage s’applique à un premier abonnement Pro.",
 }
 async function checkout(req, env) {
   if (!payReady(env)) return json(503, { error: "not_configured", message: NOT_READY })
   const token = bearer(req)
   const user = await userOf(token)
-  if (!user) return json(401, { error: "auth", message: "Connecte-toi d’abord à ton compte NEXORA." })
-  if (!user.email) return json(400, { error: "email", message: "Ajoute une adresse e-mail à ton compte NEXORA pour payer en ligne." })
+  if (!user) return json(401, { error: "auth", message: "Connectez-vous d’abord à votre compte NEXORA." })
+  if (!user.email) return json(400, { error: "email", message: "Ajoutez une adresse e-mail à votre compte NEXORA pour payer en ligne." })
   const a = await req.json().catch(() => ({}))
   const period = a.period === "year" ? "year" : "month"
   // #090 : code ou lien d'un parrain, rattaché au compte avant le paiement (refus expliqué : code inconnu, le sien…).
@@ -287,7 +287,7 @@ async function checkout(req, env) {
   const mine = await rpc("nx_referral_mine", {}, token)
   const m = mine.ok && mine.body && typeof mine.body === "object" ? mine.body : null
   const cents = m ? Number(m.referred ? m[`${period}_cents`] : m[`list_${period}_cents`]) : NaN
-  if (!Number.isInteger(cents) || cents <= 0) return json(502, { error: "server", message: "Le prix de Pro n’a pas pu être lu. Réessaie dans un instant." })
+  if (!Number.isInteger(cents) || cents <= 0) return json(502, { error: "server", message: "Le prix de Pro n’a pas pu être lu. Réessayez dans un instant." })
   const referral = m.referred ? String(m.code || "") : ""
   const ref = crypto.randomUUID()
   const meta = user.user_metadata || {}
@@ -304,7 +304,7 @@ async function checkout(req, env) {
   } catch (e) {
     return payError(e)
   }
-  if (!s.id || !s.checkout_url) return json(502, { error: "provider", message: "Le service de paiement n’a pas renvoyé de page de paiement. Réessaie dans un instant." })
+  if (!s.id || !s.checkout_url) return json(502, { error: "provider", message: "Le service de paiement n’a pas renvoyé de page de paiement. Réessayez dans un instant." })
   const saved = await rpc("nx_pay_session_open", {
     p_secret: env.NX_PROBE_SECRET, p_id: String(s.id), p_ref: ref, p_user: user.id, p_period: period, p_amount: cents, p_currency: "usd",
     p_referral: referral || null, p_url: String(s.checkout_url),
@@ -312,7 +312,7 @@ async function checkout(req, env) {
   if (!saved.ok || !saved.body || saved.body.ok === false) {
     // Session impossible à rattacher au compte : annulée plutôt que d'encaisser un paiement sans Pro.
     await saspay(env, "POST", `/checkout-sessions/${encodeURIComponent(s.id)}/cancel/`).catch(() => null)
-    return json(502, { error: "server", message: "Le paiement n’a pas pu être préparé. Réessaie dans un instant." })
+    return json(502, { error: "server", message: "Le paiement n’a pas pu être préparé. Réessayez dans un instant." })
   }
   return json(200, { url: s.checkout_url, ref })
 }
@@ -346,7 +346,7 @@ async function sessionTransaction(env, id) {
 async function confirm(req, env) {
   if (!payReady(env)) return json(503, { error: "not_configured", message: NOT_READY })
   const user = await userOf(bearer(req))
-  if (!user) return json(401, { error: "auth", message: "Connecte-toi d’abord à ton compte NEXORA." })
+  if (!user) return json(401, { error: "auth", message: "Connectez-vous d’abord à votre compte NEXORA." })
   const a = await req.json().catch(() => ({}))
   const ref = String(a.ref || "")
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref)) return json(400, { error: "bad_request" })

@@ -57,7 +57,7 @@ func runInstaller(e installEnv) error {
 		if err := e.selfInstall(l); err != nil {
 			journal(l, "install", err.Error())
 			wz.Page(wizPage{step: 1, steps: installSteps, tone: "danger", icon: "circleX", title: "Installation impossible",
-				body:    "NEXORA Devs Toolbox n’a pas pu être copié dans son dossier. Ferme NEXORA s’il est ouvert, puis relance l’installation.",
+				body:    "NEXORA Devs Toolbox n’a pas pu être copié dans son dossier. Fermez NEXORA s’il est ouvert, puis relancez l’installation.",
 				buttons: []uiButton{{"quit", "Fermer", "primary"}}, cancel: "quit"})
 			return errCancelled
 		}
@@ -145,7 +145,7 @@ func runUninstaller(e uninstallEnv) error {
 	p.Set(1, "Terminé")
 	msg := "NEXORA Devs Toolbox a été retiré de ce PC."
 	if !ch.Documents || !ch.Settings || !ch.Library {
-		msg += " Ce que tu as choisi de garder est resté en place ; une réinstallation le retrouvera."
+		msg += " Ce que vous avez choisi de garder est resté en place ; une réinstallation le retrouvera."
 	}
 	if len(failed) > 0 {
 		msg += "\n\nCertains dossiers n’ont pas pu être supprimés :\n" + strings.Join(failed, "\n")

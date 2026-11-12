@@ -43,7 +43,7 @@ const LOCKED_PREFIXES = ['android:', 'lab:', 'dev:', 'git:', 'gh:', 'tunnel:', '
 const OPEN_CHANNELS = new Set(['mon:cloud-session']);
 
 let opts = null;
-let state = { status: 'checking', message: 'Vérification de ta licence…', at: 0 };
+let state = { status: 'checking', message: 'Vérification de votre licence…', at: 0 };
 let session = null; // { token, email } transmis par l'interface (canal mon:cloud-session)
 let timer = null;
 let pingTimer = null;
@@ -115,7 +115,7 @@ function verifySigned(res, nonce, dev) {
   return p;
 }
 
-const OFFLINE = 'Connexion perdue : NEXORA ne peut pas joindre son serveur de sécurité. Vérifie ta connexion à Internet ; NEXORA se rouvre dès que la connexion est rétablie et le contrôle validé.';
+const OFFLINE = 'Connexion perdue : NEXORA ne peut pas joindre son serveur de sécurité. Vérifiez votre connexion à Internet ; NEXORA se rouvre dès que la connexion est rétablie et le contrôle validé.';
 let checking = null;
 function check(reason = 'contrôle') {
   if (!checking) checking = runCheck(reason).finally(() => { checking = null; });
@@ -133,7 +133,7 @@ async function runCheck(reason) {
   const lockIntegrity = () => set({ status: integrityStatus(integ), reason: integ.reason, message: integ.message, file: integ.file || '' });
   if (!session || !session.token) {
     if (!integ.ok) { lockIntegrity(); return publicState(); }
-    set({ status: 'auth', reason: 'auth', message: 'Connecte-toi à ton compte NEXORA pour ouvrir le logiciel.' });
+    set({ status: 'auth', reason: 'auth', message: 'Connectez-vous à votre compte NEXORA pour ouvrir le logiciel.' });
     return publicState();
   }
   const dev = await deviceInfo();
@@ -151,7 +151,7 @@ async function runCheck(reason) {
       const j = await r.json().catch(() => ({}));
       fails += 1;
       if (!integ.ok) { lockIntegrity(); return publicState(); }
-      set({ status: 'server', reason: 'not_configured', message: j.message || 'Le serveur de sécurité de NEXORA est indisponible. Réessaie dans quelques minutes.' });
+      set({ status: 'server', reason: 'not_configured', message: j.message || 'Le serveur de sécurité de NEXORA est indisponible. Réessayez dans quelques minutes.' });
       return publicState();
     }
     res = await r.json();
@@ -166,7 +166,7 @@ async function runCheck(reason) {
   if (!p) {
     fails += 1;
     techLog('securite', 'Réponse du serveur de sécurité non authentique');
-    set({ status: 'blocked', reason: 'signature', message: 'La réponse du serveur de sécurité n’est pas authentique. Vérifie ta connexion (proxy, pare-feu), puis réessaie.' });
+    set({ status: 'blocked', reason: 'signature', message: 'La réponse du serveur de sécurité n’est pas authentique. Vérifiez votre connexion (proxy, pare-feu), puis réessayez.' });
     return publicState();
   }
   fails = 0;
@@ -311,7 +311,7 @@ function allowed(channel) {
   return !LOCKED_PREFIXES.some((p) => channel.startsWith(p));
 }
 function lockedError() {
-  return new Error(state.status === 'offline' ? 'Connexion perdue : NEXORA a besoin d’Internet pour vérifier ta licence.' : ['integrity', 'manifest'].includes(state.status) ? 'Échec du contrôle d’intégrité — Installation non authentifiée.' : state.status === 'outdated' ? 'Version non autorisée : mets NEXORA à jour.' : state.status === 'auth' ? 'Connecte-toi à ton compte NEXORA pour utiliser le logiciel.' : 'NEXORA est verrouillé tant que ta licence n’est pas validée.');
+  return new Error(state.status === 'offline' ? 'Connexion perdue : NEXORA a besoin d’Internet pour vérifier votre licence.' : ['integrity', 'manifest'].includes(state.status) ? 'Échec du contrôle d’intégrité — Installation non authentifiée.' : state.status === 'outdated' ? 'Version non autorisée : mettez NEXORA à jour.' : state.status === 'auth' ? 'Connectez-vous à votre compte NEXORA pour utiliser le logiciel.' : 'NEXORA est verrouillé tant que votre licence n’est pas validée.');
 }
 
 function setSession(c) {
@@ -321,7 +321,7 @@ function setSession(c) {
   const otherUser = !next || !session || user(next.token) !== user(session.token);
   session = next;
   if (!opts) return;
-  if (!next) { if (state.session_id) ping(true); set({ status: 'auth', reason: 'auth', message: 'Connecte-toi à ton compte NEXORA pour ouvrir le logiciel.', session_id: null, plan: null }); return; }
+  if (!next) { if (state.session_id) ping(true); set({ status: 'auth', reason: 'auth', message: 'Connectez-vous à votre compte NEXORA pour ouvrir le logiciel.', session_id: null, plan: null }); return; }
   if (changed && (otherUser || state.status !== 'ok')) check('connexion');
 }
 

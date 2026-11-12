@@ -29,7 +29,7 @@ function tiles(rec) {
 
 export async function render(inst, host) {
   host.innerHTML = `<div class="nxs">
-    <form class="sec-bar nxs-bar" data-dom-form><span class="sec-ico">${icon('globe', 15)}</span><input class="input" data-dom placeholder="ton-domaine.com" spellcheck="false" value="${esc(state.host || hostOf(inst.siteUrl()) || '')}"><button class="btn primary">${icon('search', 14)}<span>Analyser le domaine</span></button></form>
+    <form class="sec-bar nxs-bar" data-dom-form><span class="sec-ico">${icon('globe', 15)}</span><input class="input" data-dom placeholder="votre-domaine.com" spellcheck="false" value="${esc(state.host || hostOf(inst.siteUrl()) || '')}"><button class="btn primary">${icon('search', 14)}<span>Analyser le domaine</span></button></form>
     <div data-dom-out></div>
   </div>`;
   const out = host.querySelector('[data-dom-out]');
@@ -45,19 +45,19 @@ export async function render(inst, host) {
 }
 
 function empty(out) {
-  out.innerHTML = `<div class="sec-empty">${icon('mail', 34)}<b>Protège ton nom de domaine et tes e-mails</b>
-    <p>Sans SPF ni DMARC, n’importe qui peut envoyer des e-mails « de ta part » à tes clients. NEXORA vérifie aussi la date d’expiration de ton domaine et repère les sous-domaines oubliés qu’un inconnu pourrait reprendre.</p>
+  out.innerHTML = `<div class="sec-empty">${icon('mail', 34)}<b>Protégez votre nom de domaine et vos e-mails</b>
+    <p>Sans SPF ni DMARC, n’importe qui peut envoyer des e-mails « de votre part » à vos clients. NEXORA vérifie aussi la date d’expiration de votre domaine et repère les sous-domaines oubliés qu’un inconnu pourrait reprendre.</p>
     <div class="sec-chips">${['SPF', 'DMARC', 'DKIM', 'DNSSEC', 'CAA', 'Expiration du domaine', 'Sous-domaines orphelins', 'security.txt'].map((s) => `<span>${esc(s)}</span>`).join('')}</div></div>`;
 }
 
 async function run(host, out) {
   const input = host.querySelector('[data-dom]');
   const v = String(input.value || '').trim();
-  if (!v) { toast('Indique ton nom de domaine.', { kind: 'bad' }); return; }
+  if (!v) { toast('Indiquez votre nom de domaine.', { kind: 'bad' }); return; }
   state.host = v;
   out.innerHTML = progressHtml('Lecture des enregistrements DNS…');
   const off = followJob(out, 'domain');
-  try { state.report = await call('sec:domain', { host: v }); draw(out); } catch (err) { out.innerHTML = `<div class="sec-empty"><b class="bad">${esc(err.message)}</b><p>Vérifie l’orthographe du domaine et ta connexion à Internet.</p></div>`; } finally { off(); }
+  try { state.report = await call('sec:domain', { host: v }); draw(out); } catch (err) { out.innerHTML = `<div class="sec-empty"><b class="bad">${esc(err.message)}</b><p>Vérifiez l’orthographe du domaine et votre connexion à Internet.</p></div>`; } finally { off(); }
 }
 
 async function draw(out) {

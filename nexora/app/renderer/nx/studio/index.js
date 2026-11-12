@@ -61,7 +61,7 @@ function sceneCards(S) {
   h += montageCard(S);
   const mine = W.myPresets();
   h += `<section class="st-card nx-st-card" data-nxcard="presets">${head(`${icon('star', 13)} Mes mises en scène`)}
-    ${mine.length ? `<div class="nx-st-presets">${mine.map((p) => `<div class="nx-st-preset"><button class="nx-st-preset-go" data-nxa="preset-apply" data-id="${esc(p.id)}" title="Appliquer « ${esc(p.name)} »">${p.thumb ? `<img src="${esc(p.thumb)}" alt="">` : `<span class="nx-st-preset-ph">${icon('cube', 16)}</span>`}<span>${esc(p.name)}</span></button><button class="nx-st-preset-del" data-nxa="preset-del" data-id="${esc(p.id)}" title="Supprimer « ${esc(p.name)} »" aria-label="Supprimer « ${esc(p.name)} »">${icon('trash', 13)}</button></div>`).join('')}</div>` : '<p class="nx-st-note">Enregistre la scène actuelle (objets, lumières, rendu, animation) pour la réutiliser dans une autre scène.</p>'}
+    ${mine.length ? `<div class="nx-st-presets">${mine.map((p) => `<div class="nx-st-preset"><button class="nx-st-preset-go" data-nxa="preset-apply" data-id="${esc(p.id)}" title="Appliquer « ${esc(p.name)} »">${p.thumb ? `<img src="${esc(p.thumb)}" alt="">` : `<span class="nx-st-preset-ph">${icon('cube', 16)}</span>`}<span>${esc(p.name)}</span></button><button class="nx-st-preset-del" data-nxa="preset-del" data-id="${esc(p.id)}" title="Supprimer « ${esc(p.name)} »" aria-label="Supprimer « ${esc(p.name)} »">${icon('trash', 13)}</button></div>`).join('')}</div>` : '<p class="nx-st-note">Enregistrez la scène actuelle (objets, lumières, rendu, animation) pour la réutiliser dans une autre scène.</p>'}
     <div class="st-btns">${btn('preset-save', 'Enregistrer cette mise en scène', 'plus')}</div>
   </section>`;
   return h;
@@ -113,7 +113,7 @@ function montageCard(S) {
   const m = A.musicBuffer(S);
   h += field('Rythme de la musique', m
     ? `${S.anim.nxBpm ? `<p class="nx-st-note">${S.anim.nxBpm} battements par minute · ${(S.anim.nxBeats || []).length} temps dans la vidéo.</p>` : ''}<div class="st-btns">${btn('beats', S.anim.nxBpm ? 'Analyser à nouveau' : 'Détecter le rythme', 'nxBeat')}${S.anim.nxBeats && S.anim.nxBeats.length ? btn('beats-snap', 'Caler les clés sur les temps', 'keyframe') + btn('beats-cut', 'Flash sur chaque mesure', 'nxTransition') : ''}</div>`
-    : '<p class="nx-st-note">Ajoute une musique (carte « Musique des vidéos ») pour caler l’animation sur son rythme.</p>');
+    : '<p class="nx-st-note">Ajoutez une musique (carte « Musique des vidéos ») pour caler l’animation sur son rythme.</p>');
   return h + '</section>';
 }
 function animCard(S, ids) {
@@ -127,7 +127,7 @@ function animCard(S, ids) {
 }
 function combineCard(S, ids) {
   return `<section class="st-card nx-st-card" data-nxcard="combiner">${head(`${icon('nxCombine', 13)} Combiner les deux formes`)}
-    <p class="nx-st-note">Crée un nouvel objet à partir des deux formes sélectionnées. Les originaux sont masqués, pas supprimés.</p>
+    <p class="nx-st-note">Créez un nouvel objet à partir des deux formes sélectionnées. Les originaux sont masqués, pas supprimés.</p>
     <div class="st-btns">${Object.entries(M.BOOLS).map(([op, l]) => btn(`combine-${op}`, l.split(' (')[0], 'nxCombine')).join('')}</div>
   </section>`;
 }

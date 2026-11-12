@@ -154,7 +154,7 @@ export function App() {
               </i>
               <span>
                 <b>{openTickets ? `${openTickets} ticket${openTickets > 1 ? "s" : ""} à traiter` : "Support à jour"}</b>
-                <small>{openTickets ? "Réponds depuis Support." : "Aucun ticket en attente."}</small>
+                <small>{openTickets ? "Répondez depuis Support." : "Aucun ticket en attente."}</small>
               </span>
               <i className="go-chip" aria-hidden="true">
                 <Icon name="chevronRight" size={14} />

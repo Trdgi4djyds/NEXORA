@@ -68,7 +68,7 @@ export function Plans() {
               {!migrated && (
                 <div className="banner">
                   <Icon name="warn" size={16} />
-                  <span className="grow">Les offres du #037 ne sont pas encore sur Supabase : applique les migrations <code>20261104000007_offres_limites.sql</code> à <code>20261108000002_licences_offres.sql</code> (section Supabase → Tout appliquer). Les panneaux ci-dessous montrent les offres prévues.</span>
+                  <span className="grow">Les offres du #037 ne sont pas encore sur Supabase : appliquez les migrations <code>20261104000007_offres_limites.sql</code> à <code>20261108000002_licences_offres.sql</code> (section Supabase → Tout appliquer). Les panneaux ci-dessous montrent les offres prévues.</span>
                   <button className="btn sm" onClick={() => go("supabase")}>Ouvrir Supabase</button>
                 </div>
               )}
@@ -145,7 +145,7 @@ function PlanPanel({ plan, subscribers, editable, onSaved, compact = false }: { 
         <div className="row">
           <Tag tone={p.active ? "ok" : ""}>{p.active ? "Proposée" : "Retirée"}</Tag>
           <span className="grow" />
-          <button className="btn sm" disabled={!editable} title={editable ? undefined : "Applique d’abord la migration des offres"} onClick={() => setOpen(!open)}>
+          <button className="btn sm" disabled={!editable} title={editable ? undefined : "Appliquez d’abord la migration des offres"} onClick={() => setOpen(!open)}>
             <Icon name={open ? "close" : "pencil"} size={12} /> {open ? "Fermer" : "Modifier"}
           </button>
         </div>

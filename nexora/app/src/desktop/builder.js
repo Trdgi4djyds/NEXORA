@@ -92,15 +92,15 @@ function explain(tail, fallback) {
   // Les lignes d'erreur passent avant le reste (« no code signing certificate configured » n'est pas une erreur).
   const errors = tail.filter((l) => /⨯|error|erreur|failed|échec|ERR!/i.test(l) && !/signing is skipped/i.test(l));
   const text = (errors.length ? errors : tail).join('\n');
-  if (/ENOSPC|not enough space|espace insuffisant/i.test(text)) return 'Le disque est plein : libère au moins 2 Go, puis relance la construction.';
+  if (/ENOSPC|not enough space|espace insuffisant/i.test(text)) return 'Le disque est plein : libérez au moins 2 Go, puis relancez la construction.';
   if (/EBUSY|EPERM|resource busy|being used by another process|utilisé par un autre processus/i.test(text)) {
-    return 'Un fichier est utilisé par un autre programme : ferme le logiciel s’il est ouvert (test ou ancienne version), l’explorateur ouvert sur son dossier, puis relance. Si cela continue, ton antivirus analyse peut-être les fichiers : réessaie dans une minute.';
+    return 'Un fichier est utilisé par un autre programme : fermez le logiciel s’il est ouvert (test ou ancienne version), l’explorateur ouvert sur son dossier, puis relancez. Si cela continue, votre antivirus analyse peut-être les fichiers : réessayez dans une minute.';
   }
-  if (/\b429\b|Too Many Requests/i.test(text)) return 'Le serveur de téléchargement limite les demandes pour le moment : réessaie dans quelques minutes.';
-  if (/ETIMEDOUT|ECONNRESET|ENOTFOUND|EAI_AGAIN|getaddrinfo|socket hang up|network|ECONNREFUSED/i.test(text)) return 'Problème de connexion pendant un téléchargement : vérifie ta connexion à Internet (ou ton proxy), puis relance la construction.';
-  if (/signtool|Cannot sign|sign(ing)? failed|certificate (password|is invalid|not found)|password is incorrect|invalid password/i.test(text)) return 'La signature a échoué : vérifie le certificat (.pfx) et son mot de passe dans la section Signature.';
-  if (/Cannot find module|MODULE_NOT_FOUND/i.test(text)) return 'Un module de construction est introuvable : vide le cache de construction (section Construction), puis relance.';
-  if (/7za process failed|Exit code: null|^Killed$|\bKilled\b/im.test(text)) return 'La construction s’est arrêtée (mémoire insuffisante ou antivirus). Ferme les programmes lourds, puis relance ; tu peux aussi choisir la compression « rapide » dans la section Installation.';
+  if (/\b429\b|Too Many Requests/i.test(text)) return 'Le serveur de téléchargement limite les demandes pour le moment : réessayez dans quelques minutes.';
+  if (/ETIMEDOUT|ECONNRESET|ENOTFOUND|EAI_AGAIN|getaddrinfo|socket hang up|network|ECONNREFUSED/i.test(text)) return 'Problème de connexion pendant un téléchargement : vérifiez votre connexion à Internet (ou votre proxy), puis relancez la construction.';
+  if (/signtool|Cannot sign|sign(ing)? failed|certificate (password|is invalid|not found)|password is incorrect|invalid password/i.test(text)) return 'La signature a échoué : vérifiez le certificat (.pfx) et son mot de passe dans la section Signature.';
+  if (/Cannot find module|MODULE_NOT_FOUND/i.test(text)) return 'Un module de construction est introuvable : videz le cache de construction (section Construction), puis relancez.';
+  if (/7za process failed|Exit code: null|^Killed$|\bKilled\b/im.test(text)) return 'La construction s’est arrêtée (mémoire insuffisante ou antivirus). Fermez les programmes lourds, puis relancez ; vous pouvez aussi choisir la compression « rapide » dans la section Installation.';
   // Première ligne « ⨯ » d'electron-builder, avec sa précision éventuelle (« - configuration has… »).
   const idx = tail.findIndex((l) => /^\s*⨯/.test(l));
   if (idx >= 0) {
@@ -234,7 +234,7 @@ class DesktopBuilder extends EventEmitter {
     const have = await sdk.checkSdk('node', { fresh: true }).catch(() => ({ ok: false }));
     if (have.ok && major(have.version) >= MIN_NODE) { this.log(`Node.js ${have.version} présent.`); return have.version; }
     const tools = toolsMod.shared();
-    if (!IS_WIN || !tools) throw new Error(`Node.js ${MIN_NODE} ou plus récent est nécessaire pour construire le logiciel : installe-le depuis https://nodejs.org, puis relance.`);
+    if (!IS_WIN || !tools) throw new Error(`Node.js ${MIN_NODE} ou plus récent est nécessaire pour construire le logiciel : installez-le depuis https://nodejs.org, puis relancez.`);
     this.step('tools', have.ok ? `Mise à jour de Node.js (${have.version} est trop ancien)` : 'Installation de Node.js (≈ 35 Mo, une seule fois)', from);
     const onProgress = (p) => {
       if (p.id !== 'node') return;
@@ -247,7 +247,7 @@ class DesktopBuilder extends EventEmitter {
       if (!r.ok) throw new Error(r.cancelled ? 'Construction annulée.' : `Node.js n’a pas pu être installé : ${r.message}`);
     } finally { tools.removeListener('progress', onProgress); }
     const now = await sdk.checkSdk('node', { fresh: true });
-    if (!now.ok) throw new Error('Node.js est installé mais ne répond pas. Redémarre NEXORA, puis relance la construction.');
+    if (!now.ok) throw new Error('Node.js est installé mais ne répond pas. Redémarrez NEXORA, puis relancez la construction.');
     return now.version;
   }
   async ensureKit(from) {
@@ -258,7 +258,7 @@ class DesktopBuilder extends EventEmitter {
       name: 'nexora-desktop-kit', private: true, description: 'Kit de construction des logiciels de bureau de NEXORA', dependencies: { 'electron-builder': project.BUILDER_VERSION },
     }, null, 2));
     await this.cmd('npm install --no-fund --no-audit --no-progress --loglevel=error', 'Installation du kit de construction', { cwd: this.kitDir, timeout: 25 * 60000 });
-    if (this.kitVersion() !== project.BUILDER_VERSION) throw new Error('Le kit de construction ne s’est pas installé correctement. Vérifie ta connexion, puis relance.');
+    if (this.kitVersion() !== project.BUILDER_VERSION) throw new Error('Le kit de construction ne s’est pas installé correctement. Vérifiez votre connexion, puis relancez.');
   }
 
   // ------------------------------------------------------------ 2. moteur Electron
@@ -278,7 +278,7 @@ class DesktopBuilder extends EventEmitter {
     })[0];
     if (cached || own) this.log(`Version d’Electron utilisée : ${cached || own} (hors connexion).`);
     if (cached || own) return cached || own;
-    throw new Error('Impossible de connaître la version d’Electron à utiliser : vérifie ta connexion.');
+    throw new Error('Impossible de connaître la version d’Electron à utiliser : vérifiez votre connexion.');
   }
   async electronSha(version, file) {
     try {
@@ -292,7 +292,7 @@ class DesktopBuilder extends EventEmitter {
     const res = await this.fetchSigned(`https://cdn.jsdelivr.net/npm/electron@${version}/checksums.json`, { headers: { 'User-Agent': 'NEXORA' } });
     const sums = res.ok ? await res.json() : null;
     if (sums && /^[0-9a-f]{64}$/.test(sums[file] || '')) return sums[file];
-    throw new Error('Empreinte de sécurité d’Electron introuvable : vérifie ta connexion, puis relance.');
+    throw new Error('Empreinte de sécurité d’Electron introuvable : vérifiez votre connexion, puis relancez.');
   }
   async ensureElectron(version, archs, from, to) {
     fs.mkdirSync(this.electronDir, { recursive: true });
@@ -377,7 +377,7 @@ class DesktopBuilder extends EventEmitter {
         return abs;
       }
     }
-    throw new Error(`Aucun fichier index.html dans « ${c.source.webDir || 'le dossier choisi'} »${c.source.build ? ' après la construction' : ''}. Vérifie le dossier du site dans la section Source.`);
+    throw new Error(`Aucun fichier index.html dans « ${c.source.webDir || 'le dossier choisi'} »${c.source.build ? ' après la construction' : ''}. Vérifiez le dossier du site dans la section Source.`);
   }
 
   // ------------------------------------------------------------ 5. emballage
@@ -460,7 +460,7 @@ class DesktopBuilder extends EventEmitter {
   }
   async saveCert(appId, file, password) {
     if (!this.crypt) throw new Error('Le trousseau sécurisé de Windows n’est pas disponible : le mot de passe du certificat ne peut pas être protégé.');
-    if (!file || !/\.(pfx|p12)$/i.test(file) || !fs.existsSync(file)) throw new Error('Choisis un certificat au format .pfx ou .p12.');
+    if (!file || !/\.(pfx|p12)$/i.test(file) || !fs.existsSync(file)) throw new Error('Choisissez un certificat au format .pfx ou .p12.');
     if (fs.statSync(file).size > 1e6) throw new Error('Ce fichier est trop gros pour un certificat.');
     fs.mkdirSync(this.certsDir, { recursive: true });
     fs.copyFileSync(file, this.certFile(appId));
@@ -475,7 +475,7 @@ class DesktopBuilder extends EventEmitter {
   }
   async certEnv(appId) {
     const info = this.certInfo(appId);
-    if (!info.ok) throw new Error('Signature activée, mais aucun certificat n’est enregistré : ajoute-le dans la section Signature, ou désactive la signature.');
+    if (!info.ok) throw new Error('Signature activée, mais aucun certificat n’est enregistré : ajoutez-le dans la section Signature, ou désactivez la signature.');
     const m = JSON.parse(fs.readFileSync(this.certMeta(appId), 'utf8'));
     const password = m.password ? await this.crypt.decrypt(m.password) : '';
     return { CSC_LINK: this.certFile(appId), CSC_KEY_PASSWORD: password };
@@ -490,7 +490,7 @@ class DesktopBuilder extends EventEmitter {
     if (!this.crypt) throw new Error('Le trousseau sécurisé de Windows n’est pas disponible : le secret ne peut pas être protégé.');
     const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!GUID.test(String(tenant || '')) || !GUID.test(String(client || ''))) throw new Error('L’identifiant du locataire (tenant) et celui de l’application (client) ont la forme 00000000-0000-0000-0000-000000000000.');
-    if (String(secret || '').length < 8) throw new Error('Colle le secret client de l’application Azure.');
+    if (String(secret || '').length < 8) throw new Error('Collez le secret client de l’application Azure.');
     fs.mkdirSync(this.certsDir, { recursive: true });
     fs.writeFileSync(this.azureMeta(appId), JSON.stringify({ tenant, client, secret: await this.crypt.encrypt(String(secret)), at: new Date().toISOString() }, null, 2), { mode: 0o600 });
     return this.azureInfo(appId);
@@ -498,7 +498,7 @@ class DesktopBuilder extends EventEmitter {
   removeAzure(appId) { fs.rmSync(this.azureMeta(appId), { force: true }); return { ok: false }; }
   async azureEnv(appId) {
     const info = this.azureInfo(appId);
-    if (!info.ok) throw new Error('Signature dans le cloud activée, mais les identifiants Azure ne sont pas enregistrés : ajoute-les dans la section Signature.');
+    if (!info.ok) throw new Error('Signature dans le cloud activée, mais les identifiants Azure ne sont pas enregistrés : ajoutez-les dans la section Signature.');
     const m = JSON.parse(fs.readFileSync(this.azureMeta(appId), 'utf8'));
     return { AZURE_TENANT_ID: m.tenant, AZURE_CLIENT_ID: m.client, AZURE_CLIENT_SECRET: await this.crypt.decrypt(m.secret) };
   }
@@ -696,9 +696,9 @@ class DesktopBuilder extends EventEmitter {
 
   /** Code source du logiciel écrit dans un dossier choisi, sans construction (pour le modifier ou le publier). */
   async exportProject({ app: raw, assets = {} } = {}, destRoot) {
-    if (this.busy) throw new Error('Une construction est en cours : attends sa fin pour exporter le projet.');
+    if (this.busy) throw new Error('Une construction est en cours : attendez sa fin pour exporter le projet.');
     const c = project.sanitize(raw);
-    if (c.source.kind === 'electron') throw new Error('Un projet Electron existant est déjà ton code source : rien à exporter.');
+    if (c.source.kind === 'electron') throw new Error('Un projet Electron existant est déjà votre code source : rien à exporter.');
     let dest = path.join(destRoot, c.slug);
     for (let n = 2; fs.existsSync(dest) && n < 100; n++) dest = path.join(destRoot, `${c.slug}-${n}`);
     this.abort = new AbortController();

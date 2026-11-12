@@ -67,7 +67,7 @@ final class Config {
     boolean fileUpload = true;
     boolean offlinePage = true;
     String offlineTitle = "Pas de connexion";
-    String offlineText = "Vérifie ta connexion Internet, puis réessaie.";
+    String offlineText = "Vérifiez votre connexion Internet, puis réessayez.";
     String offlineButton = "Réessayer";
     final List<Tab> tabs = new ArrayList<>();
     int tabBg = Color.WHITE;

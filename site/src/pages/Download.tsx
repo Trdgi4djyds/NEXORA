@@ -13,15 +13,15 @@ import { useRemote } from "../lib/remote"
 
 // #076 : NEXORA Devs Toolbox s'installe par un lanceur léger qui télécharge, vérifie et met à jour l'application.
 const STEPS: [string, string, string][] = [
-  ["download", "Télécharge le lanceur", "NEXORA Devs Toolbox : un petit programme de quelques mégaoctets."],
-  ["shield", "Lance-le", "Il télécharge NEXORA, vérifie sa signature et l’installe, sans droits d’administrateur."],
-  ["key", "Connecte-toi", "Ta licence gratuite s’active : ton premier jour est un essai complet de Pro."],
+  ["download", "Téléchargez le lanceur", "NEXORA Devs Toolbox : un petit programme de quelques mégaoctets."],
+  ["shield", "Lancez-le", "Il télécharge NEXORA, vérifie sa signature et l’installe, sans droits d’administrateur."],
+  ["key", "Connectez-vous", "Votre licence gratuite s’active : votre premier jour est un essai complet de Pro."],
 ]
 const REQUIREMENTS: [string, string][] = [
   ["Système", "Windows 10 ou Windows 11, 64 bits"],
   ["Mémoire", "8 Go conseillés pour le Studio 3D et les constructions"],
-  ["Espace disque", "Environ 450 Mo, plus tes projets et ta bibliothèque"],
-  ["Internet", "Obligatoire au démarrage : ta licence est vérifiée par nos serveurs"],
+  ["Espace disque", "Environ 450 Mo, plus vos projets et votre bibliothèque"],
+  ["Internet", "Obligatoire au démarrage : votre licence est vérifiée par nos serveurs"],
 ]
 const WEB_FAQ = FAQ.filter((f) => /ordinateurs|mises à jour|sécurité/.test(f.q))
 
@@ -37,8 +37,8 @@ export function Download() {
           title={["NEXORA Devs Toolbox,", downloadUrl || !ready ? "prêt en trois clics." : "bientôt disponible."]}
           lead={
             downloadUrl || !ready
-              ? "Un lanceur léger installe NEXORA, vérifie chaque fichier et le tient à jour. Tes réglages, tes projets et ton compte sont gardés d’une version à l’autre."
-              : "Le lanceur pour Windows n’est pas encore publié. Crée dès maintenant ton compte et ta licence gratuite : ils t’attendront au premier démarrage."
+              ? "Un lanceur léger installe NEXORA, vérifie chaque fichier et le tient à jour. Vos réglages, vos projets et votre compte sont gardés d’une version à l’autre."
+              : "Le lanceur pour Windows n’est pas encore publié. Créez dès maintenant votre compte et votre licence gratuite : ils vous attendront au premier démarrage."
           }
           className="mb-10 md:mb-12"
         />
@@ -84,7 +84,7 @@ export function Download() {
           </div>
           {!downloadUrl && ready && (
             <p className="relative mt-6 flex items-start gap-2.5 border-t border-foreground/[0.08] pt-5 text-[13.5px] text-muted-foreground">
-              <Icon name="info" size={15} className="mt-0.5 shrink-0 text-primary" /> Le lanceur public arrive très bientôt. En attendant, crée ton compte et ta licence gratuite&nbsp;: ils seront reconnus au premier démarrage.
+              <Icon name="info" size={15} className="mt-0.5 shrink-0 text-primary" /> Le lanceur public arrive très bientôt. En attendant, créez votre compte et votre licence gratuite&nbsp;: ils seront reconnus au premier démarrage.
             </p>
           )}
         </Reveal>
@@ -101,7 +101,7 @@ export function Download() {
             <Watermark icon="shield" className="wm-br" size={150} />
             <Icon name="shield" size={18} className="mt-0.5 shrink-0 text-primary" />
             <p className="text-[14px] text-muted-foreground">
-              Au premier lancement, Windows peut afficher « Windows a protégé votre ordinateur ». Clique sur « Informations complémentaires », puis sur « Exécuter quand même » : c’est le message habituel des logiciels récemment publiés.
+              Au premier lancement, Windows peut afficher « Windows a protégé votre ordinateur ». Cliquez sur « Informations complémentaires », puis sur « Exécuter quand même » : c’est le message habituel des logiciels récemment publiés.
             </p>
           </div>
         }
@@ -110,8 +110,8 @@ export function Download() {
       <SplitPanel
         media={<MacBook space="home" />}
         eyebrow="Une seule fenêtre"
-        title={["Tout NEXORA,", "sur ton PC."]}
-        text="Neuf espaces autour de tes projets : tester, inspecter, coder, publier sur Android et Windows, présenter en 3D, créer des visuels et surveiller tes sites. Le lanceur garde tout à jour."
+        title={["Tout NEXORA,", "sur votre PC."]}
+        text="Neuf espaces autour de vos projets : tester, inspecter, coder, publier sur Android et Windows, présenter en 3D, créer des visuels et surveiller vos sites. Le lanceur garde tout à jour."
         action={<MainButton />}
         icon="laptop"
       />
@@ -119,7 +119,7 @@ export function Download() {
       <section className="section relative overflow-hidden" data-capture="configuration">
         <Watermark icon="laptop" className="wm-tr" size={460} />
         <div className="wrap relative">
-          <SectionHead eyebrow="Configuration" title={["Ce qu’il te faut", "pour bien démarrer."]} />
+          <SectionHead eyebrow="Configuration" title={["Ce qu’il vous faut", "pour bien démarrer."]} />
           <ul className="panel divide-y divide-foreground/[0.08]">
             {REQUIREMENTS.map(([title, text], i) => (
               <Reveal as="li" className="grid gap-2 px-6 py-5 md:grid-cols-[220px_1fr] md:px-8" key={title} delay={i * 70}>
@@ -137,7 +137,7 @@ export function Download() {
             <Reveal className="glow surface has-wm p-7" delay={80}>
               <Watermark icon="trash" className="wm-br" size={170} />
               <h3 className="text-[18px] font-semibold">Désinstallation propre</h3>
-              <p className="mt-2 text-[14.5px] leading-relaxed text-muted-foreground">Depuis les Paramètres de Windows : tu choisis de garder ou de supprimer tes documents, projets, réglages et la bibliothèque téléchargée.</p>
+              <p className="mt-2 text-[14.5px] leading-relaxed text-muted-foreground">Depuis les Paramètres de Windows : vous choisissez de garder ou de supprimer vos documents, projets, réglages et la bibliothèque téléchargée.</p>
               <a className="link-arrow mt-4" href="/licence">
                 Gérer ma licence <Icon name="nxArrowRight" size={15} stroke={2} />
               </a>

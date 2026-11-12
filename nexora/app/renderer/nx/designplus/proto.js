@@ -246,10 +246,10 @@ const CSS = '.pp-view{position:relative;display:grid;place-items:center;width:10
 export async function play(D) {
   if (!D.doc.pages.length) return;
   const P = await build(D, 1);
-  if (!P.some((p) => p.hot.length || p.auto || p.anim)) toast('Aucun lien pour l’instant : sélectionne un bouton, puis règle son action dans l’onglet « Prototype » du panneau de droite.');
+  if (!P.some((p) => p.hot.length || p.auto || p.anim)) toast('Aucun lien pour l’instant : sélectionnez un bouton, puis réglez son action dans l’onglet « Prototype » du panneau de droite.');
   const ov = document.createElement('div');
   ov.className = 'dzx-player';
-  ov.innerHTML = `<style>${CSS}</style><div class="dzx-player-bar"><b>Prototype · ${esc(D.doc.name || '')}</b><div class="seg"><button class="on" data-pmode="phone">${ico('phone', 13)} Téléphone</button><button data-pmode="full">${ico('display', 13)} Plein écran</button></div><span class="grow"></span><button class="btn small" data-pexport>${ico('download', 13)}<span>Exporter (HTML)</span></button><button class="icon-btn" data-pclose title="Fermer (Échap)">${ico('close', 15)}</button></div><div class="dzx-player-stage"><div class="pp-phone" data-pframe></div></div><p class="dzx-player-tip">Clique sur les zones liées · flèches du clavier pour avancer ou revenir · un clic ailleurs montre les zones</p>`;
+  ov.innerHTML = `<style>${CSS}</style><div class="dzx-player-bar"><b>Prototype · ${esc(D.doc.name || '')}</b><div class="seg"><button class="on" data-pmode="phone">${ico('phone', 13)} Téléphone</button><button data-pmode="full">${ico('display', 13)} Plein écran</button></div><span class="grow"></span><button class="btn small" data-pexport>${ico('download', 13)}<span>Exporter (HTML)</span></button><button class="icon-btn" data-pclose title="Fermer (Échap)">${ico('close', 15)}</button></div><div class="dzx-player-stage"><div class="pp-phone" data-pframe></div></div><p class="dzx-player-tip">Cliquez sur les zones liées · flèches du clavier pour avancer ou revenir · un clic ailleurs montre les zones</p>`;
   document.body.append(ov);
   const frame = ov.querySelector('[data-pframe]');
   const start = () => { frame.innerHTML = ''; const host = document.createElement('div'); host.style.cssText = 'width:100%;height:100%'; frame.append(host); player(P, host); };
@@ -272,7 +272,7 @@ export async function exportHtml(D, P) {
 export function panel(D) {
   let links = 0;
   walk(objs(D), (o) => { if (o.nxProto) links += 1; });
-  return `<p class="dzx-hint">Sélectionne un élément (bouton, image, texte), puis règle son action dans l’onglet « Prototype » du panneau de droite (au clic, au survol, pendant l’appui, après un délai, touche du clavier) : aller à une page, ouvrir une page par-dessus, revenir, ouvrir une adresse, contrôler l’animation de la page. Sans sélection, la page peut aussi avancer seule après un délai. ${links ? pl(links, 'lien', 'liens') : 'Aucun lien'} sur cette page.</p>
+  return `<p class="dzx-hint">Sélectionnez un élément (bouton, image, texte), puis réglez son action dans l’onglet « Prototype » du panneau de droite (au clic, au survol, pendant l’appui, après un délai, touche du clavier) : aller à une page, ouvrir une page par-dessus, revenir, ouvrir une adresse, contrôler l’animation de la page. Sans sélection, la page peut aussi avancer seule après un délai. ${links ? pl(links, 'lien', 'liens') : 'Aucun lien'} sur cette page.</p>
     <div class="nx-btns">${btn('proto-play', 'play', 'Tester le prototype', '', 'primary')}${btn('proto-export', 'download', 'Exporter en page HTML')}</div>
     <p class="dzx-hint">La page exportée s’ouvre dans n’importe quel navigateur, y compris sur téléphone : idéale pour faire tester un parcours. Les pages animées et les transitions Smart Animate y sont jouées.</p>`;
 }

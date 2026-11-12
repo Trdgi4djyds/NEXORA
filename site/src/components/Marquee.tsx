@@ -20,7 +20,7 @@ export function Marquee() {
         </ul>
       </div>
       <p className="wrap mt-10 text-center text-[14px] text-muted-foreground" id="tech-title">
-        Ton stack, reconnu : NEXORA identifie ton framework à l’ouverture du projet et installe les outils qui manquent, depuis leurs sources officielles.
+        Votre stack, reconnu : NEXORA identifie votre framework à l’ouverture du projet et installe les outils qui manquent, depuis leurs sources officielles.
       </p>
     </section>
   )

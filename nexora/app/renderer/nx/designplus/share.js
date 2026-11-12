@@ -20,7 +20,7 @@ function overlay(html) {
 async function openReview(token) {
   const ov = overlay('<div class="dzx-review-box"><p>Chargement du design…</p></div>');
   const { data, error } = await sb.rpc('nx_review_get', { p_token: token }).then((r) => r, (e) => ({ error: e }));
-  if (error || !data) { ov.querySelector('.dzx-review-box').innerHTML = '<h2>Lien introuvable</h2><p>Ce lien de validation n’existe pas ou n’est plus actif. Demande un nouveau lien à la personne qui te l’a envoyé.</p><button class="btn" data-rclose>Fermer</button>'; ov.addEventListener('click', (e) => { if (e.target.closest('[data-rclose]')) { ov.remove(); history.replaceState(null, '', location.pathname); } }); return; }
+  if (error || !data) { ov.querySelector('.dzx-review-box').innerHTML = '<h2>Lien introuvable</h2><p>Ce lien de validation n’existe pas ou n’est plus actif. Demande un nouveau lien à la personne qui vous l’a envoyé.</p><button class="btn" data-rclose>Fermer</button>'; ov.addEventListener('click', (e) => { if (e.target.closest('[data-rclose]')) { ov.remove(); history.replaceState(null, '', location.pathname); } }); return; }
   if (data.kind === 'video') { videoReview(ov, token, data); return; }
   let page = 0;
   const pins = [];
@@ -29,9 +29,9 @@ async function openReview(token) {
     const reviews = (data.reviews || []).filter((r) => r.page === page);
     ov.innerHTML = `<div class="dzx-review-box wide"><header><div><small>Validation demandée</small><h2>${esc(data.name)}</h2></div><span class="grow"></span>${data.pages.length > 1 ? `<div class="seg">${data.pages.map((x, i) => `<button class="${i === page ? 'on' : ''}" data-rpage="${i}">${i + 1}</button>`).join('')}</div>` : ''}<button class="btn" data-rclose>Fermer</button></header>
       <div class="dzx-review-main"><div class="dzx-review-img" data-rimg><img src="${esc(p.img)}" alt="${esc(p.name)}">${[...reviews, ...pins].filter((r) => r.x != null).map((r, i) => `<span class="dzx-pin" style="left:${r.x * 100}%;top:${r.y * 100}%">${i + 1}</span>`).join('')}</div>
-      <aside><p class="dzx-hint">Clique sur l’image pour épingler un commentaire à un endroit précis.</p>
-        <label>Ton nom<input class="input" data-rname value="${esc(localStorage.getItem('nx-review-name') || '')}" placeholder="Prénom Nom"></label>
-        <label>Commentaire<textarea class="input" rows="4" data-rtext placeholder="Ce qui te plaît, ce qu’il faut changer…"></textarea></label>
+      <aside><p class="dzx-hint">Cliquez sur l’image pour épingler un commentaire à un endroit précis.</p>
+        <label>Votre nom<input class="input" data-rname value="${esc(localStorage.getItem('nx-review-name') || '')}" placeholder="Prénom Nom"></label>
+        <label>Commentaire<textarea class="input" rows="4" data-rtext placeholder="Ce qui vous plaît, ce qu’il faut changer…"></textarea></label>
         <div class="dzx-review-acts"><button class="btn primary" data-rsend="approve">Approuver</button><button class="btn" data-rsend="changes">Demander des changements</button><button class="btn" data-rsend="comment">Commenter</button></div>
         <h3>Avis (${(data.reviews || []).length})</h3>${(data.reviews || []).map((r) => `<div class="dzx-rv ${r.decision}"><b>${esc(r.author)}</b> <em>${esc(DECISIONS[r.decision] || '')}</em><p>${esc(r.comment)}</p><small>Page ${r.page + 1} · ${new Date(r.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</small></div>`).join('') || '<p class="dzx-hint">Aucun avis pour l’instant.</p>'}</aside></div></div>`;
     // NEXORA #075 : lien en lecture seule : toutes les pages, sans formulaire d'avis ni épingles.
@@ -53,7 +53,7 @@ async function openReview(token) {
       localStorage.setItem('nx-review-name', author);
       const pin = pins[0] || {};
       const { data: rows, error } = await sb.rpc('nx_review_post', { p_token: token, p_author: author, p_decision: s.dataset.rsend, p_comment: comment, p_page: page, p_x: pin.x ?? null, p_y: pin.y ?? null }).then((r) => r, (er) => ({ error: er }));
-      if (error) { const h = ov.querySelector('aside .dzx-hint'); if (h) h.textContent = 'Ton avis n’a pas pu être envoyé. Réessaie dans un instant.'; return; }
+      if (error) { const h = ov.querySelector('aside .dzx-hint'); if (h) h.textContent = 'Votre avis n’a pas pu être envoyé. Réessayez dans un instant.'; return; }
       data.reviews = rows || data.reviews; pins.length = 0; render();
     }
   });
@@ -65,16 +65,16 @@ async function videoReview(ov, token, data) {
   const box = ov.querySelector('.dzx-review-box');
   box.innerHTML = '<p>Chargement de la vidéo…</p>';
   let src = '';
-  try { src = URL.createObjectURL(await (await fetch(data.media_url)).blob()); } catch { box.innerHTML = '<h2>Vidéo indisponible</h2><p>La vidéo n’a pas pu être chargée. Réessaie dans un instant.</p><button class="btn" data-rclose>Fermer</button>'; }
+  try { src = URL.createObjectURL(await (await fetch(data.media_url)).blob()); } catch { box.innerHTML = '<h2>Vidéo indisponible</h2><p>La vidéo n’a pas pu être chargée. Réessayez dans un instant.</p><button class="btn" data-rclose>Fermer</button>'; }
   const close = () => { if (src) URL.revokeObjectURL(src); ov.remove(); history.replaceState(null, '', location.pathname); };
   const list = () => `<h3>Avis (${(data.reviews || []).length})</h3>${(data.reviews || []).map((r) => `<div class="dzx-rv ${r.decision}"><b>${esc(r.author)}</b> <em>${esc(DECISIONS[r.decision] || '')}</em><p>${esc(r.comment)}</p><small>${r.t != null ? `<button class="dzx-rv-t" data-rseek="${r.t}">à ${mmss(r.t)}</button> · ` : ''}${new Date(r.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</small></div>`).join('') || '<p class="dzx-hint">Aucun avis pour l’instant.</p>'}`;
   if (src) {
     box.classList.add('wide');
     box.innerHTML = `<header><div><small>Vidéo à valider</small><h2>${esc(data.name)}</h2></div><span class="grow"></span><button class="btn" data-rclose>Fermer</button></header>
       <div class="dzx-review-main"><div class="dzx-review-video"><video controls playsinline src="${src}"></video><div class="dzx-rv-marks">${(data.reviews || []).filter((r) => r.t != null).map((r) => `<button class="dzx-rv-mark ${r.decision}" data-rseek="${r.t}" title="${esc(r.author)} à ${mmss(r.t)}" style="left:0"></button>`).join('')}</div></div>
-      <aside><p class="dzx-hint">Mets la vidéo en pause au bon moment : ton commentaire est rattaché à cet instant (<b data-rnow>0:00</b>).</p>
-        <label>Ton nom<input class="input" data-rname value="${esc(localStorage.getItem('nx-review-name') || '')}" placeholder="Prénom Nom"></label>
-        <label>Commentaire<textarea class="input" rows="4" data-rtext placeholder="Ce qui te plaît, ce qu’il faut changer…"></textarea></label>
+      <aside><p class="dzx-hint">Mettez la vidéo en pause au bon moment : votre commentaire est rattaché à cet instant (<b data-rnow>0:00</b>).</p>
+        <label>Votre nom<input class="input" data-rname value="${esc(localStorage.getItem('nx-review-name') || '')}" placeholder="Prénom Nom"></label>
+        <label>Commentaire<textarea class="input" rows="4" data-rtext placeholder="Ce qui vous plaît, ce qu’il faut changer…"></textarea></label>
         <div class="dzx-review-acts"><button class="btn primary" data-rsend="approve">Approuver</button><button class="btn" data-rsend="changes">Demander des changements</button><button class="btn" data-rsend="comment">Commenter</button></div>
         <div data-rlist>${list()}</div></aside></div>`;
     const v = box.querySelector('video');
@@ -92,7 +92,7 @@ async function videoReview(ov, token, data) {
     if (!comment && s.dataset.rsend !== 'approve') { box.querySelector('[data-rtext]').focus(); return; }
     localStorage.setItem('nx-review-name', author);
     const { data: rows, error } = await sb.rpc('nx_review_post', { p_token: token, p_author: author, p_decision: s.dataset.rsend, p_comment: comment, p_page: 0, p_x: null, p_y: null, p_t: Math.round(v.currentTime * 100) / 100 }).then((r) => r, (er) => ({ error: er }));
-    if (error) { const h = box.querySelector('aside .dzx-hint'); if (h) h.textContent = 'Ton avis n’a pas pu être envoyé. Réessaie dans un instant.'; return; }
+    if (error) { const h = box.querySelector('aside .dzx-hint'); if (h) h.textContent = 'Votre avis n’a pas pu être envoyé. Réessayez dans un instant.'; return; }
     data.reviews = rows || data.reviews; box.querySelector('[data-rtext]').value = ''; box.querySelector('[data-rlist]').innerHTML = list();
   });
 }
@@ -102,7 +102,7 @@ async function openShare(token) {
   const box = ov.querySelector('.dzx-review-box');
   const thumb = data && (data.thumb || (data.target && data.target.thumb) || (data.document && data.document.thumb));
   const name = data && (data.name || (data.target && data.target.name) || (data.document && data.document.name));
-  box.innerHTML = data ? `<header><div><small>Design partagé</small><h2>${esc(name || 'Design')}</h2></div><span class="grow"></span><button class="btn" data-rclose>Fermer</button></header>${thumb ? `<div class="dzx-review-img"><img src="${esc(thumb)}" alt="${esc(name || 'Aperçu')}"></div>` : '<p>L’aperçu de ce design n’est pas disponible.</p>'}<p class="dzx-hint">Pour le modifier, ouvre-le dans NEXORA avec ton compte.</p>` : '<h2>Lien introuvable</h2><p>Ce lien de partage n’existe pas ou a expiré.</p><button class="btn" data-rclose>Fermer</button>';
+  box.innerHTML = data ? `<header><div><small>Design partagé</small><h2>${esc(name || 'Design')}</h2></div><span class="grow"></span><button class="btn" data-rclose>Fermer</button></header>${thumb ? `<div class="dzx-review-img"><img src="${esc(thumb)}" alt="${esc(name || 'Aperçu')}"></div>` : '<p>L’aperçu de ce design n’est pas disponible.</p>'}<p class="dzx-hint">Pour le modifier, ouvrez-le dans NEXORA avec votre compte.</p>` : '<h2>Lien introuvable</h2><p>Ce lien de partage n’existe pas ou a expiré.</p><button class="btn" data-rclose>Fermer</button>';
   ov.addEventListener('click', (e) => { if (e.target.closest('[data-rclose]')) { ov.remove(); history.replaceState(null, '', location.pathname); } });
 }
 function route() {
@@ -119,12 +119,12 @@ export async function install() {
 // ---------- Côté propriétaire : liens de validation ----------
 // NEXORA #075 : mode « view » : lien en lecture seule, toutes les pages, sans avis (migration 20261108000001).
 export async function createLink(D, renderPages, { mode = 'review' } = {}) {
-  if (!cloud.user || !cloud.orgId) throw new Error(mode === 'view' ? 'Connecte-toi à ton compte NEXORA pour créer un lien de partage.' : 'Connecte-toi à ton compte NEXORA pour créer un lien de validation.');
+  if (!cloud.user || !cloud.orgId) throw new Error(mode === 'view' ? 'Connectez-vous à votre compte NEXORA pour créer un lien de partage.' : 'Connectez-vous à votre compte NEXORA pour créer un lien de validation.');
   const pages = await renderPages();
   const row = { org_id: cloud.orgId, doc_local_id: D.doc.id, name: D.doc.name || 'Design', pages, created_by: cloud.user.id };
   if (mode === 'view') row.mode = 'view';
   const { data, error } = await sb.from('design_review_links').insert(row).select('token').single();
-  if (error) throw new Error(mode === 'view' && /mode/.test(error.message || '') ? 'Les liens en lecture seule demandent la dernière mise à jour du serveur NEXORA (migration 20261108000001).' : 'Le lien n’a pas pu être créé. Réessaie dans un instant.');
+  if (error) throw new Error(mode === 'view' && /mode/.test(error.message || '') ? 'Les liens en lecture seule demandent la dernière mise à jour du serveur NEXORA (migration 20261108000001).' : 'Le lien n’a pas pu être créé. Réessayez dans un instant.');
   return `${webUrl()}#/revue/${data.token}`;
 }
 export async function links(D) {
@@ -143,8 +143,8 @@ export async function libraries() {
   return data || [];
 }
 export async function publish(kind, name, data) {
-  if (!cloud.user || !cloud.orgId) throw new Error('Connecte-toi à ton compte NEXORA pour partager avec ton équipe.');
+  if (!cloud.user || !cloud.orgId) throw new Error('Connectez-vous à votre compte NEXORA pour partager avec votre équipe.');
   const { error } = await sb.from('design_libraries').upsert({ org_id: cloud.orgId, kind, name, data, updated_by: cloud.user.id, updated_at: new Date().toISOString() }, { onConflict: 'org_id,kind,name' });
-  if (error) throw new Error('La bibliothèque n’a pas pu être publiée. Réessaie dans un instant.');
+  if (error) throw new Error('La bibliothèque n’a pas pu être publiée. Réessayez dans un instant.');
 }
 export { DECISIONS, esc };

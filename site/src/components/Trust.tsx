@@ -13,8 +13,8 @@ export function Trust() {
         <SectionHead
           index="07"
           eyebrow="Confiance"
-          title={["Tes projets restent", "chez toi."]}
-          lead="NEXORA travaille sur ton ordinateur : ce qui est sensible est chiffré et chaque projet reste cloisonné."
+          title={["Vos projets restent", "chez vous."]}
+          lead="NEXORA travaille sur votre ordinateur : ce qui est sensible est chiffré et chaque projet reste cloisonné."
         />
         <ul className="grid gap-6 md:grid-cols-2" data-glow>
           {TRUST.map((t, i) => (

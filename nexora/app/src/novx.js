@@ -65,7 +65,7 @@ function listCode(dir, { includeEnv = false } = {}) {
         if (!includeEnv && isEnv(e.name)) { skipped.push(r); continue; }
         const size = fs.statSync(path.join(abs, e.name)).size;
         bytes += size;
-        if (bytes > MAX_CODE) throw new Error('Le code du projet dépasse 1 Go (hors dépendances) : exporte sans le code, ou allège le dossier.');
+        if (bytes > MAX_CODE) throw new Error('Le code du projet dépasse 1 Go (hors dépendances) : exportez sans le code, ou allégez le dossier.');
         files.push({ rel: r, abs: path.join(abs, e.name), size });
       }
     }
@@ -176,7 +176,7 @@ async function readNovx(file, { codeTo = '' } = {}) {
     if (!bufs['novx.json']) throw new Error('Ce fichier n’est pas un projet .novx (novx.json manquant).');
     const m = JSON.parse(bufs['novx.json'].toString('utf8'));
     if (m.format !== FORMAT || !m.sha256 || typeof m.sha256 !== 'object') throw new Error('Format .novx inconnu.');
-    if (m.version > FORMAT_VERSION) throw new Error('Ce fichier .novx vient d’une version plus récente de NEXORA : mets NEXORA à jour pour l’ouvrir.');
+    if (m.version > FORMAT_VERSION) throw new Error('Ce fichier .novx vient d’une version plus récente de NEXORA : mettez NEXORA à jour pour l’ouvrir.');
     for (const [name, h] of Object.entries(got)) {
       if (name === 'novx.json') continue;
       if (!(name in m.sha256)) throw new Error(`Entrée inattendue dans le fichier .novx : ${name}`);

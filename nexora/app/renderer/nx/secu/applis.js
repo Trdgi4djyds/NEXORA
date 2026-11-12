@@ -20,7 +20,7 @@ export async function render(inst, host) {
 }
 
 function empty(out) {
-  out.innerHTML = `<div class="sec-empty">${icon('shield', 34)}<b>Vérifie tes applications avant de les publier</b>
+  out.innerHTML = `<div class="sec-empty">${icon('shield', 34)}<b>Vérifiez vos applications avant de les publier</b>
     <p>Pour un APK (App Builder ou autre) : application débogable, trafic non chiffré, sauvegarde des données, composants ouverts aux autres applications, permissions sensibles et signature. Pour un logiciel Electron (Desktop Builder ou autre) : isolation des pages, accès à Node.js, ouverture des liens, CSP, version d’Electron et signature.</p>
     <div class="sec-chips">${['APK débogable', 'Trafic en clair', 'Composants exportés', 'Permissions', 'Clé de débogage', 'Isolation du contexte', 'nodeIntegration', 'Signature du logiciel'].map((s) => `<span>${esc(s)}</span>`).join('')}</div></div>`;
 }

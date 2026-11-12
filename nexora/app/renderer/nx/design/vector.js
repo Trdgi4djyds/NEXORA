@@ -117,8 +117,8 @@ export class NodeEditor {
   get active() { return !!this.obj; }
   start(o) {
     const D = this.D;
-    if (!o) { toast('Sélectionne d’abord une forme ou un tracé.', { kind: 'bad' }); return false; }
-    if (['textbox', 'i-text', 'text'].includes(o.type)) { toast('Pour un texte, utilise d’abord « Vectoriser le texte » (panneau de droite).', { kind: 'bad' }); return false; }
+    if (!o) { toast('Sélectionnez d’abord une forme ou un tracé.', { kind: 'bad' }); return false; }
+    if (['textbox', 'i-text', 'text'].includes(o.type)) { toast('Pour un texte, utilisez d’abord « Vectoriser le texte » (panneau de droite).', { kind: 'bad' }); return false; }
     if (!isShape(o) || o.type === 'group') { toast('L’édition des points s’applique aux formes et aux tracés (pas aux images, groupes ni objets 3D).', { kind: 'bad' }); return false; }
     const p = o.type === 'path' && !o.angle && o.scaleX === 1 && o.scaleY === 1 && !o.flipX && !o.flipY && !o.skewX && !o.skewY ? o : bakeToPath(D, o);
     if (!p) return false;
@@ -127,7 +127,7 @@ export class NodeEditor {
     for (const x of D.canvas.getObjects()) if (x.id !== '__board') { x.nxWasSel = x.selectable; x.selectable = false; x.evented = false; }
     D.canvas.selection = false; D.canvas.defaultCursor = 'crosshair';
     D.$.hint.hidden = false;
-    D.$.hint.innerHTML = '<span>Édition des points : glisse un point ou une poignée · double-clic sur un trait pour ajouter un point · double-clic sur un point : lisse ou angle · Suppr : retirer · Alt : poignée libre · Entrée ou Échap pour terminer</span>';
+    D.$.hint.innerHTML = '<span>Édition des points : glissez un point ou une poignée · double-clic sur un trait pour ajouter un point · double-clic sur un point : lisse ou angle · Suppr : retirer · Alt : poignée libre · Entrée ou Échap pour terminer</span>';
     D.canvas.requestRenderAll();
     return true;
   }
@@ -376,7 +376,7 @@ export function outlineStroke(D, o) {
 // Diviser : découpe les formes qui se chevauchent en toutes leurs parties.
 export function divide(D, list) {
   const shapes = list.filter(isShape);
-  if (shapes.length < 2) { toast('Sélectionne au moins deux formes qui se chevauchent.', { kind: 'bad' }); return; }
+  if (shapes.length < 2) { toast('Sélectionnez au moins deux formes qui se chevauchent.', { kind: 'bad' }); return; }
   const objs = D.canvas.getObjects(); shapes.sort((a, b) => objs.indexOf(a) - objs.indexOf(b));
   let pieces = [];
   for (const s of shapes) {
@@ -407,9 +407,9 @@ export function toggleClosed(D, o) {
 }
 export function join(D, list) {
   const paths = list.filter(isShape);
-  if (paths.length !== 2) { toast('Sélectionne exactement deux tracés ouverts à joindre.', { kind: 'bad' }); return; }
+  if (paths.length !== 2) { toast('Sélectionnez exactement deux tracés ouverts à joindre.', { kind: 'bad' }); return; }
   const [A, B] = paths.map((o) => toNodes(o.type === 'path' ? o : (bakeToPath(D, o)))).map((s) => s[0]);
-  if (!A || !B || A.closed || B.closed) { toast('Les deux tracés doivent être ouverts (utilise les ciseaux ou « Ouvrir »).', { kind: 'bad' }); return; }
+  if (!A || !B || A.closed || B.closed) { toast('Les deux tracés doivent être ouverts (utilisez les ciseaux ou « Ouvrir »).', { kind: 'bad' }); return; }
   const ends = (s) => [s.nodes[0], s.nodes[s.nodes.length - 1]];
   const rev = (s) => { s.nodes.reverse(); for (const n of s.nodes) [n.ix, n.iy, n.ox, n.oy] = [n.ox, n.oy, n.ix, n.iy]; };
   const [a0, a1] = ends(A); const [b0, b1] = ends(B);
@@ -483,7 +483,7 @@ export function distort(D, o, kind, amount = 0.5) {
 // ---------- Dégradé de formes ----------
 export async function blendShapes(D, list, steps = 6) {
   const sh = list.filter(isShape);
-  if (sh.length !== 2) { toast('Sélectionne exactement deux formes pour créer le dégradé.', { kind: 'bad' }); return; }
+  if (sh.length !== 2) { toast('Sélectionnez exactement deux formes pour créer le dégradé.', { kind: 'bad' }); return; }
   const objs = D.canvas.getObjects(); sh.sort((a, b) => objs.indexOf(a) - objs.indexOf(b));
   const [A, B] = sh; const pa = children(paperOf(A))[0]; const pb = children(paperOf(B))[0];
   const N = 120; const smp = (p) => Array.from({ length: N }, (_, i) => { const pt = p.getPointAt((i / N) * p.length); return [pt.x, pt.y]; });
@@ -621,7 +621,7 @@ function textProps(t) {
 }
 export function textOnPath(D, list) {
   const t = list.find((o) => ['textbox', 'i-text', 'text'].includes(o.type)); const p = list.find((o) => isShape(o) && o !== t);
-  if (!t || !p) { toast('Sélectionne un texte et un tracé (ou une forme) ensemble.', { kind: 'bad' }); return; }
+  if (!t || !p) { toast('Sélectionnez un texte et un tracé (ou une forme) ensemble.', { kind: 'bad' }); return; }
   const baked = p.type === 'path' && !p.angle && p.scaleX === 1 && p.scaleY === 1 ? nodesD(toNodes(p)) : (p.type === 'line' ? (() => { const m = p.calcTransformMatrix(); const lp = p.calcLinePoints(); const a = apply(m, lp.x1, lp.y1); const b = apply(m, lp.x2, lp.y2); return `M ${a.x} ${a.y} L ${b.x} ${b.y}`; })() : (nxToPaper(p) || {}).pathData);
   if (!baked) { toast('Ce tracé ne peut pas servir de support.', { kind: 'bad' }); return; }
   const guide = new Path(baked, { fill: '', stroke: '', strokeWidth: 0, visible: true });
@@ -632,7 +632,7 @@ export function textOnPath(D, list) {
   D.canvas.discardActiveObject(); D.loading = true; D.canvas.remove(t); D.canvas.insertAt(at, n); D.loading = false;
   p.set({ opacity: 0.25 });
   D.canvas.setActiveObject(n); D.changed();
-  toast('Texte posé sur le tracé. Le tracé guide est atténué : supprime-le ou masque-le si besoin.');
+  toast('Texte posé sur le tracé. Le tracé guide est atténué : supprimez-le ou masquez-le si besoin.');
 }
 export function curveText(D, t, amount) {
   if (!t) return null;

@@ -18,15 +18,15 @@
   }
   let notice = ""
   try {
-    if (qs.get("confirm")) { const r = await rpc("nx_status_confirm", { p_token: qs.get("confirm") }); notice = r && r.ok ? "Abonnement confirmé : tu seras prévenu des incidents et de leur résolution." : "Ce lien de confirmation n’est plus valable." }
-    if (qs.get("stop")) { await rpc("nx_status_unsubscribe", { p_token: qs.get("stop") }); notice = "Tu ne recevras plus de messages pour cette page." }
-  } catch { notice = "Réessaie dans un instant." }
+    if (qs.get("confirm")) { const r = await rpc("nx_status_confirm", { p_token: qs.get("confirm") }); notice = r && r.ok ? "Abonnement confirmé : vous serez prévenu des incidents et de leur résolution." : "Ce lien de confirmation n’est plus valable." }
+    if (qs.get("stop")) { await rpc("nx_status_unsubscribe", { p_token: qs.get("stop") }); notice = "Vous ne recevrez plus de messages pour cette page." }
+  } catch { notice = "Réessayez dans un instant." }
   let d = null
   if (qs.get("demo")) d = demo()
   else if (slug) { try { d = await rpc("nx_status_page", { p_slug: slug }) } catch { d = undefined } }
   if (!d) {
     document.title = "Page introuvable"
-    main.innerHTML = `${notice ? `<p class="notice">${esc(notice)}</p>` : ""}<p class="empty">${d === undefined ? "La page de statut ne répond pas. Réessaie dans un instant." : "Cette page de statut n’existe pas ou n’est pas publiée."}</p>`
+    main.innerHTML = `${notice ? `<p class="notice">${esc(notice)}</p>` : ""}<p class="empty">${d === undefined ? "La page de statut ne répond pas. Réessayez dans un instant." : "Cette page de statut n’existe pas ou n’est pas publiée."}</p>`
     return
   }
   document.title = `${d.title} · État des services`
@@ -43,22 +43,22 @@
     ${d.maintenance && d.maintenance.length ? `<section class="card"><h2>Maintenances prévues</h2>${d.maintenance.map((w) => `<div class="inc"><b>${esc(w.label)}</b><small>${esc(fmt(w.starts_at))} → ${esc(fmt(w.ends_at))}${w.recur === "daily" ? " · chaque jour" : w.recur === "weekly" ? " · chaque semaine" : ""}</small></div>`).join("")}</section>` : ""}
     <section class="card"><h2>Services</h2>${(d.services || []).map(svc).join("") || '<p class="msg">Aucun service.</p>'}</section>
     ${d.incidents && d.incidents.length ? `<section class="card"><h2>Incidents récents</h2>${d.incidents.map((i) => `<div class="inc"><b>${esc(i.service)} · ${i.kind === "down" ? "panne" : "lenteur"}</b><small>${esc(fmt(i.started_at))} · ${i.ended_at ? `résolu en ${esc(dur(i.started_at, i.ended_at))}` : "en cours"}</small><div class="cause">${esc(i.cause)}</div></div>`).join("")}</section>` : ""}
-    <section class="card"><h2>Être prévenu</h2><form class="sub"><input type="email" name="email" required placeholder="ton@adresse.com" autocomplete="email" aria-label="Adresse e-mail"><button>S’abonner</button></form><p class="msg" data-msg>Un e-mail à chaque incident et à sa résolution. Désabonnement en un clic.</p></section>
+    <section class="card"><h2>Être prévenu</h2><form class="sub"><input type="email" name="email" required placeholder="votre@adresse.com" autocomplete="email" aria-label="Adresse e-mail"><button>S’abonner</button></form><p class="msg" data-msg>Un e-mail à chaque incident et à sa résolution. Désabonnement en un clic.</p></section>
     <footer>Mis à jour ${esc(fmt(d.updated_at))} · Page de statut propulsée par NEXORA</footer>`
   const form = main.querySelector("form.sub")
   form.onsubmit = async (ev) => {
     ev.preventDefault()
     const msg = main.querySelector("[data-msg]")
     const email = new FormData(form).get("email")
-    if (qs.get("demo")) { msg.textContent = "Vérifie ta boîte e-mail pour confirmer l’abonnement."; return }
-    try { const r = await rpc("nx_status_subscribe", { p_slug: slug, p_email: email }); msg.textContent = r && r.ok ? "Vérifie ta boîte e-mail pour confirmer l’abonnement." : (r && r.message) || "Réessaie dans un instant." } catch { msg.textContent = "Réessaie dans un instant." }
+    if (qs.get("demo")) { msg.textContent = "Vérifiez votre boîte e-mail pour confirmer l’abonnement."; return }
+    try { const r = await rpc("nx_status_subscribe", { p_slug: slug, p_email: email }); msg.textContent = r && r.ok ? "Vérifiez votre boîte e-mail pour confirmer l’abonnement." : (r && r.message) || "Réessayez dans un instant." } catch { msg.textContent = "Réessayez dans un instant." }
   }
 
   function demo() {
     const now = Date.now()
     const days = (bad) => Array.from({ length: 90 }, (_, i) => ({ d: new Date(now - (89 - i) * 864e5).toISOString(), a: bad.includes(i) ? (i === 84 ? 97.9 : 99.6) : i < 6 ? null : 100 }))
     return {
-      title: "Statut de la boutique", intro: "Suis ici l’état de nos services en temps réel.", overall: "degraded", updated_at: new Date(now).toISOString(),
+      title: "Statut de la boutique", intro: "Suivez ici l’état de nos services en temps réel.", overall: "degraded", updated_at: new Date(now).toISOString(),
       services: [
         { name: "Boutique en ligne", status: "up", uptime: 99.874, days: days([31, 78, 84]) },
         { name: "Paiement", status: "up", uptime: 99.981, days: days([55]) },

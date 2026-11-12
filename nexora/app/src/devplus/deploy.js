@@ -58,29 +58,29 @@ class Deployer {
       const pm = packageManager(root);
       this.log(id, `> ${pm} run build\n`);
       const b = await run(pm, ['run', 'build'], { cwd: root, env, onData, timeout: 20 * 60 * 1000 });
-      if (b.code) throw new Error('La construction du site a échoué : corrige l’erreur affichée dans le journal, puis relance.');
+      if (b.code) throw new Error('La construction du site a échoué : corrigez l’erreur affichée dans le journal, puis relancez.');
     }
     const dir = path.resolve(root, cfg.outDir || '.');
-    if (!fs.existsSync(path.join(dir, 'index.html'))) throw new Error(`Aucun index.html dans « ${cfg.outDir} » : indique le dossier produit par la construction.`);
+    if (!fs.existsSync(path.join(dir, 'index.html'))) throw new Error(`Aucun index.html dans « ${cfg.outDir} » : indiquez le dossier produit par la construction.`);
     let url = '';
     let out = '';
     const capture = (d) => { out += d; onData(d); };
     const p = cfg.provider;
     if (p === 'cloudflare') {
       const token = this.cred('cloudflare', 'token');
-      if (!token) throw new Error('Ajoute ton jeton Cloudflare dans les réglages de mise en ligne.');
+      if (!token) throw new Error('Ajoutez votre jeton Cloudflare dans les réglages de mise en ligne.');
       const e = { ...env, CLOUDFLARE_API_TOKEN: token, ...(this.cred('cloudflare', 'account') ? { CLOUDFLARE_ACCOUNT_ID: this.cred('cloudflare', 'account') } : {}) };
       await run('npx', ['--yes', 'wrangler@3', 'pages', 'project', 'create', cfg.project, '--production-branch', 'main'], { cwd: root, env: e, onData: capture }).catch(() => null);
       const r = await run('npx', ['--yes', 'wrangler@3', 'pages', 'deploy', dir, '--project-name', cfg.project, '--branch', prod ? 'main' : branch, '--commit-dirty=true'], { cwd: root, env: e, onData: capture, timeout: 20 * 60 * 1000 });
-      if (r.code) throw new Error('Cloudflare a refusé la mise en ligne : vérifie le jeton et l’identifiant du compte (journal ci-dessous).');
+      if (r.code) throw new Error('Cloudflare a refusé la mise en ligne : vérifiez le jeton et l’identifiant du compte (journal ci-dessous).');
     } else if (p === 'vercel') {
       const token = this.cred('vercel', 'token');
-      if (!token) throw new Error('Ajoute ton jeton Vercel dans les réglages de mise en ligne.');
+      if (!token) throw new Error('Ajoutez votre jeton Vercel dans les réglages de mise en ligne.');
       const r = await run('npx', ['--yes', 'vercel@latest', 'deploy', dir, '--yes', '--token', token, '--name', cfg.project, ...(prod ? ['--prod'] : [])], { cwd: root, env, onData: capture, timeout: 20 * 60 * 1000 });
       if (r.code) throw new Error('Vercel a refusé la mise en ligne (journal ci-dessous).');
     } else if (p === 'netlify') {
       const token = this.cred('netlify', 'token');
-      if (!token) throw new Error('Ajoute ton jeton Netlify dans les réglages de mise en ligne.');
+      if (!token) throw new Error('Ajoutez votre jeton Netlify dans les réglages de mise en ligne.');
       const saved = this.store.get(root, 'deploy', {});
       let site = saved.netlifySite;
       if (!site) {
@@ -95,7 +95,7 @@ class Deployer {
       try { const j = JSON.parse(r.stdout.slice(r.stdout.indexOf('{'))); url = prod ? j.url : j.deploy_url; } catch { /* adresse lue plus bas */ }
     } else if (p === 'github') {
       url = await this.githubPages(root, dir, onData);
-    } else throw new Error('Choisis un hébergeur.');
+    } else throw new Error('Choisissez un hébergeur.');
     if (!url) { const all = out.match(URL_RE) || []; url = all[all.length - 1] || ''; }
     const entry = { at: Date.now(), provider: p, branch, production: prod, url };
     const saved = this.store.get(root, 'deploy', {});
@@ -106,11 +106,11 @@ class Deployer {
   // GitHub Pages : contenu du dossier produit envoyé sur la branche gh-pages du dépôt du projet.
   async githubPages(root, dir, onData) {
     const token = this.gh && this.gh.token();
-    if (!token) throw new Error('Connecte ton compte GitHub dans le panneau « Dépôt distant ».');
+    if (!token) throw new Error('Connectez votre compte GitHub dans le panneau « Dépôt distant ».');
     const { repoOf } = require('./gitx');
     const { owner, repo } = await repoOf(root);
     const git = which('git', envFor(root));
-    if (!git) throw new Error('Git n’est pas installé : ouvre « Outils » dans le Dev Lab.');
+    if (!git) throw new Error('Git n’est pas installé : ouvrez « Outils » dans le Dev Lab.');
     const tmp = tmpFile('pages');
     fs.cpSync(dir, tmp, { recursive: true });
     fs.writeFileSync(path.join(tmp, '.nojekyll'), '');
@@ -120,7 +120,7 @@ class Deployer {
     await g(['-c', 'user.name=NEXORA', '-c', 'user.email=nexora@users.noreply.github.com', 'commit', '-qm', 'Mise en ligne par NEXORA']);
     const r = await run(git, ['push', '--force', `https://x-access-token:${token}@github.com/${owner}/${repo}.git`, 'gh-pages'], { cwd: tmp, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
     fs.rmSync(tmp, { recursive: true, force: true });
-    if (r.code) throw new Error('Envoi vers GitHub Pages refusé : vérifie les droits de ton compte sur le dépôt.');
+    if (r.code) throw new Error('Envoi vers GitHub Pages refusé : vérifiez les droits de votre compte sur le dépôt.');
     await this.gh.api(`/repos/${owner}/${repo}/pages`, { method: 'POST', body: { source: { branch: 'gh-pages', path: '/' } } }).catch(() => null);
     return `https://${owner.toLowerCase()}.github.io/${repo}/`;
   }

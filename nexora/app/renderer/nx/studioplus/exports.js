@@ -51,7 +51,7 @@ export async function playStore(S) {
       return out;
     });
     await saveBytes(zip(files), { name: `${S.exportName ? S.exportName() : 'Studio'} (fiche Play Store)`, ext: 'zip', kind: 'photo', project: projectName() });
-    toast('4 captures 1080 × 1920 et la bannière 1024 × 500 enregistrées : ajoute-les dans App Builder → Fiche Play Store.');
+    toast('4 captures 1080 × 1920 et la bannière 1024 × 500 enregistrées : ajoutez-les dans App Builder → Fiche Play Store.');
   } catch (e) { toast(`Les images n’ont pas pu être créées : ${e.message || e}`, { kind: 'bad' }); } finally { done(t); }
 }
 
@@ -91,7 +91,7 @@ export async function webPack(S) {
       { name: 'scene.glb', data: await glbOf(S, 1024) },
       { name: 'nexora-scene.js', data: COMPONENT },
       { name: 'NexoraScene.jsx', data: REACT },
-      { name: 'LISEZ-MOI.txt', data: `Scène 3D exportée par NEXORA.\n\n- scene.html : la scène interactive (souris, animation, interactions), autonome.\n- scene-defilement.html : la même scène dont l'animation suit le défilement de la page ; elle charge scene.glb, posé à côté (à publier sur un site : un navigateur ne lit pas un fichier voisin ouvert d'un double-clic).\n- nexora-scene.js : balise <nexora-scene src="scene.html" height="520"></nexora-scene> (ajoute <script type="module" src="nexora-scene.js"></script>).\n- NexoraScene.jsx : composant React (<NexoraScene src="/scene.html" height={520} />).\n- scene.glb : le modèle 3D seul (Blender, three.js, Spline…).\n\nLes pages chargent three.js depuis un CDN public (jsDelivr) : une connexion Internet est nécessaire à l'affichage.\nQuand le système demande moins d'animations, la scène reste immobile.\n` },
+      { name: 'LISEZ-MOI.txt', data: `Scène 3D exportée par NEXORA.\n\n- scene.html : la scène interactive (souriez, animation, interactions), autonome.\n- scene-defilement.html : la même scène dont l'animation suit le défilement de la page ; elle charge scene.glb, posé à côté (à publier sur un site : un navigateur ne lit pas un fichier voisin ouvert d'un double-clic).\n- nexora-scene.js : balise <nexora-scene src="scene.html" height="520"></nexora-scene> (ajoute <script type="module" src="nexora-scene.js"></script>).\n- NexoraScene.jsx : composant React (<NexoraScene src="/scene.html" height={520} />).\n- scene.glb : le modèle 3D seul (Blender, three.js, Spline…).\n\nLes pages chargent three.js depuis un CDN public (jsDelivr) : une connexion Internet est nécessaire à l'affichage.\nQuand le système demande moins d'animations, la scène reste immobile.\n` },
     ];
     await saveBytes(zip(files), { name: `${title} (pack web)`, ext: 'zip', kind: 'photo', project: projectName() });
     toast('Pack web enregistré : page interactive, page au défilement, Web Component, composant React et modèle GLB.');
@@ -132,7 +132,7 @@ export function usdMeshes(S) {
 }
 export async function arPack(S) {
   if (!allowed('Le pack de réalité augmentée')) return;
-  const base = await prompt('Pack de réalité augmentée', { label: 'Adresse où tu publieras ces fichiers (facultatif, pour le code QR et Android) : https://…', value: '', icon: 'cube', go: 'Créer le pack' });
+  const base = await prompt('Pack de réalité augmentée', { label: 'Adresse où vous publierez ces fichiers (facultatif, pour le code QR et Android) : https://…', value: '', icon: 'cube', go: 'Créer le pack' });
   if (base === null || base === undefined) return;
   const url = /^https:\/\//i.test(String(base).trim()) ? String(base).trim().replace(/\/?$/, '/') : '';
   const t = busy('Préparation de la réalité augmentée…');
@@ -145,9 +145,9 @@ export async function arPack(S) {
     const android = url ? `intent://arvr.google.com/scene-viewer/1.2?file=${encodeURIComponent(`${url}scene.glb`)}&mode=ar_preferred#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(`${url}scene.glb`)};end;` : '';
     const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Voir en réalité augmentée</title>
 <style>body{margin:0;font-family:system-ui,sans-serif;background:#f5f5f7;color:#14151a;display:grid;place-items:center;min-height:100vh}main{max-width:420px;padding:24px;text-align:center}img{width:100%;border-radius:16px;background:#fff}a.btn{display:block;margin-top:12px;padding:14px;border-radius:12px;background:#14151a;color:#fff;text-decoration:none;font-weight:600}small{color:#5b5d66}</style></head>
-<body><main><h1>Voir chez toi en 3D</h1><a rel="ar" href="scene.usdz"><img src="apercu.jpg" alt="Aperçu de l’objet"></a>
+<body><main><h1>Voir chez vous en 3D</h1><a rel="ar" href="scene.usdz"><img src="apercu.jpg" alt="Aperçu de l’objet"></a>
 <a class="btn" rel="ar" href="scene.usdz">iPhone et iPad</a>${android ? `<a class="btn" href="${android}">Android</a>` : ''}
-<p><small>Sur iPhone et iPad, l’objet s’ouvre dans Quick Look. ${android ? 'Sur Android, il s’ouvre dans Scene Viewer.' : 'Pour Android, publie ces fichiers puis indique leur adresse lors de l’export.'}</small></p></main></body></html>`;
+<p><small>Sur iPhone et iPad, l’objet s’ouvre dans Quick Look. ${android ? 'Sur Android, il s’ouvre dans Scene Viewer.' : 'Pour Android, publiez ces fichiers puis indiquez leur adresse lors de l’export.'}</small></p></main></body></html>`;
     const files = [{ name: 'scene.usdz', data: usdz }, { name: 'scene.glb', data: glb }, { name: 'apercu.jpg', data: preview }, { name: 'index.html', data: html }];
     if (url) {
       const q = await import('../../dist/chunks/qrcode-CLK456NR.js'); const qr = (q.default || q)(0, 'M'); qr.addData(`${url}index.html`); qr.make();
@@ -157,7 +157,7 @@ export async function arPack(S) {
       files.push({ name: 'code-qr.png', data: canvasBytes(c) });
     }
     await saveBytes(zip(files), { name: `${S.exportName ? S.exportName() : 'Studio'} (réalité augmentée)`, ext: 'zip', kind: 'photo', project: projectName() });
-    toast(url ? 'Pack de réalité augmentée enregistré, avec le code QR à imprimer ou à partager.' : 'Pack de réalité augmentée enregistré (iPhone et iPad). Indique une adresse de publication pour Android et le code QR.');
+    toast(url ? 'Pack de réalité augmentée enregistré, avec le code QR à imprimer ou à partager.' : 'Pack de réalité augmentée enregistré (iPhone et iPad). Indiquez une adresse de publication pour Android et le code QR.');
   } catch (e) { toast(`Le pack de réalité augmentée n’a pas pu être créé : ${e.message || e}`, { kind: 'bad' }); } finally { done(t); }
 }
 

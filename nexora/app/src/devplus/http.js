@@ -30,7 +30,7 @@ async function send({ method = 'GET', url, headers = [], body = '', bodyType = '
 // Requêtes d'une description OpenAPI 3 / Swagger 2 (JSON).
 function importOpenApi(text) {
   let spec;
-  try { spec = JSON.parse(text); } catch { throw new Error('Description illisible : NEXORA lit le format JSON (convertis un fichier YAML en JSON).'); }
+  try { spec = JSON.parse(text); } catch { throw new Error('Description illisible : NEXORA lit le format JSON (convertissez un fichier YAML en JSON).'); }
   if (!spec.paths) throw new Error('Ce fichier ne contient pas de chemins d’API (« paths »).');
   const base = spec.servers && spec.servers[0] ? spec.servers[0].url : spec.host ? `${(spec.schemes || ['https'])[0]}://${spec.host}${spec.basePath || ''}` : '{{baseUrl}}';
   const items = [];

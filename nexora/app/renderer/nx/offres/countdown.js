@@ -106,7 +106,7 @@ export function remind(p, planName) {
   if (localStorage.getItem(SEEN_KEY) === seen) return;
   localStorage.setItem(SEEN_KEY, seen);
   const d = daysLeft(p);
-  toast(`Ton offre ${planName} arrive à échéance ${d <= 1 ? 'demain' : `dans ${d} jours`}, le ${fullDate(p.end)}.`, { action: 'Voir', onAction: () => import('./upsell.js').then((m) => m.openAccount('plan')) });
+  toast(`Votre offre ${planName} arrive à échéance ${d <= 1 ? 'demain' : `dans ${d} jours`}, le ${fullDate(p.end)}.`, { action: 'Voir', onAction: () => import('./upsell.js').then((m) => m.openAccount('plan')) });
 }
 
 // ------------------------------------------------------------------ agenda (.ics)
@@ -114,7 +114,7 @@ function ics(p, planName) {
   const n = remindDays() || 1;
   const next = new Date(dayStart(p.end).getTime() + DAY);
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
-  const text = `Ton offre NEXORA ${planName} arrive à échéance le ${fullDate(p.end)}.`;
+  const text = `Votre offre NEXORA ${planName} arrive à échéance le ${fullDate(p.end)}.`;
   return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NEXORA//Offre//FR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
     'BEGIN:VEVENT', `UID:nexora-offre-${p.orgId || 'compte'}-${ymd(p.end)}@nexora`, `DTSTAMP:${stamp}`,
     `DTSTART;VALUE=DATE:${ymd(p.end)}`, `DTEND;VALUE=DATE:${ymd(next)}`, `SUMMARY:Échéance de l’offre NEXORA ${planName}`, `DESCRIPTION:${text}`,
@@ -128,7 +128,7 @@ async function addToAgenda(p, planName) {
       const f = await api.invoke('capture:save', { kind: 'document', project: 'Agenda', name, ext: 'ics', data: new TextEncoder().encode(body) });
       if (!f) return;
       await api.invoke('shell:open', f);
-      toast('Rappel prêt : ton agenda s’ouvre pour l’ajouter.', { action: 'Afficher', onAction: () => api.invoke('shell:reveal', f) });
+      toast('Rappel prêt : votre agenda s’ouvre pour l’ajouter.', { action: 'Afficher', onAction: () => api.invoke('shell:reveal', f) });
     } catch { toast('Impossible de préparer le rappel pour l’agenda.', { kind: 'bad' }); }
     return;
   }
@@ -136,7 +136,7 @@ async function addToAgenda(p, planName) {
   const a = Object.assign(document.createElement('a'), { href: url, download: `${name}.ics` });
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
-  toast('Rappel téléchargé : ouvre le fichier pour l’ajouter à ton agenda.');
+  toast('Rappel téléchargé : ouvrez le fichier pour l’ajouter à votre agenda.');
 }
 
 // ------------------------------------------------------------------ carte
@@ -150,7 +150,7 @@ export function card(p, { planName, plan }) {
   return `<section class="nxo-sub nxo-${esc(plan)}" data-nxo-sub data-start="${p.start.getTime()}" data-end="${p.end.getTime()}" data-total="${total}" data-plan-name="${esc(planName)}" data-org="${esc(p.orgId || '')}">
     <div class="nxo-sub-head">
       <span class="nxo-sub-ic">${ico('nxCalendar', 16)}</span>
-      <div class="grow"><h3>Ton abonnement ${esc(planName)}</h3><p>Période ${p.annual ? 'annuelle' : 'mensuelle'} du ${esc(shortDate(p.start))} au ${esc(fullDate(p.end))}</p></div>
+      <div class="grow"><h3>Votre abonnement ${esc(planName)}</h3><p>Période ${p.annual ? 'annuelle' : 'mensuelle'} du ${esc(shortDate(p.start))} au ${esc(fullDate(p.end))}</p></div>
       ${state}
     </div>
     <div class="nxo-sub-grid">
@@ -225,7 +225,7 @@ export function onClick(e) {
     localStorage.setItem(REMIND_KEY, String(v));
     localStorage.removeItem(SEEN_KEY);
     for (const b of rem.parentElement.querySelectorAll('[data-nxo-remind]')) { const on = b === rem; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }
-    toast(v ? `Tu seras prévenu ${v === 1 ? 'la veille' : `${v} jours avant`} de l’échéance.` : 'Plus de rappel avant l’échéance.');
+    toast(v ? `Vous serez prévenu ${v === 1 ? 'la veille' : `${v} jours avant`} de l’échéance.` : 'Plus de rappel avant l’échéance.');
     return true;
   }
   const add = e.target.closest('[data-nxo-ics]');

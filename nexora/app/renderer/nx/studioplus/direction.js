@@ -15,7 +15,7 @@ export async function direct(S, text) {
   const opts = { styles: Object.keys(R.STYLES), hdris: Object.keys(R.HDRIS), grades: Object.keys(R.GRADES), particles: Object.keys(R.PARTICLES) };
   const t = busy('L’IA prépare la mise en scène…');
   try {
-    const raw = await aiJson(`Tu règles une vidéo 3D de présentation d'application dans NEXORA. Demande : « ${text} ».
+    const raw = await aiJson(`Vous réglez une vidéo 3D de présentation d'application dans NEXORA. Demande : « ${text} ».
 Choisis uniquement parmi ces valeurs :
 scene : ${Object.entries(SCENES).map(([k, v]) => `${k} (${v})`).join(', ')}
 anim : ${Object.entries(ANIMS).map(([k, v]) => `${k} (${v})`).join(', ')}

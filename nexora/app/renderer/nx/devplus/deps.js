@@ -46,12 +46,12 @@ export function mount(el, ctx) {
     const up = t.closest('[data-up]');
     if (up) {
       const o = st.r.outdated.find((x) => x.name === up.dataset.up);
-      if (o && o.major && !await confirmSheet({ icon: 'warn', title: `Passer ${o.name} en version ${o.latest} ?`, sub: 'C’est une version majeure : elle peut casser le projet. Lance les tests après la mise à jour.', go: 'Mettre à jour' })) return;
+      if (o && o.major && !await confirmSheet({ icon: 'warn', title: `Passer ${o.name} en version ${o.latest} ?`, sub: 'C’est une version majeure : elle peut casser le projet. Lancez les tests après la mise à jour.', go: 'Mettre à jour' })) return;
       st.working = up.dataset.up; st.log = ''; render();
       try { await call('devx:deps-update', { name: up.dataset.up, dev: Boolean(up.dataset.dev) }); toast(`${up.dataset.up} est à jour.`); st.working = ''; await scan(); } catch { st.working = ''; render(); }
       return;
     }
-    if (t.closest('[data-act="fix"]') && await confirmSheet({ icon: 'wrench', title: 'Corriger les failles automatiquement ?', sub: 'Le gestionnaire de paquets passe aux versions corrigées compatibles. Lance les tests ensuite.', go: 'Corriger' })) {
+    if (t.closest('[data-act="fix"]') && await confirmSheet({ icon: 'wrench', title: 'Corriger les failles automatiquement ?', sub: 'Le gestionnaire de paquets passe aux versions corrigées compatibles. Lancez les tests ensuite.', go: 'Corriger' })) {
       st.log = ''; st.busy = true; render();
       try { const r = await call('devx:deps-fix'); toast(r.ok ? 'Corrections appliquées.' : 'Certaines failles demandent une mise à jour majeure : voir le journal.'); } catch { /* message affiché */ }
       st.busy = false; await scan();

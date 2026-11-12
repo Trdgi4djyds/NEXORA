@@ -124,7 +124,7 @@ export async function add(S, key) {
     const pos = busyScene ? [Math.round(d.mm / 40 + 6), 0, 0] : [0, 0, 0];
     const item = S.addDecor({ kind: 'glb', glbId: id, color: '#ffffff', nxDevice: key, nxScreen: image ? 'scene' : 'nexora', pos });
     if (item) { item.name = d.name; S.renderList && S.renderList(); }
-    toast(`${d.name} ajouté : modèle réaliste à taille réelle${image ? ', avec la capture de la scène' : ''}. Change son écran dans le panneau de droite.`);
+    toast(`${d.name} ajouté : modèle réaliste à taille réelle${image ? ', avec la capture de la scène' : ''}. Changez son écran dans le panneau de droite.`);
     return item;
   } catch (er) { toast(er.message || String(er), { kind: 'bad' }); } finally { done(t); }
 }
@@ -132,7 +132,7 @@ export async function add(S, key) {
 // Nouvel écran pour l'appareil sélectionné : le GLB est reconstruit avec l'image, puis l'objet est rebâti.
 export async function setScreen(S, image, label) {
   const e = S.sel && S.objects.get(S.sel);
-  if (!e || !e.item.nxDevice) { toast('Sélectionne d’abord un appareil réaliste.', { kind: 'bad' }); return; }
+  if (!e || !e.item.nxDevice) { toast('Sélectionnez d’abord un appareil réaliste.', { kind: 'bad' }); return; }
   const t = busy('Mise à jour de l’écran…');
   try {
     e.item.glbId = await register(S, await build(e.item.nxDevice, image));
