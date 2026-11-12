@@ -125,6 +125,8 @@ public class MainActivity extends Activity {
     int insetBottom;
     int imeBottom;
     boolean lastFailed;
+    // NEXORA #114 : module AdMob (VtAds, ajouté par le kit AdMob ; absent sinon), prévenu de chaque page chargée.
+    Object ads;
     long backPressedAt;
     String pendingUrl;
     LocalAssets local;
@@ -852,6 +854,15 @@ public class MainActivity extends Activity {
         if (billing != null && billing.optBoolean("enabled", false)) {
             step("billing", () -> Class.forName("app.vitrine.shell.VtBilling").getMethod("attach", android.app.Activity.class, WebView.class, String.class).invoke(null, this, web, billing.toString()));
         }
+        // NEXORA #114 : modules OneSignal (VtOneSignal) et AdMob (VtAds), ajoutés par leurs kits ; absents sinon.
+        final org.json.JSONObject onesignal = cfg.raw != null ? cfg.raw.optJSONObject("onesignal") : null;
+        if (onesignal != null && onesignal.optBoolean("enabled", false)) {
+            step("onesignal", () -> Class.forName("app.vitrine.shell.VtOneSignal").getMethod("attach", android.app.Activity.class, WebView.class, String.class).invoke(null, this, web, onesignal.toString()));
+        }
+        final org.json.JSONObject admob = cfg.raw != null ? cfg.raw.optJSONObject("ads") : null;
+        if (admob != null && admob.optBoolean("enabled", false)) {
+            step("ads", () -> ads = Class.forName("app.vitrine.shell.VtAds").getMethod("attach", android.app.Activity.class, WebView.class, String.class).invoke(null, this, web, admob.toString()));
+        }
         web.setWebViewClient(new Client());
         web.setWebChromeClient(new Chrome());
         web.setDownloadListener((url, userAgent, disposition, mime, length) -> download(url, userAgent, disposition, mime));
@@ -1128,6 +1139,7 @@ public class MainActivity extends Activity {
                 hideSplash();
             }
             CookieManager.getInstance().flush();
+            if (ads != null) step("ads", () -> ads.getClass().getMethod("pageLoaded").invoke(ads));
         }
 
         @Override

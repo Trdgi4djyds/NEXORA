@@ -40,7 +40,8 @@
     "icones:lucide": "node scripts/icones-lucide.mjs",
     "audit:ui": "node scripts/audit-ui.mjs",
     "github:push": "node scripts/github-push.mjs",
-    "test:defilement": "node scripts/test-defilement.mjs"
+    "test:defilement": "node scripts/test-defilement.mjs",
+    "test:modules": "node scripts/test-modules.mjs"
   },
   "devDependencies": {
     "@electron/asar": "^4.3.1",

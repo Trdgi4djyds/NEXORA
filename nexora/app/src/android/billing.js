@@ -31,10 +31,16 @@ const SCOPE = 'https://www.googleapis.com/auth/androidpublisher';
 const EXE = process.platform === 'win32' ? '.exe' : '';
 
 class BillingKit extends PushKit {
+  /* NEXORA #114 : name, root, fallbackVersion, format, floors, shim (pont Java), shimClass, lib (nom affiché), title
+   * (préfixe des messages), bridge (nom du pont), ready (fin de préparation), permissions et minSdk rendent ce kit
+   * réutilisable pour les modules OneSignal et AdMob (modules.js) ; valeurs par défaut : Google Play Billing. */
   constructor(opts) {
     super({
-      ...opts, name: 'billing', root: ROOT, repos: REPOS, fallbackVersion: FALLBACK_VERSION, format: FORMAT,
+      name: 'billing', root: ROOT, repos: REPOS, fallbackVersion: FALLBACK_VERSION, format: FORMAT, ...opts,
     });
+    this.mod = {
+      shim: SHIM, shimClass: 'VtBilling', lib: 'Google Play Billing', title: 'Achats intégrés', bridge: 'pont des achats', ready: 'Kit d’achats intégrés prêt', permissions: ['com.android.vending.BILLING', 'android.permission.INTERNET'], minSdk: MIN_SDK, ...(opts.module || {}),
+    };
   }
 
   async installInner(tools, onStep = () => {}) {
@@ -44,13 +50,13 @@ class BillingKit extends PushKit {
     onStep({ label: 'Vérification de l’emplacement du kit', progress: 0.01 });
     const w = await this.checkWritable();
     if (!w.ok) { const e = new Error(w.error); e.code = w.code || 'EPERM'; throw e; }
-    onStep({ label: 'Recherche de la dernière version de Google Play Billing', progress: 0.02 });
+    onStep({ label: `Recherche de la dernière version de ${this.mod.lib}`, progress: 0.02 });
     const version = await this.latestVersion();
     const dir = path.join(this.base, version);
     const libs = path.join(dir, 'libs');
     await fsx.mkdirp(libs);
     const arts = await this.resolve(version, onStep);
-    this.log(`Google Play Billing ${version} : ${arts.length} bibliothèques.`);
+    this.log(`${this.mod.lib} ${version} : ${arts.length} bibliothèques.`);
     for (const old of fs.readdirSync(dir).filter((n) => /^x\d*$/.test(n))) await fsx.rmrf(path.join(dir, old)).catch(() => {});
     const work = path.join(dir, `x${Date.now() % 1e6}`);
     await fsx.mkdirp(work);
@@ -102,16 +108,16 @@ class BillingKit extends PushKit {
       items.push(it);
     }
     const allJars = items.flatMap((it) => it.jars);
-    // Pont entre la page et Google Play Billing.
-    onStep({ label: 'Compilation du pont des achats', progress: 0.58 });
+    // Pont entre la page et la bibliothèque.
+    onStep({ label: `Compilation du ${this.mod.bridge}`, progress: 0.58 });
     const cls = path.join(work, 'classes');
     await fsx.mkdirp(cls);
-    const src = path.join(work, 'src', 'app', 'vitrine', 'shell', 'VtBilling.java');
+    const src = path.join(work, 'src', 'app', 'vitrine', 'shell', `${this.mod.shimClass}.java`);
     await fsx.mkdirp(path.dirname(src));
-    await fsx.writeFile(src, fs.readFileSync(SHIM));
+    await fsx.writeFile(src, fs.readFileSync(this.mod.shim));
     let r = await run(javac, ['--release', '11', '-nowarn', '-encoding', 'UTF-8', '-cp', [tools.platform.jar, ...allJars].join(path.delimiter), '-d', cls, src]);
-    if (r.code) throw new Error(`Compilation du pont des achats impossible : ${(r.stderr || r.stdout).slice(-1200)}`);
-    const shimJar = path.join(work, 'vtbilling.jar');
+    if (r.code) throw new Error(`Compilation du ${this.mod.bridge} impossible : ${(r.stderr || r.stdout).slice(-1200)}`);
+    const shimJar = path.join(work, `${this.mod.shimClass.toLowerCase()}.jar`);
     r = await run(path.join(tools.java.home, 'bin', `jar${EXE}`), ['cf', shimJar, '-C', cls, '.']);
     if (r.code) throw new Error(`Assemblage du pont impossible : ${r.stderr}`);
     // Conversion au format Android, bibliothèque par bibliothèque (choix à la construction).
@@ -124,13 +130,13 @@ class BillingKit extends PushKit {
     let n = 0;
     for (const u of units) {
       n += 1;
-      onStep({ label: `Conversion au format Android (d8) : ${u.it ? u.it.ga.split(':')[1] : 'pont des achats'} (${n}/${units.length})`, progress: 0.6 + 0.35 * (n / units.length) });
+      onStep({ label: `Conversion au format Android (d8) : ${u.it ? u.it.ga.split(':')[1] : this.mod.bridge} (${n}/${units.length})`, progress: 0.6 + 0.35 * (n / units.length) });
       const out = path.join(dexDir, u.name);
       // eslint-disable-next-line no-await-in-loop
       await fsx.mkdirp(out);
       const cp = allJars.filter((j) => !u.jars.includes(j)).flatMap((j) => ['--classpath', j]);
       // eslint-disable-next-line no-await-in-loop
-      r = await run(tools.java.java, ['-Xmx2g', '-cp', d8, 'com.android.tools.r8.D8', '--release', '--min-api', String(MIN_SDK), '--lib', tools.platform.jar, ...cp, '--output', out, ...u.jars], { timeout: 15 * 60 * 1000 });
+      r = await run(tools.java.java, ['-Xmx2g', '-cp', d8, 'com.android.tools.r8.D8', '--release', '--min-api', String(this.mod.minSdk), '--lib', tools.platform.jar, ...cp, '--output', out, ...u.jars], { timeout: 15 * 60 * 1000 });
       if (r.code) throw new Error(`Conversion d8 impossible (${u.it ? u.it.ga : 'pont'}) : ${`${r.stderr}\n${r.stdout}`.split('\n').filter((l) => /error/i.test(l)).slice(0, 6).join('\n') || r.stderr.slice(0, 1200)}`);
       const files = fs.readdirSync(out).filter((f) => /^classes\d*\.dex$/.test(f)).map((f) => `${u.name}/${f}`);
       if (u.it) u.it.dex = files; else units.shim = files;
@@ -145,7 +151,7 @@ class BillingKit extends PushKit {
       await fsx.mkdirp(test);
       const inputs = [...live().flatMap((it) => it.dex), ...units.shim].map((f) => path.join(dexDir, f));
       // eslint-disable-next-line no-await-in-loop
-      r = await run(tools.java.java, ['-Xmx2g', '-cp', d8, 'com.android.tools.r8.D8', '--release', '--min-api', String(MIN_SDK), '--lib', tools.platform.jar, '--output', test, ...inputs], { timeout: 15 * 60 * 1000 });
+      r = await run(tools.java.java, ['-Xmx2g', '-cp', d8, 'com.android.tools.r8.D8', '--release', '--min-api', String(this.mod.minSdk), '--lib', tools.platform.jar, '--output', test, ...inputs], { timeout: 15 * 60 * 1000 });
       // eslint-disable-next-line no-await-in-loop
       await fsx.rmrf(test).catch(() => {});
       if (!r.code) break;
@@ -160,7 +166,7 @@ class BillingKit extends PushKit {
     }
     if (r.code) throw new Error('Assemblage du code impossible : trop de bibliothèques en double.');
     const kit = {
-      format: FORMAT, version, built: new Date().toISOString(), dexDir: dexName,
+      format: this.format, version, built: new Date().toISOString(), dexDir: dexName,
       // dex : liste complète (vérification du kit par PushKit.status) ; détail par bibliothèque dans items.
       dex: [...live().flatMap((it) => it.dex), ...units.shim],
       shim: units.shim,
@@ -174,28 +180,59 @@ class BillingKit extends PushKit {
     await fsx.writeFile(this.kitFile(), JSON.stringify(kit, null, 1));
     await fsx.rmrf(work).catch((e) => this.log(`Nettoyage reporté : ${e.code || e.message}`));
     for (const old of oldDex) await fsx.rmrf(path.join(dir, old)).catch(() => {});
-    onStep({ label: 'Kit d’achats intégrés prêt', progress: 1 });
+    onStep({ label: this.mod.ready, progress: 1 });
     return this.status();
   }
 
   /* Éléments de construction : bibliothèques absentes du kit de notifications (s'il est utilisé), fusionnées
-   * avec le pont en un seul code (d8). pushArtifacts : « groupe:nom:version » du kit de notifications. */
-  async forBuild(spec, { tools, work, pushArtifacts = [], log = () => {} }) {
+   * avec le pont en un seul code (d8). pushArtifacts : « groupe:nom:version » du kit de notifications.
+   * otherDex (NEXORA #114) : code (dex) des kits déjà retenus, pour écarter les classes qu'ils fournissent déjà. */
+  async forBuild(spec, {
+    tools, work, pushArtifacts = [], otherDex = [], log = () => {},
+  }) {
     const k = this.kit();
     const have = new Map(pushArtifacts.map((s) => { const p = s.split(':'); return [`${p[0]}:${p[1]}`, p[2]]; }));
     const chosen = [];
     for (const it of k.items) {
       if (have.has(it.ga)) {
-        if (cmpVer(have.get(it.ga), it.v) < 0) log(`Achats intégrés : ${it.ga} ${have.get(it.ga)} vient du kit de notifications (le kit d’achats attend ${it.v}). Mets à jour le kit de notifications si un achat échoue.`);
+        if (cmpVer(have.get(it.ga), it.v) < 0) log(`${this.mod.title} : ${it.ga} ${have.get(it.ga)} vient d’un autre kit de l’application (ce kit attend ${it.v}). Mettez à jour l’autre kit si une fonction échoue.`);
         continue;
       }
       chosen.push(it);
     }
-    const out = path.join(work, 'billing-dex');
+    const out = path.join(work, `${this.name}-dex`);
     fs.mkdirSync(out, { recursive: true });
+    const d8 = ['-Xmx2g', '-cp', path.join(tools.buildTools.dir, 'lib', 'd8.jar'), 'com.android.tools.r8.D8', '--release', '--min-api', String(this.mod.minSdk), '--lib', tools.platform.jar];
+    // NEXORA #114 : fusion d'essai avec le code des kits déjà retenus pour l'application (otherDex) : deux bibliothèques
+    // de noms différents peuvent contenir les mêmes classes (ancien appcompat et appcompat-resources, guava et
+    // listenablefuture…) ; une petite bibliothèque de ce kit est alors écartée, puis on recommence.
+    if (otherDex.length) {
+      const prev = path.join(work, `${this.name}-autres`);
+      fs.mkdirSync(prev, { recursive: true });
+      const prevFiles = otherDex.map((buf, i) => { const f = path.join(prev, `k${i}.dex`); fs.writeFileSync(f, buf); return f; });
+      for (let attempt = 0; attempt < 25; attempt++) {
+        const test = path.join(work, `${this.name}-essai${attempt}`);
+        fs.mkdirSync(test, { recursive: true });
+        // eslint-disable-next-line no-await-in-loop
+        const t = await run(tools.java.java, [...d8, '--output', test, ...[...chosen.flatMap((it) => it.dex), ...k.shim].map((f) => path.join(k.dir, k.dexDir, f)), ...prevFiles], { timeout: 10 * 60 * 1000 });
+        fs.rmSync(test, { recursive: true, force: true });
+        if (!t.code) break;
+        const dup = /is defined multiple times: (.+?classes\d*\.dex), (.+?classes\d*\.dex)/.exec(`${t.stderr}\n${t.stdout}`) || /is defined multiple times: (.+?\.dex), (.+?\.dex)/.exec(`${t.stderr}\n${t.stdout}`);
+        const owner = (f) => chosen.find((it) => it.dex.some((d) => path.resolve(path.join(k.dir, k.dexDir, d)) === path.resolve(f)));
+        const mine = dup && (owner(dup[1]) || owner(dup[2]));
+        if (!mine) break; // conflit étranger à ce kit
+        // Seule une petite bibliothèque (fragment ou compatibilité, moins de 256 Ko de code) est écartée ; une grande
+        // (guava…) reste, quitte à doubler quelques classes identiques : Android charge la première trouvée.
+        const size = mine.dex.reduce((n, d) => n + fs.statSync(path.join(k.dir, k.dexDir, d)).size, 0);
+        if (size > 256 * 1024) { log(`${this.mod.title} : ${mine.ga} ${mine.v} gardée malgré quelques classes communes avec un autre kit.`); break; }
+        chosen.splice(chosen.indexOf(mine), 1);
+        log(`${this.mod.title} : ${mine.ga} ${mine.v} écartée (classes déjà fournies par un autre kit de l’application).`);
+      }
+      fs.rmSync(prev, { recursive: true, force: true });
+    }
     const inputs = [...chosen.flatMap((it) => it.dex), ...k.shim].map((f) => path.join(k.dir, k.dexDir, f));
-    const r = await run(tools.java.java, ['-Xmx2g', '-cp', path.join(tools.buildTools.dir, 'lib', 'd8.jar'), 'com.android.tools.r8.D8', '--release', '--min-api', String(MIN_SDK), '--lib', tools.platform.jar, '--output', out, ...inputs], { timeout: 10 * 60 * 1000 });
-    if (r.code) throw new Error(`Achats intégrés : fusion du code impossible : ${(r.stderr || r.stdout).slice(-1000)}`);
+    const r = await run(tools.java.java, ['-Xmx2g', '-cp', path.join(tools.buildTools.dir, 'lib', 'd8.jar'), 'com.android.tools.r8.D8', '--release', '--min-api', String(this.mod.minSdk), '--lib', tools.platform.jar, '--output', out, ...inputs], { timeout: 10 * 60 * 1000 });
+    if (r.code) throw new Error(`${this.mod.title} : fusion du code impossible : ${(r.stderr || r.stdout).slice(-1000)}`);
     const sub = (s) => s.replace(/\$\{applicationId\}/g, spec.appId);
     const merged = mergeManifests(chosen.map((it) => it.manifest).filter(Boolean));
     const gms = (k.items.find((it) => it.gms) || {}).gms;
@@ -205,7 +242,7 @@ class BillingKit extends PushKit {
       resZips: chosen.filter((it) => it.res).map((it) => path.join(k.dir, it.res)),
       packages: [...new Set(chosen.map((it) => it.pkg).filter(Boolean))],
       application,
-      permissions: [...new Set([...merged.permissions.map(sub), 'com.android.vending.BILLING', 'android.permission.INTERNET'])],
+      permissions: [...new Set([...merged.permissions.map(sub), ...this.mod.permissions])],
       permissionDecl: merged.permissionDecl.map(sub),
       queries: merged.queries,
       dex: fs.readdirSync(out).filter((f) => /^classes\d*\.dex$/.test(f)).sort((a, b) => (Number(a.slice(7, -4)) || 1) - (Number(b.slice(7, -4)) || 1)).map((f) => fs.readFileSync(path.join(out, f))),

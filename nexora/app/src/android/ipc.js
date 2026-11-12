@@ -69,6 +69,10 @@ function register({
   // NEXORA #019 : kit d'achats intégrés (Google Play Billing), même principe et mêmes emplacements de repli.
   const billing = require('./billing');
   const billingKit = new billing.BillingKit({ home, fetch: fetchImpl, log: (l) => send('android:log', l) });
+  // NEXORA #114 : modules OneSignal et AdMob, même principe.
+  const modules = require('./modules');
+  const oneSignalKit = new modules.OneSignalKit({ home, fetch: fetchImpl, log: (l) => send('android:log', l) });
+  const adsKit = new modules.AdsKit({ home, fetch: fetchImpl, log: (l) => send('android:log', l) });
   let tools = null;
   let busy = false;
   const detect = async () => { tools = await toolchain.detect(); return tools; };
@@ -191,6 +195,19 @@ function register({
     return billing.verify({ ...opts, serviceAccount: readSa(playFile(opts.appId)) }, fetchImpl);
   });
 
+  // ---------------------------------------------------------------- NEXORA #114 : modules OneSignal et AdMob
+  for (const [part, kit] of [['onesignal', oneSignalKit], ['admob', adsKit]]) {
+    ipcMain.handle(`android:${part}-status`, () => ({ ...kit.status(), dir: kit.base }));
+    ipcMain.handle(`android:${part}-install`, async () => {
+      if (busy) throw new Error('Une opération Android est déjà en cours.');
+      busy = true;
+      try {
+        if (!tools || !tools.ready) await detect();
+        return await kit.install(tools, (p) => send('android:progress', { part, label: p.label, progress: p.progress }));
+      } finally { busy = false; }
+    });
+  }
+
   // ---------------------------------------------------------------- centre de notifications : historique et envois programmés
   const notifDir = path.join(home, 'push', 'envois');
   const histFile = (appId) => path.join(notifDir, `${String(appId).replace(/[^\w.-]/g, '_')}.json`);
@@ -273,7 +290,7 @@ function register({
       const sounds = {};
       for (const [k, v] of Object.entries(spec.sounds || {})) sounds[k] = Buffer.from(v);
       const r = await build({ ...spec, images, sounds, outDir }, {
-        tools, keystores, fetch: fetchImpl, owner: spec.owner, pushKit, billingKit,
+        tools, keystores, fetch: fetchImpl, owner: spec.owner, pushKit, billingKit, oneSignalKit, adsKit,
         log: (l) => send('android:log', l),
         step: (label, progress) => send('android:step', { label, progress }),
       });

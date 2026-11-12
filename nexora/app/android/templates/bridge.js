@@ -223,6 +223,47 @@
     consume: function (token) { return callB('consume', [String(token)]); },
     onPurchase: function (cb) { window.addEventListener('nexora-billing', function (e) { if (e.detail && e.detail.type === 'purchase') cb(e.detail.purchases); }); },
   };
+  // NEXORA #114 : modules OneSignal et AdMob (si l'application a été construite avec le module).
+  function callNative(obj, label, method, args) {
+    if (!obj) return Promise.reject(new Error(label + ' non activé dans cette application'));
+    return new Promise(function (res, rej) {
+      var id = 'm' + (++seq) + '_' + Date.now();
+      pending[id] = { res: res, rej: rej };
+      try { obj[method].apply(obj, args.concat([id])); } catch (e) { delete pending[id]; rej(e); }
+    });
+  }
+  // OneSignal : login(idClient) relie l'appareil au compte du client (envois ciblés depuis OneSignal), logout(),
+  // tags({ cle: 'valeur' }) (valeur vide = retirée), requestPermission(), consent(true|false), optIn(true|false),
+  // state() → { permission, subscriptionId, optedIn, onesignalId, externalId }, onClick(cb) → { title, body, url, data }.
+  var OS = window.VitrineOneSignal;
+  App.onesignal = {
+    available: !!OS,
+    login: function (externalId) { return callNative(OS, 'OneSignal', 'login', [String(externalId || '')]); },
+    logout: function () { return callNative(OS, 'OneSignal', 'logout', []); },
+    tags: function (obj) { return callNative(OS, 'OneSignal', 'tags', [JSON.stringify(obj || {})]); },
+    requestPermission: function () { return callNative(OS, 'OneSignal', 'requestPermission', []); },
+    consent: function (given) { return callNative(OS, 'OneSignal', 'consent', [given !== false]); },
+    optIn: function (on) { return callNative(OS, 'OneSignal', 'optIn', [on !== false]); },
+    state: function () { return callNative(OS, 'OneSignal', 'state', []); },
+    onClick: function (cb) {
+      window.addEventListener('nexora-onesignal', function (e) { if (e.detail && e.detail.type === 'click') cb(e.detail); });
+      // Notification touchée avant le chargement de la page : remise une fois la page prête.
+      try { var last = window.__vitrineOneSignalClick || (OS && OS.lastClick && OS.lastClick() ? JSON.parse(OS.lastClick()) : null); if (last) setTimeout(function () { cb(last); }, 0); } catch (e) { /* ignore */ }
+    },
+  };
+  // AdMob : banner(true|false) affiche ou masque la bannière, interstitial() montre une annonce plein écran,
+  // rewarded() → récompense { type, amount } si la vidéo est regardée jusqu'au bout, state(), privacyOptions()
+  // (bouton « Gérer mes choix de confidentialité »), on(type, cb) : ready, banner-loaded, interstitial-closed, reward…
+  var AD = window.VitrineAds;
+  App.ads = {
+    available: !!AD,
+    banner: function (show) { return callNative(AD, 'AdMob', 'banner', [show !== false]); },
+    interstitial: function () { return callNative(AD, 'AdMob', 'interstitial', []); },
+    rewarded: function () { return callNative(AD, 'AdMob', 'rewarded', []); },
+    state: function () { return callNative(AD, 'AdMob', 'ready', []); },
+    privacyOptions: function () { return callNative(AD, 'AdMob', 'privacyOptions', []); },
+    on: function (type, cb) { window.addEventListener('nexora-ads', function (e) { if (e.detail && (!type || e.detail.type === type)) cb(e.detail.data, e.detail.type); }); },
+  };
   window.NexoraApp = App;
   window.VitrineApp = App;
 

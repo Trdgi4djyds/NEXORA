@@ -12,6 +12,8 @@ const { rewrite, list } = require('./zip');
 const { optimizeWww } = require('./optimize');
 const { parseGoogleServices, firebaseValuesXml, channelId } = require('./push');
 const { mergeKits } = require('./billing');
+// NEXORA #114 : modules OneSignal et AdMob.
+const { oneSignalConfig, adsConfig, checkModules } = require('./modules');
 
 const ROOT = path.join(__dirname, '..', '..', 'android');
 const MIN_SDK = 24;
@@ -413,6 +415,9 @@ function shellConfig(spec) {
     ...(spec.billing && spec.billing.enabled && spec.mode !== 'twa' ? {
       billing: { enabled: true, autoAcknowledge: spec.billing.autoAcknowledge !== false, consumables: (spec.billing.consumables || []).filter(Boolean).slice(0, 200) },
     } : {}),
+    // NEXORA #114 : modules OneSignal (lu par VtOneSignal) et AdMob (lu par VtAds).
+    ...(spec.onesignal && spec.onesignal.enabled && spec.mode !== 'twa' ? { onesignal: oneSignalConfig(spec) } : {}),
+    ...(spec.ads && spec.ads.enabled && spec.mode !== 'twa' ? { ads: adsConfig(spec) } : {}),
     // NEXORA #018 : statistiques et plantages envoyés au compte NEXORA du propriétaire (lu par Insights.java).
     ...(spec.insights && spec.insights.key && /^https:\/\//.test(spec.insights.url || '') ? {
       insights: {
@@ -535,11 +540,38 @@ async function build(spec, ctx) {
       }
       step('Achats intégrés : ajout de Google Play Billing', 0.17);
       const bk = await ctx.billingKit.forBuild(spec, {
-        tools, work, log, pushArtifacts: pk ? (ctx.pushKit.kit().artifacts || []) : [],
+        tools, work, log, pushArtifacts: pk ? (ctx.pushKit.kit().artifacts || []) : [], otherDex: pk ? pk.dex : [],
       });
       log(`Achats intégrés : Google Play Billing ${ctx.billingKit.status().version} (${bk.libraries} bibliothèque(s) ajoutée(s)).`);
       pk = mergeKits(pk, bk);
       pk.billing = true;
+    }
+    // NEXORA #114 : modules OneSignal et AdMob, kits préparés une fois et réunis aux précédents (aucune bibliothèque en double).
+    const modErrors = checkModules(spec);
+    if (modErrors.length) throw new Error(modErrors[0]);
+    const kitArtifacts = [
+      ...(usePush ? (ctx.pushKit.kit().artifacts || []) : []),
+      ...(useBilling ? (ctx.billingKit.kit().artifacts || []) : []),
+    ];
+    for (const [on, kit, label] of [
+      [spec.onesignal && spec.onesignal.enabled && spec.mode !== 'twa', ctx.oneSignalKit, 'OneSignal'],
+      [spec.ads && spec.ads.enabled && spec.mode !== 'twa', ctx.adsKit, 'AdMob'],
+    ]) {
+      if (!on) continue;
+      if (!kit) throw new Error(`${label} : kit indisponible.`);
+      if (!kit.status().installed) {
+        step(`${label} : préparation du kit (une seule fois)`, 0.06);
+        // eslint-disable-next-line no-await-in-loop
+        await kit.install(tools, (p) => step(`Kit ${label} : ${p.label}`, 0.06 + (p.progress || 0) * 0.1));
+      }
+      step(`${label} : ajout du module`, 0.17);
+      // eslint-disable-next-line no-await-in-loop
+      const mk = await kit.forBuild(spec, {
+        tools, work, log, pushArtifacts: [...kitArtifacts], otherDex: pk ? pk.dex : [],
+      });
+      log(`${label} : ${kit.mod.lib} ${kit.status().version} (${mk.libraries} bibliothèque(s) ajoutée(s)).`);
+      kitArtifacts.push(...(kit.kit().artifacts || []));
+      pk = mergeKits(pk, mk);
     }
     write(path.join(work, 'AndroidManifest.xml'), manifest(spec, pk));
     const assets = path.join(work, 'assets');
@@ -586,8 +618,8 @@ async function build(spec, ctx) {
     // Mode Trusted Web Activity : second fichier de code (androidx.browser réduit).
     const dexExtra = spec.mode === 'twa' ? [{ name: 'classes2.dex', data: fs.readFileSync(path.join(ROOT, 'shell', 'twa.dex')) }] : [];
     if (pk) {
-      step(usePush ? 'Notifications push : identifiants des ressources' : 'Achats intégrés : identifiants des ressources', 0.36);
-      const rdex = await (ctx.pushKit || ctx.billingKit).compileR(path.join(work, 'gen'), work, tools);
+      step('Modules : identifiants des ressources', 0.36);
+      const rdex = await (ctx.pushKit || ctx.billingKit || ctx.oneSignalKit || ctx.adsKit).compileR(path.join(work, 'gen'), work, tools);
       for (const d of [...pk.dex, ...rdex]) dexExtra.push({ name: `classes${dexExtra.length + 2}.dex`, data: d });
     }
     const result = {

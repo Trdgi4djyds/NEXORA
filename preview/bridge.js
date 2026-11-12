@@ -447,6 +447,9 @@
     "android:play-status": () => ({ serviceAccount: false }),
     // NEXORA #019 : kit d'achats intégrés pas encore préparé sur un PC neuf (src/android/billing.js, status()).
     "android:billing-status": () => ({ installed: false, dir: "" }),
+    // NEXORA #114 : modules OneSignal et AdMob (kits non préparés dans l'aperçu).
+    "android:onesignal-status": () => ({ installed: false, dir: "" }),
+    "android:admob-status": () => ({ installed: false, dir: "" }),
     "android:listing-assets": (appId) => listingCopy(appId),
     "android:listing-asset-put": async ({ appId, kind, dataUrl, replace }) => {
       const s = listingOf(appId)
