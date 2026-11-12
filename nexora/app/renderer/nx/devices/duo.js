@@ -4,6 +4,9 @@
 // (chunk-NXGVNXL4.js) : before se termine quand l'appareil peut changer d'état, after() termine l'animation sur
 // le nouvel état. Le site reste chargé pendant ce temps (l'appareil réel est seulement rendu transparent).
 // Coupé par « Animations : aucune / réduites » des Réglages et par la préférence « Réduire les animations ».
+// NEXORA #116 : sens corrigé d'après les images d'Apple : fermé, l'appareil a sa charnière à gauche ; c'est donc la
+// moitié gauche qui se replie vers l'utilisateur sur la moitié droite (qui ne bouge pas), et sa face extérieure
+// porte l'écran externe (coins nets côté charnière, caméra en haut à droite).
 import { settings } from '../core.js';
 
 // Durées ralenties par globalThis.nxFoldSlow (captures du suivi : pnpm captures … --pliage).
@@ -59,33 +62,55 @@ async function screenShot(view) {
   } catch { return null; }
 }
 
-// Face extérieure du volet : coque à la couleur de l'appareil, écran externe éteint, caméra.
-function cover(g, w, h, side) {
+// Côté de la charnière une fois l'appareil fermé (catalogue : p.hinge de l'état fermé ; iPhone Duo : gauche, comme
+// sur les images d'Apple). C'est la moitié de ce côté qui se replie sur l'autre ; l'autre moitié ne bouge pas.
+function hingeSide(dev) {
+  const closed = [...dev.states].sort((a, b) => (Number(a.w) || 0) - (Number(b.w) || 0))[0] || {};
+  const h = closed.p && closed.p.hinge;
+  if (h === 'left' || h === 'right') return h;
+  return dev.fold.coverOn === 'right' ? 'right' : 'left';
+}
+function closedState(dev) {
+  return [...dev.states].sort((a, b) => (Number(a.w) || 0) - (Number(b.w) || 0))[0] || {};
+}
+
+// Face extérieure du volet, telle qu'on la voit une fois l'appareil fermé : coque à la couleur de l'appareil, écran
+// externe éteint, coins et caméra de l'état fermé du catalogue (iPhone Duo : coins nets côté charnière, caméra en
+// haut à droite).
+function cover(g, dev, w, h) {
+  const p = closedState(dev).p || {};
+  const k = w / ((p.b && p.b[0]) || 84);
+  const corners = (v, fb) => (Array.isArray(v) ? v : [v ?? fb, v ?? fb, v ?? fb, v ?? fb]).map((x) => Math.max(2, Number(x) * k));
+  const br = corners(p.br, 9);
+  const sr = corners(p.sr, 7);
+  const pad = Math.max(2, 2.4 * k);
   const el = document.createElement('div');
-  const r = Math.max(10, Math.min(w, h) * 0.12);
-  const pad = Math.max(2, Math.min(w, h) * 0.022);
   el.className = 'nxfold-cover';
   Object.assign(el.style, {
-    position: 'absolute', top: '0', [side]: '0', width: `${w}px`, height: `${h}px`, borderRadius: `${r}px`,
+    position: 'absolute', width: `${w}px`, height: `${h}px`, borderRadius: br.map((r) => `${r}px`).join(' '),
     background: `linear-gradient(135deg, rgba(255,255,255,.22), rgba(255,255,255,0) 38%), ${g.color}`,
     boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.18), inset 0 0 0 2px rgba(0,0,0,.25)',
   });
   const glass = document.createElement('div');
   Object.assign(glass.style, {
-    position: 'absolute', inset: `${pad}px`, borderRadius: `${Math.max(6, r - pad)}px`,
+    position: 'absolute', inset: `${pad}px`, borderRadius: sr.map((r) => `${r}px`).join(' '),
     background: 'radial-gradient(120% 80% at 20% 0%, #2a2d33 0%, #0b0c0f 55%, #050506 100%)',
   });
+  const cut = p.cut && (p.cut.t === 'punch' || p.cut.t === 'udc') ? p.cut : { d: 3.4, y: 5 };
+  const cd = Math.max(4, (Number(cut.d) || 3.4) * k);
+  const gw = w - pad * 2;
+  const cx = cut.cx == null ? gw / 2 : cut.cx < 0 ? gw + cut.cx * k : cut.cx * k;
   const cam = document.createElement('i');
-  const cd = Math.max(5, w * 0.075);
-  Object.assign(cam.style, { position: 'absolute', top: `${Math.max(8, h * 0.035)}px`, left: '50%', width: `${cd}px`, height: `${cd}px`, marginLeft: `${-cd / 2}px`, borderRadius: '50%', background: '#000', boxShadow: '0 0 0 1px rgba(255,255,255,.08)' });
+  Object.assign(cam.style, { position: 'absolute', top: `${(Number(cut.y) || 5) * k}px`, left: `${cx - cd / 2}px`, width: `${cd}px`, height: `${cd}px`, borderRadius: '50%', background: '#000', boxShadow: '0 0 0 1px rgba(255,255,255,.08)' });
   glass.append(cam);
   el.append(glass);
   return el;
 }
 
-// Calque d'animation : deux moitiés du cadre ouvert (fixe et volet), posées sur l'appareil.
-function stage(view, g, coverOn, shot = null) {
+// Calque d'animation : deux moitiés du cadre ouvert (fixe et volet), posées sur l'appareil. side : côté du volet.
+function stage(view, g, side, shot = null) {
   const hinge = g.body.left + g.body.width / 2;
+  const bodyR = g.body.left + g.body.width;
   const root = document.createElement('div');
   root.className = 'nxfold';
   Object.assign(root.style, {
@@ -110,33 +135,34 @@ function stage(view, g, coverOn, shot = null) {
     }
     el.append(face);
     if (moving) {
-      // Ombre portée sur le volet pendant qu'il tourne (corps de l'appareil seulement), et face extérieure
-      // visible au-delà de 90°.
+      // Ombre portée sur le volet pendant qu'il tourne (corps de l'appareil seulement), coins extérieurs arrondis.
       const shade = document.createElement('div');
       const r = Math.max(8, Math.min(g.body.width / 2, g.body.height) * 0.1);
-      const right = coverOn === 'left';
+      const top = g.body.top - g.canvas.top;
       Object.assign(shade.style, {
-        position: 'absolute', top: `${g.body.top - g.canvas.top}px`, height: `${g.body.height}px`, background: '#000', opacity: '0', backfaceVisibility: 'hidden',
-        left: right ? '0' : `${g.body.left - x0}px`, right: right ? `${x1 - (g.body.left + g.body.width)}px` : '0',
-        borderRadius: right ? `0 ${r}px ${r}px 0` : `${r}px 0 0 ${r}px`,
+        position: 'absolute', top: `${top}px`, height: `${g.body.height}px`, background: '#000', opacity: '0', backfaceVisibility: 'hidden',
+        left: side === 'left' ? `${g.body.left - x0}px` : '0', right: side === 'left' ? '0' : `${x1 - bodyR}px`,
+        borderRadius: side === 'left' ? `${r}px 0 0 ${r}px` : `0 ${r}px ${r}px 0`,
       });
       face.append(shade);
       el.shade = shade;
-      const top = g.body.top - g.canvas.top;
-      const back = cover(g, g.body.width / 2, g.body.height, coverOn === 'left' ? 'right' : 'left');
-      Object.assign(back.style, { top: `${top}px`, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' });
-      if (coverOn === 'left') back.style.right = `${x1 - (g.body.left + g.body.width)}px`; else back.style.left = `${g.body.left - x0}px`;
+      // Face extérieure (dos du volet) : retournée dans le volet, elle se pose à l'endroit sur l'autre moitié une
+      // fois le volet replié de 180°.
+      const back = cover(g, view.dev, g.body.width / 2, g.body.height);
+      Object.assign(back.style, { top: `${top}px`, left: `${(side === 'left' ? g.body.left : hinge) - x0}px`, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' });
       el.append(back);
     }
     root.append(el);
     return el;
   };
-  const left = coverOn === 'left';
-  const fixed = left ? half(g.canvas.left, hinge, false) : half(hinge, g.canvas.left + g.canvas.width, false);
-  const flap = left ? half(hinge, g.canvas.left + g.canvas.width, true) : half(g.canvas.left, hinge, true);
-  flap.style.transformOrigin = left ? 'left center' : 'right center';
+  const left = side === 'left';
+  const fixed = left ? half(hinge, g.canvas.left + g.canvas.width, false) : half(g.canvas.left, hinge, false);
+  const flap = left ? half(g.canvas.left, hinge, true) : half(hinge, g.canvas.left + g.canvas.width, true);
+  // Le volet tourne autour de la charnière et vient vers l'utilisateur (les deux moitiés de l'écran intérieur se
+  // referment l'une sur l'autre).
+  flap.style.transformOrigin = left ? 'right center' : 'left center';
   document.body.append(root);
-  return { root, fixed, flap, sign: left ? -1 : 1, hinge };
+  return { root, fixed, flap, sign: left ? 1 : -1, hinge };
 }
 
 function turn(st, from, to) {
@@ -171,16 +197,16 @@ export function fold(view, to) {
     if (!next || cur.id === to) return null;
     const g = geometry(view);
     if (!g) return null;
-    const coverOn = dev.fold.coverOn === 'right' ? 'right' : 'left';
+    const side = hingeSide(dev);
     const closing = (Number(next.w) || 0) < (Number(cur.w) || 0);
     const device = view.$.device;
     if (closing) {
-      // Ouvert → fermé : le volet (avec l'écran affiché) se replie sur l'autre moitié, puis l'appareil fermé
-      // prend sa place.
+      // Ouvert → fermé : le volet (avec l'écran affiché) se replie sur l'autre moitié, qui reste en place, puis
+      // l'appareil fermé prend sa place.
       const hinge = g.body.left + g.body.width / 2;
-      const kept = coverOn === 'left' ? { left: g.body.left, top: g.body.top, height: g.body.height } : { left: hinge, top: g.body.top, height: g.body.height };
+      const kept = side === 'left' ? { left: hinge, top: g.body.top, height: g.body.height } : { left: g.body.left, top: g.body.top, height: g.body.height };
       const run = (async () => {
-        const st = stage(view, g, coverOn, await screenShot(view));
+        const st = stage(view, g, side, await screenShot(view));
         device.style.opacity = '0';
         await turn(st, 0, 180);
         return st;
@@ -196,7 +222,7 @@ export function fold(view, to) {
         },
       };
     }
-    // Fermé → ouvert : la coque fermée se place sur la moitié de l'appareil ouvert, puis le volet se déplie.
+    // Fermé → ouvert : la coque fermée se place sur la moitié fixe de l'appareil ouvert, puis le volet se déplie.
     const ghost = document.createElement('div');
     ghost.className = 'nxfold';
     Object.assign(ghost.style, { position: 'fixed', left: `${g.canvas.left}px`, top: `${g.canvas.top}px`, width: `${g.canvas.width}px`, height: `${g.canvas.height}px`, zIndex: '60', pointerEvents: 'none', transformOrigin: '0 0' });
@@ -210,9 +236,9 @@ export function fold(view, to) {
         const g2 = geometry(view);
         if (!g2) { ghost.remove(); device.style.opacity = ''; return; }
         const hinge = g2.body.left + g2.body.width / 2;
-        const target = coverOn === 'left' ? { left: g2.body.left, top: g2.body.top, height: g2.body.height } : { left: hinge, top: g2.body.top, height: g2.body.height };
+        const target = side === 'left' ? { left: hinge, top: g2.body.top, height: g2.body.height } : { left: g2.body.left, top: g2.body.top, height: g2.body.height };
         await move(ghost, g.canvas, { left: g.body.left, top: g.body.top, height: g.body.height }, target);
-        const st = stage(view, g2, coverOn);
+        const st = stage(view, g2, side);
         st.flap.style.transform = `rotateY(${180 * st.sign}deg)`;
         await frame();
         ghost.remove();

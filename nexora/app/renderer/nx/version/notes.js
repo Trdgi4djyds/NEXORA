@@ -10,6 +10,8 @@ export const NOTES = {
   // NEXORA #114 : défilement des appareils rétabli, icône Android, mises à jour sans dépôt à saisir (republiée en v1.2.2-r5).
   // NEXORA #115 : logo et écran de démarrage, modules OneSignal, AdMob, Analytics et Meta, vouvoiement, iPhone Duo officiel
   // avec animation de pliage, Réglages sans détail interne (republiée en v1.2.2-r6).
+  // NEXORA #116 : sens du pliage corrigé (moitié gauche sur la droite), Galaxy S24 à part, caméra frontale visible sans
+  // site ouvert (republiée en v1.2.2-r7).
   '1.2.2': {
     title: 'NEXORA 1.2.2',
     intro: 'Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.',
@@ -24,7 +26,8 @@ export const NOTES = {
       { icon: 'android', space: 'android', title: 'Nouvelle icône de l’App Builder', text: 'L’App Builder prend la tête du robot Android ; dans Maintenance et sauvegarde, NEXORA vérifie ses mises à jour sans dépôt à indiquer.' },
       { icon: 'sparkle', space: 'android', title: 'Créateur de logo et d’écran de démarrage', text: 'Dans l’App Builder, composez le logo de votre application (initiales, symbole, police, couleurs, idées tirées de son nom) : il devient son icône à toutes les tailles. Composez aussi son écran de démarrage (modèles, dégradé, aurore, motif ou photo, animation).' },
       { icon: 'nxComponent', space: 'android', title: 'Modules OneSignal, AdMob, Google Analytics et Meta', text: 'Ajoutez à votre application les notifications OneSignal, les publicités AdMob (bannière, interstitiel, vidéo avec récompense, consentement), la mesure d’audience Google Analytics et les événements Meta, avec leurs SDK officiels, pilotés depuis votre page.' },
-      { icon: 'fold', space: 'responsive', title: 'iPhone Duo officiel', text: 'Coloris officiels d’Apple (Ciel nocturne, Blanc stellaire) et animation de pliage : le volet tourne autour de la charnière quand vous passez de « Ouvert » à « Fermé ».' },
+      { icon: 'fold', space: 'responsive', title: 'iPhone Duo officiel', text: 'Coloris officiels d’Apple (Ciel nocturne, Blanc stellaire) et animation de pliage : comme sur le vrai appareil, la moitié gauche se replie sur la droite quand vous passez de « Ouvert » à « Fermé » (même sens pour les autres pliables).' },
+      { icon: 'phone', space: 'responsive', title: 'Galaxy S24 fidèle', text: 'Le Galaxy S24 a son propre modèle, avec les dimensions et les coloris officiels de Samsung. La caméra frontale et l’île des iPhone restent visibles quand aucun site n’est ouvert.' },
       { icon: 'user', space: '', title: 'NEXORA vous vouvoie', text: 'Toute l’interface, les e-mails et les messages s’adressent désormais à vous en vous vouvoyant. Les Réglages ne montrent plus de détail technique propre à NEXORA.' },
       { icon: 'key', space: '', title: 'Lanceur 1.0.6', text: 'Le lanceur NEXORA Devs Toolbox prend la même apparence, vous vouvoie et se met à jour tout seul avant d’installer cette version.' },
     ],

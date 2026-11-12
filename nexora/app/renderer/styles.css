@@ -466,7 +466,7 @@ body.os-win32 .tb-spacer-controls { width: 132px; }
 .sm-body { font-size: .82em; color: #6e6e73; line-height: 1.45; word-break: break-word; }
 .sm-btn { margin-top: .6em; font-size: .85em; font-weight: 600; padding: .5em 1.2em; border-radius: 99em; background: var(--accent); color: #fff; }
 .screen-msg.bad .sm-title { color: #c4271f; }
-.screen-msg.idle { padding: 0; overflow: hidden; background: linear-gradient(160deg, #e9eefc 0%, #f4e9f7 48%, #fbefe4 100%); }
+.screen-msg.idle { padding: 0; overflow: hidden; background: linear-gradient(160deg, #e9eefc 0%, #f4e9f7 48%, #fbefe4 100%); z-index: 2; /* NEXORA #116 : sous le calque des découpes (.dv-ov), caméra frontale et île visibles */ }
 html[data-theme='dark'] .screen-msg.idle { background: linear-gradient(160deg, #1d2440 0%, #2b1f3a 50%, #3a2a24 100%); }
 .idle-mark { position: absolute; inset: 0; }
 .idle-mark span { position: absolute; border-radius: 50%; filter: blur(calc(var(--sw, 390) * 0.12px)); opacity: .85; }
