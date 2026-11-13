@@ -334,7 +334,7 @@ function PlanCard({ lic, s }: { lic: Lic; s: Session }) {
             </a>
           </Button>
           <small className="text-[12.5px] text-muted-foreground">
-            Le paiement en ligne arrive bientôt. En attendant, l’équipe NEXORA active votre offre sur demande, en général sous 24 h : écrivez à {supportEmail} ou depuis NEXORA (Mon compte → Support).
+            Le paiement en ligne arrive bientôt. En attendant, l’équipe NEXORA active votre offre sur demande, en général sous 24 h : écrivez à {supportEmail}.
           </small>
         </>
       ) : (

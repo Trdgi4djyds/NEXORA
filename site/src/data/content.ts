@@ -176,7 +176,7 @@ export const PRICING_FAQ: { q: string; a: string }[] = [
   {
     q: "Comment changer d’offre ?",
     // #087 (A-056) : le paiement en ligne n'est pas encore ouvert ; l'équipe active Pro sur demande. #107 : paiement unique (SasPay).
-    a: `Depuis la page Ma licence du site, ou dans NEXORA : Mon compte puis Offre et usage. Le paiement se fait en une fois, par Mobile Money ou carte bancaire, pour un mois ou un an : rien n’est prélevé automatiquement, et vous prolongez depuis Ma licence quand vous voulez. Tant que le paiement en ligne n’est pas ouvert, écrivez à ${CONTACT_EMAIL} ou depuis Mon compte → Support : l’équipe NEXORA active votre offre Pro, en général sous 24 h. Le paiement annuel vous offre deux mois.`,
+    a: `Depuis la page Ma licence du site, ou dans NEXORA : Mon compte puis Offre et usage. Le paiement se fait en une fois, par Mobile Money ou carte bancaire, pour un mois ou un an : rien n’est prélevé automatiquement, et vous prolongez depuis Ma licence quand vous voulez. Tant que le paiement en ligne n’est pas ouvert, écrivez à ${CONTACT_EMAIL} : l’équipe NEXORA active votre offre Pro, en général sous 24 h. Le paiement annuel vous offre deux mois.`,
   },
   {
     // #090 : NEXORA REFERRAL, remise du filleul sur chaque paiement Pro ; parrains invités par l'équipe.

@@ -148,14 +148,14 @@ const graph = (...nodes: Record<string, unknown>[]) => [{ "@context": "https://s
 
 /** Données de référencement d'une page (chemin normalisé : « / », « /tarifs », « /espaces/dev »…). */
 export function headFor(path: string): Head {
-  const base = { path, ogType: "website" as const, image: OG_IMAGE, imageAlt: "NEXORA, l’atelier complet du web installé sur votre PC" }
+  const base = { path, ogType: "website" as const, image: OG_IMAGE, imageAlt: "NEXORA, l’atelier complet du web à portée de main" }
   const canonical = (p: string) => `${SITE_URL}${p === "/" ? "/" : p}`
   const [a, b] = path.split("/").filter(Boolean)
 
   if (!a) {
-    const title = "NEXORA — L’atelier complet du web, installé sur votre PC"
+    const title = "NEXORA — L’atelier complet du web, à portée de main"
     const description = cut(
-      `Concevez, codez, testez sur ${DEVICE_COUNT} modèles d’appareils, publiez sur le web, Android et Windows, puis surveillez votre site, depuis une seule application installée sur votre PC, sans jongler entre dix outils.`,
+      `Concevez, codez, testez sur ${DEVICE_COUNT} modèles d’appareils, publiez sur le web, Android et Windows, puis surveillez votre site, depuis une seule application à portée de main, sans jongler entre dix outils.`,
     )
     return { ...base, title, description, canonical: canonical("/"), robots: INDEX, jsonLd: graph(organisation(), website(), application(), webPage("/", title, description), faqPage(FAQ)) }
   }

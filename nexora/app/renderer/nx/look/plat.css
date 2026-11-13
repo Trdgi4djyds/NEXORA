@@ -67,5 +67,5 @@ html .nxc-cta { background: var(--ink) !important; }
 html .nxc-body > .nx-plan-now { background: color-mix(in srgb, var(--accent) 10%, var(--surface)) !important; }
 
 /* ------------------------------------------------------------------ connexion (nx/auth/auth.css) */
-html .nxl-brand { background: var(--surface-2, var(--surface)) !important; }
+html .nxl > .nxl-brand { background: var(--surface-2, var(--surface)) !important; }
 html :is(.nxl-badge, .nxl-form .nx-sent > svg) { background: #6d5cf6 !important; }

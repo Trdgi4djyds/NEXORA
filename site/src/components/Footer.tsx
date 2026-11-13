@@ -84,12 +84,10 @@ export function Footer() {
           </a>
           {/* #087 : adresse de contact de NEXORA Devs Toolbox, lisible. */}
           {supportEmail && <span className="text-[12.5px] break-all text-muted-foreground">{supportEmail}</span>}
-          <span className="text-[12.5px] text-muted-foreground/70">Dans NEXORA : Mon compte → Support</span>
         </div>
       </div>
       <div className="wrap-wide mt-14 flex flex-wrap items-center justify-between gap-3 border-t border-foreground/[0.06] py-6 text-[13px] text-muted-foreground">
         <span>© {new Date().getFullYear()} NEXORA. Tous droits réservés.</span>
-        <span>Photos : Unsplash · Cadres d’appareils : Meta (via fastlane) et Android Open Source Project · Logos : SVG Logos, marques de leurs titulaires</span>
       </div>
       {/* Logotype en très grand et fin (#099), coupé par le bas de la page (décoratif). */}
       <div className="ftr-word" aria-hidden="true">

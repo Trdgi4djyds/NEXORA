@@ -13,7 +13,7 @@ type Row = { label: string; perm?: string; limit?: string; unit?: string; note?:
 
 /*
  * NEXORA #072 (audit) : le site n'affiche que ce qui existe. Le catalogue partagé avec l'application et les offres
- * du serveur promettent encore une « communauté » (aucune n'existe : l'assistance passe par Mon compte → Support)
+ * du serveur promettent encore une « communauté » (aucune n'existe : l'assistance passe par l'adresse e-mail de l'équipe)
  * et un « accès en avant-première » (permission `early_access` vérifiée nulle part). Le badge du serveur « Le plus
  * choisi » affirme une popularité qu'aucun chiffre ne soutient : le site dit « Recommandé ».
  */
@@ -128,7 +128,7 @@ export function PricingCards() {
             <a className="text-foreground underline decoration-foreground/25 underline-offset-4 hover:text-primary" href={`mailto:${supportEmail}?subject=${encodeURIComponent("Passage à l’offre Pro")}`}>
               {supportEmail}
             </a>{" "}
-            ou depuis NEXORA (Mon compte → Support) : l’équipe NEXORA active votre offre, en général sous 24 h. Prix en dollars américains.
+            : l’équipe NEXORA active votre offre, en général sous 24 h. Prix en dollars américains.
           </span>
         )}
       </p>

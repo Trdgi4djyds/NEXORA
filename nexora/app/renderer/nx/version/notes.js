@@ -13,7 +13,7 @@ export const NOTES = {
   // NEXORA #116 : sens du pliage corrigé (moitié gauche sur la droite), Galaxy S24 à part, caméra frontale visible sans
   // site ouvert (republiée en v1.2.2-r7).
   // NEXORA #118 : modèles « photo » de NEX-DESIGN, mises en scène réalistes et contour de sélection du Studio
-  // (republiée en v1.2.2-r8).
+  // (republiée en v1.2.2-r8). #119 : fenêtre de connexion en mosaïque, « Chargement », lanceur 1.0.7 (v1.2.2-r9).
   '1.2.2': {
     title: 'NEXORA 1.2.2',
     intro: 'Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.',
@@ -33,7 +33,8 @@ export const NOTES = {
       { icon: 'laptop', space: 'studio', title: 'Mises en scène réalistes et contour de sélection', text: 'Dans le Studio, « Ordinateur entre les roches », « Ordinateur vu de dessous », « Téléphones en diagonale » et « Tablette inclinée » posent en un clic les appareils réalistes, le fond, la lumière et le cadrage. L’objet sélectionné est entouré d’un contour orange (jamais dans les rendus).' },
       { icon: 'phone', space: 'responsive', title: 'Galaxy S24 fidèle', text: 'Le Galaxy S24 a son propre modèle, avec les dimensions et les coloris officiels de Samsung. La caméra frontale et l’île des iPhone restent visibles quand aucun site n’est ouvert.' },
       { icon: 'user', space: '', title: 'NEXORA vous vouvoie', text: 'Toute l’interface, les e-mails et les messages s’adressent désormais à vous en vous vouvoyant. Les Réglages ne montrent plus de détail technique propre à NEXORA.' },
-      { icon: 'key', space: '', title: 'Lanceur 1.0.6', text: 'Le lanceur NEXORA Devs Toolbox prend la même apparence, vous vouvoie et se met à jour tout seul avant d’installer cette version.' },
+      { icon: 'user', space: '', title: 'Nouvelle fenêtre de connexion', text: 'La connexion et l’inscription s’ouvrent sur une mosaïque de vrais visuels créés dans NEX-DESIGN et le Studio 3D, qui défile doucement. À l’ouverture, NEXORA affiche simplement « Chargement ».' },
+      { icon: 'key', space: '', title: 'Lanceur 1.0.7', text: 'Le lanceur NEXORA Devs Toolbox prend la même apparence, vous vouvoie, affiche « Chargement… » à l’ouverture et se met à jour tout seul avant d’installer cette version.' },
     ],
   },
   // NEXORA #106 : note de la 1.2.1, publiée depuis une autre session (A-063), reprise telle quelle du paquet publié.

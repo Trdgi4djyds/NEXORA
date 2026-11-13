@@ -18,7 +18,8 @@ let wasTrial = false;
 // NEXORA #084 : textes réduits à l'essentiel (« Vérification de la licence », « Chargement de votre espace ») ; aucun
 // détail technique (fichiers, signatures, serveurs de sécurité) n'est montré : il reste dans le journal local.
 const TEXT = {
-  checking: ['Vérification de la licence', 'Chargement de votre espace…', 'shield'],
+  // NEXORA #119 : « Chargement » à l'ouverture, comme le lanceur (la vérification reste faite, sans être nommée).
+  checking: ['Chargement', 'Ouverture de votre espace…', 'sync'],
   auth: ['Connectez-vous pour ouvrir NEXORA', 'NEXORA Devs Toolbox s’utilise avec un compte NEXORA (gratuit). Votre licence est liée à votre compte : connectez-vous ou créez votre compte.', 'user'],
   offline: ['Connexion perdue', 'Impossible de joindre NEXORA. Vérifiez votre connexion à Internet, puis réessayez.', 'globe'],
   server: ['NEXORA est momentanément indisponible', 'Réessayez dans quelques minutes.', 'cloud'],

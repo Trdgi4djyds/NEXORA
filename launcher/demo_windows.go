@@ -37,7 +37,7 @@ func init() {
 	root := `C:\Users\Awa\AppData\Local\Programs\NEXORA Devs Toolbox`
 	switch screen {
 	case "demarrage":
-		progress(-1, "Vérification de la licence…")
+		progress(-1, "Chargement…")
 	case "chargement":
 		progress(-1, "Chargement de votre espace…")
 	case "telechargement":

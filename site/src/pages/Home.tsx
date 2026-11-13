@@ -111,7 +111,7 @@ export function Home() {
             <SectionHead align="left" eyebrow="questions fréquentes" title={["Ce qu’on nous", "demande le plus."]} className="mb-8 md:mb-8" />
             <Reveal className="hud p-6" delay={120}>
               <b className="text-[16px] font-semibold">Une autre question ?</b>
-              <p className="mt-2 text-[14px] text-muted-foreground">Écrivez-nous depuis NEXORA (Mon compte → Support) ou à {supportEmail}.</p>
+              <p className="mt-2 text-[14px] text-muted-foreground">Écrivez-nous à {supportEmail}.</p>
               <a className="link-arrow mt-4" href={supportEmail ? `mailto:${supportEmail}` : WEB_URL}>
                 Écrire à l’équipe {arrow}
               </a>

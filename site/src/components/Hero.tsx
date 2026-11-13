@@ -92,7 +92,7 @@ export function Hero() {
           </a>
         </div>
         <p className="hx-lead rise" style={{ animationDelay: "360ms" }}>
-          Une idée, un site, un projet d’école ou une boutique : concevez, codez, testez sur {DEVICE_COUNT} modèles d’appareils, publiez sur le web, Android et Windows, puis surveillez. Une seule application sur votre PC, au lieu de dix outils à relier.
+          Une idée, un site, un projet d’école ou une boutique : concevez, codez, testez sur {DEVICE_COUNT} modèles d’appareils, publiez sur le web, Android et Windows, puis surveillez. Une seule application à portée de main, au lieu de dix outils à relier.
         </p>
         {/* #117 : le lien du hero mène aux profils (plus aucune offre citée hors des tarifs et de la licence). */}
         <a className="link-arrow rise mt-6 text-white" href="/pour-qui" style={{ animationDelay: "440ms" }}>

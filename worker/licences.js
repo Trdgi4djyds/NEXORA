@@ -251,7 +251,7 @@ async function saspay(env, method, path, body) {
   return b && b.success === true && b.data && typeof b.data === "object" ? b.data : b || {}
 }
 const payReady = (env) => Boolean(env.SASPAY_API_KEY && env.NX_PROBE_SECRET)
-const NOT_READY = "Le paiement en ligne arrive très bientôt. En attendant, écrivez à nexoradevstoolbox@gmail.com ou depuis Mon compte → Support : l’équipe NEXORA active votre offre Pro."
+const NOT_READY = "Le paiement en ligne arrive très bientôt. En attendant, écrivez à nexoradevstoolbox@gmail.com : l’équipe NEXORA active votre offre Pro."
 export const decimal = (cents) => `${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`
 // Erreurs de SasPay traduites pour le client, sans détail interne (clé, compte).
 function payError(e) {

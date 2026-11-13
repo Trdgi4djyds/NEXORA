@@ -1,4 +1,4 @@
-// NEXORA #034 : écrans de connexion et d'inscription modernisés (fenêtre « Connexion » du compte NEXORA, dans
+// NEXORA #034 (#119 : panneau de la marque en mosaïque de rendus NEX-DESIGN) : écrans de connexion et d'inscription modernisés (fenêtre « Connexion » du compte NEXORA, dans
 // l'application Windows et la version web). Deux panneaux : la marque (logo, illustration, avantages) et le
 // formulaire (onglets Connexion / Inscription, icônes dans les champs, affichage du mot de passe, jauge de
 // robustesse, lien de connexion par e-mail).
@@ -9,9 +9,27 @@
 // s'applique.
 import { a as ICONS } from '../../dist/chunks/chunk-S4I2LXHS.js';
 import { ico } from '../core.js';
-import { authArt } from './art.js';
 
 const LOGO = new URL('../../logo.png', import.meta.url).href;
+
+// NEXORA #119 : mosaïque de vrais rendus faits dans NEX-DESIGN et le Studio 3D (galerie « Réalisations » du site,
+// réduits à 400 px dans ./rendus/). Trois colonnes défilent en sens alterné ; chaque liste est écrite deux fois
+// pour boucler sans saut (translation de 0 à -50 %).
+const RENDUS = [
+  [['cartes', 'Cartes de services'], ['studio-dessous', 'Tableau de bord en contre-plongée'], ['rochers', 'Lancement produit'], ['studio-tablette', 'Appli sur tablette']],
+  [['mosaique', 'Mosaïque d’appli'], ['facade', 'Affiche sur façade'], ['studio-diagonale', 'Téléphones en diagonale']],
+  [['planche', 'Planche de marque'], ['tablette', 'Appli sur tablette'], ['studio-rochers', 'Ordinateur entre les roches'], ['dessous', 'Tableau de bord']],
+];
+const rendu = (name) => new URL(`./rendus/${name}.webp`, import.meta.url).href;
+
+function wall() {
+  const col = (items) => {
+    // Liste doublée : une moitié de piste doit dépasser la hauteur de la colonne inclinée (≈ 900 px).
+    const imgs = [...items, ...items].map(([n, alt]) => `<img src="${rendu(n)}" alt="${alt}" decoding="async" draggable="false">`).join('');
+    return `<div class="nxl-col"><div class="nxl-track">${imgs}${imgs}</div></div>`;
+  };
+  return `<div class="nxl-wall" aria-hidden="true">${RENDUS.map(col).join('')}</div>`;
+}
 
 // Icônes manquantes, dans le style de NEXORA (trait 1,6, grille 24).
 const MORE_ICONS = {
@@ -101,19 +119,16 @@ export function form(mode = 'login', closed = false) {
 
 // Fenêtre (appelée à la place du gabarit de G(mode) de chunk-EOM7FQDL.js) : .nx-auth-sheet reçoit le formulaire.
 export function sheet(mode = 'login') {
-  const feats = [
-    ['sync', 'Un seul compte', 'Réglages et projets synchronisés entre Windows et le web'],
-    ['phone', 'Responsive Lab', 'Vos sites dans de vrais appareils, côte à côte'],
-    ['cube', 'Studio 3D et NEX-DESIGN', 'Visuels, maquettes et vidéos de vos projets'],
-    ['bell', 'Supervision', 'Vos sites surveillés, alertes par e-mail'],
-  ];
+  const tags = ['Responsive Lab', 'NEX-DESIGN', 'Studio 3D', 'App Builder', 'Desktop Builder'];
   return `<div class="nxl">
-    <aside class="nxl-brand">
+    <aside class="nxl-brand nxl-mosaic">
+      ${wall()}
       <div class="nxl-logo"><img src="${LOGO}" alt=""><b>NEXORA</b></div>
-      <div class="nxl-art">${authArt('nxl-app')}</div>
       <div class="nxl-pitch">
-        <h3>Créez, testez et publiez vos sites et applications.</h3>
-        <ul>${feats.map(([i, b, t]) => `<li><span class="nxl-ic">${ico(i, 15)}</span><span><b>${b}</b><small>${t}</small></span></li>`).join('')}</ul>
+        <span class="nxl-tag">Fait avec NEXORA</span>
+        <h3>Vos idées, rendues <em>comme des pros.</em></h3>
+        <p>Ces visuels sont sortis de NEX-DESIGN et du Studio 3D. Un compte, et tout vous suit sur Windows comme sur le web.</p>
+        <ul class="nxl-chips">${tags.map((t) => `<li>${t}</li>`).join('')}</ul>
       </div>
       <p class="nxl-trust">${ico('lock', 12)}<span>Connexion chiffrée · données protégées</span></p>
     </aside>

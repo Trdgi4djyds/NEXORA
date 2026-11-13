@@ -359,7 +359,7 @@ html:not([data-contrast='high']) body .nw-tile.on { background: var(--surface-2)
    marque noir comme le site (titre fin, illustration en niveaux de gris), onglets en pilule, champs de 46 px,
    bouton principal en pilule pleine. */
 html body .sheet:has(> .nxl) { border-radius: 28px; overflow: hidden; }
-html:not([data-contrast='high']) body .nxl-brand { background: #0a0a0a; border-right: 0; color: #fff; }
+html:not([data-contrast='high']) body .nxl > .nxl-brand { background: #0a0a0a; border-right: 0; color: #fff; }
 html body .nxl-logo b, html body .nxl-pitch h3, html body .nxl-pitch li b { color: #fff; }
 html body .nxl-logo img { box-shadow: none; }
 html body .nxl-pitch h3 { font-size: 26px; font-weight: 300; letter-spacing: -0.03em; }

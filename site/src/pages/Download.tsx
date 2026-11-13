@@ -110,7 +110,7 @@ export function Download() {
       <SplitPanel
         media={<MacBook space="home" />}
         eyebrow="Une seule fenêtre"
-        title={["Tout NEXORA,", "sur votre PC."]}
+        title={["Tout NEXORA,", "à portée de main."]}
         text="Neuf espaces autour de vos projets : tester, inspecter, coder, publier sur Android et Windows, présenter en 3D, créer des visuels et surveiller vos sites. Le lanceur garde tout à jour."
         action={<MainButton />}
         icon="laptop"

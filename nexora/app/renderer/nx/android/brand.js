@@ -310,55 +310,55 @@ export function install(proto, SECTIONS) {
     const L = logoOf(cfg);
     const S = splashOf(cfg);
     this.nxBrandBind();
-    const seg = (key, val, opts, attr = 'data-nxl-set') => `<div class="seg nxl-seg" role="radiogroup">${Object.entries(opts).map(([v, l]) => `<button type="button" role="radio" aria-checked="${val === v}" class="${val === v ? 'on' : ''}" ${attr}="${key}" data-val="${v}">${l}</button>`).join('')}</div>`;
-    const range = (label, key, v, min, max, step, fmt, attr = 'data-nxl') => `<label class="field nxl-range"><span>${label} <b data-nxl-out="${key}">${fmt(v)}</b></span><input type="range" ${attr}="${key}" min="${min}" max="${max}" step="${step}" value="${v}"></label>`;
-    const color = (label, key, v, attr = 'data-nxl') => `<label class="field nxl-color"><span>${label}</span><span class="ab-color-row"><input type="color" ${attr}="${key}" value="${esc(v)}"><input class="input" ${attr}="${key}" value="${esc(v)}" spellcheck="false"></span></label>`;
+    const seg = (key, val, opts, attr = 'data-nxl-set') => `<div class="seg nxab-seg" role="radiogroup">${Object.entries(opts).map(([v, l]) => `<button type="button" role="radio" aria-checked="${val === v}" class="${val === v ? 'on' : ''}" ${attr}="${key}" data-val="${v}">${l}</button>`).join('')}</div>`;
+    const range = (label, key, v, min, max, step, fmt, attr = 'data-nxl') => `<label class="field nxab-range"><span>${label} <b data-nxl-out="${key}">${fmt(v)}</b></span><input type="range" ${attr}="${key}" min="${min}" max="${max}" step="${step}" value="${v}"></label>`;
+    const color = (label, key, v, attr = 'data-nxl') => `<label class="field nxab-color"><span>${label}</span><span class="ab-color-row"><input type="color" ${attr}="${key}" value="${esc(v)}"><input class="input" ${attr}="${key}" value="${esc(v)}" spellcheck="false"></span></label>`;
     const usesSymbol = L.mode === 'symbol' || L.mode === 'both';
     const all = this.nxBrandAllSymbols ? Object.keys(LUCIDE).sort() : PICKS.filter((k) => LUCIDE[k]);
     const q = (this.nxBrandQuery || '').toLowerCase();
     const syms = all.filter((k) => !q || k.toLowerCase().includes(q));
     let h = this.card('Créateur de logo', `
       <p class="ab-hint">Créez le logo de l’application en quelques secondes : il devient son icône (toutes les tailles, rondes, Samsung, iPhone et icône à thème d’Android 13+) et peut servir sur l’écran de démarrage.</p>
-      <div class="nxl">
-        <div class="nxl-stage">
-          <canvas class="nxl-main" width="440" height="440" data-nxl-main aria-label="Aperçu du logo"></canvas>
-          <div class="nxl-shapes">${[['squircle', 'Pixel'], ['circle', 'Rond'], ['rounded', 'Samsung'], ['ios', 'iPhone']].map(([k, l]) => `<figure><canvas width="112" height="112" data-nxl-shape="${k}"></canvas><figcaption>${l}</figcaption></figure>`).join('')}</div>
+      <div class="nxab">
+        <div class="nxab-stage">
+          <canvas class="nxab-main" width="440" height="440" data-nxl-main aria-label="Aperçu du logo"></canvas>
+          <div class="nxab-shapes">${[['squircle', 'Pixel'], ['circle', 'Rond'], ['rounded', 'Samsung'], ['ios', 'iPhone']].map(([k, l]) => `<figure><canvas width="112" height="112" data-nxl-shape="${k}"></canvas><figcaption>${l}</figcaption></figure>`).join('')}</div>
         </div>
-        <div class="nxl-ctl">
-          <div class="nxl-row"><span class="nxl-lb">Contenu</span>${seg('mode', L.mode, MODES)}</div>
+        <div class="nxab-ctl">
+          <div class="nxab-row"><span class="nxab-lb">Contenu</span>${seg('mode', L.mode, MODES)}</div>
           ${L.mode === 'symbol' ? '' : `<label class="field"><span>${L.mode === 'name' ? 'Nom affiché' : 'Initiales (3 lettres au plus)'}</span><input class="input" data-nxl="${L.mode === 'name' ? 'name' : 'text'}" value="${esc(L.mode === 'name' ? L.name : L.text)}" maxlength="${L.mode === 'name' ? 24 : 3}" spellcheck="false"></label>`}
-          ${usesSymbol ? `<div class="nxl-sym">
-            <div class="nxl-sym-head"><span class="nxl-lb">Symbole</span><input class="input nxl-search" data-nxl-search placeholder="Rechercher (heart, cart, music…)" value="${esc(this.nxBrandQuery || '')}" spellcheck="false"><button type="button" class="btn small" data-act="brand-all-symbols">${this.nxBrandAllSymbols ? 'Suggestions' : `Tous (${Object.keys(LUCIDE).length})`}</button></div>
-            <div class="nxl-sym-grid">${syms.slice(0, 120).map((k) => `<button type="button" class="nxl-sym-btn${L.symbol === k ? ' on' : ''}" data-nxl-symbol="${esc(k)}" title="${esc(k)}" aria-label="${esc(k)}"><svg viewBox="0 0 24 24" width="20" height="20" stroke-width="2">${LUCIDE[k]}</svg></button>`).join('') || '<p class="ab-hint">Aucun symbole ne correspond.</p>'}</div>
+          ${usesSymbol ? `<div class="nxab-sym">
+            <div class="nxab-sym-head"><span class="nxab-lb">Symbole</span><input class="input nxab-search" data-nxl-search placeholder="Rechercher (heart, cart, music…)" value="${esc(this.nxBrandQuery || '')}" spellcheck="false"><button type="button" class="btn small" data-act="brand-all-symbols">${this.nxBrandAllSymbols ? 'Suggestions' : `Tous (${Object.keys(LUCIDE).length})`}</button></div>
+            <div class="nxab-sym-grid">${syms.slice(0, 120).map((k) => `<button type="button" class="nxab-sym-btn${L.symbol === k ? ' on' : ''}" data-nxl-symbol="${esc(k)}" title="${esc(k)}" aria-label="${esc(k)}"><svg viewBox="0 0 24 24" width="20" height="20" stroke-width="2">${LUCIDE[k]}</svg></button>`).join('') || '<p class="ab-hint">Aucun symbole ne correspond.</p>'}</div>
           </div>` : ''}
-          <div class="nxl-row"><span class="nxl-lb">Police</span>${seg('font', L.font, Object.fromEntries(Object.entries(FONTS).map(([k, [l, f]]) => [k, `<span style="font-family:${esc(f)}">${l}</span>`])))}</div>
+          <div class="nxab-row"><span class="nxab-lb">Police</span>${seg('font', L.font, Object.fromEntries(Object.entries(FONTS).map(([k, [l, f]]) => [k, `<span style="font-family:${esc(f)}">${l}</span>`])))}</div>
           <div class="ab-grid2">${range('Épaisseur', 'weight', L.weight, 300, 900, 100, (v) => v)}${range('Taille du motif', 'size', L.size, 0.35, 0.9, 0.01, (v) => `${Math.round(v * 100)} %`)}</div>
-          <div class="nxl-row"><span class="nxl-lb">Couleurs</span><div class="nxl-pals">${Object.entries(PALETTES).map(([k, [l, a, b, f]]) => `<button type="button" class="nxl-pal${L.palette === k ? ' on' : ''}" data-nxl-palette="${k}" title="${esc(l)}" aria-label="${esc(l)}" style="--a:${a};--b:${b};--f:${f}"><i></i></button>`).join('')}</div></div>
-          <div class="nxl-colors">${color('Fond', 'bg', L.bg)}${L.gradient ? color('Second fond', 'bg2', L.bg2) : ''}${color('Motif', 'fg', L.fg)}</div>
-          <div class="nxl-togs"><label class="check-row"><input type="checkbox" data-nxl-check="gradient" ${L.gradient ? 'checked' : ''}><span class="box"></span><span>Dégradé</span></label><label class="check-row"><input type="checkbox" data-nxl-check="shadow" ${L.shadow ? 'checked' : ''}><span class="box"></span><span>Ombre douce</span></label></div>
+          <div class="nxab-row"><span class="nxab-lb">Couleurs</span><div class="nxab-pals">${Object.entries(PALETTES).map(([k, [l, a, b, f]]) => `<button type="button" class="nxab-pal${L.palette === k ? ' on' : ''}" data-nxl-palette="${k}" title="${esc(l)}" aria-label="${esc(l)}" style="--a:${a};--b:${b};--f:${f}"><i></i></button>`).join('')}</div></div>
+          <div class="nxab-colors">${color('Fond', 'bg', L.bg)}${L.gradient ? color('Second fond', 'bg2', L.bg2) : ''}${color('Motif', 'fg', L.fg)}</div>
+          <div class="nxab-togs"><label class="check-row"><input type="checkbox" data-nxl-check="gradient" ${L.gradient ? 'checked' : ''}><span class="box"></span><span>Dégradé</span></label><label class="check-row"><input type="checkbox" data-nxl-check="shadow" ${L.shadow ? 'checked' : ''}><span class="box"></span><span>Ombre douce</span></label></div>
         </div>
       </div>
-      <div class="nxl-ideas"><div class="nxl-ideas-head"><b>Idées pour « ${esc(cfg.appName || 'votre application')} »</b><button type="button" class="btn small" data-act="brand-ideas">${icon('restart', 13)}<span>Autres idées</span></button></div>
-        <div class="nxl-ideas-grid">${Array.from({ length: 8 }, (_, i) => `<button type="button" class="nxl-idea" data-nxl-idea="${i}" aria-label="Idée ${i + 1}"><canvas width="96" height="96" data-nxl-idea-c="${i}"></canvas></button>`).join('')}</div></div>
-      <div class="ab-row nxl-acts"><button class="btn small primary" data-act="brand-use-icon">${icon('check', 13)}<span>Utiliser comme icône de l’application</span></button><button class="btn small" data-act="brand-use-splash">${icon('image', 13)}<span>Utiliser sur l’écran de démarrage</span></button><button class="btn small" data-act="brand-save-png">${icon('download', 13)}<span>Enregistrer le PNG…</span></button></div>`);
+      <div class="nxab-ideas"><div class="nxab-ideas-head"><b>Idées pour « ${esc(cfg.appName || 'votre application')} »</b><button type="button" class="btn small" data-act="brand-ideas">${icon('restart', 13)}<span>Autres idées</span></button></div>
+        <div class="nxab-ideas-grid">${Array.from({ length: 8 }, (_, i) => `<button type="button" class="nxab-idea" data-nxl-idea="${i}" aria-label="Idée ${i + 1}"><canvas width="96" height="96" data-nxl-idea-c="${i}"></canvas></button>`).join('')}</div></div>
+      <div class="ab-row nxab-acts"><button class="btn small primary" data-act="brand-use-icon">${icon('check', 13)}<span>Utiliser comme icône de l’application</span></button><button class="btn small" data-act="brand-use-splash">${icon('image', 13)}<span>Utiliser sur l’écran de démarrage</span></button><button class="btn small" data-act="brand-save-png">${icon('download', 13)}<span>Enregistrer le PNG…</span></button></div>`);
     h += this.card('Créateur d’écran de démarrage', `
       <p class="ab-hint">Composez l’écran qui s’affiche pendant l’ouverture de l’application : un modèle, un fond, votre logo, un texte et une animation. Le fond est intégré à l’application (pour tous les formats d’écran) ; le logo, le nom et l’accroche restent nets à toutes les tailles.</p>
       <div class="nxs">
         <div class="nxs-phone"><canvas width="270" height="585" data-nxs-prev aria-label="Aperçu de l’écran de démarrage"></canvas></div>
         <div class="nxs-ctl">
-          <div class="nxl-row"><span class="nxl-lb">Modèles</span><div class="nxs-tpls">${Object.entries(TEMPLATES).map(([k, [l]]) => `<button type="button" class="nxs-tpl${S.template === k ? ' on' : ''}" data-nxs-tpl="${k}"><canvas width="66" height="132" data-nxs-tpl-c="${k}"></canvas><small>${l}</small></button>`).join('')}</div></div>
-          <div class="nxl-row"><span class="nxl-lb">Fond</span>${seg('bgKind', S.bgKind, SPLASH_BG, 'data-nxs-set')}</div>
-          <div class="nxl-colors">${color(S.bgKind === 'photo' ? 'Voile' : 'Fond', 'bg', S.bg, 'data-nxs')}${['gradient', 'aurora'].includes(S.bgKind) ? color('Second fond', 'bg2', S.bg2, 'data-nxs') : ''}${['aurora', 'pattern'].includes(S.bgKind) ? color(S.bgKind === 'pattern' ? 'Motif' : 'Lumière', 'accent', S.accent, 'data-nxs') : ''}</div>
+          <div class="nxab-row"><span class="nxab-lb">Modèles</span><div class="nxs-tpls">${Object.entries(TEMPLATES).map(([k, [l]]) => `<button type="button" class="nxs-tpl${S.template === k ? ' on' : ''}" data-nxs-tpl="${k}"><canvas width="66" height="132" data-nxs-tpl-c="${k}"></canvas><small>${l}</small></button>`).join('')}</div></div>
+          <div class="nxab-row"><span class="nxab-lb">Fond</span>${seg('bgKind', S.bgKind, SPLASH_BG, 'data-nxs-set')}</div>
+          <div class="nxab-colors">${color(S.bgKind === 'photo' ? 'Voile' : 'Fond', 'bg', S.bg, 'data-nxs')}${['gradient', 'aurora'].includes(S.bgKind) ? color('Second fond', 'bg2', S.bg2, 'data-nxs') : ''}${['aurora', 'pattern'].includes(S.bgKind) ? color(S.bgKind === 'pattern' ? 'Motif' : 'Lumière', 'accent', S.accent, 'data-nxs') : ''}</div>
           ${S.bgKind === 'pattern' ? `<div class="ab-grid2"><label class="field"><span>Motif</span><select class="input" data-nxs="pattern">${Object.entries(PATTERNS).map(([v, l]) => `<option value="${v}" ${S.pattern === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>${range('Intensité', 'patternOpacity', S.patternOpacity, 0.04, 0.5, 0.01, (v) => `${Math.round(v * 100)} %`, 'data-nxs')}</div>` : ''}
           ${S.bgKind === 'photo' ? `<div class="ab-row"><button type="button" class="btn small" data-act="brand-pick-photo">${icon('image', 13)}<span>${S.photo ? 'Changer la photo' : 'Choisir une photo'}</span></button></div>${range('Voile sur la photo', 'veil', S.veil, 0, 0.9, 0.01, (v) => `${Math.round(v * 100)} %`, 'data-nxs')}` : ''}
-          <div class="nxl-row"><span class="nxl-lb">Logo</span>${seg('logo', S.logo, LOGO_SRC, 'data-nxs-set')}</div>
-          ${S.logo === 'none' ? '' : `<label class="field nxl-range"><span>Taille du logo <b data-nxl-out="logoSize">${Math.round(cfg.splash.logoSize || 150)} dp</b></span><input type="range" min="72" max="240" step="2" data-nxs-splash="logoSize" value="${cfg.splash.logoSize || 150}"></label>`}
-          <div class="nxl-togs"><label class="check-row"><input type="checkbox" data-nxs-splash-check="showName" ${cfg.splash.showName ? 'checked' : ''}><span class="box"></span><span>Nom de l’application sous le logo</span></label></div>
+          <div class="nxab-row"><span class="nxab-lb">Logo</span>${seg('logo', S.logo, LOGO_SRC, 'data-nxs-set')}</div>
+          ${S.logo === 'none' ? '' : `<label class="field nxab-range"><span>Taille du logo <b data-nxl-out="logoSize">${Math.round(cfg.splash.logoSize || 150)} dp</b></span><input type="range" min="72" max="240" step="2" data-nxs-splash="logoSize" value="${cfg.splash.logoSize || 150}"></label>`}
+          <div class="nxab-togs"><label class="check-row"><input type="checkbox" data-nxs-splash-check="showName" ${cfg.splash.showName ? 'checked' : ''}><span class="box"></span><span>Nom de l’application sous le logo</span></label></div>
           <div class="ab-grid2"><label class="field"><span>Phrase d’accroche</span><input class="input" data-nxs-splash="tagline" value="${esc(cfg.splash.tagline || '')}" placeholder="Le marché dans votre poche" maxlength="60"></label>${color('Couleur du texte', 'textColor', cfg.splash.textColor || (luminance(S.bg) > 0.6 ? '#1D1D1F' : '#FFFFFF'), 'data-nxs-splash')}</div>
-          <div class="nxl-row"><span class="nxl-lb">Animation</span><div class="nxs-motions">${Object.entries(MOTIONS).map(([k, [l]]) => `<button type="button" class="chip${S.motion === k ? ' on' : ''}" data-nxs-motion="${k}">${l}</button>`).join('')}</div></div>
+          <div class="nxab-row"><span class="nxab-lb">Animation</span><div class="nxs-motions">${Object.entries(MOTIONS).map(([k, [l]]) => `<button type="button" class="chip${S.motion === k ? ' on' : ''}" data-nxs-motion="${k}">${l}</button>`).join('')}</div></div>
         </div>
       </div>
-      <div class="ab-row nxl-acts"><button class="btn small primary" data-act="brand-apply-splash">${icon('check', 13)}<span>Appliquer à l’application</span></button><button class="btn small" data-act="replay-splash">${icon('play', 13)}<span>Voir l’animation</span></button>${cfg.splash.bgImage ? `<button class="btn small" data-act="brand-clear-splash">${icon('trash', 13)}<span>Retirer le fond créé</span></button>` : ''}</div>
+      <div class="ab-row nxab-acts"><button class="btn small primary" data-act="brand-apply-splash">${icon('check', 13)}<span>Appliquer à l’application</span></button><button class="btn small" data-act="replay-splash">${icon('play', 13)}<span>Voir l’animation</span></button>${cfg.splash.bgImage ? `<button class="btn small" data-act="brand-clear-splash">${icon('trash', 13)}<span>Retirer le fond créé</span></button>` : ''}</div>
       ${cfg.splash.bgImage ? `<p class="ab-hint">${icon('check', 12)} Fond créé appliqué : il s’affiche dès l’ouverture de l’application, derrière le logo.</p>` : ''}`);
     return h;
   };
@@ -366,7 +366,7 @@ export function install(proto, SECTIONS) {
   // Lien vers le créateur depuis la section « Icône et démarrage ».
   const formIcon0 = proto.form_icon;
   proto.form_icon = function formIcon(cfg) {
-    return `${this.card('', `<div class="nxl-promo">${icon('sparkle', 18)}<div><b>Pas encore de logo ?</b><small>Créez-le avec le créateur de logo, puis composez l’écran de démarrage.</small></div><button class="btn small primary" data-sec="brand">${icon('sparkle', 13)}<span>Créer un logo</span></button></div>`)}${formIcon0.call(this, cfg)}`;
+    return `${this.card('', `<div class="nxab-promo">${icon('sparkle', 18)}<div><b>Pas encore de logo ?</b><small>Créez-le avec le créateur de logo, puis composez l’écran de démarrage.</small></div><button class="btn small primary" data-sec="brand">${icon('sparkle', 13)}<span>Créer un logo</span></button></div>`)}${formIcon0.call(this, cfg)}`;
   };
 
   proto.nxBrandBind = function nxBrandBind() {
