@@ -92,10 +92,11 @@ export function Hero() {
           </a>
         </div>
         <p className="hx-lead rise" style={{ animationDelay: "360ms" }}>
-          Design, code, tests sur {DEVICE_COUNT} modèles d’appareils, supervision et publication sur le web, Android et Windows, dans une seule application installée sur votre PC.
+          Une idée, un site, un projet d’école ou une boutique : concevez, codez, testez sur {DEVICE_COUNT} modèles d’appareils, publiez sur le web, Android et Windows, puis surveillez. Une seule application sur votre PC, au lieu de dix outils à relier.
         </p>
-        <a className="link-arrow rise mt-6 text-white" href="/licence" style={{ animationDelay: "440ms" }}>
-          Obtenir ma licence gratuite <Icon name="nxArrowUpRight" size={13} stroke={2} />
+        {/* #117 : le lien du hero mène aux profils (plus aucune offre citée hors des tarifs et de la licence). */}
+        <a className="link-arrow rise mt-6 text-white" href="/pour-qui" style={{ animationDelay: "440ms" }}>
+          Trouver le parcours fait pour vous <Icon name="nxArrowUpRight" size={13} stroke={2} />
         </a>
       </div>
       <div className="wrap-wide hx-foot">

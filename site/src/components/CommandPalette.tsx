@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { PERSONAS, personaHref } from "../data/personas"
 import { SPACES, spaceHref } from "../data/spaces"
 import { navigate } from "../router"
 import { Icon } from "../lib/icons"
@@ -26,11 +27,14 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     () => [
       { id: "accueil", group: "Pages", label: "Accueil du site", icon: "home", href: "/" },
       { id: "espaces", group: "Pages", label: "Les 9 espaces", icon: "grid", href: "/espaces" },
-      { id: "tarifs", group: "Pages", label: "Tarifs", hint: "Gratuit et Pro", icon: "star", href: "/tarifs", words: "prix offres abonnement" },
-      { id: "comparatif", group: "Pages", label: "Comparer les offres", icon: "nxTable", href: "/tarifs/comparatif", words: "fonctions limites" },
+      { id: "pour-qui", group: "Pages", label: "Pour qui ?", hint: "Neuf profils et leur parcours", icon: "nxUsers", href: "/pour-qui", words: "profils besoins parcours" },
+      { id: "tarifs", group: "Pages", label: "Tarifs", icon: "star", href: "/tarifs", words: "prix offres abonnement" },
+      { id: "comparatif", group: "Pages", label: "Comparatif détaillé", icon: "nxTable", href: "/tarifs/comparatif", words: "fonctions limites offres" },
       { id: "telecharger", group: "Pages", label: "Télécharger NEXORA", hint: "Windows 10 et 11", icon: "download", href: "/telecharger", words: "installer zip portable" },
       { id: "nouveautes", group: "Pages", label: "Nouveautés", icon: "sparkle", href: "/nouveautes", words: "version" },
-      ...SPACES.map((s) => ({ id: s.id, group: "Espaces", label: s.name, hint: s.subtitle, icon: s.icon, space: s.id, href: spaceHref(s), words: s.tagline })),
+      ...SPACES.map((s) => ({ id: s.id, group: "Espaces", label: s.name, hint: s.subtitle, icon: s.icon, space: s.id, href: spaceHref(s), words: `${s.tagline} ${s.need}` })),
+      // #117 : les 9 profils « Pour qui ? ».
+      ...PERSONAS.map((p) => ({ id: `profil-${p.slug}`, group: "Pour qui ?", label: p.name, hint: p.tagline, icon: p.icon, href: personaHref(p), words: p.quote })),
       { id: "licence", group: "Actions", label: "Ma licence", icon: "key", href: "/licence", words: "licence clé compte connexion abonnement paiement" },
     ],
     [],
@@ -69,7 +73,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       <DialogContent aria-describedby="cmdk-desc">
         <DialogTitle className="sr-only">Rechercher dans le site</DialogTitle>
         <DialogDescription id="cmdk-desc" className="sr-only">
-          Tape pour filtrer les pages, les espaces et les actions, puis Entrée pour ouvrir.
+          Tapez pour filtrer les pages, les espaces, les profils et les actions, puis Entrée pour ouvrir.
         </DialogDescription>
         <div className="flex items-center gap-3 border-b border-foreground/[0.08] px-5">
           <Icon name="search" size={18} className="text-primary" />

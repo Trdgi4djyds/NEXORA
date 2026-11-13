@@ -2,7 +2,8 @@
 // pour le navigateur (titre et méta mis à jour à chaque navigation, App.tsx) : titre, description, adresse canonique,
 // consigne aux robots, image de partage et données structurées schema.org (JSON-LD) de chaque page.
 import { CONTACT_EMAIL, FALLBACK } from "../../nexora/app/renderer/nx/offres/catalog.js"
-import { FAQ } from "./data/content"
+import { FAQ, PRICING_FAQ } from "./data/content"
+import { PERSONAS, personaBySlug } from "./data/personas"
 import { SPACES, spaceBySlug } from "./data/spaces"
 import { APP_VERSION, DEVICE_COUNT, RELEASES } from "./lib/product"
 
@@ -36,6 +37,9 @@ export const PAGES: PageEntry[] = [
   { path: "/", sitemap: true, priority: 1, changefreq: "weekly" },
   { path: "/espaces", sitemap: true, priority: 0.9, changefreq: "monthly" },
   ...SPACES.map((s) => ({ path: `/espaces/${s.slug}`, sitemap: true, priority: 0.8, changefreq: "monthly" as const })),
+  // #117 : profils « Pour qui ? ».
+  { path: "/pour-qui", sitemap: true, priority: 0.8, changefreq: "monthly" },
+  ...PERSONAS.map((p) => ({ path: `/pour-qui/${p.slug}`, sitemap: true, priority: 0.7, changefreq: "monthly" as const })),
   { path: "/tarifs", sitemap: true, priority: 0.9, changefreq: "monthly" },
   { path: "/tarifs/comparatif", sitemap: false, priority: 0.5, changefreq: "monthly" },
   { path: "/telecharger", sitemap: true, priority: 0.9, changefreq: "monthly" },
@@ -67,9 +71,12 @@ function organisation() {
 function website() {
   return { "@type": "WebSite", "@id": SITE_ID, url: `${SITE_URL}/`, name: SITE_NAME, inLanguage: "fr-FR", publisher: { "@id": ORG_ID } }
 }
-/** Logiciel Windows : version, systèmes, offres (prix du catalogue de repli, mêmes montants que le serveur). */
-function application() {
-  return {
+/**
+ * Logiciel Windows : version, systèmes et, sur /tarifs seulement (#117 : offres réservées aux tarifs et à la licence),
+ * offres (prix du catalogue de repli, mêmes montants que le serveur).
+ */
+function application(withOffers = false) {
+  const app = {
     "@type": "SoftwareApplication",
     "@id": APP_ID,
     name: SITE_NAME,
@@ -87,6 +94,10 @@ function application() {
     screenshot: `${SITE_URL}/screenshots/accueil-1280x800.png`,
     publisher: { "@id": ORG_ID },
     featureList: SPACES.map((s) => `${s.name} : ${s.card}`),
+  }
+  if (!withOffers) return app
+  return {
+    ...app,
     offers: [
       { "@type": "Offer", name: PLANS.free.name, price: "0", priceCurrency: "USD", availability: "https://schema.org/InStock", url: `${SITE_URL}/tarifs` },
       {
@@ -144,7 +155,7 @@ export function headFor(path: string): Head {
   if (!a) {
     const title = "NEXORA — L’atelier complet du web, installé sur votre PC"
     const description = cut(
-      `Concevez, codez, testez sur ${DEVICE_COUNT} modèles d’appareils, sécurisez et publiez votre site sur le web, Android et Windows depuis une seule application. Gratuit, sans limite de durée.`,
+      `Concevez, codez, testez sur ${DEVICE_COUNT} modèles d’appareils, publiez sur le web, Android et Windows, puis surveillez votre site, depuis une seule application installée sur votre PC, sans jongler entre dix outils.`,
     )
     return { ...base, title, description, canonical: canonical("/"), robots: INDEX, jsonLd: graph(organisation(), website(), application(), webPage("/", title, description), faqPage(FAQ)) }
   }
@@ -190,25 +201,70 @@ export function headFor(path: string): Head {
       }
     }
   }
+  // #117 : profils « Pour qui ? » et parcours de chacun.
+  if (a === "pour-qui" && !b) {
+    const title = "Pour qui ? — NEXORA pour étudiants, développeurs, vibe codeurs, designers, commerçants…"
+    const description = cut(
+      "Étudiants en informatique, développeurs juniors, codeurs passionnés, vibe codeurs, entrepreneurs, créateurs de MVP, designers, freelances et agences, commerçants : ce qui vous freine, ce que NEXORA change, et votre parcours.",
+    )
+    return {
+      ...base,
+      title: cut(title, 90),
+      description,
+      canonical: canonical("/pour-qui"),
+      robots: INDEX,
+      jsonLd: graph(
+        organisation(),
+        webPage("/pour-qui", title, description, { "@type": "CollectionPage" }),
+        breadcrumb([["Accueil", "/"], ["Pour qui ?", "/pour-qui"]]),
+        {
+          "@type": "ItemList",
+          itemListElement: PERSONAS.map((p, i) => ({ "@type": "ListItem", position: i + 1, name: p.name, url: `${SITE_URL}/pour-qui/${p.slug}` })),
+        },
+      ),
+    }
+  }
+  if (a === "pour-qui" && b) {
+    const pr = personaBySlug(b)
+    if (pr) {
+      const p = `/pour-qui/${pr.slug}`
+      const title = cut(`NEXORA pour les ${pr.name.charAt(0).toLowerCase()}${pr.name.slice(1)} — ${pr.h1.join(" ")}`, 90)
+      const description = cut(pr.lead)
+      return {
+        ...base,
+        title,
+        description,
+        canonical: canonical(p),
+        robots: INDEX,
+        jsonLd: graph(
+          organisation(),
+          webPage(p, title, description, {
+            audience: { "@type": "Audience", audienceType: pr.name },
+            mainEntity: { "@type": "ItemList", name: `Parcours : ${pr.name}`, itemListElement: pr.steps.map((st, i) => ({ "@type": "ListItem", position: i + 1, name: st.title, description: st.text })) },
+          }),
+          breadcrumb([["Accueil", "/"], ["Pour qui ?", "/pour-qui"], [pr.name, p]]),
+        ),
+      }
+    }
+  }
   if (a === "tarifs") {
     const title = `Tarifs NEXORA — Gratuit, ou Pro à ${usd(PRO.price_month_cents).replace(/\.00$/, "")} $ par mois`
     const description = cut(
       `Offre Gratuite sans limite de durée : Responsive Lab, Browser Lab et 2 applications Android ou Windows. Pro à ${usd(PRO.price_month_cents).replace(/\.00$/, "")} $ par mois ouvre tout NEXORA. Comparatif complet des fonctions.`,
     )
-    const billing = FAQ.filter((f) => /gratuit|offre|IA/.test(f.q))
     return {
       ...base,
       title,
       description,
       canonical: canonical("/tarifs"),
       robots: b === "comparatif" ? NOINDEX : INDEX,
-      jsonLd: graph(organisation(), application(), webPage("/tarifs", title, description), breadcrumb([["Accueil", "/"], ["Tarifs", "/tarifs"]]), faqPage(billing)),
+      jsonLd: graph(organisation(), application(true), webPage("/tarifs", title, description), breadcrumb([["Accueil", "/"], ["Tarifs", "/tarifs"]]), faqPage(PRICING_FAQ)),
     }
   }
   if (a === "telecharger") {
-    const title = "Télécharger NEXORA pour Windows 10 et 11 — gratuit"
+    const title = "Télécharger NEXORA pour Windows 10 et 11"
     const description = cut(
-      `Téléchargez NEXORA ${APP_VERSION} pour Windows 10 et 11 : un lanceur vérifie la signature de chaque fichier, installe et met à jour l’application. Licence gratuite, sans limite de durée.`,
+      `Téléchargez NEXORA ${APP_VERSION} pour Windows 10 et 11 : un lanceur vérifie la signature de chaque fichier, installe et met à jour l’application. Vos réglages et vos projets sont gardés d’une version à l’autre.`,
     )
     return {
       ...base,

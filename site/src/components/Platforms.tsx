@@ -18,14 +18,14 @@ const PLATFORMS: { id: string; icon: string; logos: string[]; title: string; tex
     logos: ["cloudflare", "vercel", "netlify", "github"],
     title: "Sur le web",
     text: "Partagez votre projet par une adresse publique, puis mettez-le en ligne chez les principaux hébergeurs, contrôlé sur trois appareils avant chaque publication.",
-    points: ["Partage en ligne (Pro)", "Cloudflare, Vercel, Netlify, GitHub Pages (Pro)", "Contrôles avant mise en ligne"],
+    points: ["Partage par une adresse publique", "Cloudflare, Vercel, Netlify, GitHub Pages", "Contrôles avant mise en ligne"],
   },
   {
     id: "android",
     icon: "android",
     logos: ["android", "googleplay"],
     title: "Sur Android",
-    text: "Le même site devient une application signée, sur téléphone, pliable et tablette, avec ses notifications push et une fiche prête pour le Play Store.",
+    text: "Vos clients sont sur leur téléphone : le même site devient une application signée, sur téléphone, pliable et tablette, avec ses notifications push et une fiche prête pour le Play Store.",
     points: ["APK et AAB signés", "Notifications push", "Tests fermés et Play Store"],
   },
   {
@@ -33,12 +33,12 @@ const PLATFORMS: { id: string; icon: string; logos: string[]; title: string; tex
     icon: "display",
     logos: ["windows", "electron"],
     title: "Sur Windows",
-    text: "Et le même site devient un logiciel installable, avec mises à jour automatiques et distribution par winget ou le Microsoft Store.",
+    text: "Pour les postes de travail et les clients qui veulent un vrai logiciel : le même site devient un logiciel installable, avec mises à jour automatiques et distribution par winget ou le Microsoft Store.",
     points: ["Installateur, portable, ZIP et MSI", "Mises à jour automatiques", "winget et Microsoft Store"],
   },
 ]
 
-// Publication : depuis ton PC vers le monde entier (décoratif).
+// Publication : depuis votre PC vers le monde entier (décoratif).
 const MARKERS: GlobeMarker[] = [CITIES.cotonou, CITIES.paris, CITIES.newyork, CITIES.saopaulo, CITIES.johannesburg, CITIES.mumbai, CITIES.tokyo, CITIES.sydney, CITIES.montreal].map((at) => ({ at }))
 const ARCS: GlobeArc[] = [
   { from: CITIES.cotonou, to: CITIES.paris },
@@ -80,7 +80,7 @@ function WindowsDesktop() {
 }
 
 /**
- * « Un projet, trois plateformes » (#086) : globe animé en fond (arcs de publication depuis ton PC), et pour chaque
+ * « Un projet, trois plateformes » (#086) : globe animé en fond (arcs de publication depuis votre PC), et pour chaque
  * plateforme une scène de face : ce site dans un navigateur, sur trois vrais téléphones Android, puis en logiciel sur
  * une Surface Pro X. Logos officiels des hébergeurs et plateformes. Avance automatique avec barre de progression.
  */
@@ -113,8 +113,8 @@ export function Platforms() {
         <SectionHead
           index="04"
           eyebrow="Un projet, trois plateformes"
-          title={["Publie partout,", "sans tout refaire."]}
-          lead="Votre site reste la source. NEXORA en tire une adresse web, une application Android et un logiciel Windows, chacun prêt à distribuer."
+          title={["Publiez partout,", "sans tout refaire."]}
+          lead="Développer séparément un site, une application Android et un logiciel Windows triple le travail. Avec NEXORA, votre site reste la source : il en tire une adresse web, une application Android et un logiciel Windows, chacun prêt à distribuer."
         />
       </div>
       <div className="wrap-wide">

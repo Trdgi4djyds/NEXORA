@@ -3,10 +3,11 @@ import { CtaBand } from "../components/CtaBand"
 import { Faq } from "../components/Faq"
 import { CompareTable, PricingCards } from "../components/Pricing"
 import { PageHero, SectionHead } from "../components/SectionHead"
-import { FAQ } from "../data/content"
+import { PRICING_FAQ } from "../data/content"
 import { money, monthsOffered, useRemote } from "../lib/remote"
 
-const BILLING_FAQ = FAQ.filter((f) => /gratuit|offre|IA/.test(f.q))
+// #117 : questions sur les offres, présentes seulement ici (data/content.ts, PRICING_FAQ).
+const BILLING_FAQ = PRICING_FAQ
 
 export function Pricing() {
   return (

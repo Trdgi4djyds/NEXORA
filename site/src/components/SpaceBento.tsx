@@ -1,22 +1,15 @@
 import { SPACE_FACTS } from "../data/content"
-import { SPACES, spaceHref, type Space } from "../data/spaces"
+import { SPACES, spaceHref } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
 import { GlassTile } from "./Neon"
 import { Screen } from "./Screen"
 
-/** Offre d'un espace, dans le coin de la carte (comme l'année des projets de la référence). */
-function offer(s: Space) {
-  if (s.id === "preview" || s.id === "browser") return "Gratuit"
-  // #087 : 2 applications gratuites, App Builder et Desktop Builder confondus.
-  if (s.id === "android" || s.id === "desktop") return "2 apps gratuites"
-  return s.plan === "pro" ? "Pro" : "Gratuit"
-}
-
 /**
  * Grille des espaces. #099 (« Horizon ») : cartes « projet » de la référence : nom et offre en tête, vraie capture
  * de NEXORA (thème sombre) avec son repère « /tag » et un rond blanc à flèche, puis deux lignes de méta-données
- * (ce que tu y fais, un fait vérifié). Remplace les aplats colorés de « Signal » (#092 à #095). #101 : tuile de verre à icône néon.
+ * (ce que vous y faites, un fait vérifié). Remplace les aplats colorés de « Signal » (#092 à #095). #101 : tuile de verre à icône néon.
+ * #117 : numéro de l'espace dans le coin (au lieu de l'offre), lignes « Le besoin » et « La réponse ».
  */
 export function SpaceBento() {
   return (
@@ -27,7 +20,7 @@ export function SpaceBento() {
           <Reveal as="a" key={s.id} href={spaceHref(s)} data-space={s.id} className="proj group flex flex-col" delay={(i % 3) * 90}>
             <span className="flex items-baseline justify-between gap-3 border-t border-foreground/15 pt-3 text-[14px]">
               <b className="font-medium">{s.name}</b>
-              <span className="text-muted-foreground">{offer(s)}</span>
+              <span className="text-muted-foreground tabular-nums">{String(i + 1).padStart(2, "0")}</span>
             </span>
             <span className="proj-shot mt-3" aria-hidden="true">
               <Screen space={s.id} />
@@ -39,7 +32,9 @@ export function SpaceBento() {
               </span>
             </span>
             <dl className="mt-4 grid grid-cols-[110px_1fr] gap-x-4 gap-y-1.5 text-[13.5px] leading-snug">
-              <dt className="text-muted-foreground">Ce que vous faites</dt>
+              <dt className="text-muted-foreground">Le besoin</dt>
+              <dd>{s.need}</dd>
+              <dt className="text-muted-foreground">La réponse</dt>
               <dd>{s.card}</dd>
               <dt className="text-muted-foreground">Repère</dt>
               <dd>

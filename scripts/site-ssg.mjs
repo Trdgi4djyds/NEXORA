@@ -215,12 +215,14 @@ ${urls
 
   // llms.txt (llmstxt.org) et texte complet pour les assistants IA.
   const space = (s) => `${SITE}/espaces/${s.slug}`
-  const plans = `- Gratuit : 0 $, sans limite de durée. Responsive Lab et Browser Lab complets, 2 applications Android ou Windows.\n- Pro : 25 $ par mois ou 250 $ par an. Tout NEXORA : Dev Lab, jusqu’à 50 applications, Studio 3D & Motion et NEX-DESIGN complets. Premier jour : essai complet de 24 h.`
+  // #117 : aucune offre ni prix dans ces résumés (réservés aux pages /tarifs, /tarifs/comparatif et /licence) ; profils
+  // « Pour qui ? » et besoin de chaque espace ajoutés.
+  const persona = (p) => `${SITE}/pour-qui/${p.slug}`
   fs.writeFileSync(
     path.join(OUT_DIR, "llms.txt"),
     `# NEXORA
 
-> NEXORA (aussi « NEXORA Devs Toolbox ») est une application pour Windows 10 et 11, en français, qui réunit en un seul logiciel tout ce qu’il faut pour concevoir, coder, tester sur ${m.DEVICE_COUNT} modèles d’appareils, sécuriser et publier un site sur le web, sur Android (APK, AAB, PWA, Play Store) et sur Windows (installateur, MSI, winget, Microsoft Store). Version actuelle : ${m.APP_VERSION}. Offre Gratuite sans limite de durée, offre Pro à 25 $ par mois.
+> NEXORA (aussi « NEXORA Devs Toolbox ») est une application pour Windows 10 et 11, en français, qui réunit en un seul logiciel tout ce qu’il faut pour concevoir, coder, tester sur ${m.DEVICE_COUNT} modèles d’appareils, sécuriser et publier un site sur le web, sur Android (APK, AAB, PWA, Play Store) et sur Windows (installateur, MSI, winget, Microsoft Store). Version actuelle : ${m.APP_VERSION}. Elle s’adresse aux étudiants en informatique, développeurs juniors, codeurs passionnés, vibe codeurs, entrepreneurs, créateurs de MVP, designers, freelances et agences, et aux commerçants.
 
 - Site officiel : ${SITE}/
 - NEXORA dans le navigateur (NEXORA web) : ${m.STUDIO_URL}
@@ -229,9 +231,10 @@ ${urls
 
 ## Pages principales
 
-- [Accueil](${SITE}/) : présentation, les 9 espaces, chiffres clés, tarifs, questions fréquentes.
-- [Les 9 espaces](${SITE}/espaces) : un espace par métier, tous reliés au même projet.
-- [Tarifs](${SITE}/tarifs) : offres Gratuit et Pro, comparatif complet des fonctions.
+- [Accueil](${SITE}/) : présentation, ce que NEXORA change, les 9 espaces, les profils, questions fréquentes.
+- [Les 9 espaces](${SITE}/espaces) : un espace par besoin, tous reliés au même projet.
+- [Pour qui ?](${SITE}/pour-qui) : 9 profils, ce qui les freine, ce que NEXORA change et leur parcours.
+- [Tarifs](${SITE}/tarifs) : offres, prix et comparatif complet des fonctions.
 - [Télécharger](${SITE}/telecharger) : installation sur Windows 10 et 11, configuration requise.
 - [Nouveautés](${SITE}/nouveautes) : notes de version.
 
@@ -239,9 +242,9 @@ ${urls
 
 ${m.SPACES.map((s) => `- [${s.name}](${space(s)}) : ${s.card}. ${s.tagline}`).join("\n")}
 
-## Offres
+## Pour qui ?
 
-${plans}
+${m.PERSONAS.map((p) => `- [${p.name}](${persona(p)}) : ${p.tagline}`).join("\n")}
 
 ## Optional
 
@@ -254,22 +257,33 @@ ${plans}
     path.join(OUT_DIR, "llms-full.txt"),
     `# NEXORA — texte complet du site (${SITE})
 
-NEXORA est une application pour Windows 10 et 11 (version ${m.APP_VERSION}), en français. Elle réunit 9 espaces qui partagent les mêmes projets : concevoir, coder, tester sur ${m.DEVICE_COUNT} modèles d’appareils, sécuriser et publier un site sur le web, sur Android et sur Windows. Mise à jour : ${today}.
-
-## Offres
-
-${plans}
+NEXORA est une application pour Windows 10 et 11 (version ${m.APP_VERSION}), en français. Elle réunit 9 espaces qui partagent les mêmes projets : concevoir, coder, tester sur ${m.DEVICE_COUNT} modèles d’appareils, sécuriser et publier un site sur le web, sur Android et sur Windows. Mise à jour : ${today}. Offres et prix : page Tarifs (${SITE}/tarifs).
 
 ${m.SPACES.map(
   (s) => `## ${s.name} — ${s.card}
 
 Adresse : ${space(s)}
+Besoin : ${s.need}
 ${s.lead}
-Offre : ${s.planNote}.
 
-${s.features.map((f) => `- ${f.title}${f.plan ? ` (offre ${f.plan === "pro" ? "Pro" : f.plan})` : ""} : ${f.text}`).join("\n")}
+${s.features.map((f) => `- ${f.title} : ${f.text}`).join("\n")}
 ${s.details ? `\n${s.details.title} : ${s.details.items.join(" ; ")}.\n` : ""}`,
 ).join("\n")}
+## Pour qui ?
+
+${m.PERSONAS.map(
+  (p) => `### ${p.name}
+
+Adresse : ${persona(p)}
+${p.lead}
+Situation type : « ${p.quote} »
+
+${p.shifts.map((x) => `- Sans NEXORA : ${x.before} Avec NEXORA : ${x.after}`).join("\n")}
+
+Parcours :
+${p.steps.map((st, i) => `${i + 1}. ${st.title} (${m.SPACES.find((s) => s.id === st.space).name}) : ${st.text}`).join("\n")}`,
+).join("\n\n")}
+
 ## Questions fréquentes
 
 ${m.FAQ.map((f) => `### ${f.q}\n\n${f.a}`).join("\n\n")}
@@ -294,7 +308,7 @@ ${latest[1].items.map((it) => `- ${it.title} : ${it.text}`).join("\n")}
         id: "/",
         name: "NEXORA — L’atelier complet du web",
         short_name: "NEXORA",
-        description: `Conçois, code, teste sur ${m.DEVICE_COUNT} modèles d’appareils, sécurise et publie ton site sur le web, Android et Windows depuis une seule application.`,
+        description: `Concevez, codez, testez sur ${m.DEVICE_COUNT} modèles d’appareils, sécurisez et publiez votre site sur le web, Android et Windows depuis une seule application.`,
         lang: "fr",
         dir: "ltr",
         start_url: "/?source=pwa",
@@ -316,7 +330,7 @@ ${latest[1].items.map((it) => `- ${it.title} : ${it.text}`).join("\n")}
         screenshots: [
           { src: "/screenshots/accueil-1280x800.png", sizes: "1280x800", type: "image/png", form_factor: "wide", label: "Accueil du site de NEXORA" },
           { src: "/screenshots/espaces-1280x800.png", sizes: "1280x800", type: "image/png", form_factor: "wide", label: "Les 9 espaces de NEXORA" },
-          { src: "/screenshots/app-builder-1280x800.png", sizes: "1280x800", type: "image/png", form_factor: "wide", label: "App Builder : ton site devient une application" },
+          { src: "/screenshots/app-builder-1280x800.png", sizes: "1280x800", type: "image/png", form_factor: "wide", label: "App Builder : votre site devient une application" },
           { src: "/screenshots/mobile-accueil-780x1688.png", sizes: "780x1688", type: "image/png", form_factor: "narrow", label: "NEXORA sur téléphone" },
           { src: "/screenshots/mobile-espaces-780x1688.png", sizes: "780x1688", type: "image/png", form_factor: "narrow", label: "Les espaces sur téléphone" },
         ],

@@ -55,13 +55,13 @@ export function MainButton({ size = "md", className = "" }: { size?: "sm" | "md"
   return <DownloadButton size={size} label={size === "sm" ? "Télécharger" : "Télécharger pour Windows"} className={className} />
 }
 
-/** Second bouton : la page « Ma licence » (compte, clé gratuite, abonnement). */
+/** Second bouton : la page « Ma licence » (compte, clé, abonnement). #117 : libellé sans offre. */
 export function SecondButton({ size = "md", className = "" }: { size?: "sm" | "md" | "lg"; className?: string }) {
   return (
     <Button asChild size={sz(size)} variant="outline" className={className}>
       <a href="/licence">
         <Icon name="key" size={size === "sm" ? 15 : 17} />
-        <span>{size === "sm" ? "Ma licence" : "Obtenir ma licence gratuite"}</span>
+        <span>{size === "sm" ? "Ma licence" : "Obtenir ma licence"}</span>
       </a>
     </Button>
   )

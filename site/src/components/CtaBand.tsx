@@ -13,7 +13,8 @@ import { Words } from "./SectionHead"
  */
 export function CtaBand({
   title = "Ouvrez votre premier projet aujourd’hui.",
-  text = "NEXORA est gratuit, sans limite de durée, avec 2 applications offertes. Passez à Pro quand vous voulez aller plus loin.",
+  // #117 : plus aucune offre citée hors des tarifs et de la licence.
+  text = "Installez NEXORA, choisissez ce que vous voulez obtenir et ouvrez votre projet : vos outils sont prêts, vos écrans aussi, et chaque espace reprend là où le précédent s’est arrêté.",
   bright = false,
 }: {
   title?: string
@@ -55,7 +56,7 @@ const CTA_LINKS: [string, string][] = [
   ["Télécharger", "/telecharger"],
   ["Ma licence", "/licence"],
   ["Nouveautés", "/nouveautes"],
-  ["Comparatif", "/tarifs/comparatif"],
+  ["Pour qui ?", "/pour-qui"],
 ]
 
 /**

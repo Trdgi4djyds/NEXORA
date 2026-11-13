@@ -99,6 +99,10 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
             Espaces
             <Icon name="chevronDown" size={14} stroke={2} className={cn("transition-transform duration-300", mega && "rotate-180")} />
           </button>
+          {/* #117 : profils et parcours. */}
+          <a className={navLink} href="/pour-qui" aria-current={current("pour-qui")} onMouseEnter={track}>
+            Pour qui ?
+          </a>
           <a className={navLink} href="/tarifs" aria-current={current("tarifs")} onMouseEnter={track}>
             Tarifs
           </a>
@@ -181,6 +185,7 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
             </div>
             <div className="mt-6 grid grid-cols-2 gap-2 text-[15px]">
               {[
+                ["/pour-qui", "Pour qui ?"],
                 ["/tarifs", "Tarifs"],
                 ["/nouveautes", "Nouveautés"],
                 ["/telecharger", "Télécharger"],

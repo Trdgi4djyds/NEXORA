@@ -1,37 +1,55 @@
-import { PERSONAS } from "../data/content"
-import { SPACE_BY_ID, spaceHref } from "../data/spaces"
+import { PERSONAS, personaHref, type Persona } from "../data/personas"
+import { SPACE_BY_ID } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
+import { NeonIcon } from "./Neon"
 import { SectionHead } from "./SectionHead"
 
-/** « Pour qui ? » : quatre cartes à photo (noir et blanc, en couleur au survol). */
+/** #117 : carte d'un profil : icône néon, nom, promesse, situation type, espaces du parcours et lien vers sa page. */
+export function PersonaCard({ persona, index, quote = true }: { persona: Persona; index: number; quote?: boolean }) {
+  const spaces = [...new Set(persona.steps.map((s) => s.space))]
+  return (
+    <a className="pq-card" href={personaHref(persona)}>
+      <span className="pq-card-top">
+        <NeonIcon name={persona.icon} size={34} />
+        <span className="pq-num">{String(index + 1).padStart(2, "0")}</span>
+      </span>
+      <b className="pq-name">{persona.name}</b>
+      <span className="pq-tag">{persona.tagline}</span>
+      {quote && <span className="pq-say">« {persona.quote} »</span>}
+      <span className="pq-chips">
+        {spaces.map((id) => (
+          <span key={id} className="pq-chip">
+            <Icon name={SPACE_BY_ID[id].icon} size={12} />
+            {SPACE_BY_ID[id].name}
+          </span>
+        ))}
+      </span>
+      <span className="pq-go">
+        Voir le parcours <Icon name="nxArrowRight" size={14} stroke={2} />
+      </span>
+    </a>
+  )
+}
+
+/** « Pour qui ? » de l'accueil (#117) : les 9 profils, chacun relié à sa page et à son parcours. */
 export function Personas() {
   return (
-    <section className="section light" data-capture="pour-qui">
-      <div className="wrap">
+    <section className="section light" id="pour-qui" data-capture="pour-qui">
+      <div className="wrap-wide">
         <SectionHead
-          index="06"
-          eyebrow="Pour qui ?"
-          title={["Quatre façons", "de travailler avec NEXORA."]}
-          lead="Freelance, agence, commerce ou salle de classe : chacun y trouve l’espace qui lui fait gagner le plus de temps."
-        />
-        <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4" data-glow>
+          eyebrow="pour qui ?"
+          title={["Votre point de départ,", "votre parcours."]}
+          lead="Étudiant, développeur junior, vibe codeur, designer ou commerçant : chacun arrive avec un besoin précis. Choisissez votre profil pour voir ce qui vous freine aujourd’hui et ce que NEXORA change concrètement."
+        >
+          <a className="link-arrow" href="/pour-qui">
+            Tous les profils <Icon name="nxArrowUpRight" size={13} stroke={2} />
+          </a>
+        </SectionHead>
+        <ul className="pq-grid">
           {PERSONAS.map((p, i) => (
-            <Reveal as="li" key={p.title} delay={i * 80}>
-              <a className="glow lift surface group flex h-full flex-col overflow-hidden" href={spaceHref(SPACE_BY_ID[p.space])}>
-                <span className="relative block aspect-[4/3] overflow-hidden">
-                  <img src={p.photo} alt={p.alt} loading="lazy" width={960} height={720} className="h-full w-full object-cover grayscale transition duration-700 group-hover:scale-105 group-hover:grayscale-0" />
-                  <span className="absolute inset-0 bg-black/30 transition group-hover:bg-transparent" />
-                  <span className="absolute top-3 left-3 rounded-full bg-lime px-2.5 py-1 text-[13px] font-mediumtabular-nums text-ink">{String(i + 1).padStart(2, "0")}</span>
-                </span>
-                <span className="flex flex-1 flex-col p-6">
-                  <b className="display text-[24px] leading-tight font-medium tracking-[-0.03em]">{p.title}</b>
-                  <span className="mt-2 flex-1 text-[14px] leading-relaxed text-muted-foreground">{p.text}</span>
-                  <span className="link-arrow mt-5 text-[14px]">
-                    {p.link} <Icon name="nxArrowRight" size={15} stroke={2} />
-                  </span>
-                </span>
-              </a>
+            <Reveal as="li" key={p.slug} delay={(i % 3) * 70}>
+              <PersonaCard persona={p} index={i} quote={false} />
             </Reveal>
           ))}
         </ul>

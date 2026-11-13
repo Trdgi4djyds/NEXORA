@@ -15,7 +15,7 @@ import { useRemote } from "../lib/remote"
 const STEPS: [string, string, string][] = [
   ["download", "Téléchargez le lanceur", "NEXORA Devs Toolbox : un petit programme de quelques mégaoctets."],
   ["shield", "Lancez-le", "Il télécharge NEXORA, vérifie sa signature et l’installe, sans droits d’administrateur."],
-  ["key", "Connectez-vous", "Votre licence gratuite s’active : votre premier jour est un essai complet de Pro."],
+  ["key", "Connectez-vous", "Votre licence s’active, liée à votre compte : vos réglages et vos projets vous suivent d’une version à l’autre."],
 ]
 const REQUIREMENTS: [string, string][] = [
   ["Système", "Windows 10 ou Windows 11, 64 bits"],
@@ -38,7 +38,7 @@ export function Download() {
           lead={
             downloadUrl || !ready
               ? "Un lanceur léger installe NEXORA, vérifie chaque fichier et le tient à jour. Vos réglages, vos projets et votre compte sont gardés d’une version à l’autre."
-              : "Le lanceur pour Windows n’est pas encore publié. Créez dès maintenant votre compte et votre licence gratuite : ils vous attendront au premier démarrage."
+              : "Le lanceur pour Windows n’est pas encore publié. Créez dès maintenant votre compte et votre licence : ils vous attendront au premier démarrage."
           }
           className="mb-10 md:mb-12"
         />
@@ -72,7 +72,7 @@ export function Download() {
                   {/* #076 : sans version publiée, l'action possible (créer sa licence) passe avant le bouton inactif. */}
                   <Button asChild size="lg">
                     <a href="/licence">
-                      <Icon name="key" size={18} stroke={2} /> Créer ma licence gratuite
+                      <Icon name="key" size={18} stroke={2} /> Créer ma licence
                     </a>
                   </Button>
                   <Button size="lg" variant="outline" aria-disabled="true" tabIndex={-1} type="button">
@@ -84,7 +84,7 @@ export function Download() {
           </div>
           {!downloadUrl && ready && (
             <p className="relative mt-6 flex items-start gap-2.5 border-t border-foreground/[0.08] pt-5 text-[13.5px] text-muted-foreground">
-              <Icon name="info" size={15} className="mt-0.5 shrink-0 text-primary" /> Le lanceur public arrive très bientôt. En attendant, créez votre compte et votre licence gratuite&nbsp;: ils seront reconnus au premier démarrage.
+              <Icon name="info" size={15} className="mt-0.5 shrink-0 text-primary" /> Le lanceur public arrive très bientôt. En attendant, créez votre compte et votre licence&nbsp;: ils seront reconnus au premier démarrage.
             </p>
           )}
         </Reveal>

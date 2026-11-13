@@ -5,14 +5,15 @@ import { DeviceGallery, DeviceWall } from "../components/DeviceWall"
 import { MainButton } from "../components/Download"
 import { Device } from "../components/Screen"
 import { SectionHead } from "../components/SectionHead"
-import { Badge } from "../components/ui/badge"
+import { NeonIcon } from "../components/Neon"
+import { PersonaCard } from "../components/Personas"
 import { Button } from "../components/ui/button"
 import { SPACE_FACTS } from "../data/content"
-import { PLAN_LABEL, SPACES, spaceHref, type Feature, type Space } from "../data/spaces"
+import { PERSONAS, personaHref, personasForSpace } from "../data/personas"
+import { SPACES, spaceHref, type Space } from "../data/spaces"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
 import { APP_VERSION, DEVICE_CATEGORIES, DEVICE_LIST } from "../lib/product"
-import type { PlanId } from "../lib/remote"
 import { cn } from "../lib/utils"
 
 /** Catalogue des appareils du Responsive Lab, tiré des sources de NEXORA, avec la vitrine des vrais cadres (#086). */
@@ -50,57 +51,57 @@ function DeviceCatalog() {
   )
 }
 
-/** Ce que chaque offre apporte dans cet espace (#076 : Gratuit et Pro ; #087 : limites propres à l'espace). */
-function PlanSplit({ space }: { space: Space }) {
-  const cols: { id: PlanId; title: string; lead: string; items: Feature[] }[] = [
-    {
-      id: "free",
-      title: "Gratuit",
-      lead: space.limits ? space.limits.free : space.plan === "free" ? "Pour découvrir et créer" : "Ouvert pendant votre essai de 24 h, puis réservé à Pro",
-      items: space.plan === "free" ? space.features.filter((f) => !f.plan) : [],
-    },
-    {
-      id: "pro",
-      title: "Pro",
-      lead: space.limits
-        ? space.limits.pro
-        : space.plan !== "free" ? "Tout l’espace :" : space.features.some((f) => f.plan === "pro") ? "Tout le Gratuit, plus :" : "Le même espace, avec des limites plus larges :",
-      items: space.limits
-        ? space.limits.perks.map((title) => ({ icon: "check", title, text: "" }))
-        : space.plan === "free" ? space.features.filter((f) => f.plan === "pro") : space.features,
-    },
-  ]
+/**
+ * NEXORA #117 : « Qui s'en sert, et pour quoi faire » : les profils dont le parcours passe par cet espace, avec l'étape
+ * qui le concerne (remplace la répartition par offre, réservée désormais aux tarifs). L'Accueil sert à tous les profils.
+ */
+function SpacePersonas({ space }: { space: Space }) {
+  const who = personasForSpace(space.id)
   return (
-    <div className="grid gap-6 md:grid-cols-2" data-glow>
-      {cols.map((c, i) => (
-        <Reveal className={cn("glow has-wm p-8", c.id === "pro" ? "panel-hi" : "panel")} key={c.id} delay={i * 80}>
-          <Watermark icon={c.id === "pro" ? "nxCrown" : "nxSend"} className="wm-br" size={200} />
-          <Badge variant={c.id === "pro" ? "solid" : "default"}>{c.title}</Badge>
-          <p className="mt-4 text-[15px] text-muted-foreground">{c.lead}</p>
-          <ul className="mt-5 flex flex-col gap-3">
-            {c.items.length ? (
-              c.items.map((f) => (
-                <li key={f.title} className="flex items-start gap-3 text-[14.5px]">
-                  <Icon name="check" size={15} stroke={2.6} className="mt-1 shrink-0 text-primary" />
-                  {f.title}
-                </li>
-              ))
-            ) : (
-              <li className="text-[14.5px] text-muted-foreground">
-                {/* #072 : un espace gratuit sans fonction Pro n'est pas « à ouvrir » : il est déjà inclus. */}
-                {c.id === "pro"
-                  ? space.limits
-                    ? "Les mêmes fonctions, pour toutes vos applications : projets, membres et constructions plus larges."
-                    : "Des limites plus larges : projets, membres et constructions."
-                  : space.plan === "free"
-                    ? "Cet espace est déjà complet avec l’offre Gratuite."
-                    : "Passez à Pro pour garder cet espace après votre essai."}
-              </li>
-            )}
-          </ul>
-        </Reveal>
-      ))}
-    </div>
+    <section className="section-tight light" id="pour-qui" data-capture="pour-qui">
+      <div className="wrap-wide">
+        <SectionHead
+          eyebrow="pour qui ?"
+          title={who.length ? ["Qui s’en sert,", "et pour quoi faire."] : ["Le point de départ", "de tous les profils."]}
+          lead={
+            who.length
+              ? `${who.length} profils sur ${PERSONAS.length} passent par l’espace ${space.name} dans leur parcours. Voici ce qu’ils y font.`
+              : `Quel que soit votre profil, c’est ici que vous retrouvez vos projets et choisissez par où commencer.`
+          }
+        >
+          <a className="link-arrow" href="/pour-qui">
+            Tous les profils <Icon name="nxArrowRight" size={15} stroke={2} />
+          </a>
+        </SectionHead>
+        <ul className="pq-grid">
+          {who.length
+            ? who.map((p, i) => {
+                const step = p.steps.find((st) => st.space === space.id)!
+                return (
+                  <Reveal as="li" key={p.slug} delay={(i % 3) * 70}>
+                    <a className="pq-card" href={personaHref(p)}>
+                      <span className="pq-card-top">
+                        <NeonIcon name={p.icon} size={30} />
+                        <span className="pq-num">{p.name}</span>
+                      </span>
+                      <b className="pq-name">{step.title}</b>
+                      <span className="pq-tag">{step.text}</span>
+                      <span className="pq-say">« {p.quote} »</span>
+                      <span className="pq-go mt-auto pt-4">
+                        Voir le parcours complet <Icon name="nxArrowRight" size={14} stroke={2} />
+                      </span>
+                    </a>
+                  </Reveal>
+                )
+              })
+            : PERSONAS.map((p, i) => (
+                <Reveal as="li" key={p.slug} delay={(i % 3) * 70}>
+                  <PersonaCard persona={p} index={i} quote={false} />
+                </Reveal>
+              ))}
+        </ul>
+      </div>
+    </section>
   )
 }
 
@@ -133,12 +134,9 @@ export function SpacePage({ space }: { space: Space }) {
               <div className="mt-7 flex flex-wrap gap-3">
                 <MainButton />
                 <Button asChild variant="outline">
-                  <a href="/tarifs">Voir les tarifs</a>
+                  <a href="#pour-qui">Qui s’en sert ?</a>
                 </Button>
               </div>
-              <span className="mt-5 inline-flex items-center gap-2 text-[13px] text-muted-foreground">
-                <i className="dot" /> {space.planNote}
-              </span>
             </div>
           </div>
         </div>
@@ -173,7 +171,7 @@ export function SpacePage({ space }: { space: Space }) {
       <section className="section lime relative overflow-hidden" data-capture="fonctions">
         <Watermark icon={space.icon} className="wm-tr" size={520} />
         <div className="wrap relative">
-          <SectionHead eyebrow="Ce que vous pouvez faire" title={[space.name, "en détail."]} lead={`${space.features.length} fonctions livrées dans NEXORA ${APP_VERSION}, avec l’offre qui les ouvre.`} />
+          <SectionHead eyebrow="Ce que vous pouvez faire" title={[space.name, "en détail."]} lead={`${space.features.length} fonctions livrées dans NEXORA ${APP_VERSION}, chacune pour un besoin concret.`} />
           <ol className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" data-glow>
             {space.features.map((f, i) => (
               <Reveal as="li" className="glow surface feat-card flex flex-col p-7" key={f.title} delay={(i % 3) * 70}>
@@ -182,7 +180,7 @@ export function SpacePage({ space }: { space: Space }) {
                   <span className="sp-ic solid">
                     <Icon name={f.icon} size={18} />
                   </span>
-                  {f.plan ? <Badge variant="outline">{PLAN_LABEL[f.plan]}</Badge> : space.trial ? <Badge variant="outline">{space.trial.tag}</Badge> : <span className="text-[12px] font-semibold tabular-nums text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>}
+                  <span className="text-[12px] font-semibold tabular-nums text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
                 </span>
                 <h3 className="display mt-6 text-[23px] leading-tight font-medium tracking-[-0.03em]">{f.title}</h3>
                 <p className="mt-2 text-[14.5px] leading-relaxed text-muted-foreground">{f.text}</p>
@@ -215,16 +213,7 @@ export function SpacePage({ space }: { space: Space }) {
         </section>
       )}
 
-      <section className="section-tight light" data-capture="offres">
-        <div className="wrap">
-          <SectionHead eyebrow="Dans vos offres" title={["Ce qui est inclus,", "offre par offre."]}>
-            <a className="link-arrow" href="/tarifs/comparatif">
-              Voir le comparatif complet <Icon name="nxArrowRight" size={15} stroke={2} />
-            </a>
-          </SectionHead>
-          <PlanSplit space={space} />
-        </div>
-      </section>
+      <SpacePersonas space={space} />
 
       <section className="section-tight light pt-0">
         <div className="wrap grid gap-6 md:grid-cols-2" data-glow>
@@ -251,10 +240,12 @@ export function SpacePage({ space }: { space: Space }) {
   )
 }
 
-/** #105 : l'espace en chiffres, en rangées géantes (référence « About us in numbers » de l'utilisateur). */
+const lowerFirst = (t: string) => t.charAt(0).toLowerCase() + t.slice(1)
+
+/** #105 : l'espace en chiffres, en rangées géantes (référence « About us in numbers » de l'utilisateur). #117 : sans offre. */
 function SpaceNumbers({ space }: { space: Space }) {
-  const pro = space.features.filter((f) => f.plan === "pro").length
   const [fact, factLabel] = SPACE_FACTS[space.id]
+  const who = personasForSpace(space.id)
   return (
     <NumberRows
       eyebrow="En chiffres"
@@ -266,13 +257,14 @@ function SpaceNumbers({ space }: { space: Space }) {
           label: "fonctions",
           text: (
             <>
-              Livrées dans <b>NEXORA {APP_VERSION}</b>
-              {pro ? `, dont ${pro} ouvertes par l’offre Pro.` : ", toutes ouvertes avec l’offre Gratuite."}
+              Livrées dans <b>NEXORA {APP_VERSION}</b>, sans autre logiciel à installer.
             </>
           ),
         },
         { value: fact, label: factLabel, text: space.card + "." },
-        { value: PLAN_LABEL[space.plan], label: space.plan === "free" ? "pour commencer" : "pour l’ouvrir", text: space.planNote + "." },
+        who.length
+          ? { value: String(who.length), label: `profils sur ${PERSONAS.length}`, text: <>S’en servent dans leur parcours : {who.map((p) => lowerFirst(p.name)).join(", ")}.</> }
+          : { value: String(PERSONAS.length), label: "profils", text: "Tous partent de l’Accueil pour retrouver leurs projets." },
       ]}
     />
   )

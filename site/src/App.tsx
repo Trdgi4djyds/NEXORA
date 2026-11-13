@@ -11,6 +11,9 @@ import { Download } from "./pages/Download"
 import { News } from "./pages/News"
 import { Licence } from "./pages/Licence"
 import { NotFound } from "./pages/NotFound"
+import { PersonasIndex } from "./pages/PersonasIndex"
+import { PersonaPage } from "./pages/PersonaPage"
+import { personaBySlug } from "./data/personas"
 import { spaceBySlug } from "./data/spaces"
 import { installGlow } from "./lib/glow"
 import { installDepth } from "./lib/depth"
@@ -26,6 +29,12 @@ function page(route: Route): { key: string; node: ReactNode } {
   if (a === "espaces" && b) {
     const space = spaceBySlug(b)
     if (space) return { key: `espace-${space.slug}`, node: <SpacePage space={space} /> }
+  }
+  // NEXORA #117 : profils « Pour qui ? » et parcours de chacun.
+  if (a === "pour-qui" && !b) return { key: "pour-qui", node: <PersonasIndex /> }
+  if (a === "pour-qui" && b) {
+    const persona = personaBySlug(b)
+    if (persona) return { key: `profil-${persona.slug}`, node: <PersonaPage persona={persona} /> }
   }
   if (a === "tarifs") return { key: "tarifs", node: <Pricing /> }
   if (a === "telecharger") return { key: "telecharger", node: <Download /> }

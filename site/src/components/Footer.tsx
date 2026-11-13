@@ -55,8 +55,8 @@ export function Footer() {
           <a href="/tarifs" className={link}>
             Tarifs
           </a>
-          <a href="/tarifs/comparatif" className={link}>
-            Comparer les offres
+          <a href="/pour-qui" className={link}>
+            Pour qui ?
           </a>
           <a href="/nouveautes" className={link}>
             Nouveautés

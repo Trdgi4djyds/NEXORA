@@ -33,7 +33,27 @@ const cmp = (a: string, b: string) => {
   for (let i = 0; i < 3; i += 1) if ((pa[i] || 0) !== (pb[i] || 0)) return (pb[i] || 0) - (pa[i] || 0)
   return 0
 }
-export const RELEASES: [string, Note][] = (Object.entries(NOTES) as [string, Note][]).sort((a, b) => cmp(a[0], b[0]))
+/**
+ * NEXORA #117 : sur le site, les nouveautés ne parlent ni des offres ni des prix (réservés à /tarifs, /tarifs/comparatif
+ * et /licence) : un élément dont le titre en cite un est retiré, une phrase qui en cite un est retirée du texte. Les
+ * notes de l'application (nx/version/notes.js) restent intactes.
+ */
+const OFFER = /\b(pro|gratuite?s?|offertes?|offres?|essai|abonnements?)\b|\$/i
+/** Chapeau propre au site quand celui de l'application cite une offre. */
+const SITE_INTRO: Record<string, string> = {
+  "1.2.0": "NEXORA Devs Toolbox : une installation vérifiée à chaque démarrage, un assistant IA sans limite, et l’App Builder comme le Desktop Builder prêts pour la distribution.",
+}
+function withoutOffers(version: string, note: Note): Note {
+  const items = note.items
+    .filter((it) => !OFFER.test(it.title))
+    .map((it) => ({ ...it, text: it.text.split(/(?<=[.!?])\s+/).filter((x) => !OFFER.test(x)).join(" ") }))
+    .filter((it) => it.text)
+  const intro = !OFFER.test(note.intro) ? note.intro : SITE_INTRO[version] || `${items.slice(0, 3).map((it) => it.title).join(", ")}.`
+  return { ...note, intro, items }
+}
+export const RELEASES: [string, Note][] = (Object.entries(NOTES) as [string, Note][])
+  .sort((a, b) => cmp(a[0], b[0]))
+  .map(([v, n]) => [v, withoutOffers(v, n)] as [string, Note])
 
 /**
  * NEXORA web : /studio/ du domaine depuis le #096 (racine du site publié jusqu'au #095). Dans l'aperçu Figma Make,

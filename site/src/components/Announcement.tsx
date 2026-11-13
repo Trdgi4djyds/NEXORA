@@ -3,9 +3,12 @@ import { Icon } from "../lib/icons"
 import { useRemote } from "../lib/remote"
 
 const KEY = "nexora-site-annonce"
-const MARK = "076-toolbox"
+const MARK = "117-pour-qui"
 
-/** Bandeau du haut : maintenance annoncée par NEXORA, sinon l’annonce de NEXORA Devs Toolbox (#076). */
+/**
+ * Bandeau du haut : maintenance annoncée par NEXORA, sinon l’annonce du moment. #117 : les parcours « Pour qui ? »
+ * (l’annonce de NEXORA Devs Toolbox du #076 citait l’offre et l’essai, réservés désormais aux tarifs et à la licence).
+ */
 export function Announcement({ home = false }: { home?: boolean }) {
   const { maintenance } = useRemote()
   // #096 : masquée ou non selon le stockage du navigateur, lu après l'hydratation de la page pré-générée.
@@ -38,12 +41,12 @@ export function Announcement({ home = false }: { home?: boolean }) {
   return (
     <div className="relative border-b border-foreground/[0.08] bg-lime text-ink">
       <div className="wrap-wide flex items-center gap-3 py-2">
-        <a className="group flex min-w-0 flex-1 items-center justify-center gap-3 text-[13px] text-ink/80" href="/licence">
+        <a className="group flex min-w-0 flex-1 items-center justify-center gap-3 text-[13px] text-ink/80" href="/pour-qui">
           <span className="shrink-0 rounded-full bg-ink px-2 py-0.5 text-[12px] font-medium text-lime">Nouveau</span>
           {/* #089 : deux lignes sur téléphone (le texte était coupé après « licence gra… »). */}
-          <span className="line-clamp-2 leading-snug sm:line-clamp-none sm:truncate">NEXORA Devs Toolbox : licence gratuite, 2 applications Android ou Windows offertes, 24 h d’essai Pro complet</span>
+          <span className="line-clamp-2 leading-snug sm:line-clamp-none sm:truncate">Étudiant, vibe codeur, designer, commerçant… votre parcours dans NEXORA, étape par étape</span>
           <span className="hidden items-center gap-1.5 font-semibold text-ink transition-[gap] group-hover:gap-2.5 sm:inline-flex">
-            Obtenir ma licence <Icon name="nxArrowRight" size={14} stroke={2} />
+            Trouver mon parcours <Icon name="nxArrowRight" size={14} stroke={2} />
           </span>
         </a>
         <button type="button" className="grid size-7 place-items-center rounded-full text-ink/70 transition hover:bg-ink/10 hover:text-ink" onClick={hide} aria-label="Masquer l’annonce">
