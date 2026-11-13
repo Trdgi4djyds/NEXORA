@@ -78,6 +78,7 @@ async function fitted(src, aspect) {
 }
 
 // GLB de l'appareil, à taille réelle, posé au sol, écran habillé. `image` : adresse d'image (data:) ou null.
+// NEXORA #118 : `image` peut aussi être une fonction (format de la dalle, famille) qui dessine l'écran au format exact.
 export async function build(key, image) {
   const d = DEVICES[key]; if (!d) throw new Error('Appareil inconnu.');
   const gltf = await new T.GLTFLoader().parseAsync((await source(key)).slice(0), '');
@@ -89,8 +90,10 @@ export async function build(key, image) {
   const screen = screenOf(model);
   if (screen) {
     const aspect = aspectOf(screen);
-    const canvas = image ? await fitted(image, aspect) : wallpaper(aspect, d.kind);
+    const canvas = typeof image === 'function' ? await image(aspect, d.kind) : image ? await fitted(image, aspect) : wallpaper(aspect, d.kind);
     const tex = new T.CanvasTexture(canvas); tex.colorSpace = T.SRGBColorSpace; tex.flipY = false;
+    // NEXORA #118 : écran enregistré en JPEG dans le GLB (bien plus léger qu'en PNG, sans transparence utile).
+    tex.userData.mimeType = 'image/jpeg';
     screen.material = new T.MeshBasicMaterial({ map: tex, toneMapped: false, name: 'Écran' });
   }
   const out = await new T.GLTFExporter().parseAsync(root, { binary: true, onlyVisible: true, maxTextureSize: 2048 });

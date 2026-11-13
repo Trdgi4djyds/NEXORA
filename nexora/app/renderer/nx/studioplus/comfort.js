@@ -4,7 +4,8 @@
 import { flashRate } from './formats.js';
 import { toast, settings, saveSettings } from './ui.js';
 
-const opts = () => (settings.nxStudioComfort = { adaptive: true, fps: false, flash: true, ...(settings.nxStudioComfort || {}) });
+// NEXORA #118 : outline = contour orange de la sélection dans la vue d'édition.
+const opts = () => (settings.nxStudioComfort = { adaptive: true, fps: false, flash: true, outline: true, ...(settings.nxStudioComfort || {}) });
 export const comfort = opts;
 export function set(k, v) { opts()[k] = v; saveSettings(); }
 

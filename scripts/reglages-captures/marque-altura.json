@@ -1,0 +1,8 @@
+{
+  "nxBrand": {
+    "name": "Altura",
+    "colors": ["#c6f24e", "#ff5b3a", "#ffd23f", "#111113", "#f4f4f1"],
+    "fonts": { "title": "NX Space Grotesk", "body": "NX Inter" },
+    "logo": null
+  }
+}

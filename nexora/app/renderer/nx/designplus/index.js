@@ -23,6 +23,10 @@ import * as LAYOUT from './layout.js';
 import * as MOTION from './motion-ui.js';
 // NEXORA #113 : couleurs de la sélection, lissage des coins, pense-bêtes, connecteurs, notes de présentation.
 import * as EXTRAS from './extras.js';
+// NEXORA #118 : écran des appareils réalistes posés par les modèles « photo ».
+import * as SCENES from '../design/scenes.js';
+import { sec, btn } from './ui.js';
+import { getBrand } from '../services.js';
 
 const TABS = [
   ['variables', 'Variables', 'nxPalette', STD, () => VAR],
@@ -222,7 +226,7 @@ function propsHtml(D) {
   // NEXORA #075 : sans sélection, réglage du prototype de la page (passage automatique).
   if (!s.length) return (has(STD) && D.doc.pages.length > 1 ? PROTO.pageProps(D) : '') + EXTRAS.props(D);
   const o = s.length === 1 ? s[0] : null;
-  let h = AL.props(D, o || s[0]);
+  let h = (o ? SCENES.props(D, o, { sec, btn }) : '') + AL.props(D, o || s[0]);
   if (!o) return h + EXTRAS.props(D) + MOTION.props(D, null);
   if (has(STD)) h += VNT.props(D, o) + VAR.props(D, o) + RESP.props(D, o) + PROTO.props(D, o) + CODE.inspect(D, o);
   h += EXTRAS.props(D) + MOTION.props(D, o) + MOTION.codeProps(D, o);
@@ -243,6 +247,7 @@ async function onField(D, k, v) {
 }
 async function onAction(D, a) {
   const s = D.sel(); const o = s.length === 1 ? s[0] : null;
+  if (o && a.startsWith('nxdev-')) { await SCENES.onAction(D, o, a, getBrand()); return; }
   if (a === 'auto-new') { AL.create(D); D.renderProps(); return; }
   if (a === 'auto-add' && o) { AL.addItem(D, AL.groupOf(o)); D.renderProps(); return; }
   if (a === 'auto-off' && o) { AL.remove(D, AL.groupOf(o)); D.renderProps(); return; }

@@ -3340,3 +3340,67 @@ html[data-vt="back"]::view-transition-new(root) {
     color: var(--foreground);
   }
 }
+
+/* ---------- #118 : galerie des vrais rendus (NEX-DESIGN, Studio) sur les pages d'espace ---------- */
+.rz-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr);
+}
+.rz-item figure {
+  margin: 0;
+}
+.rz-frame {
+  display: block;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: var(--raised);
+}
+.rz-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform 0.6s var(--ease);
+}
+.rz-item figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 12px 4px 0;
+}
+.rz-item figcaption b {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.rz-item figcaption span {
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+@media (hover: hover), (pointer: none) {
+  .rz-item:hover .rz-frame img {
+    transform: scale(1.025);
+  }
+}
+@media (min-width: 640px) {
+  .rz-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .rz-design .rz-wide {
+    grid-column: 1 / -1;
+  }
+}
+@media (min-width: 1024px) {
+  .rz-design {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rz-frame img {
+    transition: none;
+  }
+}

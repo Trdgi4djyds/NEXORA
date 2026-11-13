@@ -194,6 +194,8 @@ export const SPACES: Space[] = [
     lead: "Une capture d’écran plate ne fait pas envie. Placez votre site ou votre app dans des appareils 3D éclairés comme en studio photo, animez la caméra, puis exportez des images et des vidéos prêtes pour vos réseaux, vos stores et vos clients, sans logiciel de montage.",
     features: [
       { icon: "cube", title: "Appareils 3D réalistes", text: "Téléphones, pliables, tablettes et ordinateurs à taille réelle, éclairés comme une photo produit." },
+      // #118 : mises en scène réalistes et contour de sélection.
+      { icon: "laptop", title: "Mises en scène réalistes", text: "Ordinateur entre les roches, vu de dessous, téléphones en diagonale ou tablette inclinée : fond, lumière et cadrage de studio photo en un clic, l’appareil prêt à être ajusté." },
       { icon: "video", title: "Mouvements de caméra", text: "Orbite, spirale, plongée, effet vertigo et clés d’animation sur une frise, sans connaître la 3D." },
       { icon: "nxBeat", title: "Transitions et rythme", text: "Fondus, iris, volets, et clés calées sur le tempo de votre musique." },
       { icon: "nxAperture", title: "Rendu avancé", text: "Réaliste, argile, dessin animé ou fil de fer ; éclairages, profondeur de champ et ambiances." },
@@ -205,7 +207,7 @@ export const SPACES: Space[] = [
     ],
     details: {
       title: "Des mises en scène toutes prêtes",
-      items: ["Deux téléphones côte à côte", "Trois appareils en présentoir", "Pliable qui s’ouvre", "Ordinateur et téléphone", "Téléphone en vedette", "Posés à plat, vue de dessus"],
+      items: ["Deux téléphones côte à côte", "Trois appareils en présentoir", "Pliable qui s’ouvre", "Ordinateur et téléphone", "Téléphone en vedette", "Posés à plat, vue de dessus", "Ordinateur entre les roches", "Ordinateur vu de dessous", "Téléphones en diagonale", "Tablette inclinée"],
     },
   },
   {
@@ -221,6 +223,8 @@ export const SPACES: Space[] = [
     h1: ["Dessinez, prototypez,", "exportez le code."],
     lead: "Concevez vos écrans, vos visuels et vos documents d’impression au même endroit que votre code : mise en page automatique, composants, prototype cliquable et code prêt pour votre projet, pour que le site ressemble enfin à la maquette.",
     features: [
+      // #118 : modèles « photo ».
+      { icon: "image", title: "Modèles photo", text: "Planches de marque, cartes, affiches et mises en scène avec photos et appareils réalistes en 3D, aux couleurs de votre kit de marque : il ne reste qu’à remplacer textes, photos et écrans." },
       { icon: "grid", title: "Mise en page automatique", text: "Des blocs qui s’adaptent à leur contenu, avec espacements et alignements : moins de réglages à la main." },
       { icon: "nxAccess", title: "Accessibilité et mesures", text: "Contraste vérifié et distances affichées en maintenant Alt." },
       { icon: "nxComponent", title: "Variables et variantes", text: "Couleurs, tailles et modes ; variantes de composants réutilisables d’un écran à l’autre." },

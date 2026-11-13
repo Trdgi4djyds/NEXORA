@@ -13,6 +13,9 @@ import * as TEAM from './team.js';
 import * as BR from './bridges.js';
 import * as COMFORT from './comfort.js';
 import * as DEV from './devices.js';
+// NEXORA #118 : contour de sélection et mises en scène réalistes.
+import * as OUTLINE from './outline.js';
+import * as STAGE from './stagings.js';
 
 const DECISION = { approve: 'approuvé', changes: 'changements demandés', comment: 'commentaire' };
 const fmtT = (t) => `${(Math.round(t * 100) / 100).toString().replace('.', ',')} s`;
@@ -49,7 +52,7 @@ function sceneCards(S) {
   h += versionsCard(S);
   h += teamCard(S, pro);
   const c = COMFORT.comfort();
-  h += card('comfort', 'Aperçu et accessibilité', 'eye', `${check('Aperçu adaptatif (résolution réduite quand l’image saccade)', 'cf:adaptive', c.adaptive)}${check('Afficher les images par seconde', 'cf:fps', c.fps)}${check('Signaler les flashs rapides dans les vidéos exportées', 'cf:flash', c.flash)}
+  h += card('comfort', 'Aperçu et accessibilité', 'eye', `${check('Aperçu adaptatif (résolution réduite quand l’image saccade)', 'cf:adaptive', c.adaptive)}${check('Afficher les images par seconde', 'cf:fps', c.fps)}${check('Signaler les flashs rapides dans les vidéos exportées', 'cf:flash', c.flash)}${check('Contour orange autour de l’objet sélectionné (jamais dans les rendus)', 'cf:outline', c.outline)}
     ${note(`Aperçu : ${S.sxFps || '…'} i/s${S.sxScale && S.sxScale < 1 ? ', résolution allégée' : ''}. Les pages web exportées restent immobiles quand le système demande moins d’animations.`)}`);
   return h;
 }
@@ -142,7 +145,7 @@ function onInput(S, el, final) {
   if (d.sxk) {
     const v = el.checked;
     if (d.sxk.startsWith('social:')) DIR.socialPick(S)[d.sxk.slice(7)] = v;
-    else if (d.sxk.startsWith('cf:')) COMFORT.set(d.sxk.slice(3), v);
+    else if (d.sxk.startsWith('cf:')) { COMFORT.set(d.sxk.slice(3), v); S.dirty = true; }
     return true;
   }
   if (d.sxr === 'pts') {
@@ -178,6 +181,26 @@ export async function install(S) {
     proto.build = function (item, ...rest) { const r = this.sxBuild(item, ...rest); if (item && item.nxPoints) { try { MODELS.dressPoints(this, item); } catch { /* */ } } return r; };
   }
   for (const id of S.order) { const e = S.objects.get(id); if (e && e.item.nxPoints) MODELS.dressPoints(S, e.item); }
+  // NEXORA #118 : contour de la sélection tracé après chaque rendu de la vue d'édition (jamais dans les rendus).
+  if (!proto.sxAfterView) {
+    proto.sxAfterView = proto.afterViewRender || null;
+    proto.afterViewRender = function (...args) {
+      try { OUTLINE.draw(this, COMFORT.comfort().outline); } catch (e) { console.warn('[NEXORA #118] contour', e); }
+      return this.sxAfterView ? this.sxAfterView(...args) : undefined;
+    };
+    proto.sxSelect = proto.select;
+    proto.select = function (...args) { const r = this.sxSelect(...args); this.dirty = true; return r; };
+  }
+  // NEXORA #118 : mises en scène réalistes ajoutées à la liste « Mises en scène » du panneau de gauche.
+  if (!proto.sxRenderPresets && proto.renderPresets) {
+    proto.sxRenderPresets = proto.renderPresets;
+    proto.renderPresets = function (...args) { const r = this.sxRenderPresets(...args); try { this.$.presets.insertAdjacentHTML('beforeend', STAGE.listHtml()); } catch (e) { console.warn('[NEXORA #118]', e); } return r; };
+  }
+  if (S.$.presets && !S.$.presets.dataset.sxStage) {
+    S.$.presets.dataset.sxStage = '1';
+    S.$.presets.addEventListener('click', (ev) => { const b = ev.target.closest('[data-sx-scene]'); if (!b) return; ev.stopPropagation(); STAGE.apply(S, b.dataset.sxScene); }, true);
+    if (S.renderPresets) S.renderPresets();
+  }
   const rp = proto.renderProps0;
   proto.renderProps0 = function (...args) {
     const r = rp.apply(this, args);

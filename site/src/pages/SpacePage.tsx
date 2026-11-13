@@ -7,6 +7,7 @@ import { Device } from "../components/Screen"
 import { SectionHead } from "../components/SectionHead"
 import { NeonIcon } from "../components/Neon"
 import { PersonaCard } from "../components/Personas"
+import { Realisations } from "../components/Realisations"
 import { Button } from "../components/ui/button"
 import { SPACE_FACTS } from "../data/content"
 import { PERSONAS, personaHref, personasForSpace } from "../data/personas"
@@ -189,6 +190,9 @@ export function SpacePage({ space }: { space: Space }) {
           </ol>
         </div>
       </section>
+
+      {/* #118 : vrais rendus des modèles « photo » de NEX-DESIGN et des mises en scène réalistes du Studio. */}
+      {(space.id === "design" || space.id === "studio") && <Realisations space={space.id} />}
 
       <SpaceNumbers space={space} />
 

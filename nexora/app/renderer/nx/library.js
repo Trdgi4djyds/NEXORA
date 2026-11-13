@@ -196,7 +196,9 @@ export const SHAPES = {
   croix: ['Croix', 'M35 0 L65 0 L65 35 L100 35 L100 65 L65 65 L65 100 L35 100 L35 65 L0 65 L0 35 L35 35 Z'],
   blob1: ['Forme organique', 'M52 4 C74 2 96 18 96 44 C96 68 84 96 54 96 C26 96 4 80 4 54 C4 28 28 6 52 4 Z'],
   blob2: ['Forme fluide', 'M60 6 C82 10 98 30 92 54 C86 78 66 98 40 92 C16 86 2 66 8 42 C14 18 36 2 60 6 Z'],
-  arche: ['Arche', 'M8 100 L8 46 C8 22 27 4 50 4 C73 4 92 22 92 46 L92 100 Z']
+  arche: ['Arche', 'M8 100 L8 46 C8 22 27 4 50 4 C73 4 92 22 92 46 L92 100 Z'],
+  // NEXORA #118 : flèche ↗ des boutons ronds des cartes.
+  flecheOblique: ['Flèche oblique', 'M26 14 H86 V74 H72 V38 L24 86 L14 76 L62 28 H26 Z']
 };
 
 // ---------- Cadres photo (forme de découpe, boîte 100 × 100) ----------
@@ -211,7 +213,9 @@ export const FRAMES = {
   goutte: ['Goutte', SHAPES.goutte[1]],
   diagonale: ['Diagonale', 'M20 0 H100 L80 100 H0 Z'],
   polaroid: ['Polaroïd', 'M6 6 H94 V76 H6 Z'],
-  telephone: ['Écran de téléphone', 'M14 0 H86 Q100 0 100 14 V86 Q100 100 86 100 H14 Q0 100 0 86 V14 Q0 0 14 0 Z']
+  telephone: ['Écran de téléphone', 'M14 0 H86 Q100 0 100 14 V86 Q100 100 86 100 H14 Q0 100 0 86 V14 Q0 0 14 0 Z'],
+  // NEXORA #118 : coins de même rayon quelle que soit la forme du cadre (tracé recalculé à la taille, voir design/scenes.js).
+  tuile: ['Tuile arrondie', 'M6 0 H94 Q100 0 100 6 V94 Q100 100 94 100 H6 Q0 100 0 94 V6 Q0 0 6 0 Z']
 };
 export const GRIDS = {
   deux: ['2 colonnes', [[0, 0, 0.5, 1], [0.5, 0, 0.5, 1]]],
@@ -254,6 +258,15 @@ export function stickerSvg(kind, { c1 = '#6a4cff', c2 = '#ffcc00', text = '' } =
 // ---------- Modèles de départ (positions relatives à la page, adaptés à tout format) ----------
 // Chaque élément : rect, ellipse, text, frame (cadre photo), shape (forme), sticker, logo.
 export const TEMPLATES = {
+  // NEXORA #118 : modèles « photo » d'après les références de l'utilisateur : une seule couleur d'accent (la
+  // première du kit de marque), photos d'exemple remplaçables, appareils réalistes du Studio en 3D inclinés.
+  planche: { label: 'Planche de marque', format: 'hd', usage: 'Marque', photo: true },
+  mosaique: { label: 'Mosaïque d’appli', format: 'post', usage: 'Marque', photo: true },
+  cartes: { label: 'Cartes de services', format: 'post', usage: 'Web', photo: true },
+  facade: { label: 'Affiche sur façade', format: 'portrait', usage: 'Mise en scène', photo: true },
+  rochers: { label: 'Lancement produit', format: 'portrait', usage: 'Mise en scène', photo: true },
+  dessous: { label: 'Tableau de bord en contre-plongée', format: 'post', usage: 'Mise en scène', photo: true },
+  tablette: { label: 'Appli sur tablette', format: 'portrait', usage: 'Mise en scène', photo: true },
   promo: { label: 'Publication promo', format: 'post', usage: 'Réseaux sociaux' },
   story: { label: 'Story lancement', format: 'story', usage: 'Réseaux sociaux' },
   citation: { label: 'Citation', format: 'portrait', usage: 'Réseaux sociaux' },
@@ -271,6 +284,7 @@ export function templateSpec(id, brand) {
   const [c1, c2, c3, dark, light] = brand.colors;
   const tf = brand.fonts.title; const bf = brand.fonts.body; const name = brand.name || 'Ma marque';
   const t = (text, x, y, w, size, o = {}) => ({ type: 'text', text, x, y, w, size, font: o.font || tf, weight: o.weight ?? 800, color: o.color || dark, align: o.align || 'left', lh: o.lh || 1.05, spacing: o.spacing || 0 });
+  if (TEMPLATES[id] && TEMPLATES[id].photo) return photoSpec(id, brand);
   switch (id) {
     case 'promo': return { bg: light, items: [{ type: 'ellipse', x: 0.52, y: -0.18, w: 0.8, h: 0.8, fill: c1 }, { type: 'frame', shape: 'cercle', x: 0.5, y: 0.08, w: 0.46, h: 0.46 }, t('Nouvelle collection', 0.08, 0.6, 0.8, 0.085), t('Jusqu’à −30 % cette semaine seulement.', 0.08, 0.8, 0.7, 0.04, { font: bf, weight: 400 }), { type: 'sticker', kind: 'promo', x: 0.08, y: 0.1, w: 0.26, h: 0.26, c1, c2: c3 }, { type: 'logo', x: 0.78, y: 0.88, w: 0.14, h: 0.08 }] };
     case 'story': return { bg: c1, items: [{ type: 'rect', x: 0.06, y: 0.05, w: 0.88, h: 0.56, fill: light, r: 0.06 }, { type: 'frame', shape: 'telephone', x: 0.1, y: 0.07, w: 0.8, h: 0.52 }, t('C’est le jour J', 0.08, 0.66, 0.84, 0.1, { color: inkOn(c1) }), t('Découvrez la nouveauté dans le lien.', 0.08, 0.84, 0.84, 0.042, { font: bf, weight: 400, color: inkOn(c1) }), { type: 'shape', shape: 'flecheCourbe', x: 0.72, y: 0.9, w: 0.16, h: 0.08, fill: c3 }] };
@@ -284,6 +298,195 @@ export function templateSpec(id, brand) {
     case 'partage': return { bg: c1, items: [{ type: 'rect', x: 0.04, y: 0.07, w: 0.92, h: 0.86, fill: light, r: 0.04 }, t(name, 0.1, 0.18, 0.8, 0.06, { color: c1, font: bf, weight: 700 }), t('Le titre de votre article ou de votre page', 0.1, 0.32, 0.6, 0.1), { type: 'logo', x: 0.78, y: 0.76, w: 0.14, h: 0.12 }] };
     case 'soldes': return { bg: c2, items: [{ type: 'shape', shape: 'sceau', x: 0.18, y: 0.12, w: 0.64, h: 0.64, fill: c3 }, t('SOLDES', 0.1, 0.32, 0.8, 0.16, { align: 'center', weight: 900, color: inkOn(c3) }), t('−50 %', 0.1, 0.5, 0.8, 0.1, { align: 'center', color: inkOn(c3) }), t('Sur une sélection d’articles', 0.1, 0.84, 0.8, 0.045, { align: 'center', color: inkOn(c2), font: bf, weight: 500 })] };
     case 'recrute': return { bg: light, items: [{ type: 'rect', x: 0, y: 0, w: 1, h: 0.42, fill: c1 }, t('ON RECRUTE', 0.08, 0.12, 0.84, 0.1, { color: inkOn(c1), weight: 900 }), t('Développeur ou développeuse front-end', 0.08, 0.5, 0.84, 0.065), t('CDI · Télétravail possible · Paris', 0.08, 0.7, 0.84, 0.04, { font: bf, weight: 400, color: c1 }), { type: 'logo', x: 0.08, y: 0.86, w: 0.2, h: 0.08 }] };
+    default: return { bg: light, items: [] };
+  }
+}
+// ---------- NEXORA #118 : modèles « photo » (positions en pixels du format, converties en relatif) ----------
+const FMT_PX = { hd: [1920, 1080], post: [1080, 1080], portrait: [1080, 1350] };
+const rgba = (hex, a) => { const [r, g, b] = hexRgb(hex); return `rgba(${r},${g},${b},${a})`; };
+function waveD() {
+  let d = '';
+  for (let i = 0; i < 22; i++) { const h = 18 + 72 * Math.abs(Math.sin(i * 0.9) * Math.cos(i * 0.37)); const x = (i * 4.62).toFixed(2); d += `M${x} ${(50 - h / 2).toFixed(2)} h2.3 v${h.toFixed(2)} h-2.3 Z `; }
+  return d.trim();
+}
+function photoSpec(id, brand) {
+  const [W, H] = FMT_PX[TEMPLATES[id].format]; const M = Math.min(W, H);
+  const P = (x, y, w, h) => ({ x: x / W, y: y / H, w: w / W, h: h / H });
+  const S = (n) => n / M;
+  const C = (x, y, w, h, r = 0) => [x / W, y / H, w / W, h / H, r / M];
+  const [c1, c2, c3, dark, light] = brand.colors;
+  const A = c1; const onA = inkOn(A);
+  const tf = brand.fonts.title; const bf = brand.fonts.body; const nm = brand.name || 'Ma marque';
+  const fontName = String(tf).replace(/^NX /, '');
+  const T = (text, x, y, w, size, o = {}) => ({ type: 'text', text, ...P(x, y, w, 0), size: S(size), font: o.font || tf, weight: o.weight ?? 600, color: o.color || '#111113', align: o.align || 'left', lh: o.lh || 1.1, spacing: o.spacing || 0, lines: o.lines, accent: o.accent });
+  const R = (x, y, w, h, fill, r = 0, o = {}) => ({ type: 'rect', ...P(x, y, w, h), fill, rp: S(r), ...o });
+  const ink = '#0d0d0f'; const grey = '#8c8c92';
+  switch (id) {
+    case 'planche': {
+      const tile = '#151517'; const paper = '#f2f2ef'; const soft = ['rgba(0,0,0,0.10)', 0.022, 0, 0.008];
+      return { bg: '#0a0a0b', items: [
+        { type: 'photo', src: 'objectif', ...P(28, 28, 610, 420), r: S(14), zoom: 1.12, name: 'Photo produit' },
+        T(nm, 56, 54, 320, 17, { color: '#ffffff', weight: 700, font: bf }),
+        T('Concept de marque', 400, 56, 210, 15, { color: '#b9b9be', weight: 500, font: bf, align: 'right' }),
+        { type: 'photo', src: 'appareil', ...P(28, 464, 610, 412), r: S(14), name: 'Photo d’ambiance' },
+        { type: 'grad', ...P(28, 464, 610, 250), r: S(14), stops: [[0, 'rgba(10,10,11,0.9)'], [1, 'rgba(10,10,11,0)']] },
+        T('Rapprochez\nchaque détail.', 56, 494, 540, 46, { color: '#ffffff', lh: 1.04, accent: ['détail.', A] }),
+        R(28, 892, 610, 160, paper, 14),
+        T('Votre produit', 56, 920, 540, 40, { color: ink }),
+        T('Rapprochez chaque détail.', 56, 982, 540, 22, { color: '#6a6a70', weight: 500, font: bf }),
+        R(654, 28, 610, 330, paper, 14),
+        T(nm, 682, 54, 320, 17, { color: ink, weight: 700, font: bf }),
+        T('Concept de marque', 1026, 56, 210, 15, { color: grey, weight: 500, font: bf, align: 'right' }),
+        { type: 'pill', ...P(752, 110, 276, 66), text: 'Objectif télé', fill: '#ffffff', color: ink, size: S(22), dot: ink, shadow: soft },
+        { type: 'pill', ...P(780, 176, 326, 72), text: 'Photo mobile', fill: A, color: onA, size: S(23), angle: -20 },
+        { type: 'pill', ...P(980, 252, 240, 60), text: 'Gros plan', fill: '#ffffff', color: ink, size: S(21), angle: 18, dot: ink, shadow: soft },
+        R(654, 374, 610, 230, A, 14),
+        brand.logo ? { type: 'logo', ...P(764, 420, 390, 138) } : T(nm.toUpperCase(), 654, 442, 610, 84, { color: onA, weight: 800, align: 'center', spacing: 40, lh: 1 }),
+        R(654, 620, 610, 432, tile, 14),
+        { type: 'glow', ...P(690, 690, 540, 400), color: rgba(A, 0.5) },
+        { type: 'device', key: 'macbook-pro-16', screen: 'site', ...P(620, 612, 680, 480), rx: 18, ry: -26, clip: C(654, 620, 610, 432, 14) },
+        { type: 'photo', src: 'montagne', ...P(1280, 28, 612, 560), r: S(14), name: 'Photo de paysage' },
+        { type: 'grad', ...P(1280, 248, 612, 340), r: S(14), stops: [[0, 'rgba(8,8,10,0)'], [1, 'rgba(8,8,10,0.8)']] },
+        { type: 'grad', ...P(1280, 28, 612, 150), r: S(14), stops: [[0, 'rgba(8,8,10,0.5)'], [1, 'rgba(8,8,10,0)']] },
+        T(nm, 1308, 54, 320, 17, { color: '#ffffff', weight: 700, font: bf }),
+        T('Concept de marque', 1654, 56, 210, 15, { color: '#d6d6da', weight: 500, font: bf, align: 'right' }),
+        T('Voyez\nplus loin.', 1308, 416, 560, 68, { color: '#ffffff', lh: 1, accent: ['plus loin.', A] }),
+        R(1280, 604, 612, 448, tile, 14),
+        T('Police principale', 1308, 634, 300, 17, { color: grey, weight: 500, font: bf }),
+        T(fontName, 1308, 662, 320, 38, { color: '#ffffff' }),
+        T('Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz', 1622, 636, 246, 15, { color: '#b0b0b6', weight: 500, font: bf, lh: 1.45 }),
+        T('AaBbCc', 1302, 760, 580, 136, { color: '#ffffff', lh: 1 }),
+        ...brand.colors.map((c, i) => R(1308 + i * 114, 968, 102, 56, c, 10, { stroke: '#2e2e33' }))
+      ] };
+    }
+    case 'mosaique': {
+      const card = '#101312'; const edge = 'rgba(255,255,255,0.08)';
+      const K = (x, y, w, h, fill = card) => R(x, y, w, h, fill, 26, { stroke: edge });
+      return { bg: '#050706', items: [
+        { type: 'glow', ...P(-280, 400, 940, 940), color: rgba(A, 0.42) },
+        { type: 'glow', ...P(560, 520, 760, 760), color: rgba(A, 0.26) },
+        { type: 'glow', ...P(520, -320, 760, 700), color: 'rgba(255,255,255,0.07)' },
+        K(40, 40, 322, 330),
+        { type: 'path', d: waveD(), ...P(72, 64, 258, 64), fill: '#ffffff' },
+        R(56, 150, 290, 204, '#f4f4f2', 20),
+        T('Analyse IA', 78, 172, 250, 26, { color: ink, weight: 700 }),
+        T('Dépenses\nsous contrôle', 78, 206, 250, 26, { color: ink, weight: 300, lh: 1.08 }),
+        T(nm, 78, 318, 180, 15, { color: ink, weight: 700, font: bf }),
+        { type: 'orb', ...P(300, 306, 32, 32), stroke: ink, color: ink },
+        { type: 'photo', src: 'portrait', ...P(40, 386, 322, 654), r: S(26), name: 'Photo de personne' },
+        { type: 'grad', ...P(40, 720, 322, 320), r: S(26), stops: [[0, 'rgba(5,7,6,0)'], [1, 'rgba(5,7,6,0.72)']] },
+        R(62, 410, 60, 60, A, 17),
+        { type: 'ellipse', ...P(81, 429, 22, 22), fill: onA },
+        { type: 'pill', ...P(218, 858, 126, 40), text: 'Sécurisé', fill: '#ffffff', color: ink, size: S(15), dot: A },
+        R(56, 918, 290, 104, '#ffffff', 20),
+        T('Bonjour, je suis votre assistant.', 78, 938, 250, 15, { color: '#55555a', weight: 500, font: bf }),
+        T('Comment puis-je vous aider ?', 78, 966, 250, 20, { color: ink, weight: 700, font: bf }),
+        K(378, 40, 322, 230),
+        T('Votre nouvel\nassistant\npiloté par l’IA', 378, 78, 322, 32, { color: '#ffffff', weight: 300, align: 'center', lh: 1.12, accent: ['piloté par l’IA', '#ffffff', 700] }),
+        { type: 'grad', ...P(378, 286, 322, 270), r: S(26), stops: [[0, card], [1, rgba(A, 0.55)]] },
+        { type: 'glow', ...P(420, 440, 240, 180), color: rgba(A, 0.65) },
+        R(406, 390, 64, 64, '#0b0d0c', 18, { stroke: 'rgba(255,255,255,0.16)' }),
+        { type: 'ellipse', ...P(425, 409, 26, 26), fill: A },
+        T(nm, 486, 396, 200, 34, { color: '#ffffff' }),
+        K(378, 572, 322, 468),
+        { type: 'device', key: 'iphone-18-pro', screen: 'app', ...P(300, 560, 560, 600), rx: -12, ry: 34, rz: -24, clip: C(378, 572, 322, 468, 26) },
+        { type: 'grad', ...P(716, 40, 324, 620), r: S(26), stops: [[0, card], [0.45, card], [1, rgba(A, 0.95)]] },
+        { type: 'glow', ...P(690, 300, 380, 380), color: rgba(A, 0.6) },
+        T(nm, 744, 66, 200, 15, { color: '#ffffff', weight: 700, font: bf }),
+        T('Plus qu’un\nassistant vocal', 716, 112, 324, 30, { color: '#ffffff', weight: 400, align: 'center', lh: 1.1, accent: ['assistant vocal', '#ffffff', 700] }),
+        { type: 'decor3d', shape: 'tore', color: A, finish: 'chrome', ...P(742, 196, 268, 268), rx: 58, ry: 18 },
+        { type: 'pill', ...P(870, 252, 156, 38), text: '470 k utilisateurs', fill: 'rgba(20,20,22,0.72)', color: '#ffffff', size: S(13) },
+        { type: 'pill', ...P(890, 300, 120, 38), text: 'Note 5,0', fill: 'rgba(20,20,22,0.72)', color: '#ffffff', size: S(13) },
+        { type: 'pill', ...P(734, 586, 138, 48), text: 'App Store', fill: '#ffffff', color: ink, size: S(15) },
+        { type: 'pill', ...P(884, 586, 138, 48), text: 'Google Play', fill: '#ffffff', color: ink, size: S(15) },
+        K(716, 676, 324, 364),
+        T('TYPOGRAPHIE', 744, 706, 220, 13, { color: grey, weight: 600, font: bf, spacing: 120 }),
+        { type: 'orb', ...P(988, 696, 34, 34), stroke: grey, color: grey },
+        T(`${fontName} Aa`, 744, 748, 290, 56, { color: '#ffffff', weight: 500 }),
+        T('PALETTE', 744, 900, 220, 13, { color: grey, weight: 600, font: bf, spacing: 120 }),
+        ...[light, c3, A, c2, mixHex(c2, '#000000', 0.25)].map((c, i) => R(744 + i * 56, 934, 48, 10, c, 5))
+      ] };
+    }
+    case 'cartes': {
+      const card = 'rgba(40,40,44,0.86)'; const soft = '#d2d2d7';
+      const title = (text, x, y, w, color = '#ffffff') => T(text, x, y, w, 52, { color, weight: 400, lh: 1 });
+      const body = (text, x, y, w, color = soft) => T(text, x, y, w, 21, { color, weight: 400, font: bf, lh: 1.32 });
+      return { bg: '#121214', items: [
+        { type: 'glow', ...P(60, 100, 800, 800), color: rgba(A, 0.55) },
+        { type: 'glow', ...P(540, 540, 620, 620), color: rgba(A, 0.38) },
+        R(40, 40, 400, 600, card, 30),
+        body('Découvrez les services\nnumériques imaginés\npar notre studio.', 68, 72, 300),
+        { type: 'decor3d', shape: 'spirale', color: A, finish: 'satin', ...P(160, 150, 340, 430), rx: -8, ry: 32 },
+        title('Services', 68, 556, 340),
+        { type: 'orb', ...P(364, 58, 58, 58), fill: A },
+        R(40, 660, 400, 380, A, 30),
+        body('Ce que nos clients disent\nde leur expérience.', 68, 692, 300, onA),
+        title('Avis', 68, 956, 340, onA),
+        { type: 'orb', ...P(364, 678, 58, 58), fill: '#111113', color: '#ffffff' },
+        R(460, 40, 580, 260, card, 30),
+        body('Comment notre studio imagine et\nconstruit des produits numériques.', 488, 72, 440),
+        title('À propos', 488, 216, 420),
+        { type: 'orb', ...P(964, 58, 58, 58), fill: A },
+        R(460, 320, 280, 460, card, 30),
+        body('Une question,\nun projet ?\nÉcrivez-nous,\nnous répondons\nvite.', 488, 352, 220),
+        title('Contact', 488, 696, 240),
+        { type: 'orb', ...P(664, 338, 58, 58), fill: A },
+        R(760, 320, 280, 460, A, 30),
+        body('Rencontrez\nl’équipe', 788, 352, 170, onA),
+        { type: 'photo', src: 'portrait', ...P(780, 446, 240, 226), r: S(22), zoom: 1.7, dy: 0.06, name: 'Photo de l’équipe' },
+        title('L’équipe', 788, 696, 236, onA),
+        { type: 'orb', ...P(964, 338, 58, 58), fill: '#111113', color: '#ffffff' },
+        R(460, 800, 580, 240, card, 30),
+        body('Les produits numériques\nconçus par notre studio.', 488, 832, 400),
+        { type: 'decor3d', shape: 'tore', color: A, finish: 'satin', ...P(800, 760, 330, 330), rx: 68, ry: -22 },
+        title('Nos produits', 488, 956, 420),
+        { type: 'orb', ...P(964, 818, 58, 58), fill: A }
+      ] };
+    }
+    case 'facade': {
+      const panel = C(80, 346, 1040, 528);
+      return { bg: '#d9d9d6', items: [
+        { type: 'photo', src: 'facade', ...P(0, 0, 1080, 1350), name: 'Photo de façade' },
+        R(64, 330, 1060, 560, '#2a2a2d', 6, { shadow: ['rgba(0,0,0,0.42)', 0.05, 0, 0.03] }),
+        { type: 'grad', ...P(80, 346, 1044, 528), coords: [0, 0, 1, 1], stops: [[0, '#f3f3f4'], [1, '#c3c3c7']] },
+        { type: 'device', key: 'iphone-18-pro', screen: 'app', ...P(760, 140, 560, 700), rx: 6, ry: -14, rz: -40, clip: panel },
+        { type: 'device', key: 'iphone-18-pro', screen: 'app', ...P(500, 330, 640, 800), rx: 6, ry: -14, rz: -40, clip: panel },
+        R(128, 404, 58, 58, '#141416', 16),
+        { type: 'ellipse', ...P(146, 422, 22, 22), fill: '#ffffff' },
+        T(nm, 202, 404, 400, 42, { color: '#141416' }),
+        T('Une appli claire\npour chaque client', 126, 492, 600, 66, { weight: 500, lh: 1.02, lines: ['#8d8d92', '#2a2a2e'] }),
+        T('Des conditions claires, un suivi transparent\net le contrôle à chaque étape.', 128, 666, 520, 23, { color: '#47474c', weight: 500, font: bf, lh: 1.35 }),
+        { type: 'photo', src: 'facade', ...P(0, 0, 1080, 1350), blend: 'multiply', opacity: 0.55, clip: C(64, 330, 1016, 560), name: 'Ombres du feuillage' }
+      ] };
+    }
+    case 'rochers': {
+      return { bg: '#0b0908', items: [
+        { type: 'grad', ...P(0, 0, 1080, 1350), stops: [[0, '#0a0807'], [0.4, mixHex(A, '#000000', 0.64)], [0.78, mixHex(A, '#000000', 0.08)], [1, mixHex(A, '#ffffff', 0.3)]] },
+        { type: 'glow', ...P(-240, -240, 980, 760), color: 'rgba(255,255,255,0.08)' },
+        { type: 'rock', seed: 11, ...P(720, 180, 600, 860), rx: 10, ry: -30, flat: 0.95 },
+        { type: 'device', key: 'macbook-pro-16', screen: 'site', ...P(-90, 270, 1290, 930), rx: 14, ry: 30, rz: 9 },
+        { type: 'rock', seed: 3, ...P(-290, 860, 830, 680), rx: 6, ry: 20 },
+        { type: 'rock', seed: 7, ...P(290, 950, 1010, 620), rx: 8, ry: -10 },
+        T(nm, 72, 80, 420, 24, { color: '#ffffff', weight: 600, font: bf }),
+        T('Le lancement\nqui marque.', 70, 126, 780, 78, { color: '#ffffff', weight: 300, lh: 1, accent: ['qui marque.', '#ffffff', 700] })
+      ] };
+    }
+    case 'dessous': {
+      return { bg: '#d4d4d7', items: [
+        { type: 'glow', ...P(60, -80, 980, 900), color: 'rgba(255,255,255,0.9)' },
+        { type: 'device', key: 'macbook-pro-16', screen: 'dash', ...P(-1012, -488, 2740, 1960), rx: -16, ry: 30, fov: 42 },
+        T(nm, 700, 1010, 340, 22, { color: '#3a3a3f', weight: 700, font: bf, align: 'right' })
+      ] };
+    }
+    case 'tablette': {
+      return { bg: '#c9c9cc', items: [
+        { type: 'grad', ...P(0, 0, 1080, 1350), stops: [[0, '#e0e0e2'], [1, '#8a8a8e']] },
+        { type: 'glow', ...P(-260, -260, 1000, 900), color: 'rgba(255,255,255,0.6)' },
+        { type: 'device', key: 'ipad-pro-13', screen: 'sombre', land: true, ...P(60, 110, 1200, 1000), rx: 6, ry: -26, rz: 84 },
+        T(nm, 72, 1132, 420, 24, { color: '#1a1a1d', weight: 700, font: bf }),
+        T('Tout votre dossier,\nd’un seul geste.', 70, 1172, 900, 58, { color: '#1a1a1d', weight: 400, lh: 1.05, accent: ['d’un seul geste.', A] })
+      ] };
+    }
     default: return { bg: light, items: [] };
   }
 }

@@ -4,6 +4,7 @@ import { Path, Rect, Ellipse, Textbox, Group, FabricImage, FabricObject, util, a
 import { replaceObj } from './vector.js';
 import { SHAPES, FRAMES, GRIDS, stickerSvg, TEMPLATES, templateSpec } from '../library.js';
 import { getBrand } from '../services.js';
+import * as SC from './scenes.js';
 import { a as ICONS } from '../../dist/chunks/chunk-S4I2LXHS.js';
 import { toast, uid, esc, clamp, mixHex, luminance, hexRgb, makeCanvas, loadImage, pickFile, sheet, closeSheet, sheetHtml, ico, inkOn, state } from '../core.js';
 
@@ -72,12 +73,12 @@ export async function fillFrame(D, frame, dataUrl, { zoom = 1, dx = 0, dy = 0 } 
   const box = frameBox(frame); if (!box) return null;
   const shape = frame.nxFrame.shape;
   const img = dataUrl instanceof HTMLCanvasElement ? new FabricImage(dataUrl) : await FabricImage.fromURL(dataUrl);
-  layoutInFrame(img, box, shape, { zoom, dx, dy });
+  layoutInFrame(img, box, shape, { zoom, dx, dy, rad: frame.nxFrame.rad });
   img.name = frame.name && frame.name.startsWith('Cadre') ? frame.name.replace('Cadre photo', 'Photo') : 'Photo';
   if (frame.type === 'image') { img.nxAdj = frame.nxAdj; img.nxFx = frame.nxFx; }
   return replaceObj(D, frame, img, { keepName: false });
 }
-export function layoutInFrame(img, box, shape, { zoom = 1, dx = 0, dy = 0 } = {}) {
+export function layoutInFrame(img, box, shape, { zoom = 1, dx = 0, dy = 0, rad } = {}) {
   const ew = img.width; const eh = img.height;
   const s = Math.max(box.w / ew, box.h / eh) * zoom;
   img.set({ scaleX: s, scaleY: s, angle: 0, flipX: false, flipY: false });
@@ -85,7 +86,9 @@ export function layoutInFrame(img, box, shape, { zoom = 1, dx = 0, dy = 0 } = {}
   img.setCoords();
   // Forme du cadre en coordonnées locales de l'image.
   const inv = invert(img.calcTransformMatrix());
-  const tmp = new Path(FRAMES[shape][1]);
+  // NEXORA #118 : « tuile » : tracé recalculé à la taille de la boîte, pour des coins de même rayon.
+  const r = shape === 'tuile' ? (rad ?? Math.min(box.w, box.h) * 0.06) : null;
+  const tmp = new Path(shape === 'tuile' ? SC.tilePath(box.w, box.h, r) : FRAMES[shape][1]);
   const sx = box.w / tmp.width; const sy = box.h / tmp.height; const po = tmp.pathOffset;
   const d = tmp.path.map((seg) => {
     const out = [seg[0]];
@@ -94,7 +97,7 @@ export function layoutInFrame(img, box, shape, { zoom = 1, dx = 0, dy = 0 } = {}
   });
   const clip = new Path(d, { fill: '#000' });
   img.clipPath = clip;
-  img.nxFrame = { shape, zoom, dx, dy };
+  img.nxFrame = { shape, zoom, dx, dy, ...(r != null ? { rad: r } : {}) };
   img.dirty = true;
 }
 export function reframe(D, img, patch) {
@@ -287,8 +290,18 @@ export async function rebuildQr(D, o, patch) {
 }
 
 // ---------- Modèles de départ ----------
+const FORMATS_PX = { post: [1080, 1080], story: [1080, 1920], portrait: [1080, 1350], yt: [1280, 720], banner: [1440, 480], card: [1050, 600], a4: [2480, 3508], flyer: [1748, 2480], hd: [1920, 1080], og: [1200, 630] };
 export async function applyTemplate(D, id, { onNewPage = false } = {}) {
   const b = getBrand(); const spec = templateSpec(id, b);
+  // NEXORA #118 : un modèle « photo » est composé pour son format : une page vide d'un autre format le prend
+  // (comme « Changer de format… »), une page déjà remplie laisse la place à une nouvelle page.
+  if (TEMPLATES[id].photo && !onNewPage) {
+    const pg0 = page(D); const [fw, fh] = FORMATS_PX[TEMPLATES[id].format] || [pg0.w, pg0.h];
+    if (Math.abs(pg0.w / pg0.h - fw / fh) > 0.01) {
+      if (D.canvas.getObjects().some((o) => o.id !== '__board')) onNewPage = true;
+      else { Object.assign(pg0, { w: fw, h: fh }); if (D.updateBoard) D.updateBoard(); if (D.fit) D.fit(); }
+    }
+  }
   if (onNewPage) {
     const { b: newPage } = await import('../../dist/chunks/chunk-SKL2UTC7.js');
     D.capturePage(); D.doc.pages.push(newPage(`${TEMPLATES[id].label}`, TEMPLATES[id].format)); await D.openPage(D.doc.pages.length - 1, { save: false });
@@ -297,13 +310,20 @@ export async function applyTemplate(D, id, { onNewPage = false } = {}) {
   pg.bg = spec.bg; D.updateBoard && D.updateBoard();
   D.loading = true;
   const made = [];
+  // NEXORA #118 : modèles « photo » : photos, appareils réalistes et roches en 3D, préparés avant d'être posés.
+  const ctx = { W, H, m, brand: b };
+  const heavy = spec.items.some((it) => SC.TYPES.has(it.type));
+  const wait = heavy ? toast('Préparation du modèle : photos et appareils en 3D…', { busy: true, sticky: true }) : null;
+  let failed = 0;
+  try {
   for (const it of spec.items) {
-    let o = null;
+    let o = null; let list = null;
     const x = it.x * W; const y = it.y * H; const w = it.w * W; const h = (it.h || 0) * H;
-    if (it.type === 'rect') o = new Rect({ left: x, top: y, width: w, height: h, fill: it.fill, rx: (it.r || 0) * Math.min(w, h), ry: (it.r || 0) * Math.min(w, h), strokeWidth: 0 });
+    if (it.type === 'rect') { const rr = it.rp != null ? it.rp * m : (it.r || 0) * Math.min(w, h); o = new Rect({ left: x, top: y, width: w, height: h, fill: it.fill, rx: rr, ry: rr, stroke: it.stroke || null, strokeWidth: it.stroke ? Math.max(1, m * 0.0012) : 0 }); }
+    if (it.type === 'path') o = boxPath(it.d, x, y, w, h, { fill: it.fill, strokeWidth: 0 });
     if (it.type === 'ellipse') o = new Ellipse({ left: x, top: y, rx: w / 2, ry: h / 2, fill: it.fill, strokeWidth: 0 });
     if (it.type === 'shape') o = boxPath(SHAPES[it.shape][1], x, y, w, h, { fill: it.fill, strokeWidth: 0, fillRule: 'evenodd' });
-    if (it.type === 'text') { o = new Textbox(it.text, { left: x, top: y, width: w, fontSize: it.size * m, fontFamily: it.font, fontWeight: it.weight, fill: it.color, textAlign: it.align, lineHeight: it.lh, charSpacing: it.spacing }); o.name = it.text.split('\n')[0].slice(0, 24); }
+    if (it.type === 'text') { o = new Textbox(it.text, { left: x, top: y, width: w, fontSize: it.size * m, fontFamily: it.font, fontWeight: it.weight, fill: it.color, textAlign: it.align, lineHeight: it.lh, charSpacing: it.spacing }); o.name = it.text.split('\n')[0].slice(0, 24); SC.styleText(o, it); }
     if (it.type === 'frame') { o = boxPath(FRAMES[it.shape][1], x, y, w, h, { fill: mixHex(b.colors[4], '#000000', 0.08), stroke: mixHex(b.colors[4], '#000000', 0.25), strokeWidth: 2, strokeDashArray: [10, 8], strokeUniform: true }); o.nxFrame = { shape: it.shape, empty: true }; o.name = 'Cadre photo'; }
     if (it.type === 'sticker') {
       D.loading = false;
@@ -316,16 +336,26 @@ export async function applyTemplate(D, id, { onNewPage = false } = {}) {
       if (b.logo) { const img = await FabricImage.fromURL(b.logo); const s = Math.min(w / img.width, h / img.height); img.set({ scaleX: s, scaleY: s, left: x + (w - img.width * s) / 2, top: y + (h - img.height * s) / 2 }); o = img; } else { o = new Textbox(b.name || 'Logo', { left: x, top: y + h * 0.15, width: w, fontSize: h * 0.6, fontFamily: b.fonts.title, fontWeight: 800, fill: luminance(spec.bg) > 0.4 ? b.colors[3] : '#ffffff', textAlign: 'right' }); }
       o.name = 'Logo'; o.nxKind = 'logo';
     }
-    if (o) { o.id = uid(); o.name = o.name || D.typeName(o); D.canvas.add(o); made.push(o); }
+    if (SC.TYPES.has(it.type)) {
+      D.loading = false;
+      try { list = await SC.build(D, it, ctx); } catch (err) { failed++; console.warn('[NEXORA #118] élément du modèle', it.type, err); }
+      D.loading = true;
+    }
+    if (o) { SC.decorate(o, it, ctx); list = [o]; }
+    for (const ob of list || []) { ob.id = ob.id || uid(); ob.name = ob.name || D.typeName(ob); D.canvas.add(ob); made.push(ob); }
   }
-  D.loading = false;
+  } finally { D.loading = false; if (wait) wait.close(); }
   D.canvas.requestRenderAll(); D.changed(); D.renderLeft(); D.renderProps();
-  toast(`Modèle « ${TEMPLATES[id].label} » appliqué${b.name ? ` avec la marque ${b.name}` : ''}. Remplacez les textes et déposez vos photos dans les cadres.`);
+  const how = TEMPLATES[id].photo ? 'Remplacez les textes, les photos (« Choisir une image… ») et l’écran des appareils dans le panneau de droite.' : 'Remplacez les textes et déposez vos photos dans les cadres.';
+  toast(`Modèle « ${TEMPLATES[id].label} » appliqué${b.name ? ` avec la marque ${b.name}` : ''}. ${how}${failed ? ` ${failed > 1 ? `${failed} éléments 3D n’ont` : 'Un élément 3D n’a'} pas pu être préparé${failed > 1 ? 's' : ''} sur ce PC.` : ''}`, failed ? { kind: 'bad' } : undefined);
   return made;
 }
 // Aperçu d'un modèle (rendu simplifié dans une petite image).
 const thumbCache = new Map();
 export function templateThumb(id, w = 132) {
+  // NEXORA #118 : modèles « photo » : aperçu tiré du vrai rendu du modèle (photos et appareils en 3D),
+  // régénéré par `node scripts/modeles-design.mjs`.
+  if (TEMPLATES[id] && TEMPLATES[id].photo) return new URL(`./modeles/${id}.webp`, import.meta.url).href;
   const key = `${id}:${JSON.stringify(getBrand())}`;
   if (thumbCache.has(key)) return thumbCache.get(key);
   const fmt = { post: [1080, 1080], story: [1080, 1920], portrait: [1080, 1350], yt: [1280, 720], banner: [1440, 480], card: [1050, 600], a4: [2480, 3508], flyer: [1748, 2480], hd: [1920, 1080], og: [1200, 630] }[TEMPLATES[id].format] || [1080, 1080];

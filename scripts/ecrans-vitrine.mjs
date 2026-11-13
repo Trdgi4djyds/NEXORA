@@ -59,8 +59,9 @@ const PLAN = [
   { slug: "dev", web: false, args: ["--demo-dev", "--click", "server.js"] },
   // L'aperçu « Application » charge le site dans une webview d'Electron : écran de démarrage à la place.
   { slug: "apps", web: true, args: ["--click", "Démarrage"] },
-  { slug: "studio", web: true, args: [] },
-  { slug: "design", web: true, args: ["--click", "Publication promo"] },
+  // #118 : mise en scène réaliste (appareil sélectionné : contour et poignées) et modèle « photo » avec un kit fictif.
+  { slug: "studio", web: true, args: ["--click", "Ordinateur entre les roches", "--attendre", "2500"] },
+  { slug: "design", web: true, args: ["--reglages", "scripts/reglages-captures/marque-altura.json", "--click", "Planche de marque", "--attendre", "2500"] },
   { slug: "securite", web: false, args: ["--demo", "--click", "Supervision & alertes"] },
   // Sans adresse : une adresse locale en http ferait afficher l'avertissement « échanges non chiffrés ».
   { slug: "desktop", web: true, args: [] },

@@ -12,6 +12,8 @@ export const NOTES = {
   // avec animation de pliage, Réglages sans détail interne (republiée en v1.2.2-r6).
   // NEXORA #116 : sens du pliage corrigé (moitié gauche sur la droite), Galaxy S24 à part, caméra frontale visible sans
   // site ouvert (republiée en v1.2.2-r7).
+  // NEXORA #118 : modèles « photo » de NEX-DESIGN, mises en scène réalistes et contour de sélection du Studio
+  // (republiée en v1.2.2-r8).
   '1.2.2': {
     title: 'NEXORA 1.2.2',
     intro: 'Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.',
@@ -27,6 +29,8 @@ export const NOTES = {
       { icon: 'sparkle', space: 'android', title: 'Créateur de logo et d’écran de démarrage', text: 'Dans l’App Builder, composez le logo de votre application (initiales, symbole, police, couleurs, idées tirées de son nom) : il devient son icône à toutes les tailles. Composez aussi son écran de démarrage (modèles, dégradé, aurore, motif ou photo, animation).' },
       { icon: 'nxComponent', space: 'android', title: 'Modules OneSignal, AdMob, Google Analytics et Meta', text: 'Ajoutez à votre application les notifications OneSignal, les publicités AdMob (bannière, interstitiel, vidéo avec récompense, consentement), la mesure d’audience Google Analytics et les événements Meta, avec leurs SDK officiels, pilotés depuis votre page.' },
       { icon: 'fold', space: 'responsive', title: 'iPhone Duo officiel', text: 'Coloris officiels d’Apple (Ciel nocturne, Blanc stellaire) et animation de pliage : comme sur le vrai appareil, la moitié gauche se replie sur la droite quand vous passez de « Ouvert » à « Fermé » (même sens pour les autres pliables).' },
+      { icon: 'image', space: 'design', title: 'Modèles photo dans NEX-DESIGN', text: 'Sept nouveaux modèles d’après des planches de marque et des mises en scène de studio : planche de marque, mosaïque d’appli, cartes de services, affiche sur façade, lancement produit, tableau de bord en contre-plongée et appli sur tablette. Photos remplaçables, appareils réalistes en 3D dont vous changez l’écran, une couleur d’accent tirée de votre kit de marque.' },
+      { icon: 'laptop', space: 'studio', title: 'Mises en scène réalistes et contour de sélection', text: 'Dans le Studio, « Ordinateur entre les roches », « Ordinateur vu de dessous », « Téléphones en diagonale » et « Tablette inclinée » posent en un clic les appareils réalistes, le fond, la lumière et le cadrage. L’objet sélectionné est entouré d’un contour orange (jamais dans les rendus).' },
       { icon: 'phone', space: 'responsive', title: 'Galaxy S24 fidèle', text: 'Le Galaxy S24 a son propre modèle, avec les dimensions et les coloris officiels de Samsung. La caméra frontale et l’île des iPhone restent visibles quand aucun site n’est ouvert.' },
       { icon: 'user', space: '', title: 'NEXORA vous vouvoie', text: 'Toute l’interface, les e-mails et les messages s’adressent désormais à vous en vous vouvoyant. Les Réglages ne montrent plus de détail technique propre à NEXORA.' },
       { icon: 'key', space: '', title: 'Lanceur 1.0.6', text: 'Le lanceur NEXORA Devs Toolbox prend la même apparence, vous vouvoie et se met à jour tout seul avant d’installer cette version.' },
