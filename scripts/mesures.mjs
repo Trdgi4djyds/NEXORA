@@ -1,6 +1,8 @@
 // NEXORA #120 : `pnpm mesures <mesure>` : mesures de performance dans Chromium sans fenêtre.
 //   repos [espaces]            aperçu de NEXORA : processeur au repos, rappels d'animation et recalculs de styles par
-//                              espace (défaut : les 9 espaces, Studio compris, dans l'ordre du rail)
+//                              espace (défaut : les 9 espaces, Studio compris, dans l'ordre du rail) ; espaces nommés
+//                              comme pour `pnpm captures` (accueil, apps, securite…) ou par leur identifiant du rail
+//                              (home, android…), séparés par des espaces ou des virgules
 //   editeur                    Dev Lab de démonstration : temps d'ouverture du premier fichier dans l'éditeur
 //   defilement [adresse]       page web (défaut : https://nexoradevs.online/) : geste de défilement réel, images
 //                              présentées et coût du fil principal pendant le défilement
@@ -58,7 +60,8 @@ async function openApp(browser, { demoDev = false } = {}) {
 }
 
 async function repos() {
-  const spaces = (pos[1] || "home,preview,browser,dev,android,studio,design,security,desktop").split(",")
+  const MODES = { accueil: "home", responsive: "preview", apps: "android", securite: "security" }
+  const spaces = (pos.slice(1).join(",") || "home,preview,browser,dev,android,studio,design,security,desktop").split(",").filter(Boolean).map((s) => MODES[s] || s)
   const browser = await launch()
   try {
     const { page, cdp, railMs } = await openApp(browser)
