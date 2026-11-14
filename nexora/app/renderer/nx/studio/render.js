@@ -147,8 +147,10 @@ export function installRender(S) {
   Object.defineProperty(proto, 'effectsOn', { configurable: true, get() { return (desc && desc.get ? desc.get.call(this) : false) || on({ three: this }, 'dof') || on({ three: this }, 'grade') || (this.env && this.env.nx && this.env.nx.style && this.env.nx.style.kind === 'croquis'); } });
   const ensure = proto.ensureComposer;
   proto.ensureComposer = function () {
-    const had = !!this.composer; ensure.call(this);
-    if (had || this.nxDof) return;
+    ensure.call(this);
+    // NEXORA #122 : passes ajoutées aussi à un compositeur créé avant cette enveloppe (Studio rouvert sur une scène
+    // à effets : halo, vignettage) ; sinon draw() lisait nxDof absent et levait une erreur à chaque image.
+    if (!this.composer || this.nxDof) return;
     this.nxDof = new ShaderPass(DOF); this.nxGrade = new ShaderPass(GRADE); this.nxEdge = new ShaderPass(EDGE);
     const passes = this.composer.passes; const out = passes.indexOf(this.outputPass);
     this.composer.insertPass(this.nxDof, 1); this.composer.insertPass(this.nxEdge, 2);

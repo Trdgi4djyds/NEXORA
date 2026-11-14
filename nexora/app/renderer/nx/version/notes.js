@@ -16,6 +16,7 @@ export const NOTES = {
   // (republiée en v1.2.2-r8). #119 : fenêtre de connexion en mosaïque, « Chargement », lanceur 1.0.7 (v1.2.2-r9).
   // #120 : projets Laravel dans l'App Builder, compte mieux protégé, éditeurs plus rapides, Studio plus léger (v1.2.2-r10 ;
   // appareils connectés sans nom répété, v1.2.2-r11). #121 : lanceur 1.0.8, mosaïque de rendus et fenêtres réorganisées (v1.2.2-r12).
+  // #122 : présentations du Studio redessinées, quatre styles de diapositives (v1.2.2-r13).
   '1.2.2': {
     title: 'NEXORA 1.2.2',
     intro: 'Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.',
@@ -41,6 +42,7 @@ export const NOTES = {
       { icon: 'code', space: 'dev', title: 'Éditeurs de code plus rapides', text: 'L’éditeur du Dev Lab est prêt avant l’ouverture du premier fichier. Code Editor démarre à l’avance, garde sa version et son cache d’une ouverture à l’autre et s’ouvre sur une zone vide, sans filigrane.' },
       { icon: 'cube', space: 'studio', title: 'NEXORA plus léger', text: 'Le Studio ne redessine plus sa scène quand rien ne bouge et ne tourne plus en arrière-plan une fois quitté : moins de processeur et de batterie dans tous les espaces.' },
       { icon: 'key', space: '', title: 'Lanceur 1.0.8', text: 'Le lanceur NEXORA Devs Toolbox s’ouvre sur la même mosaïque de rendus que la fenêtre de connexion, avec des fenêtres réorganisées : plus rien ne se chevauche, même avec un titre long ou un affichage agrandi. Il affiche « Chargement… » à l’ouverture et se met à jour tout seul avant d’installer cette version.' },
+      { icon: 'present', space: 'studio', title: 'Présentations redessinées', text: 'Dans la Présentation du Studio, quatre nouveaux styles de diapositives : Violet, Nuit néon, Galerie et Marque (aux couleurs de votre marque). Chaque mise en page a sa composition : ordinateurs, tablettes et téléphones réalistes inclinés, socles brillants, halos et arcs lumineux, roches, grands titres et repères en pilule. Les écrans montrent votre site, sinon un écran d’exemple aux couleurs de votre marque ; le style d’origine reste proposé (« Classique »).' },
     ],
   },
   // NEXORA #106 : note de la 1.2.1, publiée depuis une autre session (A-063), reprise telle quelle du paquet publié.

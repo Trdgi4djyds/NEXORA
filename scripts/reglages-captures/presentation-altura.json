@@ -1,0 +1,21 @@
+{
+  "studioBrand": { "name": "Altura", "primary": "#6d4aff", "ink": "#111111", "bg": "#f1eeff", "bg2": "#ddd5ff", "font": "display" },
+  "studioDeckCur": "altura",
+  "studioDecks": [
+    {
+      "id": "altura",
+      "name": "Altura",
+      "url": "",
+      "cur": 0,
+      "slides": [
+        { "id": "altura-1", "layout": "cover", "kicker": "Altura", "title": "Des expériences qui restent en mémoire", "text": "Identité, site et application pensés ensemble, du premier croquis à la mise en ligne.", "bullets": [], "dur": 5, "url": "" },
+        { "id": "altura-2", "layout": "screens", "kicker": "Sur tous les écrans", "title": "Altura sur ordinateur, tablette et mobile", "text": "altura.studio", "bullets": [], "dur": 5, "url": "" },
+        { "id": "altura-3", "layout": "mobile", "kicker": "Sur mobile", "title": "Réservez en trois gestes", "text": "Une appli rapide, pensée pour le pouce, avec paiement intégré.", "bullets": ["Paiement mobile", "Notifications utiles", "Mode hors ligne"], "dur": 5, "url": "" },
+        { "id": "altura-4", "layout": "desktop", "kicker": "Sur ordinateur", "title": "Un tableau de bord clair", "text": "Toutes vos données au même endroit, mises à jour en direct.", "bullets": ["Rapports automatiques", "Équipe et rôles", "Export PDF"], "dur": 5, "url": "" },
+        { "id": "altura-5", "layout": "features", "kicker": "Altura", "title": "Au programme", "text": "", "bullets": ["Stratégie de marque", "Design d’interface", "Développement web", "Applications mobiles", "Mise en ligne"], "dur": 5, "url": "" },
+        { "id": "altura-6", "layout": "statement", "kicker": "Altura", "title": "Concevoir moins, mais mieux : chaque écran a une raison d’être.", "text": "", "bullets": [], "dur": 5, "url": "" },
+        { "id": "altura-7", "layout": "contact", "kicker": "Contact", "title": "Rendez-vous sur altura.studio", "text": "Parlons de votre prochain projet.", "bullets": [], "dur": 5, "url": "https://altura.studio" }
+      ]
+    }
+  ]
+}

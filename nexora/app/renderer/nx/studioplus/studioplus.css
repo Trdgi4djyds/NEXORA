@@ -33,3 +33,12 @@
 /* NEXORA #100 : appareils réalistes, boutons sur plusieurs lignes. */
 .sx-devs { display: flex; flex-wrap: wrap; gap: 6px; }
 .sx-devs .btn { flex: 0 1 auto; }
+
+/* NEXORA #122 : style des diapositives (Présentation). Vignettes : aperçu du fond du style, nom dessous. */
+.nx-looks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 2px 0 8px; }
+.nx-look { display: grid; gap: 5px; padding: 4px 4px 6px; border: 1px solid var(--info-edge, var(--border)); border-radius: 10px; background: var(--fill-2, transparent); color: var(--text-2); font-size: 11px; line-height: 1.2; text-align: center; cursor: pointer; min-width: 0; }
+.nx-look i { display: block; height: 34px; border-radius: 7px; box-shadow: inset 0 0 0 1px rgba(127, 127, 127, .18); }
+.nx-look span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nx-look:hover { border-color: var(--text-3); color: var(--text); }
+.nx-look.on { border-color: var(--accent, #6a4cff); color: var(--text); font-weight: 600; box-shadow: 0 0 0 1px var(--accent, #6a4cff); }
+.nx-looks-card .btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 6px; }

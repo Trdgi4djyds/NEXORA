@@ -12,6 +12,8 @@
 //   --route <#/chemin>    avec « site » : page du site à capturer (répétable ; défaut : #/, l'accueil du site)
 //   --click <texte>       avec un seul espace : clique ensuite sur le bouton portant ce texte, ou cette
 //                         infobulle pour un bouton à icône seule (répétable)
+//   --pause <ms>          NEXORA #122 : attente entre deux clics (répétable), par exemple le temps qu'un style
+//                         soit appliqué à toutes les diapositives d'une présentation avant d'en ouvrir une
 //   --compte-onglet <id>  NEXORA #090 : avec un seul espace et --compte demo, ouvre la fenêtre Mon compte sur cet
 //                         onglet (plan = « Offre et usage », profile, security…), par la même fonction que NEXORA
 //   --theme sombre        thème sombre de NEXORA (défaut : clair)
@@ -149,6 +151,7 @@ function parseArgs(argv) {
     else if (arg === "--licence") opts.licence = JSON.stringify(JSON.parse(value()))
     else if (arg === "--sans-notifications") opts.quiet = true
     else if (arg === "--attendre") opts.wait = Number(value()) || 0
+    else if (arg === "--pause") opts.actions.push({ kind: "pause", ms: Number(value()) || 0 })
     else if (arg === "--compte-onglet") opts.actions.push({ kind: "account", tab: value() })
     else if (arg === "--route") opts.routes.push(value())
     else if (arg === "--scroll") opts.scroll = value()
@@ -503,6 +506,10 @@ async function main() {
       await button.click()
       await settle(page, space.wait ?? 1500)
       for (const action of opts.actions) {
+        if (action.kind === "pause") {
+          await sleep(action.ms)
+          continue
+        }
         if (action.kind === "type") {
           if (!(await typeInto(page, action.field, action.text)))
             throw new Error(`Champ « ${action.field}… » introuvable dans ${space.label}.`)

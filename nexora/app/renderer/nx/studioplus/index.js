@@ -16,6 +16,7 @@ import * as DEV from './devices.js';
 // NEXORA #118 : contour de sélection et mises en scène réalistes.
 import * as OUTLINE from './outline.js';
 import * as STAGE from './stagings.js';
+import * as SLIDES from './slides.js';
 
 const DECISION = { approve: 'approuvé', changes: 'changements demandés', comment: 'commentaire' };
 const fmtT = (t) => `${(Math.round(t * 100) / 100).toString().replace('.', ',')} s`;
@@ -221,6 +222,8 @@ export async function install(S) {
   }, true);
   P.addEventListener('input', (ev) => { if (onInput(S, ev.target, false)) ev.stopPropagation(); }, true);
   P.addEventListener('change', (ev) => { if (onInput(S, ev.target, true)) ev.stopPropagation(); }, true);
+  // NEXORA #122 : styles des présentations (appareils réalistes, compositions des références).
+  try { await SLIDES.install(S); } catch (err) { console.error('[NEXORA #122] présentations', err); }
   window.__nxStudioPlus = { S, apply: (plan) => DIR.apply(S, plan) };
   await sleep(0);
   S.renderProps();

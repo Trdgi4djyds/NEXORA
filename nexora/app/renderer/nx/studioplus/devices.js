@@ -140,6 +140,8 @@ export async function setScreen(S, image, label) {
   try {
     e.item.glbId = await register(S, await build(e.item.nxDevice, image));
     e.item.nxScreen = image ? 'image' : 'nexora';
+    // NEXORA #122 : appareil d'une diapositive : l'écran choisi remplace l'écran posé automatiquement.
+    delete e.item.nxSlide;
     S.build(e.item); S.dirty = true; S.renderProps(); S.commit();
     toast(label || 'Écran mis à jour.');
   } catch (er) { toast(er.message || String(er), { kind: 'bad' }); } finally { done(t); }
