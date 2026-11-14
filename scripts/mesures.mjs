@@ -4,9 +4,12 @@
 //   editeur                    Dev Lab de démonstration : temps d'ouverture du premier fichier dans l'éditeur
 //   defilement [adresse]       page web (défaut : https://nexoradevs.online/) : geste de défilement réel, images
 //                              présentées et coût du fil principal pendant le défilement
-// Options : --cpu <n> (processeur ralenti n fois, défaut 1 ; 4 ≈ portable modeste), --attente <ms> (editeur).
+// Options : --cpu <n> (processeur ralenti n fois, défaut 1 ; 4 ≈ portable modeste), --attente <ms> (editeur),
+//           --dist (defilement : pages et fichiers du site servis depuis dist/, la version construite par
+//           `pnpm build` et pas encore publiée, à l'adresse demandée, sans lancer de serveur).
 import { spawnSync } from "node:child_process"
 import fs from "node:fs"
+import path from "node:path"
 import puppeteer from "puppeteer-core"
 
 const CHROMIUM = process.env.CHROME_PATH || "/usr/bin/chromium"
@@ -15,6 +18,7 @@ const opt = (name, fb) => { const i = args.indexOf(name); return i >= 0 && args[
 const pos = args.filter((a, i) => !a.startsWith("--") && !(i > 0 && args[i - 1].startsWith("--")))
 const what = pos[0] || "repos"
 const cpu = Number(opt("--cpu", "1")) || 1
+const fromDist = args.includes("--dist")
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const previewBase = () => {
   if (process.env.NX_PREVIEW_URL) return process.env.NX_PREVIEW_URL
@@ -105,6 +109,7 @@ async function defilement() {
   try {
     const page = await browser.newPage()
     await page.setViewport({ width: 1440, height: 900 })
+    if (fromDist) await serveDist(page, new URL(url).origin)
     await page.goto(url, { waitUntil: "networkidle2", timeout: 120000 })
     await sleep(2500)
     const cdp = await page.createCDPSession()
@@ -138,12 +143,35 @@ async function defilement() {
     draws.sort((a, b) => a - b)
     const gaps = draws.slice(1).map((t, i) => (t - draws[i]) / 1000)
     const long = gaps.filter((g) => g > 25).length
-    console.log(`${url} · processeur ×${cpu}`)
+    console.log(`${url}${fromDist ? " (dist/)" : ""} · processeur ×${cpu}`)
     console.log(`  images présentées ${frames} · intervalle moyen ${gaps.length ? (gaps.reduce((a, b) => a + b, 0) / gaps.length).toFixed(1) : "—"} ms · images de plus de 25 ms ${long} · fil principal occupé ${(busy / 1000).toFixed(0)} ms · mises en page ${layouts}`)
     for (const [k, v] of [...totals].sort((a, b) => b[1] - a[1])) console.log(`  ${k.padEnd(52)} ${(v / 1000).toFixed(0).padStart(6)} ms`)
     console.log("  fonctions les plus coûteuses :")
     for (const [k, v] of [...fns].sort((a, b) => b[1] - a[1]).slice(0, 6)) console.log(`    ${k.slice(0, 74).padEnd(76)} ${(v / 1000).toFixed(0).padStart(5)} ms`)
   } finally { await browser.close() }
+}
+
+// --dist : chaque requête vers l'adresse mesurée reçoit le fichier de dist/ (page pré-générée « chemin.html » pour
+// une adresse sans extension, comme la publication) ; les autres adresses partent sur le réseau.
+const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".json": "application/json", ".webmanifest": "application/manifest+json", ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/png", ".jpg": "image/jpeg", ".ico": "image/x-icon", ".woff2": "font/woff2", ".txt": "text/plain; charset=utf-8", ".xml": "application/xml" }
+async function serveDist(page, origin) {
+  const root = new URL("../dist/", import.meta.url)
+  if (!fs.existsSync(root)) throw new Error("dist/ absent : lancer d'abord pnpm build.")
+  await page.setBypassServiceWorker(true)
+  await page.setRequestInterception(true)
+  page.on("request", (req) => {
+    const u = new URL(req.url())
+    if (u.origin !== origin) return req.continue()
+    const p = decodeURIComponent(u.pathname)
+    for (const c of p.endsWith("/") ? [p + "index.html"] : [p, p + ".html", p + "/index.html"]) {
+      const file = new URL("." + c, root)
+      if (!file.pathname.startsWith(root.pathname)) break
+      if (fs.existsSync(file) && fs.statSync(file).isFile()) {
+        return req.respond({ status: 200, contentType: MIME[path.extname(file.pathname)] || "application/octet-stream", body: fs.readFileSync(file) })
+      }
+    }
+    req.respond({ status: 404, contentType: "text/plain; charset=utf-8", body: "Introuvable dans dist/." })
+  })
 }
 
 const run = { repos, editeur, defilement }[what]

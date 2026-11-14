@@ -14,7 +14,8 @@ export const NOTES = {
   // site ouvert (republiée en v1.2.2-r7).
   // NEXORA #118 : modèles « photo » de NEX-DESIGN, mises en scène réalistes et contour de sélection du Studio
   // (republiée en v1.2.2-r8). #119 : fenêtre de connexion en mosaïque, « Chargement », lanceur 1.0.7 (v1.2.2-r9).
-  // #120 : projets Laravel dans l'App Builder, compte mieux protégé, éditeurs plus rapides, Studio plus léger (v1.2.2-r10).
+  // #120 : projets Laravel dans l'App Builder, compte mieux protégé, éditeurs plus rapides, Studio plus léger (v1.2.2-r10 ;
+  // appareils connectés sans nom répété, v1.2.2-r11).
   '1.2.2': {
     title: 'NEXORA 1.2.2',
     intro: 'Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.',

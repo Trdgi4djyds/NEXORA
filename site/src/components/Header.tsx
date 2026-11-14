@@ -65,6 +65,27 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
     }
     const el = ref.current
     if (el) delete el.dataset.tucked
+    // Barre animée par le CSS : plus besoin de suivre le défilement. « Page défilée » (fond de l'en-tête) vient d'un
+    // repère de 8 px posé en haut de la page et suivi par un IntersectionObserver : aucune lecture à chaque évènement.
+    // Le repère touche encore le haut de la fenêtre à 8 px défilés : il la quitte au-delà, comme y > 8.
+    if (cssBar && typeof IntersectionObserver === "function") {
+      const mark = document.createElement("div")
+      mark.setAttribute("aria-hidden", "true")
+      mark.style.cssText = "position:absolute;top:0;left:0;width:1px;height:8px;pointer-events:none;visibility:hidden"
+      document.body.prepend(mark)
+      const io = new IntersectionObserver(([e]) => {
+        const s = !e.isIntersecting
+        if (s !== scrolled) {
+          scrolled = s
+          setScrolled(s)
+        }
+      })
+      io.observe(mark)
+      return () => {
+        io.disconnect()
+        mark.remove()
+      }
+    }
     measure()
     update()
     const ro = typeof ResizeObserver === "function" ? new ResizeObserver(onResize) : null

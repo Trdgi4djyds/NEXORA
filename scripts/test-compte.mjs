@@ -74,6 +74,9 @@ try {
   await openTab("security")
   await page.waitForSelector(`${P} [name="current_password"]`, { timeout: 15000 })
   check("onglet Sécurité : champ « Mot de passe actuel »", true)
+  // Le logiciel s'enregistre sous le nom « Application Windows » : jamais « Application Windows · Application Windows ».
+  const devices = await page.evaluate(() => [...document.querySelectorAll("#nxAccBody .nx-li b")].map((b) => b.textContent.trim()))
+  check("appareils connectés : libellé sans répétition", devices.length > 0 && devices.every((d) => !/^(.+) · \1$/.test(d)), devices.slice(0, 3).join(" | "))
   await fill(`${P} [name="current_password"]`, GOOD)
   await fill(`${P} [name="password"]`, "password123")
   await fill(`${P} [name="password2"]`, "password123")

@@ -336,7 +336,13 @@ function zoneField(current) {
 // (data-form="password", data-acc-act, data-del-confirm), avec le mot de passe actuel et la jauge de robustesse.
 export function security(devices = [], { when = (d) => d } = {}) {
   const email = cloud.user ? cloud.user.email : '';
-  const list = (devices || []).map((n) => `<div class="nx-li">${ico(n.platform === 'web' ? 'globe' : 'laptop', 16)}<div><b>${esc(n.platform === 'web' ? 'Navigateur' : 'Application Windows')}${n.name ? ` · ${esc(n.name)}` : ''}</b><small>Dernière activité ${esc(when(n.last_seen_at))}${n.app_version ? ` · v${esc(n.app_version)}` : ''}</small></div></div>`).join('') || '<p class="nx-muted">Aucun appareil.</p>';
+  // Le logiciel s'enregistre sous le nom « Application Windows » : le nom n'est ajouté que s'il dit autre chose.
+  const list = (devices || []).map((n) => {
+    const kind = n.platform === 'web' ? 'Navigateur' : 'Application Windows';
+    const name = String(n.name || '').trim();
+    const extra = name && name.toLowerCase() !== kind.toLowerCase() ? ` · ${esc(name)}` : '';
+    return `<div class="nx-li">${ico(n.platform === 'web' ? 'globe' : 'laptop', 16)}<div><b>${esc(kind)}${extra}</b><small>Dernière activité ${esc(when(n.last_seen_at))}${n.app_version ? ` · v${esc(n.app_version)}` : ''}</small></div></div>`;
+  }).join('') || '<p class="nx-muted">Aucun appareil.</p>';
   return `
   <form class="nxc-card nx-form nxc-pass" data-form="password">
     <div class="nxc-card-head"><span class="nxc-card-ic">${ico('lock', 15)}</span><div><h3>Mot de passe</h3><p>Confirmez d’abord votre mot de passe actuel. Le nouveau doit compter au moins 8 caractères et ne pas être trop simple.</p></div></div>

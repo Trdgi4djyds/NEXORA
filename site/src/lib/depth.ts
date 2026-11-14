@@ -65,6 +65,7 @@ export function installDepth(): () => void {
     schedule()
   }
   const onScroll = () => {
+    if (!visible.size) return
     scrollY = window.scrollY
     schedule()
   }
