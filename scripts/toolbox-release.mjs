@@ -159,7 +159,8 @@ const manifest = {
   // #106 : 1.0.5 (fenêtres « Horizon ») : les lanceurs 1.0.3 et 1.0.4 se mettent à jour avant d'installer la 1.2.2.
   // #115 : 1.0.6 (textes vouvoyés) : les lanceurs 1.0.5 se mettent à jour avant d'installer la 1.2.2-r6.
   // #119 : 1.0.7 (« Chargement… » à l'ouverture) : les lanceurs 1.0.6 se mettent à jour avant d'installer la 1.2.2-r9.
-  min_launcher: "1.0.7",
+  // #121 : 1.0.8 (mosaïque de rendus, fenêtres réorganisées) : les lanceurs 1.0.7 se mettent à jour avant la 1.2.2-r12.
+  min_launcher: "1.0.8",
   package: pkg,
   ...(launcher ? { launcher } : {}),
   files,

@@ -46,6 +46,8 @@ func init() {
 		progress(0.85, "Installation de NEXORA…")
 	case "assistant-bienvenue":
 		page(welcomePage(root, false))
+	case "assistant-mise-a-jour": // #121 : page de mise à jour (titre sur deux lignes avant la correction)
+		page(welcomePage(root, true))
 	case "assistant-installation":
 		wz := newWizard()
 		p := wz.Progress(installProgressPage(false))
@@ -57,6 +59,11 @@ func init() {
 		page(installErrorPage("offline", secTitle("offline"), secActions("offline")))
 	case "desinstallation":
 		page(uninstallPage(root), true, false, true)
+	case "assistant-long": // #121 : page trop haute pour 520 pixels : la fenêtre doit grandir, sans chevauchement
+		p := uninstallPage(root)
+		p.body += " " + p.body
+		p.options = append(p.options, p.options...)
+		page(p, true, false, true, false, true, false)
 	case "desinstallation-progression":
 		wz := newWizard()
 		p := wz.Progress(uninstallProgressPage())

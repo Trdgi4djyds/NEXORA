@@ -9,13 +9,14 @@
 //     paquets Debian (apt-get download, sources en HTTPS, dpkg -x) ; Xvfb lancé sur DISPLAY ;
 //   - police Selawik (github.com/microsoft/Selawik, OFL, métriques de Segoe UI) dans le préfixe Wine, avec la
 //     substitution « Segoe UI » → « Selawik » (Segoe UI n'est pas libre ; Windows a la vraie).
+// NEXORA #121 : sans xwd, l'écran est lu par `import -window root` (ImageMagick du système).
 // Les captures montrent le rendu sous Wine : sans les coins arrondis ni l'ombre de Windows 11 (DWM absent).
 import { spawnSync } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 import { ROOT } from "../preview/server.mjs"
 
-const ALL = ["assistant-bienvenue", "assistant-installation", "assistant-termine", "assistant-erreur", "demarrage", "chargement", "telechargement", "integrite", "connexion", "version", "desinstallation", "desinstallation-progression", "desinstallation-ouvert", "desinstallation-terminee", "erreur"]
+const ALL = ["assistant-bienvenue", "assistant-mise-a-jour", "assistant-installation", "assistant-termine", "assistant-erreur", "demarrage", "chargement", "telechargement", "integrite", "connexion", "version", "desinstallation", "desinstallation-progression", "desinstallation-ouvert", "desinstallation-terminee", "erreur"]
 const args = process.argv.slice(2)
 const opt = (n) => (args.includes(n) ? args[args.indexOf(n) + 1] : "")
 const label = opt("--label") || "lanceur"
@@ -27,6 +28,7 @@ if (!fs.existsSync(env)) {
   process.exit(1)
 }
 const sh = (cmd) => spawnSync("sh", ["-c", `. ${env}; ${cmd}`], { encoding: "utf8" })
+const grab = sh("command -v xwd >/dev/null").status === 0 ? "xwd -root -silent | convert-im7.q16 xwd:-" : "import -window root png:- | convert-im7.q16 png:-"
 const exe = path.join(process.env.TMPDIR || "/tmp", "nexora-launcher-demo.exe")
 const go = [process.env.GO, "go", "/tmp/go/bin/go"].find((g) => g && spawnSync(g, ["version"], { stdio: "ignore" }).status === 0)
 if (!go) {
@@ -49,7 +51,7 @@ for (const s of screens.length ? screens : ALL) {
     continue
   }
   const file = path.join(dir, `${s}${dpi !== 96 ? `-${dpi}dpi` : ""}.png`)
-  sh(`wineserver -k 2>/dev/null; sleep 1; (wine '${exe}' --demo=${s} >/dev/null 2>&1 &); sleep ${["demarrage", "chargement"].includes(s) ? 7.7 : 7}; xwd -root -silent | convert-im7.q16 xwd:- -fuzz 1% -trim +repage -bordercolor '#e2e4e9' -border 40 '${file}'; wineserver -k 2>/dev/null`)
+  sh(`wineserver -k 2>/dev/null; sleep 1; (wine '${exe}' --demo=${s} >/dev/null 2>&1 &); sleep ${["demarrage", "chargement"].includes(s) ? 7.7 : 7}; ${grab} -fuzz 1% -trim +repage -bordercolor '#e2e4e9' -border 40 '${file}'; wineserver -k 2>/dev/null`)
   if (fs.existsSync(file) && fs.statSync(file).size > 1000) {
     out.push(file)
     console.log(`Capture : ${path.relative(ROOT, file)}`)

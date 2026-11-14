@@ -54,6 +54,7 @@ var (
 	pGetKeyState         = user32.NewProc("GetKeyState")
 	pGetSystemMetrics    = user32.NewProc("GetSystemMetrics")
 	pSetDpiAwarenessCtx  = user32.NewProc("SetProcessDpiAwarenessContext")
+	pSystemParamsInfo    = user32.NewProc("SystemParametersInfoW")
 	pGetModuleHandle     = kernel32.NewProc("GetModuleHandleW")
 
 	pCreateCompatibleDC = gdi32.NewProc("CreateCompatibleDC")
@@ -113,9 +114,13 @@ const (
 	ctlOption       = 2
 	ctlClose        = 3
 	animInterval    = 33
-	progressLogical = 520
-	wizardW         = 640
-	wizardH         = 480
+	progressLogical = 680 // #121 : toutes les fenêtres ont le panneau de la marque (mosaïque) à gauche
+	progressSide    = 220
+	wizardW         = 780
+	wizardH         = 520
+	wizardSide      = 300
+	dialogSide      = 184
+	footH           = 72 // pied (boutons)
 	dtPathEllipsis  = 0x4000
 )
 
@@ -208,6 +213,12 @@ type uiText struct {
 	s          string
 }
 
+// uiPill : repère « / … » à contour (#121, comme la fenêtre de connexion de NEXORA), dessiné avant les textes.
+type uiPill struct {
+	x, y, w, h float64
+	col        rgb
+}
+
 // uiWin : une fenêtre du lanceur (progression ou dialogue), pilotée par le fil qui l'a créée.
 type uiWin struct {
 	hwnd     uintptr
@@ -242,6 +253,18 @@ type uiWin struct {
 	bits       unsafe.Pointer
 	bw, bh     int
 	fonts      map[[2]int]uintptr
+
+	// #121 : panneau de la marque (mosaïque de rendus) et hauteur de l'assistant
+	opened         time.Time // départ du défilement de la mosaïque
+	animate        bool      // défilement : fenêtres à minuterie et animations de Windows actives
+	panel          []byte    // image du panneau, recalculée seulement quand elle change
+	panelKey       [4]int
+	veil           []float64 // voile du panneau, ligne par ligne
+	veilKey        [3]int
+	panelCost      time.Duration // durée moyenne d'une image du panneau (défilement ralenti si elle est longue)
+	pills          []uiPill
+	minH           float64 // assistant : hauteur logique atteinte (la fenêtre ne rapetisse pas d'une page à l'autre)
+	sizedW, sizedH int     // taille donnée à la fenêtre
 }
 
 var (
@@ -316,6 +339,15 @@ func (w *uiWin) layout() {
 	}
 }
 
+// clientAnimations : réglage « Effets d'animation » de Windows (SPI_GETCLIENTAREAANIMATION) ; vrai par défaut.
+func clientAnimations() bool {
+	on := int32(1)
+	if r, _, _ := pSystemParamsInfo.Call(0x1042, 0, uintptr(unsafe.Pointer(&on)), 0); r == 0 {
+		return true
+	}
+	return on != 0
+}
+
 // open : crée et montre la fenêtre au centre de l'écran du pointeur ; faux si Windows refuse (repli MessageBox).
 func (w *uiWin) open() bool {
 	if !uiInit() {
@@ -323,6 +355,8 @@ func (w *uiWin) open() bool {
 	}
 	w.hover, w.press, w.focus = -1, -1, -1
 	w.started = time.Now()
+	w.opened = w.started
+	w.animate = (w.progress || w.wizard) && clientAnimations()
 	dc, _, _ := pCreateCompatibleDC.Call(0)
 	if dc == 0 {
 		return false
@@ -375,6 +409,7 @@ func (w *uiWin) open() bool {
 		}
 	}
 	pSetWindowPos.Call(hwnd, 0, uintptr(x), uintptr(y), uintptr(w.W), uintptr(w.H), 0x0234) // cadre recalculé, sans activation ni ordre
+	w.sizedW, w.sizedH = w.W, w.H
 	pShowWindow.Call(hwnd, 5)
 	pSetForegroundWindow.Call(hwnd)
 	pUpdateWindow.Call(hwnd)
@@ -495,7 +530,20 @@ func (w *uiWin) handle(msg, wp, lp uintptr) (uintptr, bool) {
 				w.shown = w.target
 			}
 		}
+		// #121 : page de l'assistant plus haute que la fenêtre : la fenêtre grandit (vers le bas) au lieu de laisser
+		// le pied recouvrir le contenu.
+		resize := false
+		if w.wizard && msg == wmAppUpdate {
+			w.layoutWizard()
+			if resize = w.W != w.sizedW || w.H != w.sizedH; resize {
+				w.sizedW, w.sizedH = w.W, w.H
+			}
+		}
+		W, H := w.W, w.H
 		w.mu.Unlock()
+		if resize {
+			pSetWindowPos.Call(w.hwnd, 0, 0, 0, uintptr(W), uintptr(H), 0x0016) // SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE
+		}
 		pInvalidateRect.Call(w.hwnd, 0, 0)
 		return 0, true
 	case wmAppClose:
@@ -549,6 +597,7 @@ func (w *uiWin) handle(msg, wp, lp uintptr) (uintptr, bool) {
 		r := (*wRect)(unsafe.Add(unsafe.Pointer(nil), lp)) // rectangle proposé par Windows
 		x := r.L + (r.R-r.L-int32(w.W))/2
 		y := r.T + (r.B-r.T-int32(w.H))/2
+		w.sizedW, w.sizedH = w.W, w.H
 		w.mu.Unlock()
 		pSetWindowPos.Call(w.hwnd, 0, uintptr(x), uintptr(y), uintptr(w.W), uintptr(w.H), 0x0014)
 		pInvalidateRect.Call(w.hwnd, 0, 0)
@@ -711,43 +760,71 @@ func (w *uiWin) text(sizePx float64, weight int, col rgb, x, y, wd, ht float64, 
 	w.texts = append(w.texts, uiText{int(math.Round(sizePx * w.s)), weight, col, wRect{int32(x), int32(y), int32(x + wd), int32(y + ht)}, flags | dtNoPrefix, s})
 }
 
+// ---------------------------------------------------------------- panneau de la marque (#121)
+// tag : repère « / … » à contour, comme sur la fenêtre de connexion de NEXORA ; renvoie sa hauteur.
+func (w *uiWin) tag(x, y float64, label string, col rgb) float64 {
+	sw, _ := w.measure(11.5, 400, "/", 0)
+	lw, _ := w.measure(11.5, 400, label, 0)
+	h := w.px(26)
+	pw := w.px(12) + sw + w.px(6) + lw + w.px(12)
+	w.pills = append(w.pills, uiPill{x, y, pw, h, col})
+	w.text(11.5, 400, mix(colBg, col, 0.5), x+w.px(12), y, sw+w.px(2), h, dtVCenter|dtSingleLine, "/")
+	w.text(11.5, 400, mix(colBg, col, 0.88), x+w.px(12)+sw+w.px(6), y, lw+w.px(4), h, dtVCenter|dtSingleLine, label)
+	return h
+}
+
+// layoutPanel : textes du panneau de la marque (logo, NEXORA, Devs Toolbox en haut ; repère « / Fait avec
+// NEXORA » dont le bas est en pillBottom, si pillBottom > 0).
+func (w *uiWin) layoutPanel(side, pillBottom float64) {
+	w.g["side"] = side
+	ls := w.px(36)
+	w.g["logoS"], w.g["logoX"], w.g["logoY"] = ls, w.px(24), w.px(24)
+	tx := w.px(24) + ls + w.px(12)
+	w.text(16, 700, colInk, tx, w.px(24), side-tx-w.px(12), w.px(20), dtSingleLine|dtEndEllipsis, "NEXORA")
+	w.text(12, 400, colPanelSub, tx, w.px(43), side-tx-w.px(12), w.px(17), dtSingleLine|dtEndEllipsis, "Devs Toolbox")
+	if pillBottom > 0 {
+		w.tag(w.px(24), pillBottom-w.px(26), "Fait avec NEXORA", colInk)
+		w.g["veilText"] = pillBottom - w.px(26)
+	}
+}
+
 // ---------------------------------------------------------------- mise en page : dialogue
+// #121 : panneau de la marque à gauche (mosaïque fixe), contenu à droite ; la hauteur suit le contenu.
 func (w *uiWin) layoutDialog() {
 	sp := w.spec
-	W := w.px(float64(max(sp.width, 420)))
+	side := w.px(dialogSide)
+	W := side + w.px(float64(max(sp.width, 420)))
 	pad := w.px(28)
-	w.ctrls, w.texts, w.g = nil, nil, map[string]float64{}
-	// Barre du haut : logo, nom, croix.
-	w.text(13, 600, colBody, w.px(52), 0, W-w.px(120), w.px(52), dtVCenter|dtSingleLine, productName)
+	x0 := side + pad
+	bw := W - x0 - pad
+	w.ctrls, w.texts, w.pills, w.g = nil, nil, nil, map[string]float64{"footX": side}
 	w.ctrls = append(w.ctrls, uiCtrl{kind: ctlClose, id: sp.cancel, x: W - w.px(44), y: w.px(8), w: w.px(36), h: w.px(36)})
-	y := w.px(64)
-	// En-tête : pastille d'icône, surtitre, titre.
-	tx := pad + w.px(48+16)
+	y := w.px(44)
+	// En-tête : pastille d'icône, repère, titre.
+	tx := x0 + w.px(48+16)
 	tw := W - tx - pad
-	_, kh := w.measure(11.5, 700, sp.kicker, 0)
 	_, th := w.measure(19, 600, sp.title, tw)
-	w.g["badgeY"] = y
+	w.g["badgeX"], w.g["badgeY"] = x0, y
 	if sp.kicker != "" {
-		w.text(11.5, 700, hexc(uiTones[sp.tone][0]), tx, y+w.px(2), tw, kh, dtSingleLine, sp.kicker)
-		w.text(19, 600, colInk, tx, y+w.px(2)+kh+w.px(2), tw, th, dtWordBreak, sp.title)
-		y += math.Max(w.px(48), w.px(4)+kh+th) + w.px(16)
-	} else { // sans surtitre : titre centré sur la pastille
+		kh := w.tag(tx, y, sp.kicker, hexc(uiTones[sp.tone][0]))
+		w.text(19, 600, colInk, tx, y+kh+w.px(8), tw, th, dtWordBreak, sp.title)
+		y += math.Max(w.px(48), kh+w.px(8)+th) + w.px(18)
+	} else { // sans repère : titre centré sur la pastille
 		w.text(19, 600, colInk, tx, y+math.Max(0, (w.px(48)-th)/2), tw, th, dtWordBreak, sp.title)
-		y += math.Max(w.px(48), th) + w.px(16)
+		y += math.Max(w.px(48), th) + w.px(18)
 	}
 	// Texte.
-	bw := W - 2*pad
 	_, bh := w.measure(14, 400, sp.body, bw)
-	w.text(14, 400, colBody, pad, y, bw, bh, dtWordBreak, sp.body)
+	w.text(14, 400, colBody, x0, y, bw, bh, dtWordBreak, sp.body)
 	y += bh + w.px(18)
 	// Cases à cocher (cartes).
 	for i, o := range sp.options {
-		ix := pad + w.px(14+20+12)
+		ix := x0 + w.px(14+20+12)
 		iw := bw - w.px(14+20+12+14)
 		_, oth := w.measure(14, 600, o.title, iw)
 		_, odh := w.measure(12.5, 400, o.desc, iw)
 		ch := math.Max(w.px(52), w.px(13)+oth+w.px(2)+odh+w.px(13))
-		w.ctrls = append(w.ctrls, uiCtrl{kind: ctlOption, idx: i, x: pad, y: y, w: bw, h: ch})
+		w.ctrls = append(w.ctrls, uiCtrl{kind: ctlOption, idx: i, x: x0, y: y, w: bw, h: ch})
 		w.text(14, 600, colInk, ix, y+w.px(13), iw, oth, dtWordBreak, o.title)
 		w.text(12.5, 400, colMuted, ix, y+w.px(13)+oth+w.px(2), iw, odh, dtWordBreak, o.desc)
 		y += ch + w.px(10)
@@ -757,18 +834,20 @@ func (w *uiWin) layoutDialog() {
 	}
 	// Encadré de note.
 	if sp.note != "" {
-		nx := pad + w.px(12+16+10)
+		nx := x0 + w.px(12+16+10)
 		nw := bw - w.px(12+16+10+12)
 		_, nh := w.measure(12.5, 400, sp.note, nw)
 		boxH := w.px(11) + math.Max(w.px(17), nh) + w.px(11)
-		w.g["noteY"], w.g["noteH"] = y, boxH
+		w.g["noteX"], w.g["noteW"], w.g["noteY"], w.g["noteH"] = x0, bw, y, boxH
 		w.text(12.5, 400, colMuted, nx, y+w.px(11), nw, nh, dtWordBreak, sp.note)
 		y += boxH + w.px(22)
 	} else {
 		y += w.px(8)
 	}
-	// Pied : boutons alignés à droite.
-	w.g["footY"] = y
+	// Pied : boutons alignés à droite ; hauteur minimale pour que le panneau garde sa marque et son repère.
+	H := math.Max(y+w.px(footH), w.px(268))
+	foot := H - w.px(footH)
+	w.g["footY"] = foot
 	widths := make([]float64, len(sp.buttons))
 	total := 0.0
 	for i, b := range sp.buttons {
@@ -778,44 +857,69 @@ func (w *uiWin) layoutDialog() {
 	}
 	bx := W - pad - total + w.px(10)
 	for i, b := range sp.buttons { // de gauche à droite (ordre de Tab)
-		w.ctrls = append(w.ctrls, uiCtrl{kind: ctlButton, id: b.id, style: b.style, label: b.label, x: bx, y: y + w.px(16), w: widths[i], h: w.px(40)})
+		w.ctrls = append(w.ctrls, uiCtrl{kind: ctlButton, id: b.id, style: b.style, label: b.label, x: bx, y: foot + w.px(16), w: widths[i], h: w.px(40)})
 		bx += widths[i] + w.px(10)
 	}
-	w.W, w.H = int(W), int(y+w.px(72))
+	w.layoutPanel(side, 0)
+	w.W, w.H = int(W), int(H)
 }
 
 // ---------------------------------------------------------------- mise en page : progression
+// #121 : panneau de la marque à gauche (mosaïque qui défile) ; repère, titre, message, barre et étapes à droite,
+// à des positions fixes (la fenêtre garde sa taille quand la progression devient connue).
 func (w *uiWin) layoutProgress() {
 	W := w.px(progressLogical)
-	pad := w.px(28)
-	w.ctrls, w.texts, w.g = nil, nil, map[string]float64{}
+	side := w.px(progressSide)
+	x0 := side + w.px(32)
+	cw := W - x0 - w.px(32)
+	w.ctrls, w.texts, w.pills, w.g = nil, nil, nil, map[string]float64{"footX": side}
 	w.ctrls = append(w.ctrls, uiCtrl{kind: ctlClose, id: "cancel", x: W - w.px(44), y: w.px(8), w: w.px(36), h: w.px(36)})
-	w.text(20, 600, colInk, w.px(104), w.px(34), W-w.px(150), w.px(30), dtSingleLine|dtEndEllipsis, productName)
-	sub := "Démarrage"
+	tag, title := "Démarrage", "Ouverture de NEXORA"
 	if w.target >= 0 {
-		sub = "Mise à jour de NEXORA"
+		tag, title = "Mise à jour", "Mise à jour de NEXORA"
 	}
-	w.text(13.5, 400, colMuted, w.px(104), w.px(64), W-w.px(150), w.px(22), dtSingleLine|dtEndEllipsis, sub)
-	w.text(14, 400, colInk, pad, w.px(116), W-2*pad-w.px(64), w.px(22), dtSingleLine|dtEndEllipsis, w.msg)
+	w.tag(x0, w.px(40), tag, colInk)
+	w.text(21, 600, colInk, x0, w.px(76), cw-w.px(16), w.px(30), dtSingleLine|dtEndEllipsis, title)
+	w.text(14, 400, colBody, x0, w.px(122), cw-w.px(64), w.px(22), dtSingleLine|dtEndEllipsis, w.msg)
+	w.g["barX"], w.g["barW"], w.g["barY"] = x0, cw, w.px(154)
 	if w.target >= 0 {
 		pct := int(math.Round(math.Min(1, math.Max(0, w.shown)) * 100))
-		w.text(14, 600, colViolet, W-pad-w.px(64), w.px(116), w.px(64), w.px(22), dtSingleLine|dtRight, itoa(pct)+" %")
+		w.text(14, 600, colViolet, x0+cw-w.px(64), w.px(122), w.px(64), w.px(22), dtSingleLine|dtRight, itoa(pct)+" %")
+		// Étapes placées selon la largeur de leur nom (« Téléchargement » entier), sinon en trois tiers.
 		stage := progressStage(w.target)
-		sw := (W - 2*pad) / 3
+		widths := make([]float64, len(progressSteps))
+		total := 0.0
+		for i, name := range progressSteps {
+			widths[i], _ = w.measure(12.5, map[bool]int{true: 600, false: 400}[i == stage], name, 0)
+			total += w.px(24) + widths[i]
+		}
+		gap := (cw - total) / float64(len(progressSteps)-1)
+		if gap < w.px(14) {
+			gap = w.px(14)
+			for i := range widths {
+				widths[i] = (cw-2*gap)/3 - w.px(24)
+			}
+		}
+		w.g["stepsY"] = w.px(186)
+		sx := x0
 		for i, name := range progressSteps {
 			col := colMuted
 			if i == stage {
 				col = colInk
 			}
-			w.text(12.5, map[bool]int{true: 600, false: 400}[i == stage], col, pad+float64(i)*sw+w.px(24), w.px(168), sw-w.px(26), w.px(20), dtSingleLine|dtVCenter|dtEndEllipsis, name)
+			w.g["stepX"+itoa(i)] = sx + w.px(8)
+			w.text(12.5, map[bool]int{true: 600, false: 400}[i == stage], col, sx+w.px(24), w.px(176), widths[i]+w.px(2), w.px(20), dtSingleLine|dtVCenter|dtEndEllipsis, name)
+			sx += w.px(24) + widths[i] + gap
 		}
 	}
-	foot := w.px(214)
+	foot := w.px(222)
 	w.g["footY"] = foot
 	lw, _ := w.measure(14, 600, "Annuler", 0)
 	bw := math.Max(w.px(104), lw+w.px(40))
-	w.ctrls = append(w.ctrls, uiCtrl{kind: ctlButton, id: "cancel", style: "secondary", label: "Annuler", x: W - pad - bw, y: foot + w.px(14), w: bw, h: w.px(36)})
-	w.W, w.H = int(W), int(foot+w.px(64))
+	w.ctrls = append(w.ctrls, uiCtrl{kind: ctlButton, id: "cancel", style: "secondary", label: "Annuler", x: W - w.px(32) - bw, y: foot + w.px(16), w: bw, h: w.px(40)})
+	H := foot + w.px(footH)
+	w.layoutPanel(side, 0)
+	w.W, w.H = int(W), int(H)
 }
 
 func itoa(n int) string {
@@ -859,15 +963,17 @@ func (w *uiWin) paint(hdc uintptr) {
 	foot, fx := int(w.g["footY"]), int(w.g["footX"])
 	c.fillRect(fx, foot, w.W, w.H, colFooter)
 	c.fillRect(fx, foot, w.W, foot+int(math.Max(1, math.Round(w.s))), colLine)
-	if !w.wizard { // filet en haut de la fenêtre (l'assistant a sa colonne) ; #103 : gris, plus de dégradé
-		c.fillRect(0, 0, w.W, int(math.Max(1, math.Round(w.s))), colEdge)
-	}
+	w.paintPanel(c)
 	if w.wizard {
 		w.paintWizard(c)
 	} else if w.progress {
 		w.paintProgress(c)
 	} else {
 		w.paintDialog(c)
+	}
+	for _, p := range w.pills { // repères « / … » : fond sombre léger et contour, comme sur la connexion
+		c.roundRect(p.x, p.y, p.w, p.h, p.h/2, solid(colPanel), 0.45)
+		c.strokeRoundRect(p.x, p.y, p.w, p.h, p.h/2, math.Max(1, math.Round(w.s)), p.col, 0.24)
 	}
 	texts := append(append([]uiText(nil), w.texts...), w.paintControls(c)...)
 	pSetBkMode.Call(w.memDC, 1)
@@ -881,27 +987,62 @@ func (w *uiWin) paint(hdc uintptr) {
 	pBitBlt.Call(hdc, 0, 0, uintptr(w.W), uintptr(w.H), w.memDC, 0, 0, 0x00CC0020)
 }
 
+// paintPanel : panneau de la marque (#121) sur toute la hauteur : mosaïque de rendus (défilement à 15 images par
+// seconde au plus, image recalculée seulement quand elle change ; fixe sans minuterie ou si Windows coupe les
+// animations), filet à droite, logo.
+func (w *uiWin) paintPanel(c *canvas) {
+	side := int(w.g["side"])
+	if side <= 0 || side > w.W {
+		return
+	}
+	// 15 images par seconde au plus ; 8 si une image du panneau coûte plus de 8 ms (grand écran à 200 %, PC lent).
+	fps, frame := 15.0, 0
+	if w.panelCost > 8*time.Millisecond {
+		fps = 8
+	}
+	if w.animate {
+		frame = int(time.Since(w.opened).Seconds() * fps)
+	}
+	key := [4]int{side, w.H, int(math.Round(w.s * 100)), frame*100 + int(fps)}
+	vk := [3]int{w.H, int(math.Round(w.s * 100)), int(w.g["veilText"])}
+	if len(w.veil) != w.H || w.veilKey != vk {
+		w.veil, w.veilKey = panelVeil(w.H, w.s, w.g["veilText"]), vk
+		w.panelKey = [4]int{}
+	}
+	if len(w.panel) != side*w.H*4 || w.panelKey != key {
+		if len(w.panel) != side*w.H*4 {
+			w.panel = make([]byte, side*w.H*4)
+		}
+		t0 := time.Now()
+		mosaicFor(side, w.H, w.s).render(w.panel, float64(frame)/fps, w.veil)
+		w.panelCost = (w.panelCost*3 + time.Since(t0)) / 4
+		w.panelKey = key
+	}
+	for y := 0; y < w.H; y++ {
+		copy(c.pix[y*w.W*4:y*w.W*4+side*4], w.panel[y*side*4:(y+1)*side*4])
+	}
+	lw := int(math.Max(1, math.Round(w.s)))
+	c.fillRect(side-lw, 0, side, w.H, colLine)
+	c.image(logoImage(int(w.g["logoS"])), int(w.g["logoX"]), int(w.g["logoY"]))
+}
+
 func (w *uiWin) paintDialog(c *canvas) {
 	sp := w.spec
-	pad := w.px(28)
-	c.image(logoImage(int(w.px(24))), int(w.px(20)), int(w.px(14)))
 	tone := uiTones[sp.tone]
-	by := w.g["badgeY"]
-	c.circle(pad+w.px(24), by+w.px(24), w.px(24), hexc(tone[1]), 1)
+	bx, by := w.g["badgeX"], w.g["badgeY"]
+	c.circle(bx+w.px(24), by+w.px(24), w.px(24), hexc(tone[1]), 1)
 	isz := int(w.px(24))
-	c.icon(sp.icon, int(pad+w.px(24))-isz/2, int(by+w.px(24))-isz/2, isz, 2, hexc(tone[0]))
+	c.icon(sp.icon, int(bx+w.px(24))-isz/2, int(by+w.px(24))-isz/2, isz, 2, hexc(tone[0]))
 	if ny, ok := w.g["noteY"]; ok {
-		c.roundRect(pad, ny, float64(w.W)-2*pad, w.g["noteH"], w.px(12), solid(colRaised), 1)
+		nx := w.g["noteX"]
+		c.roundRect(nx, ny, w.g["noteW"], w.g["noteH"], w.px(12), solid(colRaised), 1)
 		s := int(w.px(16))
-		c.icon("shieldCheck", int(pad+w.px(12)), int(ny+w.px(12)), s, 2, colGreen)
+		c.icon("shieldCheck", int(nx+w.px(12)), int(ny+w.px(12)), s, 2, colGreen)
 	}
 }
 
 func (w *uiWin) paintProgress(c *canvas) {
-	pad := w.px(28)
-	W := float64(w.W)
-	c.image(logoImage(int(w.px(60))), int(pad), int(w.px(30)))
-	bx, by, bwid, bh := pad, w.px(146), W-2*pad, w.px(8)
+	bx, by, bwid, bh := w.g["barX"], w.g["barY"], w.g["barW"], w.px(8)
 	c.roundRect(bx, by, bwid, bh, bh/2, solid(colTrack), 1)
 	brand := func(x, _ float64) rgb { return gradBrand((x - bx) / bwid) }
 	if w.target < 0 {
@@ -919,9 +1060,8 @@ func (w *uiWin) paintProgress(c *canvas) {
 	}
 	if w.target >= 0 {
 		stage := progressStage(w.target)
-		sw := (W - 2*pad) / 3
 		for i := range progressSteps {
-			cx, cy, r := pad+float64(i)*sw+w.px(8), w.px(178), w.px(8)
+			cx, cy, r := w.g["stepX"+itoa(i)], w.g["stepsY"], w.px(8)
 			switch {
 			case i < stage:
 				c.circle(cx, cy, r, colGreen, 1)
@@ -1122,38 +1262,26 @@ func (p wizProgress) Set(f float64, msg string) {
 func (p wizProgress) Cancelled() bool { return p.z.w.cancelled.Load() }
 func (p wizProgress) Close()          {}
 
+// #121 : panneau de la marque à gauche (mosaïque qui défile ; étapes et version en bas, sur la partie noire du
+// voile), contenu à droite. La hauteur suit le contenu : le pied (boutons) ne recouvre jamais une case ni un texte.
 func (w *uiWin) layoutWizard() {
 	p := w.page
-	W, H := w.px(wizardW), w.px(wizardH)
-	side := w.px(212)
-	w.ctrls, w.texts, w.g = nil, nil, map[string]float64{"footX": side}
-	soft := colMuted
-	// Colonne : marque, étapes, version (#103 : colonne gris très sombre, texte blanc et gris).
-	w.text(18, 700, colInk, w.px(28), w.px(102), side-w.px(40), w.px(26), dtSingleLine, "NEXORA")
-	w.text(13, 400, soft, w.px(28), w.px(128), side-w.px(40), w.px(20), dtSingleLine, "Devs Toolbox")
-	for i, name := range p.steps {
-		col, wt := soft, 400
-		if i == p.step {
-			col, wt = colInk, 600
-		}
-		w.text(13.5, wt, col, w.px(60), w.px(188)+float64(i)*w.px(44), side-w.px(70), w.px(22), dtSingleLine|dtVCenter, name)
-	}
-	w.text(11.5, 400, soft, w.px(28), H-w.px(42), side-w.px(40), w.px(18), dtSingleLine, "Version "+version)
-	// Contenu.
-	x0 := side + w.px(36)
-	cw := W - x0 - w.px(36)
+	W := w.px(wizardW)
+	side := w.px(wizardSide)
+	x0 := side + w.px(40)
+	cw := W - x0 - w.px(40)
+	w.ctrls, w.texts, w.pills, w.g = nil, nil, nil, map[string]float64{"footX": side}
 	if p.cancel != "" && !(p.progress && len(p.buttons) == 0) {
 		w.ctrls = append(w.ctrls, uiCtrl{kind: ctlClose, id: p.cancel, x: W - w.px(44), y: w.px(8), w: w.px(36), h: w.px(36)})
 	}
-	y := w.px(44)
+	// Contenu, mesuré d'abord : la hauteur de la fenêtre en dépend.
+	y := w.px(48)
 	if p.icon != "" {
 		w.g["badgeX"], w.g["badgeY"] = x0, y
 		y += w.px(48 + 18)
 	}
 	if p.kicker != "" {
-		_, kh := w.measure(11.5, 700, p.kicker, 0)
-		w.text(11.5, 700, colViolet, x0, y, cw, kh, dtSingleLine, p.kicker)
-		y += kh + w.px(4)
+		y += w.tag(x0, y, p.kicker, colInk) + w.px(14)
 	}
 	_, th := w.measure(21, 600, p.title, cw)
 	w.text(21, 600, colInk, x0, y, cw, th, dtWordBreak, p.title)
@@ -1161,7 +1289,7 @@ func (w *uiWin) layoutWizard() {
 	if p.body != "" {
 		_, bh := w.measure(13.5, 400, p.body, cw)
 		w.text(13.5, 400, colBody, x0, y, cw, bh, dtWordBreak, p.body)
-		y += bh + w.px(16)
+		y += bh + w.px(18)
 	}
 	if len(p.rows) > 0 {
 		rowH := w.px(42)
@@ -1192,15 +1320,20 @@ func (w *uiWin) layoutWizard() {
 		y += ch + w.px(8)
 	}
 	if p.progress {
+		y += w.px(4)
 		w.text(13.5, 400, colInk, x0, y, cw-w.px(60), w.px(22), dtSingleLine|dtEndEllipsis, w.msg)
 		if w.target >= 0 {
 			pct := int(math.Round(math.Min(1, math.Max(0, w.shown)) * 100))
 			w.text(13.5, 600, colViolet, x0+cw-w.px(60), y, w.px(60), w.px(22), dtSingleLine|dtRight, itoa(pct)+" %")
 		}
 		w.g["barY"] = y + w.px(30)
+		y += w.px(38) + w.px(8)
 	}
-	// Pied : boutons alignés à droite.
-	foot := H - w.px(68)
+	// Hauteur : au moins wizardH, davantage si le contenu l'exige (au moins 16 pixels au-dessus du pied) ; jamais
+	// moins qu'une page précédente, pour que la fenêtre ne saute pas d'une page à l'autre.
+	H := math.Max(math.Max(w.px(wizardH), y+w.px(8)+w.px(footH)), w.px(w.minH))
+	w.minH = H / w.s
+	foot := H - w.px(footH)
 	w.g["footY"] = foot
 	widths := make([]float64, len(p.buttons))
 	total := 0.0
@@ -1209,49 +1342,61 @@ func (w *uiWin) layoutWizard() {
 		widths[i] = math.Max(w.px(104), lw+w.px(40))
 		total += widths[i] + w.px(10)
 	}
-	bx := W - w.px(28) - total + w.px(10)
+	bx := W - w.px(40) - total + w.px(10)
 	for i, b := range p.buttons {
 		label := b.label
 		if p.progress && w.cancelled.Load() {
 			label = "Annulation…"
 		}
-		w.ctrls = append(w.ctrls, uiCtrl{kind: ctlButton, id: b.id, style: b.style, label: label, x: bx, y: foot + w.px(14), w: widths[i], h: w.px(40)})
+		w.ctrls = append(w.ctrls, uiCtrl{kind: ctlButton, id: b.id, style: b.style, label: label, x: bx, y: foot + w.px(16), w: widths[i], h: w.px(40)})
 		bx += widths[i] + w.px(10)
 	}
+	// Panneau : marque en haut ; repère, étapes et version en bas, sur la partie noire du voile.
+	n := len(p.steps)
+	for i, name := range p.steps {
+		cy := H - w.px(70) - float64(n-1-i)*w.px(40)
+		w.g["step"+itoa(i)] = cy
+		col, wt := colPanelSoft, 400
+		if i == p.step {
+			col, wt = colInk, 600
+		}
+		w.text(13.5, wt, col, w.px(60), cy-w.px(11), side-w.px(72), w.px(22), dtSingleLine|dtVCenter, name)
+	}
+	w.text(11.5, 400, colPanelSoft, w.px(24), H-w.px(38), side-w.px(40), w.px(18), dtSingleLine, "Version "+version)
+	pill := 0.0
+	if n > 0 {
+		pill = w.g["step0"] - w.px(11) - w.px(22)
+	}
+	w.layoutPanel(side, pill)
 	w.W, w.H = int(W), int(H)
 }
 
 func (w *uiWin) paintWizard(c *canvas) {
 	p := w.page
-	side := int(w.g["footX"])
-	// Colonne gris très sombre, filet à droite (#103 : plus de dégradé violet → rose).
-	c.fillRect(0, 0, side, w.H, colSide)
-	c.fillRect(side-int(math.Max(1, math.Round(w.s))), 0, side, w.H, colLine)
-	c.image(logoImage(int(w.px(56))), int(w.px(28)), int(w.px(32)))
 	white := rgb{255, 255, 255}
+	cx, r := w.px(34), w.px(10)
 	for i := range p.steps {
-		cx, cy, r := w.px(28)+w.px(10), w.px(188)+float64(i)*w.px(44)+w.px(11), w.px(10)
+		cy := w.g["step"+itoa(i)]
 		if i < len(p.steps)-1 { // trait vers l'étape suivante
-			lx := int(cx)
-			for y := int(cy + r + w.px(4)); y < int(cy+w.px(44)-r-w.px(4)); y++ {
+			lx, next := int(cx), w.g["step"+itoa(i+1)]
+			for y := int(cy + r + w.px(4)); y < int(next-r-w.px(4)); y++ {
 				c.blend(lx, y, white, 0.2)
 				if w.s > 1.25 {
 					c.blend(lx+1, y, white, 0.2)
 				}
 			}
 		}
-		bg := colSide
 		switch {
 		case i < p.step:
 			c.circle(cx, cy, r, white, 1)
 			s := int(w.px(12))
-			c.icon("check", int(cx)-s/2, int(cy)-s/2, s, 3, colSide)
+			c.icon("check", int(cx)-s/2, int(cy)-s/2, s, 3, colPanel)
 		case i == p.step:
 			c.circle(cx, cy, r, white, 1)
-			c.circle(cx, cy, r*0.42, colSide, 1)
+			c.circle(cx, cy, r*0.42, colPanel, 1)
 		default:
 			c.circle(cx, cy, r, colEdgeHi, 1)
-			c.circle(cx, cy, r-math.Max(1.5, w.px(1.5)), bg, 1)
+			c.circle(cx, cy, r-math.Max(1.5, w.px(1.5)), colPanel, 1)
 		}
 	}
 	if bx, ok := w.g["badgeX"]; ok {
@@ -1261,8 +1406,8 @@ func (w *uiWin) paintWizard(c *canvas) {
 		isz := int(w.px(26))
 		c.icon(p.icon, int(bx+w.px(24))-isz/2, int(by+w.px(24))-isz/2, isz, 2, hexc(tone[0]))
 	}
-	x0 := float64(side) + w.px(36)
-	cw := float64(w.W) - x0 - w.px(36)
+	x0 := w.g["footX"] + w.px(40)
+	cw := float64(w.W) - x0 - w.px(40)
 	if ry, ok := w.g["rowsY"]; ok {
 		c.roundRect(x0, ry, cw, w.g["rowsH"], w.px(16), solid(colRaised), 1)
 	}

@@ -55,7 +55,8 @@ func securitySpec(kind, title, msg string, actions []string) uiSpec {
 		body = "NEXORA ne peut pas s’ouvrir pour le moment. Réessayez dans un instant."
 	}
 	_ = msg // message détaillé : journal seulement
-	s := uiSpec{tone: tone, icon: icon, kicker: "VÉRIFICATION DE LA LICENCE", title: title, body: body, cancel: "quit", width: 480}
+	// #121 : surtitres affichés en repère « / … » à contour, comme sur l'écran de connexion de NEXORA.
+	s := uiSpec{tone: tone, icon: icon, kicker: "Vérification de la licence", title: title, body: body, cancel: "quit", width: 480}
 	primary := true
 	for _, a := range actions {
 		if a == "quit" {
@@ -109,7 +110,7 @@ var (
 
 func welcomePage(root string, update bool) wizPage {
 	p := wizPage{
-		step: 0, steps: installSteps, kicker: "ASSISTANT D’INSTALLATION", title: "Installer NEXORA Devs Toolbox",
+		step: 0, steps: installSteps, kicker: "Assistant d’installation", title: "Installer NEXORA Devs Toolbox",
 		body: "L’assistant va installer NEXORA Devs Toolbox sur ce PC. Aucun droit d’administrateur n’est nécessaire : tout est installé dans votre dossier personnel.",
 		rows: [][2]string{{"Dossier d’installation", root}, {"Espace nécessaire", "environ 450 Mo"}},
 		options: []uiOption{
@@ -130,7 +131,7 @@ func installProgressPage(update bool) wizPage {
 	if update {
 		t = "Mise à jour de NEXORA…"
 	}
-	return wizPage{step: 1, steps: installSteps, kicker: "INSTALLATION", title: t, body: "Patientez quelques minutes : NEXORA sera prêt dès la fin.",
+	return wizPage{step: 1, steps: installSteps, kicker: "Installation", title: t, body: "Patientez quelques minutes : NEXORA sera prêt dès la fin.",
 		progress: true, buttons: []uiButton{{"cancel", "Annuler", "secondary"}}, cancel: "cancel"}
 }
 
@@ -151,7 +152,7 @@ func installDonePage(update bool) wizPage {
 
 func uninstallPage(root string) wizPage {
 	return wizPage{
-		step: 0, steps: uninstallSteps, kicker: "DÉSINSTALLATION", title: "Désinstaller NEXORA Devs Toolbox",
+		step: 0, steps: uninstallSteps, kicker: "Désinstallation", title: "Désinstaller NEXORA Devs Toolbox",
 		body: "Le logiciel sera retiré de ce PC. Cochez ce que vous voulez aussi supprimer ; le reste est gardé pour une réinstallation.",
 		options: []uiOption{
 			{title: "Mes documents et projets", desc: "Documents\\NEXORA : sites et applications construites."},
@@ -163,7 +164,7 @@ func uninstallPage(root string) wizPage {
 }
 
 func uninstallProgressPage() wizPage {
-	return wizPage{step: 1, steps: uninstallSteps, kicker: "DÉSINSTALLATION", title: "Désinstallation de NEXORA…", body: "Patiente quelques secondes.", progress: true}
+	return wizPage{step: 1, steps: uninstallSteps, kicker: "Désinstallation", title: "Désinstallation de NEXORA…", body: "Patientez quelques secondes.", progress: true}
 }
 
 func uninstallBusyPage() wizPage {

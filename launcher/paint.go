@@ -487,13 +487,18 @@ func logoImage(size int) *image.NRGBA {
 
 // resizeArea : réduction par moyenne des surfaces (alpha prémultiplié), nette à toutes les tailles d'affichage.
 func resizeArea(src *image.NRGBA, n int) *image.NRGBA {
+	return resizeTo(src, n, n)
+}
+
+// resizeTo : même réduction vers une taille quelconque (#121 : rendus de la mosaïque, qui ne sont pas carrés).
+func resizeTo(src *image.NRGBA, nw, nh int) *image.NRGBA {
 	sw, sh := src.Bounds().Dx(), src.Bounds().Dy()
 	pre := make([]float64, sw*sh*4)
 	for i := 0; i < sw*sh; i++ {
 		a := float64(src.Pix[i*4+3]) / 255
 		pre[i*4], pre[i*4+1], pre[i*4+2], pre[i*4+3] = float64(src.Pix[i*4])*a, float64(src.Pix[i*4+1])*a, float64(src.Pix[i*4+2])*a, a
 	}
-	axis := func(srcLen int) [][]struct {
+	axis := func(srcLen, n int) [][]struct {
 		i int
 		w float64
 	} {
@@ -525,27 +530,27 @@ func resizeArea(src *image.NRGBA, n int) *image.NRGBA {
 		}
 		return out
 	}
-	ax, ay := axis(sw), axis(sh)
-	tmp := make([]float64, n*sh*4)
+	ax, ay := axis(sw, nw), axis(sh, nh)
+	tmp := make([]float64, nw*sh*4)
 	for y := 0; y < sh; y++ {
-		for x := 0; x < n; x++ {
+		for x := 0; x < nw; x++ {
 			for _, t := range ax[x] {
 				for k := 0; k < 4; k++ {
-					tmp[(y*n+x)*4+k] += pre[(y*sw+t.i)*4+k] * t.w
+					tmp[(y*nw+x)*4+k] += pre[(y*sw+t.i)*4+k] * t.w
 				}
 			}
 		}
 	}
-	dst := image.NewNRGBA(image.Rect(0, 0, n, n))
-	for y := 0; y < n; y++ {
-		for x := 0; x < n; x++ {
+	dst := image.NewNRGBA(image.Rect(0, 0, nw, nh))
+	for y := 0; y < nh; y++ {
+		for x := 0; x < nw; x++ {
 			var acc [4]float64
 			for _, t := range ay[y] {
 				for k := 0; k < 4; k++ {
-					acc[k] += tmp[(t.i*n+x)*4+k] * t.w
+					acc[k] += tmp[(t.i*nw+x)*4+k] * t.w
 				}
 			}
-			i := (y*n + x) * 4
+			i := (y*nw + x) * 4
 			if acc[3] > 0 {
 				dst.Pix[i], dst.Pix[i+1], dst.Pix[i+2] = uint8(math.Min(255, acc[0]/acc[3]+0.5)), uint8(math.Min(255, acc[1]/acc[3]+0.5)), uint8(math.Min(255, acc[2]/acc[3]+0.5))
 			}
