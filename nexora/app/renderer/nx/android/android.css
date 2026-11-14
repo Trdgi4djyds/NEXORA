@@ -409,3 +409,37 @@
 .ab-app .nxm-ad-txt b { font-size: 11.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ab-app .nxm-ad-txt small { font-size: 10px; color: #5f6368; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ab-app .nxm-ad-btn { font-size: 11px; font-weight: 600; color: #fff; background: #1a73e8; border-radius: 999px; padding: 5px 10px; }
+
+/* NEXORA #120 : projet à serveur (Laravel…) dans la section Source : deux façons de construire l'APK. */
+.nxab-srv { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+.nxab-srv-head { display: flex; align-items: flex-start; gap: 12px; }
+.nxab-srv-head b { display: block; font-size: 13.5px; font-weight: 650; color: var(--text); }
+.nxab-srv-head p { margin: 3px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--text-2); }
+.nxab-srv-ic { flex: none; width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; color: var(--text); background: var(--fill-2); }
+.nxab-srv-opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.nxab-srv-opt { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 14px; border-radius: 14px; background: var(--fill-2); box-shadow: inset 0 0 0 0.5px var(--sep); }
+.nxab-srv-opt.muted p { color: var(--text-2); }
+.nxab-srv-opt h4 { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 13px; font-weight: 650; color: var(--text); }
+.nxab-srv-opt h4 em { margin-left: auto; padding: 2px 9px; border-radius: 999px; font-style: normal; font-size: 10.5px; font-weight: 600; color: var(--text-2); box-shadow: inset 0 0 0 1px var(--sep-strong); }
+.nxab-srv-opt > p { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text-2); }
+.nxab-srv-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.nxab-srv-row .input { flex: 1 1 180px; min-width: 0; height: 34px; }
+.nxab-srv-row[hidden] { display: none; }
+.nxab-srv-checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.nxab-srv-checks li { display: flex; align-items: center; gap: 7px; font-size: 12px; line-height: 1.4; color: var(--text-2); }
+.nxab-srv-checks li > svg { flex: none; }
+.nxab-srv-checks li.ok > svg { color: #1f9d55; }
+.nxab-srv-checks li.bad { color: var(--text); }
+.nxab-srv-checks li.bad > svg { color: #d97706; }
+.nxab-srv-checks li .btn { margin-left: auto; }
+.nxab-srv-live { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 0.5px var(--sep); }
+.nxab-srv-live b { display: block; font-size: 12.5px; font-weight: 650; color: var(--text); }
+.nxab-srv-live code { display: block; margin-top: 2px; font-size: 13px; font-weight: 600; color: var(--text); user-select: all; word-break: break-all; }
+.nxab-srv-live small { display: block; margin-top: 3px; font-size: 11px; color: var(--text-2); }
+.nxab-srv-dot { flex: none; width: 9px; height: 9px; margin-top: 5px; border-radius: 50%; background: #1f9d55; box-shadow: 0 0 0 3px color-mix(in srgb, #1f9d55 22%, transparent); }
+.nxab-srv-warn { margin: 0; font-size: 12px; color: #b45309; }
+.nxab-srv-note { display: flex; align-items: flex-start; gap: 6px; margin: 0; font-size: 11.5px; line-height: 1.45; color: var(--text-2); }
+.nxab-srv-note > svg { flex: none; margin-top: 2px; }
+html[data-theme='dark'] .nxab-srv-checks li.ok > svg { color: #4cd280; }
+html[data-theme='dark'] .nxab-srv-checks li.bad > svg { color: #fbbf24; }
+@media (max-width: 1100px) { .nxab-srv-opts { grid-template-columns: minmax(0, 1fr); } }

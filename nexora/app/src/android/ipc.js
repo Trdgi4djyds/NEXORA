@@ -13,6 +13,8 @@ const {
 } = require('./push');
 // NEXORA #073 : offre vérifiée hors des canaux (envois programmés décomptés, messagerie réservée à Pro).
 const plan = require('../plan');
+// NEXORA #120 : projets à serveur (Laravel…) : détection et serveur de test sur le réseau local.
+const serveur = require('./serveur');
 
 /* NEXORA #016 : chaque application a son propre dossier de sortie. Un fichier .nexora-app.json y note
  * l'identifiant de l'application ; si le dossier appartient déjà à une autre application (même nom
@@ -497,6 +499,20 @@ function register({
   });
   ipcMain.handle('android:inspect-dir', (_e, dir) => inspectDir(dir));
   ipcMain.handle('android:build-web', async (_e, dir) => buildWeb(dir, (l) => send('android:log', l)));
+  // NEXORA #120 : projet Laravel (ou autre projet PHP) : vérifications, puis serveur de test ouvert au réseau local,
+  // fichiers construits d'abord par Vite s'ils manquent ; l'APK pointe ensuite sur l'adresse de ce PC.
+  ipcMain.handle('android:server-check', (_e, dir) => serveur.check(dir));
+  ipcMain.handle('android:server-start', async (_e, dir) => {
+    const log = (l) => send('android:log', l);
+    const info = serveur.detect(dir);
+    if (info && info.kind === 'laravel' && info.vite && !serveur.laravelChecks(dir).built) {
+      log('Fichiers de l’interface absents (public/build) : construction avec Vite.');
+      await buildWeb(dir, log);
+    }
+    return serveur.start(dir, { log });
+  });
+  ipcMain.handle('android:server-stop', (_e, dir) => serveur.stop(dir));
+  app.on('before-quit', () => serveur.stopAll());
   ipcMain.handle('android:default-out', (_e, name, appId) => freeOutDir(path.join(app.getPath('documents'), 'NEXORA', 'Applications', String(name || 'application').replace(/[<>:"/\\|?*]+/g, '-')), appId));
   ipcMain.handle('android:reveal', (_e, file) => shell.showItemInFolder(file));
   // Inspection PWA (comme PWABuilder) et génération des fichiers manquants.
@@ -572,8 +588,12 @@ function inspectDir(dir) {
   const flutter = fs.existsSync(path.join(dir, 'pubspec.yaml'));
   const candidates = BUILD_DIRS.map((d) => path.join(dir, d)).filter(has);
   const www = candidates[0] || (has(dir) && !pkg ? dir : null);
+  // NEXORA #120 : projet à serveur (Laravel…) : il n'a jamais de index.html construit ; l'interface propose alors
+  // l'adresse du site en ligne ou le serveur de test (serveur.js) au lieu de « lancez la construction du projet ».
+  const found = serveur.detect(dir);
+  const server = found && (found.kind !== 'php' || !www) ? found : null;
   return {
-    ok: true, dir, www, candidates, canBuild: Boolean((pkg && pkg.scripts && pkg.scripts.build) || flutter), flutter, name: (pkg && (pkg.productName || pkg.name)) || path.basename(dir),
+    ok: true, dir, www: server ? null : www, candidates, canBuild: Boolean((pkg && pkg.scripts && pkg.scripts.build) || flutter), flutter, name: (pkg && (pkg.productName || pkg.name)) || path.basename(dir), server,
   };
 }
 

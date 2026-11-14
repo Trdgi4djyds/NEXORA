@@ -32,25 +32,49 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
   // descend (l'attribut data-tucked n'est plus posé).
   const bar = useRef<HTMLElement>(null)
   useEffect(() => {
+    // #120 : hauteur de la page mesurée seulement quand elle change (ResizeObserver, redimensionnement) et plus à
+    // chaque image : lue juste après les écritures des autres effets de défilement, elle forçait un recalcul complet
+    // de la mise en page à chaque image (latence au défilement). Pendant le défilement, seul scrollY est lu.
+    // scrollY est lu dans l'évènement « scroll », avant les écritures des rappels d'image : lu dans le rappel, après
+    // les écritures de lib/depth.ts, il forçait lui aussi un recalcul de la mise en page.
     let raf = 0
+    let max = 0
+    let y = window.scrollY
+    let scrolled: boolean | null = null
+    // Barre de lecture animée par le CSS (animation liée au défilement) quand le navigateur le permet.
+    const cssBar = typeof CSS !== "undefined" && typeof CSS.supports === "function" && CSS.supports("animation-timeline: scroll()")
+    const measure = () => {
+      if (!cssBar) max = document.documentElement.scrollHeight - window.innerHeight
+    }
     const update = () => {
       raf = 0
-      const y = window.scrollY
-      setScrolled(y > 8)
-      const el = ref.current
-      if (el) delete el.dataset.tucked
-      const max = document.documentElement.scrollHeight - window.innerHeight
-      if (bar.current) bar.current.style.transform = `scaleX(${max > 0 ? Math.min(1, y / max) : 0})`
+      const s = y > 8
+      if (s !== scrolled) {
+        scrolled = s
+        setScrolled(s)
+      }
+      if (bar.current && !cssBar) bar.current.style.transform = `scaleX(${max > 0 ? Math.min(1, y / max) : 0})`
     }
     const on = () => {
+      y = window.scrollY
       if (!raf) raf = requestAnimationFrame(update)
     }
+    const onResize = () => {
+      measure()
+      on()
+    }
+    const el = ref.current
+    if (el) delete el.dataset.tucked
+    measure()
     update()
+    const ro = typeof ResizeObserver === "function" ? new ResizeObserver(onResize) : null
+    ro?.observe(document.body)
     window.addEventListener("scroll", on, { passive: true })
-    window.addEventListener("resize", on)
+    window.addEventListener("resize", onResize)
     return () => {
+      ro?.disconnect()
       window.removeEventListener("scroll", on)
-      window.removeEventListener("resize", on)
+      window.removeEventListener("resize", onResize)
       cancelAnimationFrame(raf)
     }
   }, [])

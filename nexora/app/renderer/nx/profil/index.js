@@ -27,6 +27,8 @@ export async function install() {
   for (const [k, v] of Object.entries(MORE_ICONS)) if (!ICONS[k]) ICONS[k] = v;
   loadCss();
   compte.wireBanner();
-  globalThis.__nxCompte = { sheet: compte.sheet, profile: compte.profile };
+  // NEXORA #120 : onglet Sécurité et contrôle du mot de passe actuel (changement de mot de passe et d'adresse).
+  compte.wireSecurity();
+  globalThis.__nxCompte = { sheet: compte.sheet, profile: compte.profile, security: compte.security };
   globalThis.__nxReglages = { sheet: reglages.open, pop: reglages.pop };
 }

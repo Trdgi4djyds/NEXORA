@@ -84,7 +84,8 @@ function lockCards() {
         if (ov) ov.remove();
         continue;
       }
-      el.classList.add('nxo-card-locked');
+      // NEXORA #120 : classe posée seulement si elle manque (un ajout réécrit l'attribut et réveille les observateurs).
+      if (!el.classList.contains('nxo-card-locked')) el.classList.add('nxo-card-locked');
       // Contenu inerte (ni clic ni clavier), y compris ce qu'un redessin partiel ajoute ensuite.
       for (const c of el.children) if (c !== ov && !c.hasAttribute('inert')) c.setAttribute('inert', '');
       if (!ov && f.compact) {

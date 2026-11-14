@@ -351,8 +351,20 @@ function hookProject(d) {
   if (d.editor) hookEditor(d);
 }
 
+// NEXORA #120 : l'éditeur (Monaco, 3,7 Mo de code) est préparé pendant un temps libre, caché derrière l'écran
+// d'accueil du Dev Lab : le premier fichier s'ouvre aussitôt au lieu d'attendre le chargement. Rien en mode
+// « Code Editor », qui n'utilise pas cet éditeur.
+function warmEditor(d) {
+  const idle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1500));
+  idle(() => {
+    if (d.editor || (d.st && d.st.mode === 'vscode') || typeof d.ensureEditor !== 'function') return;
+    d.ensureEditor().catch(() => {});
+  }, { timeout: 4000 });
+}
+
 export async function install(d) {
   link();
+  warmEditor(d);
   hookProject(d);
   guardGit();
   inject(d);

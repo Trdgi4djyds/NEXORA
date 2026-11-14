@@ -267,6 +267,8 @@ function register({
     try { await vscode.start({ prefer }); return { url: vscode.folderUrl(dir || root) }; } catch (e) { return { error: e.message }; }
   });
   ipcMain.handle('dev:vscode-stop', () => { vscode.stop(); return true; });
+  // NEXORA #120 : démarrage anticipé de Code Editor au lancement de NEXORA (s'il était ouvert la dernière fois).
+  ipcMain.handle('dev:vscode-warm', () => vscode.warm());
   ipcMain.handle('dev:ext-search', async (_e, q) => { try { return await exts.search(q); } catch (e) { return { error: e.message }; } });
   ipcMain.handle('dev:ext-install', async (_e, q) => { try { return await exts.install(q); } catch (e) { return { error: e.message }; } });
   ipcMain.handle('dev:ext-uninstall', (_e, id) => exts.uninstall(id));

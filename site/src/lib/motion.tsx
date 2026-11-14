@@ -27,6 +27,33 @@ export function useReducedMotion() {
   return reduced
 }
 
+// #120 : un seul IntersectionObserver par jeu d'options pour tout le site (il y en avait un par bloc animé, soit
+// des centaines de calculs d'intersection séparés à chaque image pendant le défilement).
+type Watch = (visible: boolean) => void
+const pools = new Map<string, { io: IntersectionObserver; watchers: Map<Element, Watch> }>()
+function watchVisibility(el: Element, margin: string, threshold: number, cb: Watch) {
+  const key = `${margin}|${threshold}`
+  let pool = pools.get(key)
+  if (!pool) {
+    const watchers = new Map<Element, Watch>()
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) watchers.get(e.target)?.(e.isIntersecting)
+      },
+      { rootMargin: margin, threshold },
+    )
+    pool = { io, watchers }
+    pools.set(key, pool)
+  }
+  const p = pool
+  p.watchers.set(el, cb)
+  p.io.observe(el)
+  return () => {
+    p.watchers.delete(el)
+    p.io.unobserve(el)
+  }
+}
+
 /** Vrai tant que l'élément est (au moins en partie) visible ; `once` : reste vrai après la première apparition. */
 export function useInView<T extends Element>(
   ref: RefObject<T | null>,
@@ -40,17 +67,14 @@ export function useInView<T extends Element>(
       setInView(true)
       return
     }
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true)
-          if (once) io.disconnect()
-        } else if (!once) setInView(false)
-      },
-      { rootMargin: margin, threshold },
-    )
-    io.observe(el)
-    return () => io.disconnect()
+    let stop = () => {}
+    stop = watchVisibility(el, margin, threshold, (visible) => {
+      if (visible) {
+        setInView(true)
+        if (once) stop()
+      } else if (!once) setInView(false)
+    })
+    return () => stop()
   }, [ref, once, margin, threshold])
   return inView
 }
@@ -72,7 +96,9 @@ export function Reveal({
   [key: string]: unknown
 }) {
   const ref = useRef<HTMLElement>(null)
-  const seen = useInView(ref, { once: true, margin: "0px 0px -8% 0px" })
+  // #120 : apparition lancée un peu avant que le bloc entre à l'écran (marge basse positive) : il est déjà en place
+  // quand on l'atteint, au lieu d'apparaître après coup (impression de retard au défilement).
+  const seen = useInView(ref, { once: true, margin: "0px 0px 15% 0px" })
   return createElement(
     as,
     {

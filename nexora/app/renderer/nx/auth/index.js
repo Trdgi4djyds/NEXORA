@@ -9,6 +9,7 @@
 // s'applique.
 import { a as ICONS } from '../../dist/chunks/chunk-S4I2LXHS.js';
 import { ico } from '../core.js';
+import { score, passwordProblem, emailProblem } from './motdepasse.js';
 
 const LOGO = new URL('../../logo.png', import.meta.url).href;
 
@@ -141,18 +142,39 @@ export function sheet(mode = 'login') {
 
 /* ---------------------------------------------------------------- mot de passe : affichage et robustesse */
 
-const LEVELS = ['8 caractères minimum', 'Faible', 'Correct', 'Bon', 'Excellent'];
-export function score(pw) {
-  if (!pw || pw.length < 8) return 0;
-  let s = 1;
-  if (pw.length >= 12) s++;
-  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) s++;
-  if (/\d/.test(pw) && /[^A-Za-z0-9]/.test(pw)) s++;
-  else if (/\d/.test(pw) || /[^A-Za-z0-9]/.test(pw)) s += 0.5;
-  return Math.min(4, Math.floor(s));
-}
+// NEXORA #120 : robustesse calculée par motdepasse.js ; « Trop faible » est refusé à l'envoi.
+const LEVELS = ['8 caractères minimum', 'Trop faible', 'Correct', 'Bon', 'Excellent'];
+export { score };
 
 function bind() {
+  // NEXORA #120 : inscription et nouveau mot de passe refusés si l'adresse est invalide ou le mot de passe trop faible,
+  // trop courant ou tiré de l'adresse ou du nom ; message dans le formulaire, rien n'est envoyé au serveur. Écouteur
+  // en phase de capture : il passe avant celui de la fenêtre de connexion (chunk-EOM7FQDL.js).
+  document.addEventListener('submit', (e) => {
+    const form = e.target && e.target.closest && e.target.closest('form.nxl-form[data-auth]');
+    if (!form || !['signup', 'reset'].includes(form.dataset.auth)) return;
+    const val = (n) => (form.querySelector(`[name="${n}"]`) || {}).value || '';
+    let problem = '';
+    let field = 'password';
+    if (form.dataset.auth === 'signup') {
+      problem = emailProblem(val('email'));
+      if (problem) field = 'email';
+      else problem = passwordProblem(val('password'), { email: val('email'), name: val('name') });
+    } else {
+      problem = passwordProblem(val('password'));
+      if (!problem && val('password') !== val('password2')) { problem = 'Les deux mots de passe ne correspondent pas.'; field = 'password2'; }
+    }
+    if (!problem) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const msg = form.querySelector('[data-msg]');
+    if (msg) { msg.className = 'nx-msg bad'; msg.textContent = problem; }
+    const input = form.querySelector(`[name="${field}"]`);
+    if (input) { input.setAttribute('aria-invalid', 'true'); input.focus(); }
+  }, true);
+  document.addEventListener('input', (e) => {
+    if (e.target && e.target.matches && e.target.matches('.nxl-form [aria-invalid]')) e.target.removeAttribute('aria-invalid');
+  });
   document.addEventListener('click', (e) => {
     const eye = e.target.closest('[data-nxl-eye]');
     if (!eye) return;

@@ -1,0 +1,15 @@
+{
+  "$comment": "NEXORA #120 : application de l'App Builder construite depuis un projet Laravel + Inertia + Vue sur le PC (section Source).",
+  "android": {
+    "current": "nx-demo-laravel",
+    "section": "source",
+    "apps": [
+      {
+        "id": "nx-demo-laravel",
+        "appName": "Boutique Laravel",
+        "appId": "fr.boutique.laravel",
+        "source": { "kind": "project", "dir": "C:\\Projets\\boutique-laravel", "www": "" }
+      }
+    ]
+  }
+}

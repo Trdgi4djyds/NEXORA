@@ -14,6 +14,7 @@ export const NOTES = {
   // site ouvert (republiée en v1.2.2-r7).
   // NEXORA #118 : modèles « photo » de NEX-DESIGN, mises en scène réalistes et contour de sélection du Studio
   // (republiée en v1.2.2-r8). #119 : fenêtre de connexion en mosaïque, « Chargement », lanceur 1.0.7 (v1.2.2-r9).
+  // #120 : projets Laravel dans l'App Builder, compte mieux protégé, éditeurs plus rapides, Studio plus léger (v1.2.2-r10).
   '1.2.2': {
     title: 'NEXORA 1.2.2',
     intro: 'Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.',
@@ -34,6 +35,10 @@ export const NOTES = {
       { icon: 'phone', space: 'responsive', title: 'Galaxy S24 fidèle', text: 'Le Galaxy S24 a son propre modèle, avec les dimensions et les coloris officiels de Samsung. La caméra frontale et l’île des iPhone restent visibles quand aucun site n’est ouvert.' },
       { icon: 'user', space: '', title: 'NEXORA vous vouvoie', text: 'Toute l’interface, les e-mails et les messages s’adressent désormais à vous en vous vouvoyant. Les Réglages ne montrent plus de détail technique propre à NEXORA.' },
       { icon: 'user', space: '', title: 'Nouvelle fenêtre de connexion', text: 'La connexion et l’inscription s’ouvrent sur une mosaïque de vrais visuels créés dans NEX-DESIGN et le Studio 3D, qui défile doucement. À l’ouverture, NEXORA affiche simplement « Chargement ».' },
+      { icon: 'android', space: 'android', title: 'Projets Laravel dans l’App Builder', text: 'Un projet Laravel (avec Inertia et Vue ou React), Symfony ou PHP est reconnu : l’APK s’ouvre sur l’adresse de votre site en ligne, ou sur un serveur de test que NEXORA lance sur ce PC (php artisan serve, fichiers construits par Vite) pour l’essayer sur un téléphone connecté au même Wi-Fi.' },
+      { icon: 'lock', space: '', title: 'Compte mieux protégé', text: 'Changer de mot de passe ou d’adresse e-mail demande votre mot de passe actuel ; un mot de passe trop simple ou trop courant est refusé, à l’inscription comme dans Mon compte. Le fuseau horaire se choisit dans une liste.' },
+      { icon: 'code', space: 'dev', title: 'Éditeurs de code plus rapides', text: 'L’éditeur du Dev Lab est prêt avant l’ouverture du premier fichier. Code Editor démarre à l’avance, garde sa version et son cache d’une ouverture à l’autre et s’ouvre sur une zone vide, sans filigrane.' },
+      { icon: 'cube', space: 'studio', title: 'NEXORA plus léger', text: 'Le Studio ne redessine plus sa scène quand rien ne bouge et ne tourne plus en arrière-plan une fois quitté : moins de processeur et de batterie dans tous les espaces.' },
       { icon: 'key', space: '', title: 'Lanceur 1.0.7', text: 'Le lanceur NEXORA Devs Toolbox prend la même apparence, vous vouvoie, affiche « Chargement… » à l’ouverture et se met à jour tout seul avant d’installer cette version.' },
     ],
   },

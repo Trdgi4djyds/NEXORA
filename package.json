@@ -13,6 +13,8 @@
     "test:licences": "node scripts/test-licences.mjs",
     "test:parrainage": "node scripts/test-parrainage.mjs",
     "test:securite": "node scripts/test-securite.mjs",
+    "test:compte": "node scripts/test-compte.mjs",
+    "mesures": "node scripts/mesures.mjs",
     "test:novx": "node scripts/test-novx.mjs",
     "test:devlab": "node scripts/test-devlab.mjs",
     "test:design": "node scripts/test-design.mjs",

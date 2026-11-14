@@ -5,9 +5,13 @@
 // si bien que l'enregistrement, la photo, l'e-mail et la navigation fonctionnent sans autre changement.
 // NEXORA #047 : bannière de profil personnalisée (image choisie ou déposée, recadrée au format large), rangée
 // dans le même dossier personnel que la photo ; son adresse est gardée dans les données du compte (banner_url).
+// NEXORA #120 : fuseau horaire au choix (liste de tous les fuseaux, celui de l'ordinateur proposé) ; mot de passe
+// actuel exigé pour changer le mot de passe ou l'adresse e-mail (vérifié par une vraie connexion avant l'envoi),
+// nouveau mot de passe trop faible refusé ; onglet Sécurité fourni ici (crochet security de chunk-EOM7FQDL.js).
 import { b as sb, c as errText, e as cloud, u as avatar } from '../../dist/chunks/chunk-EZKHFSAB.js';
 import { ico, esc, toast } from '../core.js';
 import { FALLBACK, money } from '../offres/catalog.js';
+import { score, passwordProblem, emailProblem } from '../auth/motdepasse.js';
 
 // NEXORA #037 : offres Gratuit, Standard et Pro (Équipe et Entreprise : anciennes offres, passées à Pro).
 const PLANS = { free: 'Gratuit', standard: 'Pro', pro: 'Pro', team: 'Pro', enterprise: 'Pro' };
@@ -278,6 +282,168 @@ function used(u, key) {
   return v == null || !Number.isFinite(n) ? null : n;
 }
 
+// ------------------------------------------------------------------ fuseau horaire (#120)
+// Tous les fuseaux reconnus par le moteur (Intl), groupés par région, triés par décalage puis par ville ; celui de
+// l'ordinateur est choisi tant que le compte n'en a pas.
+const REGIONS = { Africa: 'Afrique', America: 'Amérique', Antarctica: 'Antarctique', Arctic: 'Arctique', Asia: 'Asie', Atlantic: 'Atlantique', Australia: 'Australie', Europe: 'Europe', Indian: 'Océan Indien', Pacific: 'Pacifique' };
+export function systemZone() {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; }
+}
+function zoneOffset(zone, now) {
+  try {
+    const part = new Intl.DateTimeFormat('en-US', { timeZone: zone, timeZoneName: 'longOffset' }).formatToParts(now).find((x) => x.type === 'timeZoneName');
+    const v = part ? part.value.replace(/^GMT/, '') : '';
+    return /^[+-]\d{2}:\d{2}$/.test(v) ? v : '+00:00';
+  } catch { return '+00:00'; }
+}
+const offsetMinutes = (o) => { const m = /^([+-])(\d{2}):(\d{2})$/.exec(o); return m ? (m[1] === '-' ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3])) : 0; };
+let ZONES = null;
+function zones() {
+  if (ZONES) return ZONES;
+  let list = [];
+  try { list = Intl.supportedValuesOf('timeZone'); } catch { list = []; }
+  if (!list.includes('UTC')) list = [...list, 'UTC'];
+  const now = new Date();
+  ZONES = list.map((z) => {
+    const [region, ...rest] = z.split('/');
+    const off = zoneOffset(z, now);
+    return { z, region: rest.length ? (REGIONS[region] || region) : 'Autres', city: (rest.length ? rest.join(' / ') : z).replace(/_/g, ' '), off, mins: offsetMinutes(off) };
+  });
+  return ZONES;
+}
+const zoneLabel = (x) => `(UTC${x.off === '+00:00' ? '' : x.off}) ${x.city}`;
+function zoneField(current) {
+  const cur = current || systemZone();
+  const all = zones();
+  const groups = new Map();
+  for (const x of all) { if (!groups.has(x.region)) groups.set(x.region, []); groups.get(x.region).push(x); }
+  const names = [...groups.keys()].sort((a, b) => (a === 'Autres') - (b === 'Autres') || a.localeCompare(b, 'fr'));
+  let options = all.some((x) => x.z === cur) ? '' : `<option value="${esc(cur)}" selected>${esc(cur)}</option>`;
+  for (const name of names) {
+    const items = groups.get(name).sort((a, b) => a.mins - b.mins || a.city.localeCompare(b.city, 'fr'));
+    options += `<optgroup label="${esc(name)}">${items.map((x) => `<option value="${esc(x.z)}"${x.z === cur ? ' selected' : ''}>${esc(zoneLabel(x))}</option>`).join('')}</optgroup>`;
+  }
+  const sys = systemZone();
+  const sysItem = all.find((x) => x.z === sys);
+  const hint = sys && sys !== cur
+    ? `<small class="nxc-hint">Fuseau de cet ordinateur : ${esc(sysItem ? zoneLabel(sysItem) : sys)} · <button type="button" class="link-btn" data-nxc-tz="${esc(sys)}">L’utiliser</button></small>`
+    : '<small class="nxc-hint">Fuseau de cet ordinateur.</small>';
+  return `<label class="nx-field"><span>Fuseau horaire</span><select class="input" name="timezone">${options}</select>${hint}</label>`;
+}
+
+// ------------------------------------------------------------------ sécurité (#120)
+// Onglet Sécurité (appelé par l'onglet « security » de chunk-EOM7FQDL.js) : mêmes formulaires et mêmes actions
+// (data-form="password", data-acc-act, data-del-confirm), avec le mot de passe actuel et la jauge de robustesse.
+export function security(devices = [], { when = (d) => d } = {}) {
+  const email = cloud.user ? cloud.user.email : '';
+  const list = (devices || []).map((n) => `<div class="nx-li">${ico(n.platform === 'web' ? 'globe' : 'laptop', 16)}<div><b>${esc(n.platform === 'web' ? 'Navigateur' : 'Application Windows')}${n.name ? ` · ${esc(n.name)}` : ''}</b><small>Dernière activité ${esc(when(n.last_seen_at))}${n.app_version ? ` · v${esc(n.app_version)}` : ''}</small></div></div>`).join('') || '<p class="nx-muted">Aucun appareil.</p>';
+  return `
+  <form class="nxc-card nx-form nxc-pass" data-form="password">
+    <div class="nxc-card-head"><span class="nxc-card-ic">${ico('lock', 15)}</span><div><h3>Mot de passe</h3><p>Confirmez d’abord votre mot de passe actuel. Le nouveau doit compter au moins 8 caractères et ne pas être trop simple.</p></div></div>
+    <input type="email" name="username" value="${esc(email)}" autocomplete="username" hidden>
+    <div class="nx-grid2 nxc-pass-grid">
+      <label class="nx-field nxc-span"><span>Mot de passe actuel</span><input class="input" type="password" name="current_password" required autocomplete="current-password"></label>
+      <label class="nx-field"><span>Nouveau mot de passe</span><input class="input" type="password" name="password" minlength="8" maxlength="72" required autocomplete="new-password">
+        <span class="nxl-meter nxc-meter" data-nxc-meter data-score="0"><i></i><i></i><i></i><i></i><em>8 caractères minimum</em></span></label>
+      <label class="nx-field"><span>Confirmation</span><input class="input" type="password" name="password2" minlength="8" maxlength="72" required autocomplete="new-password"></label>
+    </div>
+    <p class="nxc-hint">${ico('info', 13)}<span>Mot de passe oublié ? Déconnectez-vous, puis choisissez « Mot de passe oublié ? » sur l’écran de connexion.</span></p>
+    <div class="nx-actions"><button class="btn primary">Changer le mot de passe</button></div>
+  </form>
+  <section class="nxc-card">
+    <div class="nxc-card-head"><span class="nxc-card-ic">${ico('laptop', 15)}</span><div><h3>Appareils connectés</h3><p>Ordinateurs et navigateurs où votre compte est ouvert.</p></div></div>
+    <div class="nx-list">${list}</div>
+    <div class="nx-actions"><button type="button" class="btn" data-acc-act="logout-all">${ico('lock', 13)}<span>Se déconnecter partout</span></button></div>
+  </section>
+  <section class="nxc-card nx-danger">
+    <h3>Zone sensible</h3>
+    <p>Supprimer votre compte efface votre profil, votre espace personnel et ses contenus. Les équipes partagées sont confiées à un autre membre.</p>
+    <div class="nx-inline"><input class="input" data-del-confirm placeholder="Tapez SUPPRIMER pour confirmer" aria-label="Tapez SUPPRIMER pour confirmer"><button type="button" class="btn danger" data-acc-act="delete-account">Supprimer mon compte</button></div>
+  </section>`;
+}
+
+// Vrai contrôle du mot de passe actuel : une connexion au même compte (la session reste celle de cet utilisateur).
+async function verifyPassword(password) {
+  const email = cloud.user && cloud.user.email;
+  if (!email) throw new Error('Session expirée : reconnectez-vous.');
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (!error) return;
+  if (error.status === 400 || /invalid (login )?credentials|invalid_credentials/i.test(error.message || '')) throw new Error('Mot de passe actuel incorrect.');
+  throw new Error(errText(error));
+}
+
+const LEVELS = ['8 caractères minimum', 'Trop faible', 'Correct', 'Bon', 'Excellent'];
+
+// Changement du mot de passe ou de l'adresse : refusé tant que le mot de passe actuel n'est pas confirmé ou que le
+// nouveau est trop faible ; une fois vérifié, le formulaire repart vers son traitement d'origine (requestSubmit).
+// Écouteur en phase de capture : il passe avant celui de la fenêtre « Mon compte » (chunk-EOM7FQDL.js).
+let securityWired = false;
+export function wireSecurity() {
+  if (securityWired) return;
+  securityWired = true;
+  document.addEventListener('submit', async (e) => {
+    const form = e.target && e.target.closest && e.target.closest('form[data-form]');
+    if (!form || !['password', 'email'].includes(form.dataset.form) || !form.closest('#nxAccBody')) return;
+    if (form.dataset.nxcVerified === '1') { delete form.dataset.nxcVerified; return; }
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if (form.dataset.nxcBusy) return;
+    const val = (n) => (form.querySelector(`[name="${n}"]`) || {}).value || '';
+    const fail = (msg, field) => {
+      toast(msg, { kind: 'bad' });
+      const el = field && form.querySelector(`[name="${field}"]`);
+      if (el) { el.setAttribute('aria-invalid', 'true'); el.focus(); }
+    };
+    const email = cloud.user ? cloud.user.email : '';
+    const current = val('current_password');
+    if (form.dataset.form === 'password') {
+      const pw = val('password');
+      const problem = passwordProblem(pw, { email, name: cloud.profile && cloud.profile.full_name });
+      if (problem) return fail(problem, 'password');
+      if (pw !== val('password2')) return fail('Les deux mots de passe ne correspondent pas.', 'password2');
+      if (current && pw === current) return fail('Le nouveau mot de passe doit être différent de l’actuel.', 'password');
+    } else {
+      const next = val('email').trim();
+      const problem = emailProblem(next);
+      if (problem) return fail(problem, 'email');
+      if (next.toLowerCase() === String(email).toLowerCase()) return fail('C’est déjà l’adresse de votre compte.', 'email');
+    }
+    if (!current) return fail('Saisissez votre mot de passe actuel pour confirmer.', 'current_password');
+    const btn = form.querySelector('button:not([type=button])');
+    form.dataset.nxcBusy = '1';
+    if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }
+    try {
+      await verifyPassword(current);
+    } catch (err) {
+      return fail(err.message, 'current_password');
+    } finally {
+      delete form.dataset.nxcBusy;
+      if (btn) { btn.disabled = false; btn.removeAttribute('aria-busy'); }
+    }
+    const cur = form.querySelector('[name="current_password"]');
+    form.dataset.nxcVerified = '1';
+    form.requestSubmit();
+    if (cur) cur.value = '';
+  }, true);
+  document.addEventListener('input', (e) => {
+    const t = e.target;
+    if (!t || !t.closest || !t.closest('#nxAccBody')) return;
+    if (t.hasAttribute('aria-invalid')) t.removeAttribute('aria-invalid');
+    const meter = t.name === 'password' && t.closest('form[data-form="password"]') && t.closest('form').querySelector('[data-nxc-meter]');
+    if (!meter) return;
+    const s = score(t.value);
+    meter.dataset.score = String(s);
+    const left = 8 - t.value.length;
+    meter.querySelector('em').textContent = t.value && left > 0 ? `Encore ${left} caractère${left > 1 ? 's' : ''}` : LEVELS[s];
+  });
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('[data-nxc-tz]');
+    if (!b) return;
+    const sel = b.closest('form') && b.closest('form').querySelector('select[name="timezone"]');
+    if (sel) { sel.value = b.dataset.nxcTz; sel.dispatchEvent(new Event('change', { bubbles: true })); b.closest('.nxc-hint').textContent = 'Fuseau de cet ordinateur : enregistrez pour le garder.'; }
+  });
+}
+
 // Onglet Profil (appelé par l'onglet « profile » de chunk-EOM7FQDL.js).
 export async function profile() {
   const p = cloud.profile || {};
@@ -323,14 +489,16 @@ export async function profile() {
         <label class="nx-field"><span>Nom complet</span><input class="input" name="full_name" value="${esc(p.full_name || '')}" maxlength="80" autocomplete="name"></label>
         <label class="nx-field"><span>Entreprise</span><input class="input" name="company" value="${esc(p.company || '')}" maxlength="80" autocomplete="organization"></label>
         <label class="nx-field"><span>Fonction</span><input class="input" name="job_title" value="${esc(p.job_title || '')}" maxlength="80" autocomplete="organization-title"></label>
-        <label class="nx-field"><span>Fuseau horaire</span><input class="input" name="timezone" value="${esc(p.timezone || '')}" maxlength="60"></label>
+        ${zoneField(p.timezone)}
       </div>
       <div class="nx-actions"><button class="btn primary">Enregistrer</button></div>
     </form>
     <div class="nxc-stack">
       <form class="nxc-card nx-form" data-form="email">
-        <div class="nxc-card-head"><span class="nxc-card-ic">${ico('mail', 15)}</span><div><h3>Adresse e-mail</h3><p>Un lien de confirmation est envoyé à la nouvelle adresse.</p></div></div>
-        <div class="nx-inline"><input class="input" name="email" type="email" value="${esc(email)}" required autocomplete="email" aria-label="Adresse e-mail"><button class="btn">Changer</button></div>
+        <div class="nxc-card-head"><span class="nxc-card-ic">${ico('mail', 15)}</span><div><h3>Adresse e-mail</h3><p>Un lien de confirmation est envoyé à la nouvelle adresse. Confirmez avec votre mot de passe.</p></div></div>
+        <label class="nx-field"><span>Adresse e-mail</span><input class="input" name="email" type="email" value="${esc(email)}" required autocomplete="email"></label>
+        <label class="nx-field"><span>Mot de passe actuel</span><input class="input" name="current_password" type="password" required autocomplete="current-password"></label>
+        <div class="nx-actions"><button class="btn">Changer l’adresse</button></div>
       </form>
       <div class="nxc-card">
         <div class="nxc-card-head"><span class="nxc-card-ic">${ico('info', 15)}</span><div><h3>Votre compte</h3></div></div>

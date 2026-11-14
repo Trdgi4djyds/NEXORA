@@ -28,35 +28,39 @@ export function installGlow(): () => void {
     }
     return next
   }
-  const at = (el: HTMLElement, kx: string, ky: string) => {
-    const r = el.getBoundingClientRect()
-    el.style.setProperty(kx, `${Math.round(x - r.left)}px`)
-    el.style.setProperty(ky, `${Math.round(y - r.top)}px`)
-    return r
-  }
+  // #120 : toutes les lectures (élément sous le pointeur, positions) avant toute écriture : une lecture après une
+  // écriture forçait un recalcul de la mise en page, carte après carte, à chaque image.
   const frame = () => {
     raf = 0
     const hit = x < 0 ? null : (document.elementFromPoint(x, y) as HTMLElement | null)
+    const nextGroup = hit?.closest<HTMLElement>("[data-glow]") ?? null
+    const nextLight = hit?.closest<HTMLElement>("[data-light]") ?? null
+    const nextTilt = reduce.matches ? null : (hit?.closest<HTMLElement>("[data-tilt]") ?? null)
+    const cards = nextGroup
+      ? [...(nextGroup.classList.contains("glow") ? [nextGroup] : []), ...nextGroup.querySelectorAll<HTMLElement>(".glow")]
+      : []
+    const rects = cards.map((card) => card.getBoundingClientRect())
+    const lightRect = nextLight ? nextLight.getBoundingClientRect() : null
+    const tiltRect = nextTilt ? nextTilt.getBoundingClientRect() : null
 
-    group = swap(group, hit?.closest<HTMLElement>("[data-glow]") ?? null)
-    if (group) {
-      if (group.classList.contains("glow")) at(group, "--gx", "--gy")
-      group.querySelectorAll<HTMLElement>(".glow").forEach((card) => at(card, "--gx", "--gy"))
+    group = swap(group, nextGroup)
+    cards.forEach((card, i) => {
+      card.style.setProperty("--gx", `${Math.round(x - rects[i].left)}px`)
+      card.style.setProperty("--gy", `${Math.round(y - rects[i].top)}px`)
+    })
+    light = swap(light, nextLight)
+    if (light && lightRect) {
+      light.style.setProperty("--lx", `${Math.round(x - lightRect.left)}px`)
+      light.style.setProperty("--ly", `${Math.round(y - lightRect.top)}px`)
     }
-
-    light = swap(light, hit?.closest<HTMLElement>("[data-light]") ?? null)
-    if (light) at(light, "--lx", "--ly")
-
-    const next = reduce.matches ? null : (hit?.closest<HTMLElement>("[data-tilt]") ?? null)
-    if (tilt && tilt !== next) {
+    if (tilt && tilt !== nextTilt) {
       tilt.style.setProperty("--px", "0")
       tilt.style.setProperty("--py", "0")
     }
-    tilt = swap(tilt, next)
-    if (tilt) {
-      const r = tilt.getBoundingClientRect()
-      tilt.style.setProperty("--px", (((x - r.left) / r.width) * 2 - 1).toFixed(3))
-      tilt.style.setProperty("--py", (((y - r.top) / r.height) * 2 - 1).toFixed(3))
+    tilt = swap(tilt, nextTilt)
+    if (tilt && tiltRect && tiltRect.width && tiltRect.height) {
+      tilt.style.setProperty("--px", (((x - tiltRect.left) / tiltRect.width) * 2 - 1).toFixed(3))
+      tilt.style.setProperty("--py", (((y - tiltRect.top) / tiltRect.height) * 2 - 1).toFixed(3))
     }
   }
   const schedule = () => {
@@ -73,8 +77,17 @@ export function installGlow(): () => void {
     x = -1
     schedule()
   }
+  // #120 : rien pendant le défilement (la lumière n'a pas à suivre la page qui défile) : une seule mise à jour
+  // 140 ms après la fin du défilement, si le pointeur est toujours au-dessus de la page.
+  let settle = 0
   const scroll = () => {
-    if (x >= 0) schedule()
+    if (x < 0) return
+    if (raf) {
+      cancelAnimationFrame(raf)
+      raf = 0
+    }
+    clearTimeout(settle)
+    settle = window.setTimeout(schedule, 140)
   }
   window.addEventListener("pointermove", move, { passive: true })
   document.addEventListener("pointerout", out)
@@ -83,6 +96,7 @@ export function installGlow(): () => void {
     window.removeEventListener("pointermove", move)
     document.removeEventListener("pointerout", out)
     window.removeEventListener("scroll", scroll)
+    clearTimeout(settle)
     cancelAnimationFrame(raf)
   }
 }

@@ -45,6 +45,8 @@ load('secu', () => document.body, './secu/index.js');
 // NEXORA #052 : outils du Dev Lab (Problèmes, scripts, variables protégées, Git avancé, débogueur, API, tests,
 // dépendances, mise en ligne, contrôles, bases de données, assistant IA du projet), posés à la création du Dev Lab.
 load('devplus', () => state.devLab && state.devLab.el && state.devLab.st && state.devLab, './devplus/index.js');
+// NEXORA #120 : serveur de Code Editor démarré à l'avance s'il était ouvert la dernière fois.
+load('devwarm', () => settings.uiV2 && document.body, './devplus/demarrage.js');
 // NEXORA #053 : NEX-DESIGN (mise en page automatique, variables, variantes, prototype, code, accessibilité, polices,
 // série, impression, import, IA, icônes, versions, validation, équipe), posé après les fonctions du #011.
 load('designplus', () => state.design && state.design.ready && state.design.nxInstalled && state.design, './designplus/index.js');

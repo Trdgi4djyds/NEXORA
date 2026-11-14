@@ -13,9 +13,11 @@ import * as messaging from './messaging.js';
 // NEXORA #115 : créateur de logo et d'écran de démarrage, modules OneSignal, AdMob, Google Analytics et Meta.
 import * as brand from './brand.js';
 import * as modules from './modules.js';
+// NEXORA #120 : projets à serveur (Laravel…) : site en ligne ou serveur de test sur le réseau local.
+import * as serveur from './serveur.js';
 
 // messaging après ready : il complète ses contrôles (nxReadyGroups).
-const MODULES = [listing, insights, billing, home, ready, testers, messaging, brand, modules];
+const MODULES = [listing, insights, billing, home, ready, testers, messaging, brand, modules, serveur];
 
 function css() {
   if (document.querySelector('link[data-nx-android]')) return;

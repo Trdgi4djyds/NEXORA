@@ -10,23 +10,45 @@ export const comfort = opts;
 export function set(k, v) { opts()[k] = v; saveSettings(); }
 
 // Mesure des images par seconde et réduction de la résolution d'aperçu (jamais pendant un rendu).
+// NEXORA #120 : la mesure ne tourne que Studio affiché et fenêtre au premier plan ; elle continuait sinon 60 fois
+// par seconde dans tout NEXORA une fois le Studio ouvert, et réécrivait le badge chaque seconde, ce qui réveillait
+// les observateurs du DOM et faisait redessiner la scène 3D au repos. Le badge n'est réécrit que s'il change.
 export function watch(S) {
   if (S.sxWatch) return; S.sxWatch = true;
   let last = performance.now(); let n = 0; let low = 0; let high = 0; S.sxFps = 60; S.sxScale = 1;
+  let running = false;
   const r = S.three.renderer; const base = () => (S.sxBasePr || (S.sxBasePr = r.getPixelRatio()));
   const tick = (now) => {
+    if (S.visible === false || document.hidden) { running = false; return; }
     requestAnimationFrame(tick); n++;
     if (now - last < 1000) return;
     S.sxFps = Math.round(n * 1000 / (now - last)); n = 0; last = now;
     const badge = S.$.frame && S.$.frame.parentElement && S.$.frame.parentElement.querySelector('.sx-fps');
-    if (badge) { badge.hidden = !opts().fps; badge.textContent = `${S.sxFps} i/s${S.sxScale < 1 ? ' · aperçu allégé' : ''}`; }
+    if (badge) {
+      const show = Boolean(opts().fps);
+      if (badge.hidden === show) badge.hidden = !show;
+      const text = `${S.sxFps} i/s${S.sxScale < 1 ? ' · aperçu allégé' : ''}`;
+      if (show && badge.textContent !== text) badge.textContent = text;
+    }
     if (S.exporting || !opts().adaptive) { if (S.sxScale !== 1 && !S.exporting) { S.sxScale = 1; r.setPixelRatio(base()); S.resize && S.resize(); } return; }
     const busy = S.playing || S.sxDragging;
     if (busy && S.sxFps < 28) { low++; high = 0; } else if (S.sxFps > 50 || !busy) { high++; low = 0; }
     if (low >= 2 && S.sxScale > 0.6) { S.sxScale = Math.max(0.6, S.sxScale - 0.2); r.setPixelRatio(base() * S.sxScale); S.resize && S.resize(); low = 0; S.dirty = true; }
     if (high >= 3 && S.sxScale < 1) { S.sxScale = Math.min(1, S.sxScale + 0.2); r.setPixelRatio(base() * S.sxScale); S.resize && S.resize(); high = 0; S.dirty = true; }
   };
-  requestAnimationFrame(tick);
+  const start = () => {
+    if (running || S.visible === false || document.hidden) return;
+    running = true; last = performance.now(); n = 0;
+    requestAnimationFrame(tick);
+  };
+  start();
+  // Le Studio redevient visible (retour dans l'espace) ou la fenêtre revient au premier plan : la mesure reprend.
+  if (typeof S.resume === 'function' && !S.sxResumeWatch) {
+    S.sxResumeWatch = true;
+    const resume = S.resume;
+    S.resume = function (...args) { const out = resume.apply(this, args); start(); return out; };
+  }
+  document.addEventListener('visibilitychange', start);
   const cv = S.$.canvas;
   if (cv) { cv.addEventListener('pointerdown', () => { S.sxDragging = true; }); addEventListener('pointerup', () => { S.sxDragging = false; }); }
   const host = S.$.frame && S.$.frame.parentElement;

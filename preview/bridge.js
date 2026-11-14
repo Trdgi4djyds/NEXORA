@@ -493,6 +493,38 @@
       running: false,
       url: null,
     }),
+    // NEXORA #120 : démarrage anticipé de Code Editor au lancement : rien à démarrer dans l'aperçu.
+    "dev:vscode-warm": () => ({ warmed: false }),
+    // NEXORA #120 : App Builder, projet à serveur (scripts/reglages-captures/app-laravel.json) : un dossier dont le
+    // nom contient « laravel » est un projet Laravel + Inertia + Vue prêt, sans fichiers construits ; le serveur de
+    // test est simulé (journal de construction puis adresse sur le réseau local), sans rien lancer.
+    "android:inspect-dir": (dir) => {
+      const name = String(dir || "").split(/[\\/]/).pop() || "projet"
+      const laravel = /laravel/i.test(String(dir || ""))
+      return {
+        ok: true, dir, www: null, candidates: [], canBuild: true, flutter: false, name,
+        server: laravel ? { kind: "laravel", label: "Laravel + Inertia + Vue", name: "Laravel", php: true, vite: true, canServe: true } : null,
+      }
+    },
+    "android:server-check": (dir) => ({
+      server: /laravel/i.test(String(dir || "")) ? { kind: "laravel", label: "Laravel + Inertia + Vue", name: "Laravel", php: true, vite: true, canServe: true } : null,
+      php: { path: "C:\\laragon\\bin\\php\\php-8.3.14-Win32-vs16-x64\\php.exe", version: "8.3.14" },
+      checks: { vendor: true, env: true, envExample: true, key: true, built: Boolean(window.__nxDemoServer), hot: false, nodeModules: true },
+      running: window.__nxDemoServer || null,
+      addresses: [{ name: "Wi-Fi", address: "192.168.1.20" }],
+    }),
+    "android:server-start": () => new Promise((resolve) => {
+      const lines = ["Fichiers de l’interface absents (public/build) : construction avec Vite.", "> npm run build", "vite v6.1.1 building for production...", "✓ 1032 modules transformed.", "public/build/manifest.json  0.78 kB", "✓ built in 6.42s", "> php.exe artisan serve --host=0.0.0.0 --port=8000  (PHP 8.3.14)", "INFO  Server running on [http://0.0.0.0:8000]."]
+      lines.forEach((l, i) => setTimeout(() => emit("android:log", l), 120 * i))
+      setTimeout(() => {
+        window.__nxDemoServer = {
+          running: true, kind: "laravel", label: "Laravel + Inertia + Vue", port: 8000, local: "http://127.0.0.1:8000/",
+          url: "http://192.168.1.20:8000/", addresses: [{ name: "Wi-Fi", url: "http://192.168.1.20:8000/" }], since: new Date().toISOString(),
+        }
+        resolve(window.__nxDemoServer)
+      }, 120 * lines.length + 200)
+    }),
+    "android:server-stop": () => { window.__nxDemoServer = null; return true },
     "tunnel:list": () => ({
       tunnels: [],
       names: [],

@@ -60,7 +60,7 @@ import{a as v,b as c,c as h,d as I,e as s,g,h as j,j as P,k as O,l as D,m as F,n
       <div class="nx-inline"><input class="input" name="email" type="email" value="${l(s.user.email)}" required><button class="btn">Changer</button></div>
       <small class="nx-muted">Un lien de confirmation est envoy\xE9 \xE0 la nouvelle adresse.</small>
     </form>
-    <div class="nx-kv"><span>Compte cr\xE9\xE9</span><b>${E(a.created_at)}</b><span>R\xF4le sur la plateforme</span><b>${l(a.app_role==="superadmin"?"Super-administrateur":a.app_role==="admin"?"Administrateur":"Utilisateur")}</b></div>`},async security(){let{data:a}=await c.from("devices").select("*").order("last_seen_at",{ascending:!1});return`<form class="nx-form" data-form="password">
+    <div class="nx-kv"><span>Compte cr\xE9\xE9</span><b>${E(a.created_at)}</b><span>R\xF4le sur la plateforme</span><b>${l(a.app_role==="superadmin"?"Super-administrateur":a.app_role==="admin"?"Administrateur":"Utilisateur")}</b></div>`},async security(){let{data:a}=await c.from("devices").select("*").order("last_seen_at",{ascending:!1});/* NEXORA #120 : onglet redessiné, mot de passe actuel exigé (nx/profil/) */if(globalThis.__nxCompte&&globalThis.__nxCompte.security)return globalThis.__nxCompte.security(a||[],{when:q});return`<form class="nx-form" data-form="password">
       <h3>Mot de passe</h3>
       <div class="nx-grid2"><label class="nx-field"><span>Nouveau mot de passe</span><input class="input" type="password" name="password" minlength="8" required autocomplete="new-password"></label>
       <label class="nx-field"><span>Confirmation</span><input class="input" type="password" name="password2" minlength="8" required autocomplete="new-password"></label></div>

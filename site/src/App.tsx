@@ -17,6 +17,7 @@ import { personaBySlug } from "./data/personas"
 import { spaceBySlug } from "./data/spaces"
 import { installGlow } from "./lib/glow"
 import { installDepth } from "./lib/depth"
+import { installOffscreen } from "./lib/offscreen"
 import { captureFromUrl } from "./lib/referral"
 import { loadRemote } from "./lib/remote"
 import { installLinks, scrollToId, useRoute, type Route } from "./router"
@@ -55,6 +56,8 @@ export function App() {
   useEffect(() => installGlow(), [])
   // Profondeur liée au défilement des scènes en 3D (#074).
   useEffect(() => installDepth(), [])
+  // #120 : animations décoratives suspendues hors de l'écran.
+  useEffect(() => installOffscreen(), [])
   // NEXORA #090 : lien d'un parrain (?parrain=CODE), gardé le temps réglé dans le back office.
   useEffect(() => {
     captureFromUrl(() => loadRemote().then((r) => r.referral.cookie_days))

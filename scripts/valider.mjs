@@ -658,6 +658,24 @@ async function supabaseChecks() {
         (a.password_min_length || 0) >= 8 ? "ok" : "echec",
         `${a.password_min_length} caractères`,
       )
+      // NEXORA #120 : le serveur refuse aussi un changement de mot de passe sans connexion récente et un changement
+      // d'adresse non confirmé depuis l'ancienne adresse (NEXORA demande déjà le mot de passe actuel).
+      rec(
+        R,
+        "Changement de mot de passe : connexion récente exigée par Supabase",
+        a.security_update_password_require_reauthentication ? "ok" : "alerte",
+        a.security_update_password_require_reauthentication
+          ? "activé"
+          : "désactivé : back office → Supabase → Authentification, « Connexion récente exigée pour changer le mot de passe »",
+      )
+      rec(
+        R,
+        "Changement d'adresse e-mail confirmé sur les deux adresses",
+        a.mailer_secure_email_change_enabled !== false ? "ok" : "alerte",
+        a.mailer_secure_email_change_enabled !== false
+          ? "activé"
+          : "désactivé : back office → Supabase → Authentification, « Changement d’adresse confirmé sur les deux adresses »",
+      )
       rec(
         R,
         "Mots de passe divulgués refusés",

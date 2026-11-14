@@ -21,6 +21,10 @@ type AuthConfig = {
   disable_signup: boolean
   mailer_autoconfirm: boolean
   password_min_length: number
+  // NEXORA #120 : refus côté serveur d'un changement de mot de passe sans connexion récente et d'un changement
+  // d'adresse non confirmé depuis l'ancienne adresse (NEXORA demande déjà le mot de passe actuel).
+  security_update_password_require_reauthentication?: boolean
+  mailer_secure_email_change_enabled?: boolean
   external_email_enabled: boolean
   smtp_host: string | null
   smtp_port?: string | number | null
@@ -271,16 +275,17 @@ function AuthSettings({ token }: { token: string }) {
           const recommended = recommendedRedirects()
           const linksOff = recommended.some((u) => !urls.includes(u)) || /localhost|127\.0\.0\.1/.test(cur.site_url)
           const rateOff = lowMailRate(a)
-          const needs = linksOff || rateOff
+          const secureOff = !a.security_update_password_require_reauthentication || a.mailer_secure_email_change_enabled === false
+          const needs = linksOff || rateOff || secureOff
           return (
             <div className="form">
               {needs && (
                 <div className="banner">
                   <Icon name="warn" size={16} />
-                  <span className="grow">{[linksOff && "Les liens envoyés par e-mail (confirmation d’inscription, mot de passe oublié) ne mènent pas encore à NEXORA ni au back office.", rateOff && `Les e-mails des comptes (confirmation d’inscription, mot de passe oublié) sont limités à ${Number(a.rate_limit_email_sent ?? 0)} par heure : au-delà, ils ne partent plus.`].filter(Boolean).join(" ")}</span>
+                  <span className="grow">{[linksOff && "Les liens envoyés par e-mail (confirmation d’inscription, mot de passe oublié) ne mènent pas encore à NEXORA ni au back office.", rateOff && `Les e-mails des comptes (confirmation d’inscription, mot de passe oublié) sont limités à ${Number(a.rate_limit_email_sent ?? 0)} par heure : au-delà, ils ne partent plus.`, secureOff && "Supabase accepte encore un changement de mot de passe sans connexion récente, ou un changement d’adresse sans confirmation de l’ancienne adresse."].filter(Boolean).join(" ")}</span>
                   <button className="btn sm primary" disabled={act.busy} onClick={async () => {
-                    if (!(await ui.confirm({ title: "Appliquer la configuration recommandée ?", body: <>Adresse du site : {setup.siteUrl}. Redirections ajoutées : {recommended.filter((u) => !urls.includes(u)).join(", ") || "aucune"}.{rateOff ? <> E-mails des comptes : {AUTH_MAIL_RATE} par heure au plus (au lieu de {Number(a.rate_limit_email_sent ?? 0)}).</> : null}</>, confirm: "Appliquer" }))) return
-                    save({ site_url: /localhost|127\.0\.0\.1/.test(a.site_url) ? setup.siteUrl : a.site_url, uri_allow_list: [...new Set([...urls, ...recommended])].join(","), ...(rateOff ? { rate_limit_email_sent: AUTH_MAIL_RATE } : {}) }, "Configuration recommandée appliquée.")
+                    if (!(await ui.confirm({ title: "Appliquer la configuration recommandée ?", body: <>Adresse du site : {setup.siteUrl}. Redirections ajoutées : {recommended.filter((u) => !urls.includes(u)).join(", ") || "aucune"}.{rateOff ? <> E-mails des comptes : {AUTH_MAIL_RATE} par heure au plus (au lieu de {Number(a.rate_limit_email_sent ?? 0)}).</> : null}{secureOff ? <> Mot de passe : connexion récente exigée pour le changer ; adresse e-mail : changement confirmé sur les deux adresses.</> : null}</>, confirm: "Appliquer" }))) return
+                    save({ site_url: /localhost|127\.0\.0\.1/.test(a.site_url) ? setup.siteUrl : a.site_url, uri_allow_list: [...new Set([...urls, ...recommended])].join(","), ...(rateOff ? { rate_limit_email_sent: AUTH_MAIL_RATE } : {}), ...(secureOff ? { security_update_password_require_reauthentication: true, mailer_secure_email_change_enabled: true } : {}) }, "Configuration recommandée appliquée.")
                   }}>Appliquer la configuration recommandée</button>
                 </div>
               )}
@@ -305,6 +310,8 @@ function AuthSettings({ token }: { token: string }) {
                 <label className="row"><Switch checked={!cur.disable_signup} onChange={(v) => setDraft({ ...draft, disable_signup: !v })} label="Inscriptions" /><span>Inscriptions autorisées (niveau Supabase)</span></label>
                 <label className="row"><Switch checked={cur.mailer_autoconfirm} onChange={(v) => setDraft({ ...draft, mailer_autoconfirm: v })} label="Confirmation automatique" /><span>Comptes confirmés sans e-mail</span></label>
                 <label className="row"><Switch checked={cur.external_email_enabled} onChange={(v) => setDraft({ ...draft, external_email_enabled: v })} label="Connexion par e-mail" /><span>Connexion par e-mail et mot de passe</span></label>
+                <label className="row"><Switch checked={!!cur.security_update_password_require_reauthentication} onChange={(v) => setDraft({ ...draft, security_update_password_require_reauthentication: v })} label="Connexion récente" /><span>Connexion récente exigée pour changer le mot de passe</span></label>
+                <label className="row"><Switch checked={cur.mailer_secure_email_change_enabled !== false} onChange={(v) => setDraft({ ...draft, mailer_secure_email_change_enabled: v })} label="Changement d’adresse sécurisé" /><span>Changement d’adresse confirmé sur les deux adresses</span></label>
                 <label className="field"><span>Longueur minimale du mot de passe</span><input className="input" type="number" min={6} max={72} value={cur.password_min_length} onChange={(e) => setDraft({ ...draft, password_min_length: Number(e.target.value) })} /></label>
               </div>
               <div className="actions">
