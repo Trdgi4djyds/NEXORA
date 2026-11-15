@@ -1,0 +1,509 @@
+NEXORA 1.2.2
+FONCTIONNALITÉS ET FRAMEWORKS PRIS EN CHARGE
+==========================================================================================
+
+Fiche établie le 15 novembre 2026 (entrée #123 du journal SUIVI.md), d'après le code de
+NEXORA 1.2.2 et non d'après la brochure :
+  - nexora/app/src/frameworks.js         reconnaissance des projets
+  - nexora/app/src/desktop/analyze.js    sources acceptées par le Desktop Builder
+  - nexora/app/src/android/ipc.js        sources acceptées par l'App Builder
+  - nexora/app/src/android/serveur.js    projets à serveur dans l'App Builder
+
+SOMMAIRE
+  1. Les fonctionnalités, espace par espace
+  2. Quels frameworks deviennent une app Android et un logiciel Windows
+  3. Le code à ajouter dans vos sources
+  4. Bon à savoir
+
+
+==========================================================================================
+1. LES FONCTIONNALITÉS, ESPACE PAR ESPACE
+==========================================================================================
+
+ACCUEIL
+-------
+- Des projets qui regroupent le site, le dossier de code, les applications, les scènes 3D,
+  les documents et les sites surveillés.
+- « Par quoi commencer ? » : vous choisissez un objectif (app Android, logiciel Windows,
+  test sur tous les écrans...) et NEXORA ouvre le bon espace.
+- Ctrl K : une seule recherche pour ouvrir une section, une fenêtre ou un projet.
+- Ctrl N : « Nouveau » crée une planche, un projet, une application ou une scène sans
+  jamais écraser un travail existant.
+- Compte et synchronisation des réglages et des projets sur vos autres PC et dans
+  NEXORA web.
+- Interface personnalisable : thème clair ou sombre, couleur d'accent, polices, contraste
+  élevé, taille de l'interface.
+- Fenêtre « Nouveautés » à chaque nouvelle version.
+
+RESPONSIVE LAB
+--------------
+- 182 modèles d'appareils en 21 catégories : iPhone, Galaxy, Pixel, Xiaomi, Tecno,
+  Infinix, pliables, tablettes, PC, téléviseurs, montres, consoles, voitures.
+- Cadres fidèles : cadres officiels d'Android Studio (Pixel, montres, téléviseurs,
+  voitures), les autres dessinés aux mesures de chaque modèle (écran, densité, coins
+  arrondis, encoche).
+- Pliables (animation de pliage) et passage en paysage.
+- Plusieurs appareils côte à côte sur des planches, que vous pouvez rouvrir.
+- Défilement, clics, saisies et navigation synchronisés entre les appareils.
+- Projets locaux : le framework est reconnu, les dépendances sont installées et le site
+  se lance, sans ligne de commande.
+- Photos et vidéos HD du site dans ses appareils.
+- Chaque projet isolé : cookies, stockage et cache séparés.
+- Envoi des appareils vers le Studio 3D & Motion.
+- Outils de test responsive avancés.
+
+BROWSER LAB
+-----------
+- Éléments : chaque bloc de la page, ses balises et ses styles.
+- Réseau : chaque requête avec son type, son poids et son temps, en cascade.
+- Console : messages et erreurs de la page en direct.
+- Audits : performance, accessibilité, référencement, responsive, bonnes pratiques, code
+  inutilisé au chargement, avec un rapport qui classe les corrections.
+- Tests enregistrés : un parcours enregistré une fois, rejoué après chaque modification
+  et à chaque taille d'écran.
+- Extraction de site : le code source d'un site, à étudier ou à reprendre dans le Dev Lab.
+- Aperçu de la page dans les moteurs de recherche et dans les partages sur les réseaux.
+
+DEV LAB
+-------
+- Éditeur complet (Monaco) : coloration, autocomplétion, recherche dans tout le projet,
+  Ctrl P pour ouvrir un fichier.
+- VS Code intégré (Code Editor), démarré à l'avance.
+- Terminaux intégrés, placés dans l'environnement du projet.
+- Git et GitHub : enregistrer, envoyer et cloner sans retenir les commandes.
+- Aperçu en direct, mis à jour à chaque enregistrement.
+- 15 outils installés depuis leurs sources officielles, sans droits d'administrateur :
+  Node.js, pnpm, Yarn, Bun, Deno, Python, PHP, Composer, Ruby, Bundler, Go, .NET, Hugo,
+  Flutter, Git.
+- 15 modèles de projet : site HTML, CSS et JavaScript, React, React + TypeScript, Vue,
+  Svelte, Next.js, Astro, application web installable (PWA), page de présentation, site
+  PHP, serveur Node.js, JavaScript, TypeScript, application mobile (Expo), application
+  Flutter.
+- Problèmes de tout le projet (TypeScript, ESLint, Ruff), marqués dans l'éditeur.
+- Scripts en un clic (package.json, composer.json, deno.json, Makefile).
+- Tests : Vitest, Jest, Playwright, node --test, pytest, avec la couverture.
+- Git avancé : branches, fusion avec les conflits côte à côte, mises de côté, auteur des
+  lignes, graphe de l'historique, demandes de fusion GitHub.
+- Client d'API : collections, variables, import OpenAPI, historique.
+- Variables protégées : chiffrées par Windows, import et export de fichiers .env.
+- Dépendances : obsolètes, failles connues, licences, mise à jour.
+- Assistant IA sur tout le projet : changements acceptés fichier par fichier, annulables.
+- Débogueur Node.js : points d'arrêt (F9), pas à pas, pile d'appels, variables.
+- Bases de données : SQLite, Postgres, Supabase.
+- Mise en ligne : Cloudflare Pages, Vercel, Netlify, GitHub Pages, avec un aperçu par
+  branche.
+- Contrôles avant mise en ligne sur téléphone, tablette et ordinateur.
+- Recherche de secrets avant chaque enregistrement Git.
+- « Vers une app » : envoie le projet à l'App Builder, au Desktop Builder, au Responsive
+  Lab ou au Browser Lab.
+
+APP BUILDER (ANDROID)
+---------------------
+- Trois sources : « Site en ligne », « Projet (code source) », « Dossier construit » ;
+  projets à serveur (Laravel...) reconnus.
+- APK et AAB signés, prêts pour le Play Store, construits sans Gradle ; clé de signature
+  créée ou importée.
+- Deux modes : application NEX-WEBVIEW (fichiers intégrés et hors ligne, ou site en
+  ligne) ; Trusted Web Activity (plein écran dans le navigateur du téléphone, HTTPS
+  obligatoire).
+- Logo et écran de démarrage composés dans NEXORA (icône à toutes les tailles).
+- Aperçu fidèle de l'écran d'accueil et de l'application sur iPhone, Pixel, Galaxy
+  (One UI) et les autres surcouches.
+- Permissions : appareil photo, micro, localisation, notifications, vibration, empreinte
+  et visage, contacts, NFC. Android TV (bannière 320 x 180).
+- Fonctions natives appelables depuis la page (window.NexoraApp) : partage, vibration,
+  orientation, notifications, presse-papiers, liens externes, barre d'état, scanner,
+  enregistrement de fichiers, authentification biométrique, choix d'un contact, écran
+  maintenu allumé.
+- Notifications push (Firebase), avec des catégories réglables par l'utilisateur.
+- Messagerie et appels : conversations empilées, réponse depuis la notification, appels
+  entrants en plein écran.
+- Achats intégrés Google Play.
+- Modules avec leurs SDK officiels : OneSignal, Google AdMob (bannière, interstitiel,
+  vidéo avec récompense, consentement), Google Analytics pour Firebase, Meta.
+- PWA : inspection (identité, manifeste, service worker, sécurité), fichiers manquants
+  générés, paquet d'application web installable.
+- Fiche Play Store : textes par langue rédigés avec l'IA, captures habillées, icône
+  512 x 512, bannière 1024 x 500, politique de confidentialité.
+- « Prêt pour le Play Store » : un score et chaque point à corriger.
+- Tests fermés : les 12 testeurs pendant 14 jours exigés par Google Play.
+- Publication directe sur le Play Store, déploiement progressif.
+- Réglages à distance : proposer ou imposer la nouvelle version.
+- Statistiques et plantages, expliqués par l'IA.
+
+STUDIO 3D & MOTION
+------------------
+- Appareils 3D réalistes à taille réelle : téléphones, pliables, tablettes, ordinateurs.
+- 10 mises en scène toutes prêtes : deux téléphones côte à côte, trois appareils en
+  présentoir, pliable qui s'ouvre, ordinateur et téléphone, téléphone en vedette, posés à
+  plat vus de dessus, ordinateur entre les roches, ordinateur vu de dessous, téléphones
+  en diagonale, tablette inclinée.
+- Contour de l'objet sélectionné (jamais visible dans les rendus).
+- Mouvements de caméra (orbite, spirale, plongée, effet vertigo) et clés d'animation sur
+  une frise.
+- Animation physique (chute avec rebonds).
+- Transitions et rythme : fondus, iris, volets, clés calées sur le tempo de la musique.
+- Rendu avancé : réaliste, argile, dessin animé, fil de fer, croquis ; éclairages,
+  profondeur de champ, ambiances, particules, matières à relief.
+- Exports : vidéo, GIF animé, WebM à fond transparent, couches de rendu, page web 3D,
+  Web Component, composant React, Lottie, réalité augmentée (USDZ, GLB, code QR).
+- Formats des réseaux sociaux (9:16, 1:1, 16:9...) avec les zones de sécurité.
+- Mise en scène par l'IA.
+- Imports 3D : OBJ, STL, PLY, nuages de points SPLAT.
+- Validation client : lien sans compte, commentaires à la seconde près.
+- Versions de la scène, bibliothèque d'équipe 3D.
+- Présentations : 5 styles (Violet, Nuit néon, Galerie, Marque, Classique) et
+  7 mises en page.
+
+NEX-DESIGN
+----------
+- Dessin vectoriel, retouche d'image, effets, pages, calques 3D.
+- Modèles, dont 7 modèles photo : planche de marque, mosaïque d'appli, cartes de
+  services, affiche sur façade, lancement produit, tableau de bord en contre-plongée,
+  appli sur tablette.
+- Kits de marque (plusieurs, un par document).
+- Mise en page automatique, composants et variantes, variables et modes, contraintes et
+  tailles d'écran (téléphone, tablette, ordinateur).
+- Prototype : actions au clic et au survol, pages par-dessus, passage automatique,
+  Smart Animate, page HTML de démonstration.
+- Animation : frise, images clés, courbes et ressorts, 41 animations toutes faites, code
+  de l'animation en CSS, SwiftUI ou Jetpack Compose.
+- Export de code : HTML et CSS, React et Tailwind, SwiftUI, Compose, envoyé dans le
+  Dev Lab.
+- Exports : PNG, JPG, WebP, SVG, PDF vectoriel, PDF d'impression avec fonds perdus,
+  vidéo, icônes d'application.
+- Série depuis un CSV : un modèle, des dizaines de visuels remplis automatiquement.
+- Import PSD et Figma.
+- IA de design : maquette à partir d'une description, variantes, retouche intelligente.
+- Accessibilité (contraste vérifié) et mesures (touche Alt).
+- Versions automatiques, corbeille de 30 jours.
+- Commentaires, validation client, lien en lecture seule, coédition, bibliothèques
+  d'équipe tenues à jour.
+- Pense-bêtes et connecteurs, notes de présentation, statut « Prêt pour le
+  développement ».
+
+SÉCURITÉ
+--------
+- Vue d'ensemble : note de fiabilité par projet et tâches de la semaine.
+- Audit du site : en-têtes de sécurité, certificat, assistant CSP, comparaison avec
+  l'audit précédent, programmation, SARIF, rapport PDF, correctifs par hébergeur.
+- Domaine et e-mail : SPF, DKIM, DMARC, MX, DNSSEC, CAA, expiration du domaine,
+  sous-domaines.
+- Code : dépendances vulnérables, secrets oubliés, historique Git, fichiers .env.
+- Applications : APK et projets Electron.
+- Supervision 24 h/24 par les serveurs NEXORA, même application fermée : site, API
+  (contrôle de la réponse), port TCP, DNS, domaine, signal de vie ; seconde région ;
+  parcours enregistrés rejoués par NEXORA ouvert sur le PC ; tests de charge.
+- Alertes par e-mail et vers Slack, Discord, Teams, Google Chat ou ntfy, avec escalade,
+  regroupement et heures calmes.
+- Page de statut publique (abonnement aux incidents) et mesure chez les visiteurs réels.
+
+DESKTOP BUILDER (WINDOWS)
+-------------------------
+- Trois sources : « Site en ligne », dossier de site ou projet web, projet Electron
+  existant.
+- Formats : installateur (.exe), version portable, ZIP, MSI, MSIX pour le Microsoft
+  Store ; x64 et ARM64 (MSI : x64 seulement).
+- Aperçu dans un Windows 11 simulé : fenêtre, installateur, menu Démarrer, barre des
+  tâches.
+- Signature par certificat (.pfx) ou par Microsoft dans le cloud.
+- Mises à jour automatiques (GitHub ou serveur web) : déploiement progressif, canal bêta,
+  mise à jour obligatoire.
+- Bac à sable Windows (essai de l'installateur dans un Windows vierge), fiches winget.
+- Intégré à Windows : zone de notification, lancement au démarrage, pastille, actions au
+  clic droit, raccourci global, types de fichiers, liens d'ouverture (monapp://).
+- Hors connexion : page soignée quand Internet manque, liens externes ouverts dans le
+  navigateur.
+- Statistiques et plantages.
+- Suivi de la fin de prise en charge d'Electron.
+- macOS et Linux : fichier GitHub Actions généré (voir la partie 2).
+
+AUTOUR DU LOGICIEL
+------------------
+- Compte NEXORA : connexion par mot de passe ou par lien e-mail, profil, sécurité,
+  appareils connectés, déconnexion partout.
+- NEXORA web (https://nexoradevs.online/studio/) : compte et synchronisation ; les
+  fonctions qui demandent le PC restent dans l'application Windows.
+- Assistant IA avec votre propre clé API.
+- Lanceur NEXORA Devs Toolbox : installation sans droits d'administrateur, mises à jour
+  signées, contrôle d'intégrité, réparation, désinstallation.
+- Licence (clé NXDT-...), essai Pro de 24 h une fois par PC.
+- Back office d'administration, espace des parrains (NEXORA REFERRAL), page de statut,
+  site vitrine (https://nexoradevs.online/).
+- Paiement de Pro par SasPay (Mobile Money et carte).
+- Offres (catalogue de l'application ; les valeurs du serveur font foi) :
+    Gratuit : Responsive Lab et Browser Lab complets, 2 applications Android ou Windows
+              au total (applications supprimées comprises), 5 constructions par
+              application et par mois.
+    Pro     : tout NEXORA, jusqu'à 50 applications, 25 $ par mois ou 250 $ par an.
+
+
+==========================================================================================
+2. QUELS FRAMEWORKS DEVIENNENT UNE APP ANDROID ET UN LOGICIEL WINDOWS
+==========================================================================================
+
+LE PRINCIPE
+-----------
+NEXORA ne transforme pas votre code en interface native. Il construit la version web de
+votre projet (index.html, JavaScript, CSS), puis l'intègre :
+  - Android : dans une application native écrite en Java qui affiche le site, avec les
+    fonctions natives de window.NexoraApp ; résultat : APK et AAB signés ;
+  - Windows : dans Electron, empaqueté par electron-builder ; résultat : installateur,
+    version portable, ZIP, MSI, MSIX.
+
+Donc : tout framework capable de produire un site statique fonctionne pour les deux,
+hors ligne.
+
+A. CONSTRUITS DEPUIS LE CODE SOURCE, HORS LIGNE, ANDROID ET WINDOWS
+-------------------------------------------------------------------
+
+  HTML, CSS, JavaScript (site statique)
+      Commande  : aucune
+      Dossier   : le dossier qui contient index.html
+
+  Vite avec React, Vue, Svelte, Solid, Preact ou Lit
+      Commande  : npm run build
+      Dossier   : dist
+
+  Parcel, Webpack, Rsbuild, Rspack
+      Commande  : npm run build
+      Dossier   : dist
+
+  Create React App
+      Commande  : npm run build
+      Dossier   : build
+      À prévoir : construire avant de choisir le projet dans l'App Builder (partie 4)
+
+  Vue CLI
+      Commande  : npm run build
+      Dossier   : dist
+      À prévoir : construire avant de choisir le projet dans l'App Builder (partie 4)
+
+  Angular
+      Commande  : npm run build
+      Dossier   : dist/<nom-du-projet>/browser
+
+  Next.js
+      Commande  : npm run build
+      Dossier   : out
+      À prévoir : output: 'export' dans next.config (partie 3)
+
+  Nuxt
+      Commande  : nuxt generate (script « generate », sinon npx nuxi generate)
+      Dossier   : .output/public
+
+  SvelteKit
+      Commande  : npm run build
+      Dossier   : build
+      À prévoir : adaptateur @sveltejs/adapter-static (partie 3)
+
+  Remix, React Router 7
+      Commande  : npm run build
+      Dossier   : build/client
+      À prévoir : mode SPA, ssr: false (partie 3)
+
+  Astro
+      Commande  : npm run build
+      Dossier   : dist
+      À prévoir : rien (sortie statique par défaut)
+
+  Qwik
+      Commande  : npm run build
+      Dossier   : dist
+      À prévoir : adaptateur statique de Qwik City (partie 3)
+
+  Ember
+      Commande  : npm run build
+      Dossier   : dist
+
+  Gatsby
+      Commande  : npm run build
+      Dossier   : public
+
+  Docusaurus
+      Commande  : npm run build
+      Dossier   : build
+
+  VitePress
+      Commande  : vitepress build (souvent npm run docs:build)
+      Dossier   : .vitepress/dist ou docs/.vitepress/dist
+
+  Eleventy
+      Commande  : npx @11ty/eleventy (ou votre script build)
+      Dossier   : _site
+
+  Storybook
+      Commande  : npx storybook build (ou npm run build-storybook)
+      Dossier   : storybook-static
+
+  Hugo
+      Commande  : hugo --minify
+      Dossier   : public
+
+  Jekyll
+      Commande  : bundle exec jekyll build
+      Dossier   : _site
+
+  Expo (React Native)
+      Commande  : npx expo export --platform web
+      Dossier   : dist
+      À prévoir : version web d'Expo (partie 3)
+
+  Flutter
+      Commande  : flutter build web --release
+      Dossier   : build/web
+      À prévoir : version web activée, dossier web/ (partie 3)
+
+Desktop Builder : il reconnaît ces frameworks, propose la commande et le dossier produit,
+puis lance la construction. S'il n'y a pas de script « build », vous saisissez la
+commande.
+
+App Builder : avec la source « Projet (code source) », le bouton « Construire » lance
+npm run build (ou pnpm, yarn) ou flutter build web --release, puis l'App Builder cherche
+index.html dans : dist, build, out, www, public, docs, .output/public, build/web et
+dist/browser.
+  - Si le projet n'a pas de script « build » adapté (Nuxt, Expo, Hugo, Jekyll,
+    VitePress...), lancez vous-même la commande indiquée ci-dessus.
+  - Si le dossier produit n'est pas dans cette liste (Angular, Remix, React Router,
+    VitePress, Eleventy, Jekyll, Storybook), choisissez la source « Dossier construit »
+    et désignez le dossier qui contient index.html.
+
+B. FRAMEWORKS QUI ONT BESOIN D'UN SERVEUR
+-----------------------------------------
+Ces projets fabriquent leurs pages sur un serveur : ils ne peuvent pas être intégrés tels
+quels. L'application s'ouvre alors sur l'adresse du site.
+
+  Laravel (y compris Inertia avec Vue, React ou Svelte), Symfony, PHP, WordPress
+      Android : reconnus. L'APK s'ouvre sur l'adresse du site en ligne, ou sur un serveur
+                de test que NEXORA lance sur votre PC (php artisan serve ou php -S ;
+                interface construite d'abord par Vite si elle manque), pour un
+                téléphone connecté au même Wi-Fi, tant que le PC reste allumé.
+                WordPress : sa base de données MySQL doit déjà tourner (Laragon,
+                XAMPP...).
+      Windows : adresse du site en ligne (le Desktop Builder refuse le dossier).
+
+  Django, Ruby on Rails
+      Android : reconnus ; adresse du site en ligne seulement.
+      Windows : adresse du site en ligne (dossier refusé).
+
+  TanStack Start, SolidStart, Flask, FastAPI, Streamlit, ASP.NET / Blazor, Go,
+  Deno / Fresh
+      Android : adresse du site en ligne (WebView, ou Trusted Web Activity en HTTPS).
+      Windows : adresse du site en ligne (dossier refusé).
+
+  Next.js, SvelteKit, Remix ou React Router avec rendu côté serveur, serveurs Node.js
+  (Express...)
+      Passez à la sortie statique (partie A et partie 3), ou hébergez le site et
+      utilisez son adresse. Le Desktop Builder accepte le dossier de Next.js, SvelteKit,
+      Remix et React Router, mais prévient que les pages rendues par le serveur ne
+      fonctionneront pas sans sortie statique ; pour Nuxt, il lance nuxt generate.
+      Un serveur Node.js (Express...) est à héberger, puis à ouvrir par son adresse.
+
+Avec une adresse en ligne, l'application a besoin d'Internet, mais chaque mise à jour du
+site apparaît sans republier l'application.
+
+C. PROJETS ELECTRON
+-------------------
+Un projet Electron existant (electron-builder ou Electron Forge) est construit tel quel
+par le Desktop Builder, pour Windows. Avec Electron Forge, NEXORA lance sa commande
+« make » et récupère les installateurs produits.
+
+D. CE QUE NEXORA NE CONSTRUIT PAS
+---------------------------------
+- Android natif (Kotlin ou Java avec Gradle) : refusé (« Application Android native »).
+- iOS natif (Swift, projet Xcode) : refusé (« Application iOS native »).
+- React Native sans version web : refusé ; ajoutez react-native-web ou passez par Expo.
+- Flutter et Expo : c'est leur version web qui est intégrée, pas leur rendu natif.
+- iOS : aucune construction (l'App Builder montre seulement un aperçu iPhone).
+- macOS et Linux : rien n'est construit sur le PC ; NEXORA génère un fichier
+  GitHub Actions qui produit les .dmg, .zip, .AppImage et .deb sur les serveurs de
+  GitHub.
+
+
+==========================================================================================
+3. LE CODE À AJOUTER DANS VOS SOURCES
+==========================================================================================
+
+Next.js : fichier next.config.mjs
+
+    /** @type {import('next').NextConfig} */
+    const nextConfig = {
+      output: 'export',               // produit le dossier out/
+      images: { unoptimized: true },  // seulement si vous utilisez next/image
+    };
+    export default nextConfig;
+
+SvelteKit : installez l'adaptateur, puis remplacez-le dans svelte.config.js (gardez le
+reste du fichier)
+
+    npm i -D @sveltejs/adapter-static
+
+    // svelte.config.js
+    import adapter from '@sveltejs/adapter-static';
+    export default {
+      kit: { adapter: adapter() },    // produit le dossier build/
+    };
+
+    // src/routes/+layout.js
+    export const prerender = true;
+
+React Router 7 : fichier react-router.config.ts
+
+    import type { Config } from '@react-router/dev/config';
+    export default { ssr: false } satisfies Config;   // produit build/client/
+
+Remix (avec Vite) : fichier vite.config.ts
+
+    import { vitePlugin as remix } from '@remix-run/dev';
+    import { defineConfig } from 'vite';
+    export default defineConfig({ plugins: [remix({ ssr: false })] });
+
+Nuxt : fichier package.json
+
+    { "scripts": { "generate": "nuxt generate" } }
+
+Qwik City : adaptateur de site statique
+
+    npm run qwik add static
+
+Expo : version web
+
+    npx expo install react-native-web react-dom @expo/metro-runtime
+
+Flutter : si le dossier web/ manque
+
+    flutter create --platforms web .
+
+Laravel (serveur de test de l'App Builder) : une fois, dans le dossier du projet
+
+    composer install
+    copy .env.example .env          (cp .env.example .env sous macOS et Linux)
+    php artisan key:generate
+
+  Puis, dans l'App Builder : « Tester depuis ce PC », démarrer le serveur, et « Utiliser
+  cette adresse pour l'APK ». Si le pare-feu de Windows le demande, autorisez PHP sur
+  les réseaux privés.
+
+Projet Electron : fichier package.json (sinon electron-builder prend index.js)
+
+    { "main": "main.js" }
+
+
+==========================================================================================
+4. BON À SAVOIR
+==========================================================================================
+
+- Pas besoin de régler « base » ni les routes : les fichiers sont servis à la racine
+  (https://appassets.androidplatform.net/ sur Android, app://local/ sous Windows) et les
+  adresses sans extension des applications d'une seule page (React, Vue, Angular...)
+  renvoient vers index.html.
+- Règle générale : n'importe quel dossier déjà construit qui contient index.html
+  fonctionne, quel que soit l'outil qui l'a produit (source « Dossier construit » dans
+  l'App Builder, dossier du site dans le Desktop Builder).
+- Create React App et Vue CLI dans l'App Builder : avant la construction, l'App Builder
+  trouve le modèle public/index.html de ces projets et affiche quand même « index.html
+  trouvé ». Cliquez d'abord sur « Construire » (ou lancez npm run build) : sinon l'APK
+  afficherait une page blanche. Défaut noté dans SUIVI.md (A-078), pas encore corrigé.
+- Cette fiche décrit ce que fait le code : aucune application n'a été construite pour
+  l'établir (les outils Android et Windows ne sont pas disponibles dans l'environnement
+  de travail de Figma Make).
