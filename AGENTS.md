@@ -13,6 +13,7 @@ Avant toute modification, lire `REGLES.md` (règles strictes, procédures, modè
 - `REGLES.md` et `SUIVI.md` : règles strictes de travail et journal de suivi.
 - `CHECKLIST-PRODUCTION.md` : grille obligatoire avant chaque mise en production (#039, règle R26) ; `validations/` : rapports de `pnpm valider`, un par passage (`AAAA-MM-JJ-NNN-sujet.md`), jamais supprimés.
 - `captures/` : captures d'écran de chaque mise à jour, par série `AAAA-MM-JJ-NNN-sujet/`.
+- `NEXORA-FONCTIONNALITES-ET-FRAMEWORKS.txt` (#123) : fiche en texte brut, pour l'utilisateur, de toutes les fonctionnalités de NEXORA et des frameworks que l'App Builder et le Desktop Builder transforment en application Android et en logiciel Windows (commande, dossier produit, code à ajouter dans les sources), établie d'après `src/frameworks.js`, `src/desktop/analyze.js`, `src/android/ipc.js` et `src/android/serveur.js` ; à tenir à jour quand ces fichiers ou les fonctionnalités changent.
 - `nexora/app/` : code de l'application, c'est-à-dire le contenu de `app.asar`.
   - `main.js` : processus principal d'Electron (fenêtre, protocole `app://vitrine` qui sert `renderer/`, canaux IPC de base).
   - `preload.js` : pont `window.vitrine` (`invoke`, `on`) avec la liste des canaux autorisés (`INVOKE`, préfixes `PREFIXES`, événements `EVENTS`).
