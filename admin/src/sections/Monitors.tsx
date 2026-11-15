@@ -306,7 +306,7 @@ function MonitorDrawer({ id, site, hours, onChange }: { id: string; site?: Site;
           <dt>Seuil de lenteur</dt><dd>{site.threshold_ms ? ms(site.threshold_ms) : "—"}</dd>
           <dt>Code attendu</dt><dd>{site.expected_status === 200 ? "200 à 399" : site.expected_status}</dd>
           <dt>Mot-clé attendu</dt><dd>{site.keyword || "—"}</dd>
-          <dt>Origine</dt><dd>{site.app_site_id ? "Supervision de l’application NEXORA" : "Espace d’équipe"}</dd>
+          <dt>Origine</dt><dd>{site.app_site_id ? "Supervision de l’application NEXORA" : "Espace du compte"}</dd>
         </dl>
       )}
       <Loaded q={q}>

@@ -1,7 +1,7 @@
 // NEXORA #055 : fonctions ajoutées au Studio 3D & Motion, posées après le module #011 (nx/studio) sur l'instance
 // state.studio, sans modifier le code compilé : création par l'IA, import OBJ/STL/PLY/SPLAT, réseaux sociaux et
 // zones de sécurité, bruitages, repères et clés, rendus par lots, packs web et réalité augmentée, Lottie,
-// validation des vidéos, versions, bibliothèque d'équipe, écran depuis NEX-DESIGN, confort et accessibilité.
+// validation des vidéos, versions, écran depuis NEX-DESIGN, confort et accessibilité (#125 : sans bibliothèque d'équipe).
 import { esc, toast, busy, done, has, card, btn, btns, note, field, chips, check, details, icon, sleep } from './ui.js';
 import * as MODELS from './models.js';
 import * as DIR from './direction.js';
@@ -53,7 +53,7 @@ function sceneCards(S) {
     ${note('Angles : six vues en rendu accumulé (ombres fines). Lottie : une image par étape (12 i/s, 480 px). Pack web : page interactive, page au défilement, Web Component, composant React et GLB. Réalité augmentée : USDZ pour Quick Look, GLB pour Scene Viewer, page et code QR.')}`, { pro: true });
   h += reviewCard(S, pro);
   h += versionsCard(S);
-  h += teamCard(S, pro);
+  // NEXORA #125 : plus de bibliothèque d'équipe 3D (travail en équipe retiré de NEXORA).
   const c = COMFORT.comfort();
   h += card('comfort', 'Aperçu et accessibilité', 'eye', `${check('Aperçu adaptatif (résolution réduite quand l’image saccade)', 'cf:adaptive', c.adaptive)}${check('Afficher les images par seconde', 'cf:fps', c.fps)}${check('Signaler les flashs rapides dans les vidéos exportées', 'cf:flash', c.flash)}${check('Contour orange autour de l’objet sélectionné (jamais dans les rendus)', 'cf:outline', c.outline)}
     ${note(`Aperçu : ${S.sxFps || '…'} i/s${S.sxScale && S.sxScale < 1 ? ', résolution allégée' : ''}. Les pages web exportées restent immobiles quand le système demande moins d’animations.`)}`);
@@ -71,13 +71,6 @@ function versionsCard(S) {
     ${S.sxCompare ? TEAM.compareHtml(S, S.sxCompare) : ''}
     ${btns(btn('v-save', 'Enregistrer une version', 'plus'))}`);
 }
-function teamCard(S, pro) {
-  const L = S.sxLibs;
-  if (pro && L === undefined && !S.sxLibsLoading) { S.sxLibsLoading = true; TEAM.libs().then((r) => { S.sxLibs = r; S.sxLibsLoading = false; S.renderProps(); }).catch(() => { S.sxLibs = []; S.sxLibsLoading = false; }); }
-  const list = L === null ? '<p class="nx-st-note">Connectez-vous à votre compte NEXORA pour partager avec votre équipe.</p>' : L && L.length ? `<div class="sx-list">${L.map((l) => { const f = TEAM.fresh(l); return `<div class="sx-row">${l.data && l.data.thumb ? `<img class="sx-thumb" src="${esc(l.data.thumb)}" alt="">` : ''}<span><b>${esc(l.name)}</b><small>mise à jour le ${new Date(l.updated_at).toLocaleDateString('fr-FR')}${f ? ' · nouvelle version' : f === false ? ' · dans Mes mises en scène' : ''}</small></span><span class="grow"></span><button class="btn small${f ? ' primary' : ''}" data-sx="tm-take" data-k="${esc(l.id)}" title="${f === null ? 'Ajouter' : 'Mettre à jour'} « ${esc(l.name)} »">${f === null ? 'Ajouter' : f ? 'Mettre à jour' : 'Reprendre'}</button></div>`; }).join('')}</div>` : '<p class="nx-st-note">Rien n’est encore partagé dans votre espace.</p>';
-  return card('team', 'Bibliothèque d’équipe 3D', 'group', `${note('Partagez la scène (appareils, lumières, rendu, animation) avec les membres de votre espace ; ils la retrouvent dans « Mes mises en scène ».')}${btns(btn('tm-publish', 'Partager cette scène', 'upload', { primary: true }), btn('tm-load', 'Actualiser', 'refreshCw'))}${pro ? list : ''}`, { pro: true });
-}
-
 // ---------- Cartes de l'objet sélectionné ----------
 function itemCards(S, id) {
   const e = S.objects.get(id); if (!e) return '';
@@ -130,9 +123,6 @@ async function onAction(S, el) {
   if (a === 'v-restore') { S.sxCompare = null; return TEAM.restore(S, k); }
   if (a === 'v-del') { TEAM.remove(S, k); if (S.sxCompare === k) S.sxCompare = null; return S.renderProps(); }
   if (a === 'v-cmp') { S.sxCompare = S.sxCompare === k ? null : k; return S.renderProps(); }
-  if (a === 'tm-publish') { if (await TEAM.publish(S)) { S.sxLibs = undefined; S.renderProps(); } return; }
-  if (a === 'tm-load') { S.sxLibs = undefined; return S.renderProps(); }
-  if (a === 'tm-take') { const l = (S.sxLibs || []).find((x) => x.id === k); if (l) { TEAM.take(l); S.renderProps(); } return; }
   if (a === 'k-copy' && sel) return KEYS.copy(S, sel);
   if (a === 'k-paste' && sel) return KEYS.paste(S, sel);
   if (a === 'k-shift' && sel) return KEYS.shift(S, sel, Number(el.dataset.d));

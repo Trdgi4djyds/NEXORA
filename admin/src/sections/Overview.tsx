@@ -84,7 +84,8 @@ export function Overview() {
           <div className="kpis">
             <Kpi icon="user" label="Utilisateurs" value={fmtNum(a.users)} hint={`+${fmtNum(a.users_new_30d)} sur 30 jours`} onClick={() => go("users")} />
             <Kpi icon="pass" label="Actifs (7 j)" value={fmtNum(a.users_active_7d)} hint={a.users ? `${Math.round((a.users_active_7d / a.users) * 100)} % des comptes` : undefined} />
-            <Kpi icon="group" label="Équipes" value={fmtNum(a.teams)} hint={`${fmtNum(a.organizations)} espaces au total`} onClick={() => go("orgs")} />
+            {/* NEXORA #125 : plus de travail en équipe : espaces des comptes. */}
+            <Kpi icon="folder" label="Espaces" value={fmtNum(a.organizations)} hint="un par compte" onClick={() => go("orgs")} />
             {/* NEXORA #037 : offres en dollars ; #076 : Gratuit et Pro (18 $, 25 $ depuis #090), Standard passée à Pro. */}
             <Kpi icon="star" label="Revenu mensuel" value={fmtMoney(a.mrr_cents, "USD")} hint={`${fmtNum(a.paid_orgs)} espace(s) payant(s)`} tone="good" />
             <Kpi icon="folder" label="Projets" value={fmtNum(a.projects)} onClick={() => go("content")} />
@@ -132,7 +133,7 @@ export function Overview() {
                   <h3 className="grow">Offres</h3>
                   <button className="btn sm ghost" onClick={() => go("plans")}>Gérer</button>
                 </div>
-                <Donut data={stats.data.plans || {}} colors={PLAN_COLORS} caption="espaces" labels={{ free: "Gratuit", standard: "Standard (ancienne)", pro: "Pro", team: "Équipe (ancienne)", enterprise: "Entreprise (ancienne)" }} />
+                <Donut data={stats.data.plans || {}} colors={PLAN_COLORS} caption="espaces" labels={{ free: "Gratuit", standard: "Standard (ancienne)", pro: "Pro", team: "Pro (ancienne offre)", enterprise: "Entreprise (ancienne)" }} />
               </div>
             </>
           )}

@@ -184,7 +184,7 @@ ${urls
   // robots.txt : tout le site public ouvert aux moteurs de recherche et aux assistants IA (exploration, citation,
   // résumé ; entraînement selon site/seo.json), espaces privés et adresses techniques exclus. Un robot qui a son
   // propre groupe ignore le groupe « * » : les mêmes règles y sont donc répétées.
-  const rules = ["Allow: /", "Disallow: /admin/", "Disallow: /referral/", "Disallow: /__supabase-api/", "Disallow: /license/", "Disallow: /pay/", "Disallow: /security/", "Disallow: /hb/", "Disallow: /hook/", "Disallow: /rum"]
+  const rules = ["Allow: /", "Disallow: /referral/", "Disallow: /__supabase-api/", "Disallow: /license/", "Disallow: /pay/", "Disallow: /security/", "Disallow: /hb/", "Disallow: /hook/", "Disallow: /rum"]
   const signal = `Content-Signal: search=yes, ai-input=yes, ai-train=${settings.aiTraining ? "yes" : "no"}`
   const aiBots = [
     "GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User", "anthropic-ai", "PerplexityBot", "Perplexity-User",

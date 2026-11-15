@@ -241,8 +241,9 @@ export const roomCode = () => Array.from({ length: 6 }, () => 'ABCDEFGHJKLMNPQRS
 export function collabSheet({ current, onStart, onStop }) {
   const s = sheet('nx-collab', sheetHtml({
     icon: 'nxUsers',
-    title: 'Coéditer en direct',
-    sub: 'Travaillez à plusieurs sur le même document : les modifications et les curseurs s’affichent chez tout le monde. Partagez le code de la salle avec vos coéquipiers.',
+    // NEXORA #125 : travail en équipe retiré ; la fenêtre ne s'ouvre plus que pour quitter une salle déjà ouverte.
+    title: current ? 'Salle de coédition' : 'Coéditer en direct',
+    sub: current ? 'Quittez la salle pour continuer seul sur ce document.' : 'Travaillez à plusieurs sur le même document : les modifications et les curseurs s’affichent chez tout le monde.',
     body: current ? `<div class="nx-room"><span class="nx-muted">Salle en cours</span><b class="nx-code">${esc(current.code)}</b><span>${current.peers.length ? `${current.peers.length} autre${current.peers.length > 1 ? 's' : ''} personne${current.peers.length > 1 ? 's' : ''} connectée${current.peers.length > 1 ? 's' : ''}` : 'Personne d’autre pour l’instant.'}</span></div>
       <div class="nx-row"><button class="btn small" data-nxc="copy">${ico('copy', 13)}<span>Copier le code</span></button><button class="btn small" data-nxc="stop">${ico('close', 13)}<span>Quitter la salle</span></button></div>`
       : `<div class="nx-grid2"><div><div class="field-label">Créer une salle</div><button class="btn wide" data-nxc="new">${ico('plus', 14)}<span>Nouvelle salle</span></button></div>
@@ -256,7 +257,7 @@ export function collabSheet({ current, onStart, onStop }) {
     if (a === 'copy') { await api.invoke('clipboard:write', current.code).catch(() => {}); toast('Code de la salle copié.'); return; }
     if (a === 'stop') { closeSheet('nx-collab'); await onStop(); return; }
     const code = a === 'new' ? roomCode() : String((s.querySelector('[data-nxc-code]') || {}).value || '').trim().toUpperCase();
-    if (!/^[A-Z0-9]{6}$/.test(code)) { toast('Saisissez le code à 6 caractères donné par votre coéquipier.', { kind: 'bad' }); return; }
+    if (!/^[A-Z0-9]{6}$/.test(code)) { toast('Saisissez le code de salle à 6 caractères.', { kind: 'bad' }); return; }
     closeSheet('nx-collab');
     await onStart(code, a === 'new');
   };

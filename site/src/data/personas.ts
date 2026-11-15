@@ -169,7 +169,7 @@ export const PERSONAS: Persona[] = [
       { before: "Des spécifications recopiées à la main par le développeur.", after: "Export HTML et CSS, ou React et Tailwind, envoyé directement dans le Dev Lab." },
       { before: "Un prototype vu seulement sur grand écran.", after: "Le prototype et le site affichés dans le cadre de dizaines de modèles d’appareils." },
       { before: "Des animations décrites par écrit, puis mal reproduites.", after: "Une frise avec courbes et ressorts, et le code de l’animation en CSS, SwiftUI ou Compose." },
-      { before: "Des allers-retours de validation par e-mail.", after: "Liens de validation pour vos clients et bibliothèques d’équipe tenues à jour." },
+      { before: "Des allers-retours de validation par e-mail.", after: "Liens de validation pour vos clients, avis épinglés sur chaque page." },
     ],
     steps: [
       { space: "design", title: "Concevez", text: "Mise en page automatique, variables, variantes, contraste vérifié et prototype cliquable." },

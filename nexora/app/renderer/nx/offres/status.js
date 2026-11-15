@@ -3,7 +3,7 @@
 // catalogue ; sans compte, l'offre Gratuite. Les contrôles qui comptent sont faits par le serveur et par le
 // processus principal (src/plan.js) : ici, on affiche et on évite d'aller au bout d'une action refusée.
 import { b as sb, e as cloud } from '../../dist/chunks/chunk-EZKHFSAB.js';
-import { FALLBACK, PLAN_ORDER, normPlan, planOf } from './catalog.js';
+import { FALLBACK, PLAN_ORDER, normPlan, planOf, sansEquipe } from './catalog.js';
 
 let last = null, lastAt = 0, pending = null;
 let trials = null, trialsAt = 0;
@@ -70,7 +70,8 @@ export async function plans() {
   try {
     const { data, error } = await sb.from('plans').select('*').eq('active', true).order('sort');
     if (!error && data && data.some((p) => p.id === 'pro' && p.perms && Object.keys(p.perms).length)) {
-      return data.map((p) => ({ ...(FALLBACK[p.id] || {}), ...p, limits: { ...((FALLBACK[p.id] || {}).limits || {}), ...(p.limits || {}) }, perms: { ...((FALLBACK[p.id] || {}).perms || {}), ...(p.perms || {}) } }));
+      // NEXORA #125 : fonctions sans mention du travail en équipe, retiré de NEXORA.
+      return data.map((p) => ({ ...(FALLBACK[p.id] || {}), ...p, features: sansEquipe(p.features || (FALLBACK[p.id] || {}).features), limits: { ...((FALLBACK[p.id] || {}).limits || {}), ...(p.limits || {}) }, perms: { ...((FALLBACK[p.id] || {}).perms || {}), ...(p.perms || {}) } }));
     }
   } catch { /* hors ligne : catalogue */ }
   return PLAN_ORDER.map((id) => FALLBACK[id]);

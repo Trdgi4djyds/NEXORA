@@ -115,7 +115,8 @@ function PlanPanel({ plan, subscribers, editable, onSaved, compact = false }: { 
   const dirty = JSON.stringify({ ...p, limits, perms, features }) !== initial
   const id = p.id === "team" || p.id === "enterprise" ? "pro" : p.id
   const feats = features.split("\n").map((s) => s.trim()).filter(Boolean)
-  const keys = [...LIMIT_KEYS.filter((k) => k in limits), ...Object.keys(limits).filter((k) => !LIMIT_KEYS.includes(k))]
+  // NEXORA #125 : « members » (travail en équipe retiré) gardé dans les données mais plus affiché.
+  const keys = [...LIMIT_KEYS.filter((k) => k in limits), ...Object.keys(limits).filter((k) => !LIMIT_KEYS.includes(k))].filter((k) => k !== "members")
 
   async function save(e: FormEvent) {
     e.preventDefault()

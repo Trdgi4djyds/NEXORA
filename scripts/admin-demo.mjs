@@ -358,7 +358,7 @@ const V2 = {
     price_year_cents: 25000,
     badge: "Toutes les options",
     limits: { projects: 200, designs: -1, members: 10, monitors: 50, storage_mb: 51200, apps: 50, apps_lifetime: 0, app_trial_days: 0, builds_per_app_month: -1, ai_requests_month: -1, scans_per_day: 200, crawls_per_day: -1, builds_month: 400, push_month: 100000 },
-    features: ["Les 9 espaces sans restriction", "Dev Lab complet : éditeur, terminal, Git, débogueur, tests, bases de données, mise en ligne", "Jusqu’à 50 applications Android ou Windows, sans limite par application (400 constructions par mois)", "NEX-DESIGN complet : documents illimités, IA, prototype, code, équipe", "Studio 3D & Motion avancé", "Sécurité : audits avancés, 50 sites surveillés 24 h/24, page de statut", "200 projets, 10 membres, 50 Go", "Assistance prioritaire"],
+    features: ["Les 9 espaces sans restriction", "Dev Lab complet : éditeur, terminal, Git, débogueur, tests, bases de données, mise en ligne", "Jusqu’à 50 applications Android ou Windows, sans limite par application (400 constructions par mois)", "NEX-DESIGN complet : documents illimités, IA, prototype, code", "Studio 3D & Motion avancé", "Sécurité : audits avancés, 50 sites surveillés 24 h/24, page de statut", "200 projets, 50 Go", "Assistance prioritaire"],
   },
 }
 const APP_PERMS = { apk: true, pwa: true, source_import: true, play_publish: true, push: true, inapp: true, automation: true, custom_notifications: true, messaging_events: true, integrations: true, desktop_builder: true }
@@ -1357,10 +1357,46 @@ function demoLibraries() {
   ]
 }
 
+// NEXORA #125 : tables de démonstration vues comme par nx_admin_data_tables (types déduits des valeurs, clé « id »
+// ou clé composée des tables de liaison) ; lignes cherchées, triées et paginées comme par nx_admin_data_rows.
+const DATA_KEYS = { organization_members: ["org_id", "user_id"], announcement_reads: ["announcement_id", "user_id"], app_config: ["key"], feature_flags: ["key"], nx_private_config: ["key"], nx_device_accounts: ["device_id", "user_id"] }
+const typeOf = (k, v) => (v === null || v === undefined ? (/_at$/.test(k) ? "timestamp with time zone" : "text") : typeof v === "boolean" ? "boolean" : typeof v === "number" ? (Number.isInteger(v) ? "integer" : "numeric") : typeof v === "object" ? "jsonb" : /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(v) ? "uuid" : /^\d{4}-\d{2}-\d{2}T/.test(v) ? "timestamp with time zone" : "text")
+function dataInfo(name) {
+  const rows = TABLES[name] || []
+  const cols = [...new Set(rows.flatMap((r) => Object.keys(r)))]
+  const key = DATA_KEYS[name] || (cols.includes("id") ? ["id"] : [])
+  return {
+    name, rows: rows.length, readonly: name === "audit_logs", key,
+    columns: cols.map((c) => ({ name: c, type: typeOf(c, rows.find((r) => r[c] != null)?.[c]), nullable: !key.includes(c), default: c === "id" ? "gen_random_uuid()" : /^created_at$/.test(c) ? "now()" : null, generated: false })),
+  }
+}
+function dataRpc(name, a) {
+  if (!name.startsWith("nx_admin_data_")) return undefined
+  if (name === "nx_admin_data_tables") return Object.keys(TABLES).sort().map(dataInfo)
+  const list = TABLES[a.p_table]
+  if (!list) return { message: `Table inconnue : ${a.p_table}.` }
+  const info = dataInfo(a.p_table)
+  const match = (r) => info.key.every((k) => String(r[k]) === String((a.p_key || {})[k]))
+  if (name === "nx_admin_data_rows") {
+    const s = String(a.p_search || "").toLowerCase()
+    let rows = s ? list.filter((r) => JSON.stringify(r).toLowerCase().includes(s)) : [...list]
+    if (a.p_order) rows.sort((x, y) => (String(x[a.p_order] ?? "") < String(y[a.p_order] ?? "") ? -1 : String(x[a.p_order] ?? "") > String(y[a.p_order] ?? "") ? 1 : 0) * (a.p_desc === false ? 1 : -1))
+    const off = Number(a.p_offset) || 0
+    return { total: rows.length, rows: rows.slice(off, off + (Number(a.p_limit) || 50)), key: info.key }
+  }
+  if (name === "nx_admin_data_update") { const r = list.find(match); if (r) Object.assign(r, a.p_values || {}); return r || null }
+  if (name === "nx_admin_data_insert") { const r = { id: `demo-${list.length + 1}`, created_at: new Date(now).toISOString(), ...(a.p_values || {}) }; list.unshift(r); return r }
+  if (name === "nx_admin_data_delete") { const i = list.findIndex(match); return i < 0 ? null : list.splice(i, 1)[0] }
+  return undefined
+}
+
 function rpc(name, args) {
   // NEXORA #090 : fonctions du parrainage (scripts/referral-demo.mjs).
   const referral = referralRpc(name, args)
   if (referral !== undefined) return referral
+  // NEXORA #125 : section « Données » du back office (nx_admin_data_*), sur les tables de démonstration.
+  const data = dataRpc(name, args)
+  if (data !== undefined) return data
   // NEXORA #090 : licence du compte de démonstration (page « Ma licence » du site vitrine) : offre Gratuite.
   if (name === "nx_license_mine")
     return {
@@ -1829,7 +1865,7 @@ const mgmtAuth = {
   site_url: "https://nexoradevs.online/",
   uri_allow_list:
     // #109 : liste relevée en ligne le 2026-11-11 (sans l'adresse workers.dev, désactivée), plus le back office de l'aperçu.
-    "http://localhost:5173/**,http://127.0.0.1:5173/**,http://localhost:4173/**,https://nexoradevs.online/**,https://nexoradevs.online/admin/**,http://localhost:3000/admin/**",
+    "http://localhost:5173/**,http://127.0.0.1:5173/**,http://localhost:4173/**,https://nexoradevs.online/**,https://nexoradevs.online/nex-system/**,http://localhost:3000/nex-system/**",
   disable_signup: false,
   mailer_autoconfirm: false,
   password_min_length: 8,

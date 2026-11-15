@@ -235,11 +235,12 @@ export const SPACES: Space[] = [
       { icon: "pdf", title: "Impression vectorielle", text: "PDF avec fonds perdus, textes sélectionnables et polices intégrées, prêt pour l’imprimeur." },
       { icon: "nxTable", title: "Série depuis un CSV", text: "Un modèle, des dizaines de visuels remplis automatiquement." },
       { icon: "sparkle", title: "IA de design", text: "Une maquette à partir d’une description, des variantes et la retouche intelligente." },
-      { icon: "nxUsers", title: "Équipe et validation", text: "Bibliothèques d’équipe tenues à jour et liens de validation pour vos clients." },
+      // #125 : le travail en équipe est retiré de NEXORA.
+      { icon: "nxUsers", title: "Validation client", text: "Un lien sans compte : votre client épingle ses avis sur chaque page et approuve, ou demande des changements." },
     ],
     details: {
       title: "Les fonctions de design",
-      items: ["Variables", "Prototype", "Code", "Accessibilité", "Polices", "Série", "Impression", "Importer", "IA", "Icônes et espaces", "Versions", "Validation", "Équipe"],
+      items: ["Variables", "Prototype", "Code", "Accessibilité", "Polices", "Série", "Impression", "Importer", "IA", "Icônes et espaces", "Versions", "Validation"],
     },
   },
   {
@@ -261,7 +262,7 @@ export const SPACES: Space[] = [
       // #072 : les parcours rejoués tournent sur le PC (NEXORA ouvert) : sortis de la supervision serveur.
       { icon: "nxiPulse", title: "Supervision 24 h/24", text: "Site, API, port, DNS, domaine et signal de vie, vérifiés par les serveurs NEXORA même quand l’application est fermée." },
       { icon: "code", title: "Code et correctifs", text: "Dépendances vulnérables, secrets oubliés, audits programmés et correctifs écrits pour votre hébergeur." },
-      { icon: "bell", title: "Alertes", text: "Par e-mail et vers vos outils d’équipe, avec escalade, regroupement et heures calmes." },
+      { icon: "bell", title: "Alertes", text: "Par e-mail et par webhook (Slack, Discord, Microsoft Teams, Google Chat…), avec escalade, regroupement et heures calmes." },
       { icon: "globe", title: "Page de statut publique", text: "Vos visiteurs suivent l’état de votre service et s’abonnent aux incidents, au lieu de vous écrire." },
       { icon: "group", title: "Visiteurs réels", text: "Les temps de chargement mesurés chez vos vrais visiteurs." },
       { icon: "nxWorld", title: "Seconde région", text: "Chaque panne confirmée depuis un deuxième point du globe, pour moins de fausses alertes." },

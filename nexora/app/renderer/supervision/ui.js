@@ -58,9 +58,9 @@ export function siteSheet({ cfg, site = null, url = '', server = false, type: fo
   const wants = (k) => !e.alerts || e.alerts[k] !== false;
   const acc = account();
   const srvHint = !acc.signedIn ? 'Connectez-vous à votre compte NEXORA (bouton Connexion du rail) pour l’activer.'
-    : !acc.orgId ? 'Choisissez un espace d’équipe dans votre compte NEXORA.'
+    : !acc.orgId ? 'Reconnectez-vous à votre compte NEXORA pour retrouver votre espace.'
       : !acc.canEdit ? 'Votre rôle dans cet espace ne le permet pas (éditeur au moins).'
-        : `Vérifié en continu, même ordinateur éteint, avec une notification dans NEXORA pour l’équipe « ${acc.orgName} » et un e-mail si les alertes sont activées.`;
+        : `Vérifié en continu, même ordinateur éteint, avec une notification dans NEXORA pour votre espace « ${acc.orgName} » et un e-mail si les alertes sont activées.`;
   const srvOk = acc.signedIn && acc.orgId && acc.canEdit;
   const sec = (types, html) => `<div data-tsec="${types}">${html}</div>`;
   const hostVal = e.host || (() => { try { return e.url && !/^https?:/.test(e.url) ? new URL(e.url).hostname : ''; } catch { return ''; } })();

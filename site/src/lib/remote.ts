@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react"
 import { projectRef, publicKey } from "../../../supabase/nexora.json"
 import { paymentsOpen } from "./account"
-import { CONTACT_EMAIL, FALLBACK, PLAN_ORDER, REFERRAL, discounted, limitText, money, percent } from "../../../nexora/app/renderer/nx/offres/catalog.js"
+import { CONTACT_EMAIL, FALLBACK, PLAN_ORDER, REFERRAL, discounted, limitText, money, percent, sansEquipe } from "../../../nexora/app/renderer/nx/offres/catalog.js"
 
 export { CONTACT_EMAIL, REFERRAL, discounted, limitText, money, percent }
 
@@ -70,7 +70,8 @@ function mergePlans(rows: unknown): Plan[] {
   const plans = ORDER.filter((id) => list.some((r) => r.id === id)).map((id) => {
     const fb = FB[id]
     const row = list.find((r) => r.id === id) as Row
-    const features = Array.isArray(row.features) ? row.features.map(String).filter(Boolean) : []
+    // #125 : fonctions sans mention du travail en équipe, retiré de NEXORA (serveurs sans la migration 20261115000001).
+    const features = Array.isArray(row.features) ? (sansEquipe(row.features.map(String)) as string[]).filter(Boolean) : []
     return {
       ...fb,
       name: text(row.name) || fb.name,

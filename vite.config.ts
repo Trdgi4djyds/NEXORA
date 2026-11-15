@@ -6,7 +6,7 @@ import { siteTailwind } from "./site/tailwind.mjs"
 
 // Vite sert uniquement l'aperçu navigateur de NEXORA (voir preview/server.mjs) : l'interface est
 // déjà compilée, elle est servie telle quelle, sans bundling. `pnpm build` passe par
-// scripts/build-web.mjs. Le back office web (admin/, React) est servi par Vite sous /admin/.
+// scripts/build-web.mjs. Le back office web (admin/, React) est servi sous /nex-system/ (NEXORA #125, preview/server.mjs).
 export default defineConfig({
   base: process.env.FIGMA_PUBLIC_URL ? `${process.env.FIGMA_PUBLIC_URL}/` : "/",
   publicDir: false,

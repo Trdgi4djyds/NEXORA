@@ -254,7 +254,8 @@ function localChecks() {
     "index.html",
     "tarifs.html",
     "404.html",
-    "admin/index.html",
+    // NEXORA #125 : back office à /nex-system/.
+    "nex-system/index.html",
     // NEXORA #090 : espace des parrains.
     "referral/index.html",
     "_headers",
@@ -429,12 +430,20 @@ async function siteChecks() {
     home.status === 200 ? "ok" : "echec",
     `${home.status} en ${home.ms} ms`,
   )
-  const admin = await http(`${SITE}admin/`)
+  // NEXORA #125 : back office à /nex-system/ ; l'ancienne adresse /admin/ répond 404 (aucune redirection).
+  const admin = await http(`${SITE}nex-system/`)
   rec(
     R,
     "Back office répond",
     admin.status === 200 ? "ok" : "echec",
     `${admin.status} en ${admin.ms} ms`,
+  )
+  const oldAdmin = await http(`${SITE}admin/`)
+  rec(
+    R,
+    "Ancienne adresse du back office (/admin/) fermée, sans redirection",
+    oldAdmin.status === 404 ? "ok" : "echec",
+    `${oldAdmin.status}${oldAdmin.headers.get("location") ? ` vers ${oldAdmin.headers.get("location")}` : ""}`,
   )
   // NEXORA #096 : site vitrine à la racine, NEXORA web à /studio/.
   const studio = await http(`${SITE}studio/`)
@@ -564,7 +573,7 @@ async function siteChecks() {
       .split(path.sep)
       .join("/")
     // NEXORA #096 : sw.js porte l'heure de sa construction (version du cache) : différent à chaque construction.
-    if (/^(admin|vendor)\//.test(rel) || rel === "_headers" || rel === "_redirects" || rel === "sw.js") continue
+    if (/^(nex-system|vendor)\//.test(rel) || rel === "_headers" || rel === "_redirects" || rel === "sw.js") continue
     if (fs.statSync(path.join(dist, rel)).size > 3 << 20) continue
     list.push(rel)
   }
@@ -706,7 +715,7 @@ async function supabaseChecks() {
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean)
-      const wanted = [...setup.redirectUrls, `${SITE}admin/**`]
+      const wanted = [...setup.redirectUrls, `${SITE}nex-system/**`]
       const miss = wanted.filter((u) => !allow.includes(u))
       const local = /localhost|127\.0\.0\.1/.test(a.site_url)
       rec(
@@ -1311,7 +1320,7 @@ async function accountChecks() {
 async function loadChecks() {
   const R = "17. Charge"
   // Fichiers légers (page, script d'entrée, chargeur, back office) : on mesure le site, pas le débit de ce poste.
-  const paths = ["", "studio/dist/main.js", "studio/nx/boot.js", "admin/"]
+  const paths = ["", "studio/dist/main.js", "studio/nx/boot.js", "nex-system/"]
   for (const level of LOAD) {
     const lat = []
     let ok = 0

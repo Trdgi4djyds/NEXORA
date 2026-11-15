@@ -17,7 +17,8 @@ import { score, passwordProblem, emailProblem } from '../auth/motdepasse.js';
 const PLANS = { free: 'Gratuit', standard: 'Pro', pro: 'Pro', team: 'Pro', enterprise: 'Pro' };
 const MEMBER = { owner: 'Propriétaire', admin: 'Administrateur', editor: 'Éditeur', viewer: 'Lecteur' };
 export const planName = (p) => PLANS[p] || p || PLANS.free;
-const platformRole = (r) => (r === 'superadmin' ? 'Super-administrateur' : r === 'admin' ? 'Administrateur' : 'Utilisateur');
+// NEXORA #125 : un seul rôle d'administration, avec tous les droits (admin et superadmin).
+const platformRole = (r) => (r === 'superadmin' || r === 'admin' ? 'Administrateur' : 'Utilisateur');
 const longDate = (d) => (d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—');
 const count = (n) => new Intl.NumberFormat('fr-FR', { notation: n >= 10000 ? 'compact' : 'standard', maximumFractionDigits: 1 }).format(n);
 
@@ -237,6 +238,9 @@ function showActiveTab() {
 export function sheet(tab, tabs) {
   wireBanner();
   requestAnimationFrame(() => requestAnimationFrame(showActiveTab));
+  // NEXORA #125 : le travail en équipe est retiré de NEXORA (onglet « Équipe » absent même d'une liste plus ancienne).
+  tabs = tabs.filter(([id]) => id !== 'teams');
+  if (tab === 'teams') tab = 'profile';
   const p = cloud.profile || {};
   const email = cloud.user ? cloud.user.email : '';
   const org = cloud.org;
@@ -363,7 +367,7 @@ export function security(devices = [], { when = (d) => d } = {}) {
   </section>
   <section class="nxc-card nx-danger">
     <h3>Zone sensible</h3>
-    <p>Supprimer votre compte efface votre profil, votre espace personnel et ses contenus. Les équipes partagées sont confiées à un autre membre.</p>
+    <p>Supprimer votre compte efface votre profil, votre espace personnel et ses contenus.</p>
     <div class="nx-inline"><input class="input" data-del-confirm placeholder="Tapez SUPPRIMER pour confirmer" aria-label="Tapez SUPPRIMER pour confirmer"><button type="button" class="btn danger" data-acc-act="delete-account">Supprimer mon compte</button></div>
   </section>`;
 }
@@ -456,17 +460,17 @@ export async function profile() {
   const email = cloud.user ? cloud.user.email : '';
   const org = cloud.org;
   const u = await usage();
-  const teams = (cloud.orgs || []).length;
+  // NEXORA #125 : plus de chiffre « Équipes » (travail en équipe retiré) : stockage utilisé à la place.
+  const mb = used(u, 'storage_mb');
   const stats = [
     ['folder', used(u, 'projects'), 'Projets'],
     ['palette', used(u, 'designs'), 'Designs'],
-    ['group', teams, teams > 1 ? 'Équipes' : 'Équipe'],
+    ['download', mb, 'Mo stockés'],
     ['sync', used(u, 'monitors'), 'Sites surveillés'],
   ];
   const job = [p.job_title, p.company].map((s) => String(s || '').trim()).filter(Boolean).join(' · ');
   const tags = [`<span class="nxc-tag accent">${ico('star', 11)}Offre ${esc(planName(cloud.plan))}</span>`];
   if (p.app_role === 'admin' || p.app_role === 'superadmin') tags.push(`<span class="nxc-tag">${ico('shield', 11)}${esc(platformRole(p.app_role))}</span>`);
-  if (org && !org.personal && cloud.role) tags.push(`<span class="nxc-tag">${ico('group', 11)}${esc(MEMBER[cloud.role] || cloud.role)}</span>`);
   if (p.timezone) tags.push(`<span class="nxc-tag">${ico('globe', 11)}${esc(p.timezone)}</span>`);
   const banner = bannerUrl();
   return `
@@ -490,7 +494,7 @@ export async function profile() {
   </article>
   <div class="nxc-cols">
     <form class="nxc-card nx-form" data-form="profile">
-      <div class="nxc-card-head"><span class="nxc-card-ic">${ico('user', 15)}</span><div><h3>Informations personnelles</h3><p>Votre nom et votre photo sont visibles par les membres de vos équipes.</p></div></div>
+      <div class="nxc-card-head"><span class="nxc-card-ic">${ico('user', 15)}</span><div><h3>Informations personnelles</h3><p>Votre nom et votre photo identifient votre compte dans NEXORA et sur vos commentaires.</p></div></div>
       <div class="nx-grid2">
         <label class="nx-field"><span>Nom complet</span><input class="input" name="full_name" value="${esc(p.full_name || '')}" maxlength="80" autocomplete="name"></label>
         <label class="nx-field"><span>Entreprise</span><input class="input" name="company" value="${esc(p.company || '')}" maxlength="80" autocomplete="organization"></label>
@@ -511,7 +515,7 @@ export async function profile() {
         <dl class="nxc-kv">
           <dt>Compte créé</dt><dd>${esc(longDate(p.created_at))}</dd>
           <dt>Rôle sur la plateforme</dt><dd>${esc(platformRole(p.app_role))}</dd>
-          ${org ? `<dt>Espace actif</dt><dd>${esc(org.name)}${cloud.role ? ` · ${esc(MEMBER[cloud.role] || cloud.role)}` : ''}</dd>` : ''}
+          ${org ? `<dt>Espace</dt><dd>${esc(org.name)}</dd>` : ''}
         </dl>
       </div>
     </div>

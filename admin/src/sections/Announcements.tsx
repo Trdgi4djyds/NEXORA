@@ -6,7 +6,7 @@ import { must, sb, type Row } from "../supabase"
 import { fmtDate, Loaded, Switch, Table, Tag, useAction, useLoad, useUi } from "../ui"
 
 const LEVELS: [string, string, string][] = [["info", "Information", "info"], ["success", "Nouveauté", "ok"], ["warning", "Attention", "warn"], ["critical", "Critique", "bad"]]
-const AUDIENCES: [string, string][] = [["all", "Tout le monde"], ["free", "Offre Gratuite"], ["pro", "Offre Pro"], ["team", "Offre Équipe"], ["admins", "Administrateurs"]]
+const AUDIENCES: [string, string][] = [["all", "Tout le monde"], ["free", "Offre Gratuite"], ["pro", "Offre Pro"], ["admins", "Administrateurs"]]
 const label = (list: [string, string, ...string[]][], v: string) => list.find((x) => x[0] === v)?.[1] || v
 
 export function Announcements() {

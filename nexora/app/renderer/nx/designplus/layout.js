@@ -36,7 +36,7 @@ function toolbar(D) {
   end.insertAdjacentHTML('beforeend', `<span class="dz-sep"></span>
     <button class="dz-tool" data-nx2="motion" title="Animation : frise, images clés, animations toutes faites" aria-pressed="false">${ico('wave', 16)}</button>
     <button class="dz-tool" data-nx2="ai" title="IA de design : textes, images, palettes, maquettes" aria-haspopup="true">${ico('sparkle', 16)}</button>
-    <button class="dz-tool" data-nx2="share" title="Partager : validation client, lien, coédition, commentaires, bibliothèques" aria-haspopup="true">${ico('nxShare', 16)}</button>
+    <button class="dz-tool" data-nx2="share" title="Partager : validation client, lien, commentaires" aria-haspopup="true">${ico('nxShare', 16)}</button>
     <button class="dz-tool" data-nx2="present" title="Présenter et tester (F5)" aria-haspopup="true">${ico('play', 16)}</button>`);
   if (exp) end.append(exp);
   bar.append(scroll, more, end);
@@ -108,18 +108,16 @@ async function shareMenu(D, anchor) {
     { head: 'Avec votre client' },
     { id: 'review', icon: 'pass', label: n.reviews ? `Validation client · ${pl(n.reviews, 'nouvel avis', 'nouveaux avis')}` : 'Validation client…', sub: `Lien sans compte : avis épinglés, approbation${pro ? '' : ' · offre Pro'}` },
     { id: 'view', icon: 'link', label: 'Copier un lien en lecture seule', sub: 'Toutes les pages, sans compte, sans avis' },
-    { head: 'Avec votre équipe' },
-    ...(D.nxRoom ? [{ id: 'collab', icon: 'nxUsers', label: `Coédition en direct (salle ${D.nxRoom.code})…`, sub: 'Voir les personnes connectées, quitter' }]
-      : [{ id: 'collab-doc', icon: 'nxUsers', label: 'Coéditer ce document en direct', sub: 'Toute l’équipe qui ouvre ce document rejoint la même salle' }, { id: 'collab', icon: 'nxUsers', label: 'Coéditer avec un code de salle…' }]),
+    // NEXORA #125 : travail en équipe retiré (coédition en direct, bibliothèques d'équipe) ; une salle déjà ouverte
+    // peut encore être quittée.
+    { head: 'Commentaires' },
+    ...(D.nxRoom ? [{ id: 'collab', icon: 'nxUsers', label: `Quitter la coédition (salle ${D.nxRoom.code})…` }] : []),
     { id: 'comment', icon: 'nxComment', label: 'Ajouter un commentaire', kbd: 'Clic sur la page' },
-    { id: 'comments', icon: 'nxComment', label: open ? `Commentaires (${open})` : 'Commentaires', sub: 'Équipe et clients réunis' },
-    { id: 'team', icon: 'group', label: n.libs ? `Bibliothèques de l’équipe · ${pl(n.libs, 'mise à jour', 'mises à jour')}` : 'Bibliothèques de l’équipe…', sub: `Composants, variables, kit de marque${pro ? '' : ' · offre Pro'}` }
+    { id: 'comments', icon: 'nxComment', label: open ? `Commentaires (${open})` : 'Commentaires', sub: 'Vos notes et les avis de vos clients' }
   ], { width: 330, align: 'end' });
   if (!a) return;
   if (a === 'review') CTX.open('review');
-  if (a === 'team') CTX.open('team');
   if (a === 'collab') PG.collab(D);
-  if (a === 'collab-doc') await PG.startRoom(D, PG.docRoomCode(D), 'doc');
   if (a === 'comment') nxTool(D, 'comment');
   if (a === 'comments') { await CTX.loadReviews().catch(() => null); toggleFloat(D, 'comments'); D.nxRenderComments && D.nxRenderComments(); }
   if (a === 'view') await viewLink(D);
@@ -256,7 +254,7 @@ async function restore(D, id, openIt = false) {
 async function gallery(D) {
   const S = await store();
   const st = { q: '', sort: settings.nxDocSort || 'recent', tab: 'docs' };
-  const s = sheet('nx-docs', sheetHtml({ icon: 'nxFolder', title: 'Tous les documents', sub: 'Documents NEX-DESIGN gardés sur ce PC (ceux du cloud de l’équipe sont dans le menu du document).', body: '<div class="nx-docs-ui"></div>' }));
+  const s = sheet('nx-docs', sheetHtml({ icon: 'nxFolder', title: 'Tous les documents', sub: 'Documents NEX-DESIGN gardés sur ce PC (ceux du cloud sont dans le menu du document).', body: '<div class="nx-docs-ui"></div>' }));
   if (!s) return;
   s.classList.add('nx-docs-sheet');
   const closeBtn = s.querySelector('[data-sheet="close"]'); if (closeBtn) closeBtn.textContent = 'Fermer';
@@ -386,7 +384,7 @@ function bindProps(D) {
   f.addEventListener('keydown', (e) => { const h = e.target.closest && e.target.closest('.dz-card > .dz-card-h'); if (h && e.target === h && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); toggle(h); } });
 }
 
-// ---------- Commentaires : avis des clients montrés avec ceux de l'équipe ----------
+// ---------- Commentaires : avis des clients montrés avec vos notes ----------
 function clientReviews() {
   const links = (CTX && CTX.reviews()) || [];
   const out = [];

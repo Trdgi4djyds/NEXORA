@@ -4,7 +4,7 @@
 //   BASE      "" en production (site à la racine du domaine) ; "/site" dans l'aperçu Figma Make quand la page est
 //             ouverte sous /site/ (captures).
 //   Anciennes adresses « #/tarifs » (liens de l'application Windows, du lanceur, e-mails) : converties au démarrage
-//   (migrateHashRoute). Celles de NEXORA web (#/share/…, #/invite/…, #/revue/…, jetons de connexion) partent vers
+//   (migrateHashRoute). Celles de NEXORA web (#/share/…, #/revue/…, jetons de connexion ; #125 : plus d'invitations d'équipe) partent vers
 //   /studio/.
 // #074 : transitions de page par l'API View Transitions (sens html[data-vt=next|back]), aucune entre /tarifs et
 // /tarifs/comparatif ni avec « Réduire les animations ».
@@ -141,7 +141,7 @@ export function migrateHashRoute(): boolean {
   const h = location.hash
   if (!h) return false
   const path = normalizePath(location.pathname)
-  const studio = /^#\/(share|invite|revue)\//.test(h) || (path === "/" && /(^#|[#&])(access_token|error_description|error)=/.test(h) && !h.startsWith("#/"))
+  const studio = /^#\/(share|revue)\//.test(h) || (path === "/" && /(^#|[#&])(access_token|error_description|error)=/.test(h) && !h.startsWith("#/"))
   if (studio && !BASE) {
     location.replace(`${STUDIO_PATH}${h}`)
     return true

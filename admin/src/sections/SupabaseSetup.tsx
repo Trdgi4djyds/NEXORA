@@ -447,7 +447,7 @@ function EmailSettings({ token }: { token: string }) {
       try {
         const [r] = await sql<{ value: AlertState["cfg"] }>(token, `update public.app_config set value = jsonb_build_object('enabled', ${enabled}, 'sender_email', ${sqlText(form.sender.trim())}, 'sender_name', ${sqlText(form.name.trim())}), updated_at = now() where key = 'email_alerts' returning value`)
         if (!r || Boolean(r.value?.enabled) !== enabled) throw new Error("Supabase n’a pas gardé le réglage : appliquez d’abord la migration des alertes.")
-        setAlertOutcome({ ok: true, text: enabled ? `Alertes par e-mail activées : chaque panne, lenteur ou retour en ligne part de ${form.name} <${form.sender}> vers les membres concernés.` : "Alertes par e-mail désactivées : les notifications restent dans NEXORA.", at: Date.now() })
+        setAlertOutcome({ ok: true, text: enabled ? `Alertes par e-mail activées : chaque panne, lenteur ou retour en ligne part de ${form.name} <${form.sender}> vers les comptes concernés.` : "Alertes par e-mail désactivées : les notifications restent dans NEXORA.", at: Date.now() })
         setTick((n) => n + 1)
       } catch (e) {
         setAlertOutcome({ ok: false, text: `Échec : ${errMsg(e)}`, at: Date.now() })
@@ -513,7 +513,7 @@ function EmailSettings({ token }: { token: string }) {
       </div>
 
       <h4 className="email-sub">Alertes de supervision par e-mail (API)</h4>
-      <p className="muted small" style={{ margin: 0 }}>Une seule clé pour deux usages : les alertes de la supervision 24 h/24 des serveurs (membres de l’équipe) et celles de l’application Windows (Sécurité → Supervision &amp; alertes), envoyées à l’adresse du compte de chaque utilisateur. Telegram et WhatsApp ne sont plus proposés.</p>
+      <p className="muted small" style={{ margin: 0 }}>Une seule clé pour deux usages : les alertes de la supervision 24 h/24 des serveurs (propriétaire de chaque site) et celles de l’application Windows (Sécurité → Supervision &amp; alertes), envoyées à l’adresse du compte de chaque utilisateur. Telegram et WhatsApp ne sont plus proposés.</p>
       <OutcomeBanner outcome={alertOutcome} onClose={() => setAlertOutcome(null)} />
       <Loaded q={alerts}>
         {(st) => !st.installed ? (

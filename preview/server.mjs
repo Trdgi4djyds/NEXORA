@@ -325,6 +325,21 @@ export function nexoraPreview() {
         }
         if (req.method !== "GET" && req.method !== "HEAD") return next()
 
+        // NEXORA #125 : back office publié à /nex-system/ (dist/nex-system/), sources toujours dans admin/. L'ancienne
+        // adresse /admin/ n'existe plus, comme en ligne : page introuvable, sans redirection qui révélerait la nouvelle.
+        // Les modules de admin/src, importés par Vite en chemins absolus, restent servis.
+        if (rel === "nex-system") {
+          res.writeHead(302, { Location: `${base}nex-system/` })
+          res.end()
+          return
+        }
+        if (rel === "admin" || rel === "admin/" || rel === "admin/index.html") {
+          res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" })
+          res.end(req.method === "HEAD" ? undefined : "Page introuvable.")
+          return
+        }
+        if (rel.startsWith("nex-system/")) req.url = (req.url ?? "").replace(`${base}nex-system/`, `${base}admin/`)
+
         // NEXORA #062-#063 : le site vitrine est l'entrée de l'aperçu Figma Make : « / » sans paramètre sert
         // directement sa page (sans redirection, que l'aperçu de Make ne suit pas toujours) ; l'application
         // NEXORA reste servie à « /?app » (lien « Ouvrir NEXORA web » du site, captures). La version publiée

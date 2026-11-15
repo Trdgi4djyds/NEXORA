@@ -1,4 +1,6 @@
 // Coquille du back office : navigation, en-tête et routes (#/section/paramètre).
+// NEXORA #125 : NEX-SYSTEM, publié à /nex-system/ (l'ancienne adresse /admin/ répond 404) ; plus de travail en équipe
+// (section Invitations retirée) ; un seul rôle d'administration avec tous les droits ; section « Données ».
 import { createContext, useContext, useEffect, useState, type ComponentType, type ReactNode } from "react"
 import { useMe } from "./auth"
 import { Icon } from "./icons"
@@ -10,7 +12,6 @@ import { Users } from "./sections/Users"
 import { Orgs } from "./sections/Orgs"
 import { Devices } from "./sections/Devices"
 import { Licences } from "./sections/Licences"
-import { Invitations } from "./sections/Invitations"
 import { Content } from "./sections/Content"
 import { Files } from "./sections/Files"
 import { Monitors } from "./sections/Monitors"
@@ -25,6 +26,7 @@ import { SupabaseSetup } from "./sections/SupabaseSetup"
 import { Emails } from "./sections/Emails"
 import { Invoices } from "./sections/Invoices"
 import { Referral } from "./sections/Referral"
+import { Data } from "./sections/Data"
 
 export type SectionProps = { param?: string }
 type Section = {
@@ -40,13 +42,12 @@ type Section = {
 export const SECTIONS: Section[] = [
   { id: "overview", label: "Vue d’ensemble", icon: "grid", group: "Pilotage", view: Overview, desc: "L’activité de NEXORA en un coup d’œil." },
   { id: "users", label: "Utilisateurs", icon: "user", group: "Clients", view: Users, desc: "Comptes, rôles, accès et sécurité." },
-  { id: "orgs", label: "Équipes et offres", icon: "group", group: "Clients", view: Orgs, desc: "Espaces, membres et abonnements." },
+  { id: "orgs", label: "Espaces et offres", icon: "folder", group: "Clients", view: Orgs, desc: "Espaces des comptes et abonnements." },
   { id: "invoices", label: "Factures", icon: "pdf", group: "Clients", view: Invoices, desc: "Factures PDF aux couleurs de NEXORA, envoyées par e-mail avec Brevo." },
   // NEXORA #090 : NEXORA REFERRAL (parrains, codes du mois, filleuls, commissions, retraits).
   { id: "referral", label: "Parrainage", icon: "gift", group: "Clients", view: Referral, desc: "NEXORA REFERRAL : parrains invités par l’équipe, code d’accès du mois, filleuls, commissions et retraits." },
   { id: "devices", label: "Appareils", icon: "laptop", group: "Clients", view: Devices, desc: "Postes Windows et navigateurs connectés." },
   { id: "licences", label: "Licences", icon: "key", group: "Clients", view: Licences, desc: "Licences de NEXORA Devs Toolbox, appareils, adresses IP, contrôles, sessions et journaux du logiciel." },
-  { id: "invitations", label: "Invitations", icon: "mail", group: "Clients", view: Invitations, desc: "Invitations envoyées aux équipes." },
   { id: "content", label: "Contenus", icon: "layers", group: "Contenus", view: Content, desc: "Projets, designs, Studio, planches, partages et commentaires." },
   { id: "files", label: "Fichiers", icon: "folder", group: "Contenus", view: Files, desc: "Fichiers stockés par les espaces." },
   { id: "monitors", label: "Supervision", icon: "sync", group: "Contenus", view: Monitors, desc: "Sites surveillés et disponibilité." },
@@ -57,8 +58,9 @@ export const SECTIONS: Section[] = [
   { id: "plans", label: "Offres", icon: "star", group: "Produit", view: Plans, desc: "Prix, limites et avantages des offres." },
   { id: "flags", label: "Fonctionnalités", icon: "wand", group: "Produit", view: Flags, desc: "Activation et déploiement progressif des espaces." },
   { id: "config", label: "Configuration", icon: "wrench", group: "Produit", view: Config, desc: "Réglages globaux de l’application." },
+  { id: "data", label: "Données", icon: "cube", group: "Système", view: Data, desc: "Toutes les tables de la base : lire, rechercher, modifier, ajouter et supprimer n’importe quelle ligne." },
   { id: "audit", label: "Journal d’audit", icon: "audit", group: "Système", view: Audit, desc: "Toutes les modifications enregistrées par la base." },
-  { id: "supabase", label: "Supabase", icon: "cloud", group: "Système", view: SupabaseSetup, superOnly: true, desc: "Configuration du projet Supabase : authentification, fonctions, base de données." },
+  { id: "supabase", label: "Supabase", icon: "cloud", group: "Système", view: SupabaseSetup, desc: "Configuration du projet Supabase : authentification, fonctions, base de données." },
 ]
 
 /* ---------------------------------------------------------------- Routes */
@@ -136,8 +138,8 @@ export function App() {
           <div className="brand">
             <img src={logo} alt="" />
             <div>
-              <b>NEXORA</b>
-              <small>Administration</small>
+              <b>NEX-SYSTEM</b>
+              <small>Administration NEXORA</small>
             </div>
           </div>
           {visible.map((s) => {

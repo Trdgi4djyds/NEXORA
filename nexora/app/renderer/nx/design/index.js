@@ -177,10 +177,10 @@ export async function moreMenu(D, anchor) {
     { id: 'present', icon: 'nxPresent', label: 'Présenter en plein écran', kbd: 'F5' },
     { id: 'zip', icon: 'nxZip', label: 'Exporter toutes les pages (ZIP)' },
     { id: 'layers', icon: 'layers', label: 'Exporter chaque calque (PNG, ZIP)' },
-    { head: 'Marque et équipe' },
+    { head: 'Marque et commentaires' },
     { id: 'brand', icon: 'nxBrand', label: 'Kit de marque…' },
     { id: 'brandApply', icon: 'nxPalette', label: 'Appliquer le kit de marque à la page' },
-    { id: 'collab', icon: 'nxUsers', label: D.nxRoom ? `Coédition en direct (salle ${D.nxRoom.code})…` : 'Coéditer en direct…' },
+    ...(D.nxRoom ? [{ id: 'collab', icon: 'nxUsers', label: `Quitter la coédition (salle ${D.nxRoom.code})…` }] : []),
     { id: 'comment', icon: 'nxComment', label: 'Ajouter un commentaire', kbd: 'Clic sur la page' },
     { id: 'comments', icon: 'nxComment', label: `Commentaires (${PG.comments(D).filter((c) => !c.done).length})` },
     { head: 'Affichage' },
@@ -495,10 +495,10 @@ function renderFloat(D, kind, f) {
   }
   if (kind === 'comments') {
     const list = PG.comments(D);
-    // NEXORA #075 : un seul fil : commentaires de l'équipe, puis avis des clients reçus par les liens de validation.
+    // NEXORA #075 : un seul fil : vos commentaires, puis avis des clients reçus par les liens de validation (#125 : sans équipe).
     const cr = D.nxClientReviews ? D.nxClientReviews() : [];
     f.innerHTML = `<div class="nx-float-h"><b>${ico('nxComment', 14)} Commentaires</b><button class="btn small" data-fl="add">${ico('plus', 12)}<span>Ajouter</span></button><button class="icon-btn small" data-fl="close" title="Fermer">${ico('close', 12)}</button></div>
-      <div class="nx-float-list"><div class="pop-sub">Équipe</div>${list.length ? list.map((c) => { const pi = D.doc.pages.findIndex((p) => p.id === c.page); return `<div class="nx-crow${c.done ? ' off' : ''}"><b>${esc(c.author)}</b><small>Page ${pi + 1} · ${new Date(c.at).toLocaleDateString('fr-FR')}</small><p>${esc(c.text)}</p>${c.replies.map((r) => `<p class="nx-reply"><b>${esc(r.author)}</b> ${esc(r.text)}</p>`).join('')}<div class="nx-row"><button class="btn small" data-cgo="${esc(c.id)}">Voir</button>${c.done ? '' : `<button class="btn small" data-cdone="${esc(c.id)}">Résolu</button>`}</div></div>`; }).join('') : '<p class="nx-muted" style="padding:10px">Aucun commentaire. Cliquez sur « Ajouter », puis sur la page.</p>'}
+      <div class="nx-float-list"><div class="pop-sub">Vos commentaires</div>${list.length ? list.map((c) => { const pi = D.doc.pages.findIndex((p) => p.id === c.page); return `<div class="nx-crow${c.done ? ' off' : ''}"><b>${esc(c.author)}</b><small>Page ${pi + 1} · ${new Date(c.at).toLocaleDateString('fr-FR')}</small><p>${esc(c.text)}</p>${c.replies.map((r) => `<p class="nx-reply"><b>${esc(r.author)}</b> ${esc(r.text)}</p>`).join('')}<div class="nx-row"><button class="btn small" data-cgo="${esc(c.id)}">Voir</button>${c.done ? '' : `<button class="btn small" data-cdone="${esc(c.id)}">Résolu</button>`}</div></div>`; }).join('') : '<p class="nx-muted" style="padding:10px">Aucun commentaire. Cliquez sur « Ajouter », puis sur la page.</p>'}
       <div class="pop-sub">Clients (validation)</div>${cr.length ? cr.map((r) => `<div class="nx-crow client ${esc(r.decision)}"><b>${esc(r.author)}</b><small>${esc(DECISION[r.decision] || 'Commentaire')} · page ${r.page + 1} · ${new Date(r.created_at).toLocaleDateString('fr-FR')} · « ${esc(r.link)} »</small><p>${esc(r.comment || '—')}</p><div class="nx-row"><button class="btn small" data-cpage="${r.page}">Voir</button></div></div>`).join('') : '<p class="nx-muted" style="padding:10px">Aucun avis de client. Envoyez un lien : Partager → Validation client.</p>'}</div>`;
     f.onclick = async (e) => {
       if (e.target.closest('[data-fl="close"]')) { f.remove(); return; }
@@ -528,7 +528,7 @@ function renderLibrary(D) {
     ${block('Modèles', `<div class="nx-tpls">${Object.entries(TEMPLATES).filter(([, t]) => m(t.label) || m(t.usage)).map(([id, t]) => `<button class="nx-tpl" data-nxl="tpl:${id}" title="${esc(t.label)} · ${esc(t.usage)}"><img src="${C.templateThumb(id, 104)}" alt=""><span>${esc(t.label)}</span></button>`).join('')}</div>`)}
     ${!q ? `<div class="st-head">Kit de marque</div><div class="nx-brandbar"><div class="nx-chips">${b.colors.map((c) => `<button class="dz-sw" data-nxl="color:${esc(c)}" style="--c:${esc(c)}" title="Appliquer ${esc(c)} à la sélection"></button>`).join('')}</div>
       <div class="nx-row">${b.logo ? `<button class="btn small" data-nxl="logo">${ico('image', 13)}<span>Logo</span></button>` : ''}<button class="btn small" data-nxl="brand-apply">${ico('nxPalette', 13)}<span>Appliquer</span></button><button class="btn small" data-nxl="brand-edit">${ico('nxBrand', 13)}<span>Modifier</span></button></div></div>
-      <div class="st-head">Styles du document</div><div class="nx-row nx-lib-links"><button class="btn small" data-nxl="panel:variables">${ico('nxPalette', 13)}<span>Variables</span></button><button class="btn small" data-nxl="panel:fonts">${ico('text', 13)}<span>Polices</span></button><button class="btn small" data-nxl="panel:team">${ico('group', 13)}<span>Bibliothèques de l’équipe</span></button></div>` : ''}`;
+      <div class="st-head">Styles du document</div><div class="nx-row nx-lib-links"><button class="btn small" data-nxl="panel:variables">${ico('nxPalette', 13)}<span>Variables</span></button><button class="btn small" data-nxl="panel:fonts">${ico('text', 13)}<span>Polices</span></button></div>` : ''}`;
   const shapes = `<div class="nx-gridlib">${Object.entries(SHAPES).filter(([, s]) => m(s[0])).map(([k, s]) => `<button class="nx-libbtn" data-nxl="shape:${k}" title="${esc(s[0])}">${svgThumb(s[1])}</button>`).join('')}</div>`;
   const rest = `${block('Autocollants', `<div class="nx-gridlib big">${Object.entries(STICKERS).filter(([, l]) => m(l)).map(([k, l]) => `<button class="nx-libbtn" data-nxl="sticker:${k}" title="${esc(l)}"><img src="${stick(k)}" alt=""></button>`).join('')}</div>`)}
     ${block('Cadres photo', `<div class="nx-gridlib">${Object.entries(FRAMES).filter(([, f]) => m(f[0]) || m('cadre photo')).map(([k, f]) => `<button class="nx-libbtn" data-nxl="frame:${k}" title="Cadre ${esc(f[0])}">${svgThumb(f[1], 'var(--text-3)')}</button>`).join('')}</div>`)}

@@ -7,7 +7,7 @@ import { box, bullets, button, code, esc, layout, p, pill, rows, TONES, type Ton
 
 export const LOGO_URL = `${NEXORA_WEB_URL}logo.png`
 /** Version des modèles enregistrés dans la base (app_config.email_templates) : à augmenter à chaque changement. */
-export const TEMPLATES_VERSION = 4
+export const TEMPLATES_VERSION = 5
 
 type V = Record<string, string>
 export type Rendered = { subject: string; html: string; text?: string }
@@ -232,7 +232,7 @@ const AUTH: EmailTemplate[] = [
         preheader: "Saisissez ce code dans NEXORA pour confirmer qu’il s’agit bien de vous.",
         greeting: esc(v.greet),
         body: p("Saisissez ce code dans NEXORA pour confirmer qu’il s’agit bien de vous :") + code(v.token),
-        note: "Ce code expire dans 1 heure. Ne le communique à personne : l’équipe NEXORA ne vous le demandera jamais.",
+        note: "Ce code expire dans 1 heure. Ne le communiquez à personne : l’équipe NEXORA ne vous le demandera jamais.",
         reason: REASON_ACCOUNT,
       }),
     }),
@@ -365,7 +365,7 @@ const ALERT: EmailTemplate = {
         title: v.titre,
         preheader: v.apercu,
         body: p(v.message) + rows([["Type", v.niveau], ["Détecté le", v.date]]) + button("Ouvrir la supervision", v.lien, tone),
-        note: "Pour ne plus recevoir ces e-mails : NEXORA → Sécurité → Supervision &amp; alertes → Alertes, ou demande à l’administrateur de votre équipe.",
+        note: "Pour ne plus recevoir ces e-mails : NEXORA → Sécurité → Supervision &amp; alertes → Alertes.",
         reason: "Vous recevez cet e-mail parce que les alertes par e-mail sont activées pour un site que vous suivez dans NEXORA.",
         year: v.annee,
       }),

@@ -289,6 +289,19 @@ html:not([data-contrast='high']) body .ab-chip:has(input:checked) { background: 
 html:not([data-contrast='high']) body .ab-sec.on { background: var(--fill) !important; }
 html:not([data-contrast='high']) body .ab-sec.on b { color: var(--text) !important; }
 html:not([data-contrast='high']) body .ab-sec.on::before { background: var(--text) !important; }
+/* NEXORA #125 : sous-titre des sections de l'App Builder et du Desktop Builder (« Site en ligne ou projet local »…) en
+   gris clair (--text-3) sur le fond gris de la section survolée ou choisie : 2,9:1 en clair. Gris lisible partout. */
+html:not([data-contrast='high']) body .ab-sec small { color: var(--text-2) !important; }
+/* Même gris lisible pour la présentation ouverte du Studio (« 1 diapositive ») et les choix de la frise (« 30 i/s »). */
+html:not([data-contrast='high']) body :is(.st-deck small, .tl-fps > button:not(.on)) { color: var(--text-2) !important; }
+/* Choix « 30 i/s / 60 i/s » de la frise : redessinés pendant la lecture, la transition de couleur repartait sans cesse et
+   laissait le choix actif gris sur gris (1,6 à 2:1 mesurés). Changement immédiat. */
+html body .tl-fps > button { transition: none !important; }
+/* NEXORA #125 : éléments posés sur l'accent avec un texte blanc écrit en dur (styles.css, nx/nx.css, licence.css, flex.css) :
+   blanc sur blanc en thème sombre, où l'accent « NEXORA » est blanc (puce choisie « Standard · 1280 × 800 » du Desktop
+   Builder, ligne choisie, pose, palette, messages et boutons de l'assistant IA, badges…). Texte de l'accent partout. */
+html body :is(.st-chip.on, .nx-hrow.on, .ps-pose.on, .pal-item.on, .tl-btn.play, .dk-badge, .dk-menu button:hover, .sm-btn, .ai-badge, .ai-msg-b.user, .ai-code-bar button.pri, .rail-ai:hover .rail-ic) { color: var(--accent-ink); }
+html body #nxTrialChip em { color: var(--accent-ink); }
 
 /* ------------------------------------------------------------------ défilement */
 html ::-webkit-scrollbar-thumb { background-color: var(--fill-hover); }
@@ -308,6 +321,14 @@ html:not([data-contrast='high']) body .nxo-medal { border-radius: var(--hz-pill)
 html:not([data-contrast='high']) body .nxo-kicker { color: var(--text-2); }
 html:not([data-contrast='high']) body .nxo-btn { border-radius: var(--hz-pill); background: transparent; box-shadow: inset 0 0 0 1px var(--sep-strong); }
 html:not([data-contrast='high']) body .nxo-btn.primary { background: var(--hz-on) !important; color: var(--hz-ink) !important; box-shadow: none !important; }
+/* NEXORA #125 : bandeau « Votre offre » (Mon compte → Offre et usage) resté bleu ou or (plat.css) alors que son repère
+   passait en gris et son bouton blanc devenait transparent : « Passer à Pro » foncé sur bleu, invisible en thème sombre.
+   Bloc noir (gris très sombre en thème sombre) comme la carte « Passez à Pro », texte blanc, bouton blanc à l'encre. */
+html:not([data-contrast='high']) body .nxo-now, html:not([data-contrast='high']) body .nxo-now:is(.nxo-free, .nxo-pro) { background: #0a0a0a !important; box-shadow: none !important; }
+html:not([data-contrast='high'])[data-theme='dark'] body .nxo-now, html:not([data-contrast='high'])[data-theme='dark'] body .nxo-now:is(.nxo-free, .nxo-pro) { background: #161616 !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08) !important; }
+html:not([data-contrast='high']) body .nxo-now .nxo-kicker { color: rgba(255, 255, 255, .72); }
+html:not([data-contrast='high']) body .nxo-btn.light { background: #fff !important; color: #0a0a0a !important; box-shadow: none !important; }
+html:not([data-contrast='high']) body .nxo-btn.light:hover:not(:disabled) { background: #e6e6e6 !important; }
 html:not([data-contrast='high']) body .nxo-feats .ico, html:not([data-contrast='high']) body .nxo-feats svg { color: var(--text) !important; }
 html:not([data-contrast='high'])[data-theme='dark'] body .nxo-plan.nxo-pro .nxo-name { background-image: none !important; -webkit-text-fill-color: currentColor; }
 html:not([data-contrast='high']) body .nxo-bar em, html:not([data-contrast='high']) body .nxo-meter.hot .nxo-bar em { background: var(--hz-on) !important; }

@@ -32,7 +32,7 @@ export async function renderStatus(ctx) {
       <label class="tog-row"><span class="tog-text"><span>Publier</span><small>Sinon, la page reste un brouillon visible seulement par vous.</small></span><input type="checkbox" name="published" ${e.published !== false ? 'checked' : ''}><span class="tog" aria-hidden="true"></span></label>
       <div class="nxs-actions">${btn(e.id ? 'Enregistrer' : 'Créer la page', 'type="submit"', { ic: 'check', cls: 'small primary' })}${e.id ? btn('Nouvelle page', 'data-st-new', { ic: 'plus' }) : ''}</div>
     </form>` : `<p class="sup-note">${icon('cloud', 13)} Une page de statut montre les sites surveillés <b>24 h/24 par les serveurs NEXORA</b>. Ouvrez la fiche d’un site et activez « Surveiller aussi 24 h/24 », puis revenez ici.</p>`, { sub: 'Vos visiteurs peuvent s’abonner aux incidents par e-mail' })}
-    ${card('Vos pages', list, { sub: `Équipe « ${esc(acc.orgName)} »` })}
+    ${card('Vos pages', list, { sub: `Espace « ${esc(acc.orgName)} »` })}
   </div>`;
 }
 

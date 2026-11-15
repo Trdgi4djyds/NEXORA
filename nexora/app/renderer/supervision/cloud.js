@@ -78,7 +78,7 @@ function row(site, orgId, extended = true) {
 export async function link(site) {
   const a = account();
   if (!a.signedIn) throw new Error('Connectez-vous à votre compte NEXORA pour activer la surveillance 24 h/24.');
-  if (!a.orgId) throw new Error('Choisissez d’abord un espace d’équipe dans votre compte NEXORA.');
+  if (!a.orgId) throw new Error('Reconnectez-vous d’abord à votre compte NEXORA pour retrouver votre espace.');
   if (!a.canEdit) throw new Error('Votre rôle dans cet espace ne permet pas d’ajouter des sites surveillés (éditeur au moins).');
   const found = await sb.from('monitors').select('id').eq('org_id', a.orgId).eq('app_site_id', site.id).limit(1);
   if (found.error) throw serverError(found.error);

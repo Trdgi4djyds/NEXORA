@@ -36,7 +36,7 @@ export function Users({ param }: SectionProps) {
   const reload = () => setTick((n) => n + 1)
 
   async function setRole(u: AdminUser, role: AppRole) {
-    if (role === "superadmin" && !(await ui.confirm({ title: "Nommer super-administrateur ?", body: `${u.full_name || u.email} aura tous les droits, y compris la configuration et la suppression de comptes.`, confirm: "Nommer" }))) return reload()
+    if (role === "superadmin" && !(await ui.confirm({ title: "Nommer administrateur ?", body: `${u.full_name || u.email} aura tous les droits sur NEXORA et sur toutes ses données, y compris la configuration et la suppression de comptes.`, confirm: "Nommer" }))) return reload()
     if (await act.run(async () => must(await sb.rpc("admin_set_role", { target: u.id, new_role: role })), "Rôle enregistré.")) reload()
   }
   async function userAction(u: Pick<AdminUser, "id" | "full_name" | "email" | "status">, action: UserAct) {
@@ -80,9 +80,10 @@ export function Users({ param }: SectionProps) {
                     <tr key={u.id} className="click" onClick={(e) => !(e.target as HTMLElement).closest("select, button") && go("users", u.id)}>
                       <td><UserCell p={u} sub={<>{u.email}{a.confirmed_at === null && <> · <span style={{ color: "var(--warn)" }}>e-mail non confirmé</span></>}</>} /></td>
                       <td>
-                        <select className="input sm" value={u.app_role} disabled={self || (u.app_role === "superadmin" && !me.isSuper)} onChange={(e) => setRole(u, e.target.value as AppRole)}>
-                          {(["user", "admin", "superadmin"] as AppRole[]).map((r) => (
-                            <option key={r} value={r} disabled={r === "superadmin" && !me.isSuper}>{ROLE_LABEL[r]}</option>
+                        {/* NEXORA #125 : Utilisateur ou Administrateur (tous les droits, enregistré en superadmin). */}
+                        <select className="input sm" value={u.app_role === "admin" ? "superadmin" : u.app_role} disabled={self} onChange={(e) => setRole(u, e.target.value as AppRole)}>
+                          {(["user", "superadmin"] as AppRole[]).map((r) => (
+                            <option key={r} value={r}>{ROLE_LABEL[r]}</option>
                           ))}
                         </select>
                       </td>
@@ -220,9 +221,8 @@ function UserDrawer({ id, onAction }: { id: string; onAction: (a: UserAct, p: Ro
                     const sub = o && (Array.isArray(o.subscriptions) ? o.subscriptions[0] : o.subscriptions)
                     return o ? (
                       <button key={o.id} className="li" onClick={() => go("orgs", o.id)}>
-                        <Icon name={o.personal ? "user" : "group"} size={15} />
+                        <Icon name={o.personal ? "user" : "folder"} size={15} />
                         <span className="grow ellipsis">{o.name}</span>
-                        <Tag>{ROLE_LABEL[m.role] || m.role}</Tag>
                         <Tag tone="info">{sub?.plan_id || "free"}</Tag>
                       </button>
                     ) : null

@@ -53,9 +53,15 @@ export const FALLBACK = {
     id: 'pro', name: 'Pro', description: 'Toutes les options de NEXORA Devs Toolbox, sans limite d’espace.', price_month_cents: 2500, price_year_cents: 25000,
     currency: 'USD', sort: 2, badge: 'Toutes les options', perms: PRO_PERMS,
     limits: { projects: 200, designs: -1, members: 10, monitors: 50, storage_mb: 51200, apps: 50, apps_lifetime: 0, app_trial_days: 0, builds_per_app_month: -1, ai_requests_month: -1, scans_per_day: 200, crawls_per_day: -1, builds_month: 400, push_month: 100000 },
-    features: ['Les 9 espaces sans restriction', 'Dev Lab complet : éditeur, terminal, Git, débogueur, tests, bases de données, mise en ligne', 'Jusqu’à 50 applications Android ou Windows, sans limite par application (400 constructions par mois)', 'NEX-DESIGN complet : documents illimités, IA, prototype, code, équipe', 'Studio 3D & Motion avancé', 'Sécurité : audits avancés, 50 sites surveillés 24 h/24, page de statut', '200 projets, 10 membres, 50 Go', 'Assistance prioritaire'],
+    // NEXORA #125 : plus de travail en équipe (copie de supabase/migrations/20261115000001_sans_equipes_admins.sql).
+    features: ['Les 9 espaces sans restriction', 'Dev Lab complet : éditeur, terminal, Git, débogueur, tests, bases de données, mise en ligne', 'Jusqu’à 50 applications Android ou Windows, sans limite par application (400 constructions par mois)', 'NEX-DESIGN complet : documents illimités, IA, prototype, code', 'Studio 3D & Motion avancé', 'Sécurité : audits avancés, 50 sites surveillés 24 h/24, page de statut', '200 projets, 50 Go', 'Assistance prioritaire'],
   },
 };
+// NEXORA #125 : le travail en équipe est retiré de NEXORA. Fonctions d'une offre lues sur le serveur avant la
+// migration 20261115000001 : mentions de l'équipe et des membres retirées (logiciel, site vitrine).
+export const sansEquipe = (features) => (features || [])
+  .map((f) => String(f).replace(/,\s*(?:l’|l')?équipes?(?!\p{L})/giu, '').replace(/,?\s*\d+\s+membres?(?!\p{L})/giu, '').replace(/^\s*,\s*/, '').trim())
+  .filter((f) => f && !/(?<!\p{L})(?:équipes?|membres?)(?!\p{L})/iu.test(f));
 // L'ancienne offre Standard (et Équipe, Entreprise) est traitée comme Pro.
 FALLBACK.standard = FALLBACK.pro;
 export const PLAN_ORDER = ['free', 'pro'];
@@ -71,7 +77,6 @@ export const PLAN_LOOK = {
 export const METERS = [
   ['projects', 'Projets', '', 'org', 'folder'],
   ['designs', 'Documents NEX-DESIGN', '', 'org', 'image'],
-  ['members', 'Membres de l’espace', '', 'org', 'group'],
   ['monitors', 'Sites surveillés', '', 'org', 'sync'],
   ['storage_mb', 'Stockage', 'Mo', 'org', 'download'],
   ['apps', 'Applications (Android ou Windows)', '', 'user', 'android'],
@@ -92,7 +97,7 @@ export const COMPARE = [
     { label: 'Studio 3D avancé', perm: 'studio_advanced' },
     { label: 'NEX-DESIGN : mise en page automatique, accessibilité, mesures, polices', text: { free: 'Inclus', pro: 'Inclus' } },
     { label: 'NEX-DESIGN : animation (Motion), variables, variantes, prototype, code, série, impression, PSD, icônes, versions', perm: 'design_extended' },
-    { label: 'NEX-DESIGN : IA, code vers le Dev Lab, validation client, bibliothèques d’équipe, import Figma', perm: 'design_full' },
+    { label: 'NEX-DESIGN : IA, code vers le Dev Lab, validation client, import Figma', perm: 'design_full' },
   ]],
   // NEXORA #087 : 2 applications au total avec l'offre Gratuite (App Builder et Desktop Builder confondus).
   ['Applications', [
@@ -142,8 +147,7 @@ export const COMPARE = [
     { label: 'API et SDK', perm: 'api_sdk' },
     { label: 'Outils d’intégration (achats intégrés, OneSignal, AdMob, Analytics, Meta)', perm: 'integrations' },
   ]],
-  ['Équipe et assistance', [
-    { label: 'Membres par espace', limit: 'members' },
+  ['Espace et assistance', [
     { label: 'Sites surveillés', limit: 'monitors' },
     { label: 'Stockage', limit: 'storage_mb', unit: 'Mo' },
     { label: 'Tableau de bord', perm: 'dashboard' },

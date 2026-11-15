@@ -221,7 +221,7 @@ async function fillServer(ctx, d, token) {
   const sub = 'Vérifié en continu, même NEXORA fermée et ordinateur éteint';
   const paint = (body, actions = '') => { if (token === ctx.token && host0.isConnected) { host0.innerHTML = card('Surveillance 24 h/24', body, { sub, actions, cls: 'sup-srv-card' }); bindServer(ctx, d, host0); } };
   if (!acc.signedIn) {
-    paint(`<p class="sup-note">${icon('cloud', 13)} Connectez-vous à votre compte NEXORA (bouton Connexion du rail) : ce site sera vérifié jour et nuit et votre équipe sera prévenue dès qu’il tombe ou ralentit.</p>`);
+    paint(`<p class="sup-note">${icon('cloud', 13)} Connectez-vous à votre compte NEXORA (bouton Connexion du rail) : ce site sera vérifié jour et nuit et vous serez prévenu dès qu’il tombe ou ralentit.</p>`);
     return;
   }
   let l;
@@ -229,7 +229,7 @@ async function fillServer(ctx, d, token) {
   if (l.outdated) { paint('<p class="sup-note">La surveillance 24 h/24 n’est pas encore disponible. Réessayez plus tard.</p>'); return; }
   const m = l.map.get(s.id);
   if (!m) {
-    paint(`<p class="sup-note">${icon('cloud', 13)} Ce site n’est vérifié que pendant que NEXORA est ouverte sur ce PC. Activez la surveillance 24 h/24 pour l’équipe « ${esc(acc.orgName)} » : vérification toutes les ${Math.max(1, Math.round(s.intervalSec / 60))} min, pannes confirmées, notification dans NEXORA.</p>`,
+    paint(`<p class="sup-note">${icon('cloud', 13)} Ce site n’est vérifié que pendant que NEXORA est ouverte sur ce PC. Activez la surveillance 24 h/24 pour votre espace « ${esc(acc.orgName)} » : vérification toutes les ${Math.max(1, Math.round(s.intervalSec / 60))} min, pannes confirmées, notification dans NEXORA.</p>`,
       acc.canEdit ? btn('Activer la surveillance 24 h/24', 'data-srv="on"', { ic: 'cloud', cls: 'small primary' }) : '<small class="muted">Rôle éditeur requis</small>');
     return;
   }

@@ -69,8 +69,9 @@ export const PRIORITY_LABEL: Record<string, string> = {
 }
 export const ROLE_LABEL: Record<string, string> = {
   user: "Utilisateur",
-  admin: "Admin",
-  superadmin: "Super-admin",
+  // NEXORA #125 : un seul rôle d'administration, avec tous les droits.
+  admin: "Administrateur",
+  superadmin: "Administrateur",
   owner: "Propriétaire",
   editor: "Éditeur",
   viewer: "Lecteur",

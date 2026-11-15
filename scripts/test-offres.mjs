@@ -9,6 +9,9 @@
 //   3. NEXORA #087 : migration 20261108000006_offre_gratuite_applications.sql rejouée deux fois par-dessus :
 //      Gratuit à 2 applications au total (Android ou Windows, supprimées comprises), 5 constructions par
 //      application et par mois (nx_app_build), anciennes versions refusées, Pro à 18 $ et 180 $, statistiques.
+//   4. NEXORA #125 : migration 20261115000001_sans_equipes_admins.sql rejouée deux fois : offres sans équipe ni
+//      membres, « admin » devenu « superadmin » (comptes et nominations), section « Données » du back office
+//      (tables, lignes, modification, ajout, suppression) réservée aux administrateurs, journalisée, journal protégé.
 // PGlite n'est pas une dépendance du dépôt : l'installer à part, par exemple
 //   mkdir -p /tmp/pgtest && cd /tmp/pgtest && echo '{}' > package.json && pnpm add @electric-sql/pglite@0.3
 // puis : node scripts/test-offres.mjs (dossier réglable par PGLITE_DIR). Sans PGlite, la partie 2 est sautée.
@@ -891,6 +894,74 @@ insert into plans (id, name, price_month_cents, price_year_cents, currency, sort
   ok(e === null, "Gratuit : application déjà suivie, réinscrite sans compter", e)
   e = await asErr(F2, "select * from public.app_insights_register('com.ex.trois', 'Trois')")
   ok(e && /suit les statistiques et les plantages de 2 applications/.test(e), "Gratuit : statistiques d’une 3e application refusées", e)
+
+  // ---------- 4. NEXORA #125 : plus de travail en équipe, administrateurs avec tous les droits, « Données » ----------
+  console.log("\n— Migration 20261115000001_sans_equipes_admins.sql (PGlite)")
+  const MIG_125 = fs.readFileSync(path.join(ROOT, "supabase/migrations/20261115000001_sans_equipes_admins.sql"), "utf8")
+  await ex("create table if not exists audit_logs (id bigserial primary key, created_at timestamptz default now(), actor_id uuid, org_id uuid, action text not null, entity text not null, entity_id text, meta jsonb not null default '{}')")
+  await ex(`create or replace function public.nx_admin_required() returns void language plpgsql stable security definer set search_path = public as $$ begin if not public.nx_is_admin() then raise exception 'Réservé aux administrateurs de NEXORA.'; end if; end $$`)
+  await q("update plans set features = $1::jsonb where id = 'pro'", [JSON.stringify(["Les 9 espaces sans restriction", "NEX-DESIGN complet : documents illimités, IA, prototype, code, équipe", "200 projets, 10 membres, 50 Go", "Assistance prioritaire"])])
+  const A2 = "77777777-7777-7777-7777-777777777777"
+  await q("insert into auth.users values ($1, 'admin2@ex.com')", [A2])
+  await q("insert into profiles (id, app_role, email) values ($1, 'admin', 'admin2@ex.com')", [A2])
+  // Ancienne équipe (créée avant #125), avec un membre et une invitation : rien ne doit disparaître.
+  const OT = "aaaaaaaa-0000-0000-0000-000000000125"
+  await q("insert into organizations (id, name, personal, owner_id) values ($1, 'Ancienne équipe', false, $2)", [OT, U.team])
+  await q("insert into organization_members values ($1, $2, 'owner')", [OT, U.team])
+  await ex("set session_replication_role = replica")
+  await q("insert into invitations (org_id, email) values ($1, 'invite@ex.com')", [OT])
+  await ex("set session_replication_role = origin")
+  await ex(MIG_125)
+  await ex(MIG_125)
+  const pro125 = (await q("select features, limits from plans where id = 'pro'"))[0]
+  ok(
+    JSON.stringify(pro125.features) === JSON.stringify(["Les 9 espaces sans restriction", "NEX-DESIGN complet : documents illimités, IA, prototype, code", "200 projets, 50 Go", "Assistance prioritaire"]),
+    "offres : plus de mention de l’équipe ni des membres, ordre gardé",
+    pro125.features,
+  )
+  ok(!JSON.stringify((await q("select features from plans")).map((p) => p.features)).match(/équipe|membre/i), "offres : aucune fonction ne parle d’équipe ou de membres")
+  ok((await q("select app_role::text as r from profiles where id = $1", [A2]))[0].r === "superadmin", "« admin » devenu « superadmin » : tous les droits")
+  await q("update profiles set app_role = 'admin' where id = $1", [F3])
+  ok((await q("select app_role::text as r from profiles where id = $1", [F3]))[0].r === "superadmin", "nomination « admin » enregistrée en « superadmin »")
+  await q("update profiles set app_role = 'user' where id = $1", [F3])
+  const kept = (await q("select (select count(*) from organizations where id = $1)::int as o, (select count(*) from organization_members where org_id = $1)::int as m, (select count(*) from invitations where org_id = $1)::int as i", [OT]))[0]
+  ok(kept.o === 1 && kept.m === 1 && kept.i === 1, "aucune donnée supprimée : anciennes équipes, membres et invitations restent en base", kept)
+
+  const tables = await rpc(A2, "nx_admin_data_tables")
+  const tPlans = tables.find((t) => t.name === "plans")
+  ok(tables.length >= 10 && tPlans && tPlans.key.join() === "id" && tPlans.columns.some((c) => c.name === "features" && c.type === "jsonb"), "Données : liste des tables, colonnes et clé primaire", tables.length)
+  ok(tables.find((t) => t.name === "audit_logs").readonly === true, "Données : journal d’audit signalé en lecture seule")
+  let page = await rpc(A2, "nx_admin_data_rows", "'plans', null, 'sort', false, 10, 0")
+  ok(page.total >= 2 && page.rows[0].id === "free" && page.key.join() === "id", "Données : lignes triées d’une table", page.total)
+  page = await rpc(A2, "nx_admin_data_rows", "'profiles', 'admin2@', null, true, 10, 0")
+  ok(page.total === 1 && page.rows[0].id === A2, "Données : recherche dans toute la ligne", page.total)
+  let row = await rpc(A2, "nx_admin_data_update", `'plans', '{"id":"pro"}'::jsonb, '{"description":"Modifiée depuis Données","badge_inconnu":1}'::jsonb`)
+  ok(row.description === "Modifiée depuis Données" && row.name === "Pro", "Données : modification d’une colonne (colonnes inconnues ignorées)", row.description)
+  row = await rpc(A2, "nx_admin_data_update", `'organization_members', '{"org_id":"${O.team}","user_id":"${U.team}"}'::jsonb, '{"role":"viewer"}'::jsonb`)
+  ok(row.role === "viewer", "Données : clé primaire composée", row)
+  row = await rpc(A2, "nx_admin_data_insert", `'monitors', '{"org_id":"${O.team}","url":"https://ajout.example.com/"}'::jsonb`)
+  ok(row.id && row.url === "https://ajout.example.com/" && row.name === "", "Données : ajout d’une ligne (valeurs par défaut)", row)
+  const del = await rpc(A2, "nx_admin_data_delete", `'monitors', '{"id":"${row.id}"}'::jsonb`)
+  ok(del.id === row.id && (await q("select count(*)::int as n from monitors where id = $1", [row.id]))[0].n === 0, "Données : suppression d’une ligne")
+  const logs = await q("select action, entity, actor_id, meta from audit_logs where action like 'data.%' order by id")
+  ok(logs.length === 4 && logs.every((l) => l.actor_id === A2) && logs[0].meta.before.description !== logs[0].meta.after.description && logs[3].meta.before.url === "https://ajout.example.com/",
+    "Données : chaque écriture journalisée (auteur, avant, après)", logs.map((l) => `${l.action} ${l.entity}`))
+  e = await asErr(A2, `select public.nx_admin_data_delete('audit_logs', '{"id":1}'::jsonb)`)
+  ok(e && /lecture seule/.test(e), "Données : journal d’audit en lecture seule", e)
+  e = await asErr(A2, `select public.nx_admin_data_update('plans', '{}'::jsonb, '{"name":"x"}'::jsonb)`)
+  ok(e && /Clé de la ligne incomplète/.test(e), "Données : clé incomplète refusée", e)
+  e = await asErr(A2, `select public.nx_admin_data_rows('pg_authid')`)
+  ok(e && /Table inconnue/.test(e), "Données : rien hors des tables du schéma public", e)
+  e = await asErr(A2, `select public.nx_admin_data_rows('plans; drop table plans')`)
+  ok(e && /Table inconnue/.test(e) && (await q("select count(*)::int as n from plans"))[0].n >= 2, "Données : nom de table injecté refusé", e)
+  for (const [fn, args] of [["nx_admin_data_tables", ""], ["nx_admin_data_rows", "'plans'"], ["nx_admin_data_update", `'plans', '{"id":"pro"}'::jsonb, '{"name":"x"}'::jsonb`], ["nx_admin_data_insert", `'monitors', '{}'::jsonb`], ["nx_admin_data_delete", `'plans', '{"id":"pro"}'::jsonb`]]) {
+    e = await asErr(F2, `select public.${fn}(${args})`)
+    ok(e && /Réservé aux administrateurs/.test(e), `Données : ${fn} refusée à un compte simple`, e)
+  }
+  const priv125 = (await q(
+    "select has_function_privilege('anon', 'public.nx_admin_data_rows(text,text,text,boolean,integer,integer)', 'execute') as anon, has_function_privilege('authenticated', 'public.nx_admin_data_rows(text,text,text,boolean,integer,integer)', 'execute') as auth, has_function_privilege('authenticated', 'public.nx_admin_data_where(regclass,jsonb)', 'execute') as internal",
+  ))[0]
+  ok(!priv125.anon && priv125.auth && !priv125.internal, "droits : « Données » réservée aux comptes connectés, fonctions internes fermées", priv125)
   return true
 }
 

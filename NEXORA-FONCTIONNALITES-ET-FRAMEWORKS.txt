@@ -2,7 +2,7 @@ NEXORA 1.2.2
 FONCTIONNALITÉS ET FRAMEWORKS PRIS EN CHARGE
 ==========================================================================================
 
-Fiche établie le 15 novembre 2026 (entrée #123 du journal SUIVI.md), d'après le code de
+Fiche établie le 15 novembre 2026 (entrée #123 du journal SUIVI.md, mise à jour au #125), d'après le code de
 NEXORA 1.2.2 et non d'après la brochure :
   - nexora/app/src/frameworks.js         reconnaissance des projets
   - nexora/app/src/desktop/analyze.js    sources acceptées par le Desktop Builder
@@ -151,7 +151,7 @@ STUDIO 3D & MOTION
 - Mise en scène par l'IA.
 - Imports 3D : OBJ, STL, PLY, nuages de points SPLAT.
 - Validation client : lien sans compte, commentaires à la seconde près.
-- Versions de la scène, bibliothèque d'équipe 3D.
+- Versions de la scène.
 - Présentations : 5 styles (Violet, Nuit néon, Galerie, Marque, Classique) et
   7 mises en page.
 - Maquettes : vos captures dans de vrais appareils 3D (iPhone, Galaxy, iPad, MacBook,
@@ -181,8 +181,7 @@ NEX-DESIGN
 - IA de design : maquette à partir d'une description, variantes, retouche intelligente.
 - Accessibilité (contraste vérifié) et mesures (touche Alt).
 - Versions automatiques, corbeille de 30 jours.
-- Commentaires, validation client, lien en lecture seule, coédition, bibliothèques
-  d'équipe tenues à jour.
+- Commentaires, validation client, lien en lecture seule.
 - Pense-bêtes et connecteurs, notes de présentation, statut « Prêt pour le
   développement ».
 
@@ -225,7 +224,8 @@ DESKTOP BUILDER (WINDOWS)
 AUTOUR DU LOGICIEL
 ------------------
 - Compte NEXORA : connexion par mot de passe ou par lien e-mail, profil, sécurité,
-  appareils connectés, déconnexion partout.
+  appareils connectés, déconnexion partout ; un espace personnel par compte (le travail
+  en équipe est retiré depuis l'entrée #125).
 - NEXORA web (https://nexoradevs.online/studio/) : compte et synchronisation ; les
   fonctions qui demandent le PC restent dans l'application Windows.
 - Assistant IA avec votre propre clé API.

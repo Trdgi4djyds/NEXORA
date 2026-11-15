@@ -123,7 +123,7 @@ function ContentTab({ tab }: { tab: TabDef }) {
   }, [tab.id, search, refresh, tick])
 
   async function remove(r: Any) {
-    if (!(await ui.confirm({ title: "Supprimer définitivement ?", body: `Supprimer ${tab.name(r)} pour tous les membres de l’espace. Cette action est irréversible.`, confirm: "Supprimer", danger: true }))) return
+    if (!(await ui.confirm({ title: "Supprimer définitivement ?", body: `Supprimer ${tab.name(r)} de l’espace. Cette action est irréversible.`, confirm: "Supprimer", danger: true }))) return
     if (await act.run(async () => must(await sb.from(tab.table).delete().eq("id", r.id)), "Élément supprimé.")) setTick((n) => n + 1)
   }
 

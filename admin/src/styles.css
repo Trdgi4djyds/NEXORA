@@ -1158,7 +1158,10 @@ textarea.input { border-radius: 16px; }
 button.kpi:hover { transform: none; box-shadow: 0 0 0 1px var(--sep-strong); }
 button.kpi:hover .kpi-ic { background: var(--ink); color: var(--ink-fg); transform: none; }
 .kpis > .kpi:first-child { background: var(--ink); color: var(--ink-fg); box-shadow: none; }
-.kpis > .kpi:first-child :is(small, b .unit, > span:last-child) { color: color-mix(in srgb, var(--ink-fg) 64%, transparent); }
+.kpis > .kpi:first-child :is(small, b .unit) { color: color-mix(in srgb, var(--ink-fg) 64%, transparent); }
+/* NEXORA #125 : « > span:last-child » n'est pas valide dans :is() (sélecteur relatif ignoré) : sous-texte de la tuile noire
+   resté gris foncé sur noir. Règle à part. */
+.kpis > .kpi:first-child > span:last-child { color: color-mix(in srgb, var(--ink-fg) 64%, transparent); }
 .kpis > .kpi:first-child b { color: var(--ink-fg) !important; }
 .kpis > .kpi:first-child .kpi-ic { background: color-mix(in srgb, var(--ink-fg) 12%, transparent); color: var(--ink-fg); }
 .kpis > .kpi:first-child [data-nxi] { opacity: .35; }
@@ -1231,3 +1234,32 @@ input[type="checkbox"]:not(.switch input):focus-visible, input[type="radio"]:foc
 html[data-theme="dark"] .switch input:checked + i::after { background: #050505; }
 /* Bouton désactivé : fond discret, texte gris. */
 .btn:disabled, .btn.primary:disabled, .btn.ink:disabled { opacity: 1; background: var(--fill-2); color: var(--text-3); box-shadow: inset 0 0 0 1px var(--sep); }
+
+/* ------------------------------------------------------------------ Section « Données » (NEXORA #125) */
+/* Tables à gauche (liste comme la navigation, table ouverte à l'encre), lignes à droite ; fiche d'une ligne en champs. */
+.data-split { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 16px; align-items: start; }
+.data-tables { position: sticky; top: 12px; display: flex; flex-direction: column; max-height: calc(100vh - 170px); border-radius: var(--r-lg, 18px); background: var(--surface); box-shadow: inset 0 0 0 1px var(--sep); overflow: hidden; }
+.data-tables-head { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-bottom: 1px solid var(--sep); }
+.data-tables-head b { font-size: 12px; font-weight: 600; color: var(--text-2); }
+.data-tables nav { overflow: auto; padding: 6px; }
+.data-tables nav a { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px; border-radius: 999px; color: var(--text); font-size: 12.5px; text-decoration: none; }
+.data-tables nav a .ico { color: var(--text-2); flex: none; }
+.data-tables nav a small { color: var(--text-2); font-variant-numeric: tabular-nums; }
+.data-tables nav a:hover { background: var(--fill-2); }
+.data-tables nav a.on { background: var(--on); color: var(--on-ink); }
+.data-tables nav a.on :is(.ico, small) { color: var(--on-ink); }
+.data-main { min-width: 0; }
+.data-sort { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; white-space: nowrap; }
+.data-sort:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.data-cell { max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.data-form { display: flex; flex-direction: column; gap: 12px; }
+.data-form-modal { max-height: min(60vh, 560px); overflow: auto; padding: 2px 4px 2px 2px; }
+.data-field { display: flex; flex-direction: column; gap: 6px; }
+.data-field-head { display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
+.data-field-head small { font-size: 11px; }
+.data-null { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--text-2); }
+.data-null input[type="checkbox"] { width: 15px; height: 15px; border-radius: 5px; }
+.data-field .input.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+/* Barre collée au bas du panneau : recouvre aussi la marge basse de .drawer-body (24 px), rien ne défile dessous. */
+.data-actions { position: sticky; bottom: -24px; display: flex; align-items: center; gap: 8px; margin: 0 -18px -24px; padding: 12px 18px 20px; background: var(--surface); border-top: 1px solid var(--sep); }
+@media (max-width: 1000px) { .data-split { grid-template-columns: 1fr; } .data-tables { position: static; max-height: 260px; } }

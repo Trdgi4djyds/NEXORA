@@ -1,4 +1,5 @@
-// Connexion au back office : comptes NEXORA dont le rôle (profiles.app_role) est admin ou superadmin.
+// Connexion au back office (NEX-SYSTEM, /nex-system/ depuis #125) : comptes NEXORA dont le rôle (profiles.app_role) est
+// admin ou superadmin. NEXORA #125 : un seul rôle d'administration, avec tous les droits (isSuper vrai pour les deux).
 import { createContext, useContext, useEffect, useState, type FormEvent, type ReactNode } from "react"
 import type { Session } from "@supabase/supabase-js"
 import { errText, sb, type Row } from "./supabase"
@@ -50,7 +51,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   if (!profile || !isAdminRole(profile.app_role) || profile.status === "suspended")
     return <Denied reason={error || (profile?.status === "suspended" ? "Ce compte est suspendu." : "")} />
   return (
-    <AuthCtx.Provider value={{ session, profile, isSuper: profile.app_role === "superadmin" }}>
+    <AuthCtx.Provider value={{ session, profile, isSuper: isAdminRole(profile.app_role) }}>
       {children}
     </AuthCtx.Provider>
   )
@@ -68,7 +69,7 @@ function Splash() {
 // illustration partagée nx/auth/art.js, ce que permet le back office) et le formulaire.
 // Écran public (avant connexion) : rien sur l'infrastructure ni sur la configuration (NEXORA #038).
 const FEATS: [string, string, string][] = [
-  ["user", "Utilisateurs et équipes", "Comptes, rôles et offres"],
+  ["user", "Utilisateurs et espaces", "Comptes, rôles et offres"],
   ["pdf", "Factures et e-mails", "Factures et messages aux couleurs de NEXORA"],
   ["sync", "Supervision", "Sites surveillés, incidents et alertes"],
 ]

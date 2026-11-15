@@ -129,7 +129,7 @@ const LABEL = {
   ci_export: 'L’intégration continue et l’export SARIF', rum: 'La mesure des visiteurs réels', synthetic: 'Les parcours rejoués',
   status_page: 'La page de statut publique', multi_region: 'La confirmation depuis une deuxième région',
   devlab_pro: 'Les outils Pro du Dev Lab (assistant IA du projet, débogueur, mise en ligne, contrôles, bases de données)',
-  design_extended: 'NEX-DESIGN étendu', design_full: 'NEX-DESIGN complet (IA, code vers le Dev Lab, validation client, équipe, import Figma)',
+  design_extended: 'NEX-DESIGN étendu', design_full: 'NEX-DESIGN complet (IA, code vers le Dev Lab, validation client, import Figma)',
   messaging_events: 'La messagerie des applications (style conversation, réponse depuis la notification, appels entrants)',
   custom_notifications: 'Les notifications personnalisées (modèles)',
 };

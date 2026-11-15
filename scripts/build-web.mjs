@@ -115,7 +115,8 @@ fs.writeFileSync(
     "  Referrer-Policy: strict-origin-when-cross-origin",
     // NEXORA #096 : HTTPS imposé au navigateur (le domaine n'est servi qu'en HTTPS par Cloudflare).
     "  Strict-Transport-Security: max-age=31536000; includeSubDomains",
-    "/admin/*",
+    // NEXORA #125 : back office publié à /nex-system/ (l'ancienne adresse /admin/ n'existe plus : page 404).
+    "/nex-system/*",
     "  X-Frame-Options: DENY",
     "  Content-Security-Policy: frame-ancestors 'none'",
     "  X-Robots-Tag: noindex, nofollow",
@@ -167,7 +168,8 @@ await build({
   // Date de publication affichée par le back office (section Supabase, #027).
   define: { __ADMIN_BUILD__: JSON.stringify(new Date().toISOString()) },
   build: {
-    outDir: path.join(OUT_DIR, "admin"),
+    // NEXORA #125 : adresse publique /nex-system/ (sources dans admin/) ; rien n'est plus publié sous /admin/.
+    outDir: path.join(OUT_DIR, "nex-system"),
     emptyOutDir: true,
     chunkSizeWarningLimit: 1000,
   },

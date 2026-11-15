@@ -41,7 +41,7 @@ Légende de la colonne « Méthode » : **auto** (`pnpm valider`), **auto compte
 | Déconnexion, session fermée côté serveur | auto compte | Le jeton de rafraîchissement ne sert plus après la déconnexion. |
 | Mot de passe oublié et réinitialisation | manuel | Consomme la limite horaire des e-mails des comptes. |
 | Sessions : expiration, rotation des jetons | auto | |
-| Rôles utilisateur, administrateur, super-administrateur | auto compte, manuel | Fonctions d'administration refusées à un compte simple ; écran de connexion du back office refusé à un compte simple, accepté pour un administrateur. |
+| Rôles utilisateur et administrateur (#125 : un seul rôle d'administration, tous les droits) | auto compte, manuel | Fonctions d'administration refusées à un compte simple ; écran de connexion du back office (`/nex-system/` ; `/admin/` répond 404) refusé à un compte simple, accepté pour un administrateur ; section « Données » refusée à un compte simple (`pnpm test:offres`). |
 | Compte suspendu | manuel | Back office → Utilisateurs → suspendre un compte de test : connexion refusée dans NEXORA et le back office ; puis le réactiver. |
 | Robots, mots de passe divulgués | auto | Alerte tant que le captcha et la protection des mots de passe divulgués sont coupés. |
 | Connexion par téléphone, codes SMS (OTP) | sans objet | Connexion par e-mail seulement ; le moyen « téléphone » doit rester fermé (contrôlé par `pnpm valider`). |
@@ -82,7 +82,7 @@ Légende de la colonne « Méthode » : **auto** (`pnpm valider`), **auto compte
 | Licences données par l'administration (#077) | manuel | Back office → Licences : « Attribuer une licence » (compte d'essai, Pro 30 jours) → NEXORA passe en Pro au contrôle suivant ; « Gérer » : date de fin, essai, ordinateurs, nouvelle clé (l'ancienne refusée), ordinateur retiré ; Réglages : un changement (ex. comptes gratuits par ordinateur) s'applique au contrôle suivant. |
 | Lanceur et publication (#076) | essais, manuel | `pnpm test:launcher`, `pnpm toolbox` puis `pnpm toolbox --verifier` (signature et empreintes) ; dépôt **public** de distribution ; `pnpm release:windows --repo <dépôt> --toolbox --essai` puis sans `--essai` ; `app_config.desktop_download_url` = `…/releases/latest/download/NEXORA-Devs-Toolbox.exe`. Sur Windows : installation sans droits d'administrateur, raccourcis, « Applications installées », lien `nexora://`, double-clic sur un `.novx`, mise à jour, retour arrière, désinstallation avec les trois choix. |
 | Quotas, essais, restrictions, historique | essais, auto compte | Offre du compte lue sur le serveur. |
-| Changement d'offre par l'administrateur | manuel | Back office → Équipes et offres : nouvelle offre visible dans NEXORA (Mon compte → Offre et usage). |
+| Changement d'offre par l'administrateur | manuel | Back office (NEX-SYSTEM, `/nex-system/`) → Espaces et offres : nouvelle offre visible dans NEXORA (Mon compte → Offre et usage). |
 | Factures : numérotation, totaux, taxes, PDF, envoi | manuel | Back office → Factures : brouillon, émission (numéro suivant, plus modifiable), PDF, envoi à une adresse de test. |
 | Promotions, commissions, cashback, points fidélité, portefeuille | sans objet | Aucun module correspondant dans NEXORA. |
 

@@ -18,6 +18,7 @@ export const NOTES = {
   // appareils connectés sans nom répété, v1.2.2-r11). #121 : lanceur 1.0.8, mosaïque de rendus et fenêtres réorganisées (v1.2.2-r12).
   // #122 : présentations du Studio redessinées, quatre styles de diapositives (v1.2.2-r13).
   // #124 : vrais appareils 3D dans la composition libre des Maquettes, onglets actifs du Studio lisibles (v1.2.2-r14).
+  // #125 : travail en équipe retiré (logiciel, offres), boutons choisis lisibles en clair et en sombre (v1.2.2-r15).
   '1.2.2': {
     title: 'NEXORA 1.2.2',
     intro: 'Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.',
@@ -45,6 +46,8 @@ export const NOTES = {
       { icon: 'key', space: '', title: 'Lanceur 1.0.8', text: 'Le lanceur NEXORA Devs Toolbox s’ouvre sur la même mosaïque de rendus que la fenêtre de connexion, avec des fenêtres réorganisées : plus rien ne se chevauche, même avec un titre long ou un affichage agrandi. Il affiche « Chargement… » à l’ouverture et se met à jour tout seul avant d’installer cette version.' },
       { icon: 'present', space: 'studio', title: 'Présentations redessinées', text: 'Dans la Présentation du Studio, quatre nouveaux styles de diapositives : Violet, Nuit néon, Galerie et Marque (aux couleurs de votre marque). Chaque mise en page a sa composition : ordinateurs, tablettes et téléphones réalistes inclinés, socles brillants, halos et arcs lumineux, roches, grands titres et repères en pilule. Les écrans montrent votre site, sinon un écran d’exemple aux couleurs de votre marque ; le style d’origine reste proposé (« Classique »).' },
       { icon: 'laptop', space: 'studio', title: 'Vrais appareils dans les Maquettes', text: 'Dans la composition libre des Maquettes, les téléphones, tablettes, ordinateurs portables et écrans sont de vrais modèles 3D (cadre en métal, clavier, charnière, pied) au lieu d’images à plat inclinées avec une fausse épaisseur ; « À plat (dessus) » montre bien l’appareil vu de dessus, les fenêtres de navigateur restent fines et « Deux côte à côte » ne les fait plus se chevaucher. Un écran vide affiche un fond d’écran, avec l’indication « Déposez une capture » dans l’aperçu seulement. Les onglets actifs du Studio sont de nouveau lisibles.' },
+      { icon: 'pen', space: '', title: 'Boutons choisis toujours lisibles', text: 'Le texte d’un bouton choisi ne disparaît plus : taille de fenêtre du Desktop Builder, ligne, pose et palette choisies, messages de l’assistant IA en thème sombre ; sous-titres des sections de l’App Builder et du Desktop Builder, bandeau « Votre offre » de Mon compte et son bouton « Passer à Pro » plus lisibles.' },
+      { icon: 'user', space: '', title: 'Un espace par compte', text: 'Le travail en équipe est retiré de NEXORA : plus d’onglet Équipe dans Mon compte, ni de bibliothèques d’équipe ou de coédition dans NEX-DESIGN et le Studio, ni de membres dans les offres. Vos projets, documents et commentaires restent dans votre espace personnel ; la validation par vos clients ne change pas.' },
     ],
   },
   // NEXORA #106 : note de la 1.2.1, publiée depuis une autre session (A-063), reprise telle quelle du paquet publié.

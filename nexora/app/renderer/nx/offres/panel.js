@@ -210,7 +210,7 @@ export async function panel() {
     <div class="nxo-choose">
       <span class="nxo-eyebrow">${ico('star', 12)}Offres</span>
       <h3>Choisissez votre offre</h3>
-      <p>Change d’offre à tout moment. Prix en dollars américains, hors taxes locales.</p>
+      <p>Changez d’offre à tout moment. Prix en dollars américains, hors taxes locales.</p>
       <div class="nxo-period" role="tablist" aria-label="Période de facturation">
         <button type="button" role="tab" class="on" data-nxo-period="month" aria-selected="true">Mensuel</button>
         <button type="button" role="tab" data-nxo-period="year" aria-selected="false" title="Annuel : 2 mois offerts">Annuel<em>2 mois offerts</em></button>

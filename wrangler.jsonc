@@ -3,7 +3,7 @@
 // /__supabase-api/* : relais de l'API de gestion de Supabase pour le back office.
 // Sans ce fichier, `wrangler deploy` configure le projet tout seul comme une app Vite
 // standard (plugin Cloudflare pour Vite) et produit `assets` sans `directory` : échec du déploiement.
-// NEXORA est assemblé par scripts/build-web.mjs (interface dans dist/, back office dans dist/admin/).
+// NEXORA est assemblé par scripts/build-web.mjs (interface dans dist/, back office dans dist/nex-system/, #125).
 {
   // Si le Worker porte un autre nom dans Cloudflare, Workers Builds utilise le sien (simple avertissement).
   "name": "nexora",
@@ -27,7 +27,7 @@
     // NEXORA #076 : contrôle de licence signé et abonnements (worker/licences.js).
     "run_worker_first": ["/__supabase-api/*", "/hb/*", "/hook/*", "/rum", "/license/*", "/pay/*", "/security/*"],
     // NEXORA #096 : site vitrine à la racine, une page HTML pré-générée par adresse (tarifs.html sert /tarifs) ;
-    // NEXORA web (/studio/), le back office (/admin/) et l'espace des parrains (/referral/) gardent leurs routes
+    // NEXORA web (/studio/), le back office (/nex-system/ depuis #125 ; /admin/ répond 404) et l'espace des parrains (/referral/) gardent leurs routes
     // après #. Une adresse inconnue reçoit la page 404 du site, avec le code 404 (jamais une page vide indexable).
     "not_found_handling": "404-page",
   },

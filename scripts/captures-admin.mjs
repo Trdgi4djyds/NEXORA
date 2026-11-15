@@ -2,10 +2,10 @@
 // avec le Chromium du système, comme `pnpm captures` pour l'application.
 //
 // Utilisation : pnpm captures:admin [écrans…] [options]
-//   écrans                connexion, vue, utilisateurs, utilisateur, equipes, equipe, appareils,
-//                         licences, licences-appareils (#076), licences-reglages (#077), invitations, contenus, fichiers, supervision, site, audits, audit-site,
+//   écrans                connexion, vue, utilisateurs, utilisateur, espaces, espace (#125), appareils,
+//                         licences, licences-appareils (#076), licences-reglages (#077), contenus, fichiers, supervision, site, audits, audit-site,
 //                         support, ticket, annonces, offres, fonctionnalites, configuration,
-//                         journal, supabase, emails, email-maj, email-journal, factures, facture,
+//                         donnees, donnees-ligne (#125), journal, supabase, emails, email-maj, email-journal, factures, facture,
 //                         facture-brouillon, parrainage, parrainage-parrains, parrainage-codes, parrainage-filleuls,
 //                         parrainage-commissions, parrainage-retraits, parrainage-reglages, parrain-invitation,
 //                         parrain-connexion, parrain-code, parrain-tableau, parrain-codes, parrain-filleuls, parrain-gains,
@@ -39,13 +39,13 @@ const SCREENS = [
   ["vue", "Vue d’ensemble", "overview"],
   ["utilisateurs", "Utilisateurs", "users"],
   ["utilisateur", "Fiche utilisateur", `users/${demoIds.user}`],
-  ["equipes", "Équipes et offres", "orgs"],
-  ["equipe", "Fiche équipe", `orgs/${demoIds.org}`],
+  // NEXORA #125 : plus de travail en équipe : espaces des comptes ; section « Données ».
+  ["espaces", "Espaces et offres", "orgs"],
+  ["espace", "Fiche d’un espace", `orgs/${demoIds.org}`],
   ["appareils", "Appareils", "devices"],
   ["licences", "Licences", "licences"],
   ["licences-appareils", "Licences : appareils", "licences/appareils"],
   ["licences-reglages", "Licences : réglages et sécurité", "licences/reglages"],
-  ["invitations", "Invitations", "invitations"],
   ["contenus", "Contenus", "content"],
   ["fichiers", "Fichiers", "files"],
   ["supervision", "Supervision", "monitors"],
@@ -58,6 +58,8 @@ const SCREENS = [
   ["offres", "Offres", "plans"],
   ["fonctionnalites", "Fonctionnalités", "flags"],
   ["configuration", "Configuration", "config"],
+  ["donnees", "Données", "data/plans"],
+  ["donnees-ligne", "Données : fiche d’une ligne", "data/plans/pro"],
   ["journal", "Journal d’audit", "audit"],
   ["supabase", "Supabase", "supabase"],
   ["emails", "E-mails", "emails"],
@@ -187,7 +189,8 @@ async function settle(page) {
 
 async function main() {
   const opts = parseArgs(process.argv.slice(2))
-  const base = `${previewUrl(opts.url).replace(/\/$/, "")}/admin/`
+  // NEXORA #125 : back office à /nex-system/.
+  const base = `${previewUrl(opts.url).replace(/\/$/, "")}/nex-system/`
   const [width, height] = opts.size
   const browser = await puppeteer.launch({
     executablePath: CHROMIUM,
@@ -280,7 +283,7 @@ async function main() {
           else localStorage.removeItem("nexora-referral-auth")
           localStorage.removeItem("nexora-referral-invite")
         }, partner)
-        await page.goto(`${base.replace(/admin\/$/, "referral/")}${hash}`, { waitUntil: "load", timeout: 30000 })
+        await page.goto(`${base.replace(/nex-system\/$/, "referral/")}${hash}`, { waitUntil: "load", timeout: 30000 })
         await settle(page)
         await page.removeScriptToEvaluateOnNewDocument(initRef.identifier)
         const refFile = path.join(dir, `${String(index + 1).padStart(2, "0")}-${slug}.png`)

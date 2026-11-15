@@ -1,11 +1,12 @@
 // NEXORA #053 : fonctions ajoutées à NEX-DESIGN, branchées sur l'éditeur déjà créé (state.design) comme le
 // module #011, sans modifier le code compilé :
 //  - panneau « Design » à onglets (variables, prototype, code, accessibilité, polices, série, impression,
-//    import, IA, icônes et espaces, versions, validation, équipe) ;
+//    import, IA, icônes et espaces, versions, validation) ;
 //  - sections du panneau de droite (mise en page automatique, variables liées, variantes, prototype,
 //    inspection, texte de remplacement, retouche intelligente) ; Maj+A ; mesures avec Alt.
 // NEXORA #054 : onglet « Responsive » et section « Contraintes », bibliothèques d'équipe tenues à jour,
 // nouveaux avis de validation signalés à l'ouverture du document.
+// NEXORA #125 : le travail en équipe est retiré de NEXORA : plus d'onglet « Équipe » ni de bibliothèques d'équipe.
 import { esc, ico, toast, prompt, has, allowed, gate, STD, PRO, api, isText } from './ui.js';
 import * as AL from './autolayout.js';
 import * as VAR from './variables.js';
@@ -17,7 +18,6 @@ import * as AI from './ai.js';
 import * as MEASURE from './measure.js';
 import * as FONTS from './fonts.js';
 import * as RESP from './responsive.js';
-import * as LIB from './library.js';
 import * as LAYOUT from './layout.js';
 // NEXORA #113 : Motion (frise, images clés, animations toutes faites, code de l'animation), d'après desigma.
 import * as MOTION from './motion-ui.js';
@@ -42,14 +42,13 @@ const TABS = [
   ['spaces', 'Icônes d’application', 'android', STD, () => import('./spaces.js')],
   ['versions', 'Versions', 'nxHistory', STD, () => import('./versions.js')],
   ['review', 'Validation', 'pass', PRO, () => REVIEW],
-  ['team', 'Équipe', 'group', PRO, () => TEAM],
 ];
 // NEXORA #075 (A-044) : le panneau ne s'ouvre plus sur 14 onglets : chaque fonction est ouverte depuis sa place
 // (fenêtre Exporter, menu Partager, menu Fichier, onglet Ressources, carte Déclinaisons, menu IA) et le panneau ne
 // montre que les onglets de ce groupe.
 const GROUPS = [
   ['export', 'Exporter', ['print', 'code', 'proto', 'spaces', 'bulk']],
-  ['share', 'Partager', ['review', 'team']],
+  ['share', 'Partager', ['review']],
   ['file', 'Fichier', ['import', 'versions']],
   ['styles', 'Styles du document', ['variables', 'fonts']],
   ['check', 'Vérifier', ['a11y']],
@@ -93,55 +92,6 @@ const REVIEW = {
     return false;
   },
 };
-// ---------- Onglet « Équipe » ----------
-const KINDS = LIB.KINDS;
-const TEAM = {
-  panel(D, s) {
-    const L = s.libs;
-    const up = L ? LIB.pending(D, L) : [];
-    const mine = D.doc.nxLibs || {};
-    return `<p class="dzx-hint">Partagez vos composants, variables et kit de marque avec les membres de votre espace : ils les importent dans leurs documents. Après chaque nouvelle publication, les documents qui les utilisent proposent la mise à jour à leur ouverture, copies des composants comprises.</p>
-      ${up.length ? `<div class="dzp-gate dzp-update">${ico('refreshCw', 16)}<div><b>${up.length === 1 ? `« ${esc(up[0].name)} » a une nouvelle version` : `${up.length} bibliothèques ont une nouvelle version`}</b><small>Publiée par votre équipe depuis votre import.</small></div><button class="btn small primary" data-dzx="tm-update-all">Mettre à jour</button></div>` : ''}
-      <div class="nx-btns"><button class="btn small primary" data-dzx="tm-pub-components">${ico('upload', 13)}<span>Publier les composants</span></button><button class="btn small" data-dzx="tm-pub-variables">${ico('upload', 13)}<span>Publier les variables</span></button><button class="btn small" data-dzx="tm-pub-brand">${ico('upload', 13)}<span>Publier le kit de marque</span></button><button class="icon-btn" data-dzx="tm-load" title="Actualiser">${ico('refreshCw', 13)}</button></div>
-      ${L === null ? '<p class="dzx-hint">Connectez-vous à votre compte NEXORA pour partager avec votre équipe.</p>' : L ? (L.length ? `<div class="dzp-list">${L.map((l) => `<div class="dzp-item"><span><b>${esc(l.name)}</b><small>${esc(KINDS[l.kind] || l.kind)} · mis à jour le ${new Date(l.updated_at).toLocaleDateString('fr-FR')}${mine[l.id] ? (up.includes(l) ? ' · nouvelle version' : ' · à jour dans ce document') : ''}</small></span>${up.includes(l) ? `<button class="btn small primary" data-tmimport="${esc(l.id)}" title="${esc(`Mettre à jour « ${l.name} »`)}">Mettre à jour</button>` : `<button class="btn small" data-tmimport="${esc(l.id)}" title="${esc(`${mine[l.id] ? 'Réimporter' : 'Importer'} « ${l.name} »`)}">${mine[l.id] ? 'Réimporter' : 'Importer'}</button>`}</div>`).join('')}</div>` : '<p class="dzx-hint">Rien n’est encore partagé dans votre espace.</p>') : ''}`;
-  },
-  async onPanel(D, e, rerender, s) {
-    const SH = await import('./share.js');
-    const t = e.target;
-    if (t.closest('[data-dzx="tm-load"]')) { s.libs = await SH.libraries(); rerender(); return true; }
-    const pub = t.closest('[data-dzx^="tm-pub-"]');
-    if (pub) {
-      const kind = pub.dataset.dzx.slice(7);
-      const name = await prompt(`Publier : ${KINDS[kind]}`, { label: 'Nom dans la bibliothèque de l’équipe', value: D.doc.name || KINDS[kind], icon: 'group', go: 'Publier' });
-      if (!name) return true;
-      const { getBrand } = await import('../services.js');
-      const data = kind === 'components' ? { components: D.doc.nxComponents || {}, sets: D.doc.nxSets || {} } : kind === 'variables' ? VAR.store(D) : getBrand();
-      try {
-        await SH.publish(kind, name.trim(), data);
-        s.libs = await SH.libraries();
-        // Le document qui publie est à jour de sa propre publication.
-        const l = (s.libs || []).find((x) => x.kind === kind && x.name === name.trim()); if (l) { LIB.remember(D, l); D.changed(); }
-        toast('Publié dans la bibliothèque de l’équipe : les documents qui l’utilisent proposeront la mise à jour.'); rerender(); news(D);
-      } catch (er) { toast(clean(er), { kind: 'bad' }); }
-      return true;
-    }
-    if (t.closest('[data-dzx="tm-update-all"]')) {
-      const list = LIB.pending(D, s.libs || []); const msgs = [];
-      for (const l of list) msgs.push(await LIB.apply(D, l));
-      toast(msgs.join(' ') || 'Tout est déjà à jour.'); rerender(); news(D);
-      return true;
-    }
-    const im = t.closest('[data-tmimport]');
-    if (im) {
-      const l = (s.libs || []).find((x) => x.id === im.dataset.tmimport);
-      if (!l) return true;
-      toast(await LIB.apply(D, l)); rerender(); news(D);
-      return true;
-    }
-    return false;
-  },
-};
-
 // ---------- Panneau « Design » ----------
 let current = 'variables';
 function host(D) {
@@ -175,7 +125,6 @@ export async function render(D, keepFocus = false) {
   const mod = await T[4]();
   const s = st(current);
   if (current === 'review' && s.links === undefined && has(PRO)) { const SH = await import('./share.js'); s.links = await SH.links(D); }
-  if (current === 'team' && s.libs === undefined && has(PRO)) { const SH = await import('./share.js'); s.libs = await SH.libraries(); }
   if (current === 'versions') { const V = await import('./versions.js'); s.auto = await V.autoList(D); }
   if (current === 'import' && s.figmaToken === undefined) s.figmaToken = await api.invoke('dzx:figma-token', {}).then((r) => Boolean(r && r.saved)).catch(() => false);
   const focus = keepFocus && document.activeElement && el.contains(document.activeElement) ? [...document.activeElement.attributes].find((a) => a.name.startsWith('data-'))?.name : null;
@@ -195,7 +144,7 @@ export async function render(D, keepFocus = false) {
 }
 export function open(D, tab) { if (tab) current = tab; render(D); }
 
-// ---------- Nouveautés du document (bibliothèques d'équipe, avis de validation) ----------
+// ---------- Nouveautés du document (avis de validation) ----------
 // Point sur le bouton de la barre d'outils tant qu'il reste une mise à jour ou un avis non lu.
 const newsState = { libs: [], reviews: 0, doc: null };
 // NEXORA #075 : le point est posé sur le bouton « Partager » du groupe de droite de la barre.
@@ -204,17 +153,12 @@ async function news(D, { announce = false } = {}) {
   if (!has(PRO) || !D.doc) return;
   try {
     const SH = await import('./share.js');
-    // Bibliothèques lues seulement si le document en a importé ; sinon l'onglet Équipe les lira à l'ouverture.
-    const libs = D.doc.nxLibs && Object.keys(D.doc.nxLibs).length ? await SH.libraries() : null;
-    newsState.libs = libs ? LIB.pending(D, libs) : [];
     const links = await SH.links(D);
     newsState.reviews = (links || []).reduce((n, l) => n + unseen(D, l), 0);
-    if (libs) st('team').libs = libs;
     st('review').links = links;
     if (D.nxRenderComments) D.nxRenderComments();
     if (announce) {
-      if (newsState.libs.length) await LIB.check(D, { libraries: async () => libs, onOpen: () => open(D, 'team') });
-      else if (newsState.reviews) toast(`${newsState.reviews} ${newsState.reviews > 1 ? 'nouveaux avis' : 'nouvel avis'} sur la validation de ce document.`, { action: 'Voir', onAction: () => open(D, 'review') });
+      if (newsState.reviews) toast(`${newsState.reviews} ${newsState.reviews > 1 ? 'nouveaux avis' : 'nouvel avis'} sur la validation de ce document.`, { action: 'Voir', onAction: () => open(D, 'review') });
     }
   } catch (e) { console.warn('[NEXORA #054]', e); }
   dot(D);
@@ -292,7 +236,7 @@ export async function install(D) {
       await this.dzxLoadPage(pg, json);
       try { AL.afterLoad(this); if (this.doc.nxVars && this.doc.nxVars.list.length) VAR.applyAll(this); FONTS.restore(this).catch(() => {}); } catch (e) { console.warn('[NEXORA #053]', e); }
       // NEXORA #054 : nouveautés vérifiées une fois à l'ouverture de chaque document.
-      if (this.doc && newsState.doc !== this.doc.id) { newsState.doc = this.doc.id; st('team').libs = undefined; st('review').links = undefined; news(this, { announce: true }); }
+      if (this.doc && newsState.doc !== this.doc.id) { newsState.doc = this.doc.id; st('review').links = undefined; news(this, { announce: true }); }
     };
   }
   if (!proto.dzxOnKey) {
