@@ -1,0 +1,388 @@
+{
+  "$comment": "NEXORA #124 : maquettes de la composition libre (Studio 3D & Motion) avec les vrais appareils 3D : iPhone incliné, MacBook en trio, MacBook à plat, navigateurs côte à côte, tablettes en cascade.",
+  "studioMockups": [
+    {
+      "format": "wide",
+      "w": 1920,
+      "h": 1080,
+      "overlay": "none",
+      "fx": {
+        "noise": 0,
+        "vignette": 0
+      },
+      "texts": [],
+      "mark": {
+        "image": null,
+        "pos": "br",
+        "size": 0.12,
+        "opacity": 0.85
+      },
+      "anim": {
+        "preset": "none",
+        "dur": 6
+      },
+      "id": "nx124-iphone",
+      "name": "iPhone incliné",
+      "layout": "tilt",
+      "bg": {
+        "type": "solid",
+        "preset": "glass",
+        "seed": 1,
+        "c1": "#eef1f6",
+        "c2": "#dfe4ee",
+        "angle": 135,
+        "color": "#eef1f6",
+        "blur": 0,
+        "dim": 0
+      },
+      "slots": [
+        {
+          "id": "nx124-s1",
+          "kind": "device",
+          "device": "iphone-18-pro",
+          "x": 0.52,
+          "y": 0.54,
+          "size": 0.84,
+          "rx": 10,
+          "ry": -22,
+          "rz": -4,
+          "style": "default",
+          "radius": "curved",
+          "shadow": {
+            "mode": "spread",
+            "opacity": 40
+          },
+          "gloss": 0,
+          "zoom": 1
+        }
+      ]
+    },
+    {
+      "format": "wide",
+      "w": 1920,
+      "h": 1080,
+      "overlay": "none",
+      "fx": {
+        "noise": 0,
+        "vignette": 0
+      },
+      "texts": [],
+      "mark": {
+        "image": null,
+        "pos": "br",
+        "size": 0.12,
+        "opacity": 0.85
+      },
+      "anim": {
+        "preset": "none",
+        "dur": 6
+      },
+      "id": "nx124-trio",
+      "name": "MacBook en trio",
+      "layout": "trio",
+      "bg": {
+        "type": "preset",
+        "preset": "mint",
+        "seed": 1,
+        "c1": "#eef1f6",
+        "c2": "#dfe4ee",
+        "angle": 135,
+        "color": "#eef1f6",
+        "blur": 0,
+        "dim": 0
+      },
+      "slots": [
+        {
+          "id": "nx124-s2",
+          "kind": "device",
+          "device": "macbook-pro-16",
+          "x": 0.5,
+          "y": 0.52,
+          "size": 0.78,
+          "rx": 0,
+          "ry": 0,
+          "rz": 0,
+          "style": "default",
+          "radius": "curved",
+          "shadow": {
+            "mode": "spread",
+            "opacity": 40
+          },
+          "gloss": 0,
+          "zoom": 1,
+          "z": 3
+        },
+        {
+          "id": "nx124-s3",
+          "kind": "device",
+          "device": "macbook-pro-16",
+          "x": 0.22,
+          "y": 0.56,
+          "size": 0.6,
+          "rx": 0,
+          "ry": 22,
+          "rz": 0,
+          "style": "default",
+          "radius": "curved",
+          "shadow": {
+            "mode": "spread",
+            "opacity": 40
+          },
+          "gloss": 0,
+          "zoom": 1,
+          "z": 1
+        },
+        {
+          "id": "nx124-s4",
+          "kind": "device",
+          "device": "macbook-pro-16",
+          "x": 0.78,
+          "y": 0.56,
+          "size": 0.6,
+          "rx": 0,
+          "ry": -22,
+          "rz": 0,
+          "style": "default",
+          "radius": "curved",
+          "shadow": {
+            "mode": "spread",
+            "opacity": 40
+          },
+          "gloss": 0,
+          "zoom": 1,
+          "z": 1
+        }
+      ]
+    },
+    {
+      "format": "square",
+      "w": 1080,
+      "h": 1080,
+      "overlay": "none",
+      "fx": {
+        "noise": 0,
+        "vignette": 0
+      },
+      "texts": [],
+      "mark": {
+        "image": null,
+        "pos": "br",
+        "size": 0.12,
+        "opacity": 0.85
+      },
+      "anim": {
+        "preset": "none",
+        "dur": 6
+      },
+      "id": "nx124-plat",
+      "name": "MacBook à plat",
+      "layout": "flat",
+      "bg": {
+        "type": "preset",
+        "preset": "mint",
+        "seed": 1,
+        "c1": "#eef1f6",
+        "c2": "#dfe4ee",
+        "angle": 135,
+        "color": "#eef1f6",
+        "blur": 0,
+        "dim": 0
+      },
+      "slots": [
+        {
+          "id": "nx124-s5",
+          "kind": "device",
+          "device": "macbook-pro-16",
+          "x": 0.5,
+          "y": 0.5,
+          "size": 0.82,
+          "rx": 48,
+          "ry": 0,
+          "rz": -32,
+          "style": "default",
+          "radius": "curved",
+          "shadow": {
+            "mode": "spread",
+            "opacity": 40
+          },
+          "gloss": 0,
+          "zoom": 1
+        }
+      ]
+    },
+    {
+      "format": "wide",
+      "w": 1920,
+      "h": 1080,
+      "overlay": "none",
+      "fx": {
+        "noise": 0,
+        "vignette": 0
+      },
+      "texts": [],
+      "mark": {
+        "image": null,
+        "pos": "br",
+        "size": 0.12,
+        "opacity": 0.85
+      },
+      "anim": {
+        "preset": "none",
+        "dur": 6
+      },
+      "id": "nx124-web",
+      "name": "Navigateurs côte à côte",
+      "layout": "duo",
+      "bg": {
+        "type": "preset",
+        "preset": "mint",
+        "seed": 1,
+        "c1": "#eef1f6",
+        "c2": "#dfe4ee",
+        "angle": 135,
+        "color": "#eef1f6",
+        "blur": 0,
+        "dim": 0
+      },
+      "slots": [
+        {
+          "id": "nx124-s6",
+          "kind": "browser",
+          "device": "iphone-18-pro",
+          "x": 0.29,
+          "y": 0.54,
+          "size": 0.44,
+          "rx": 0,
+          "ry": 14,
+          "rz": 0,
+          "style": "default",
+          "radius": "curved",
+          "shadow": {
+            "mode": "spread",
+            "opacity": 40
+          },
+          "gloss": 0,
+          "zoom": 1
+        },
+        {
+          "id": "nx124-s7",
+          "kind": "browser",
+          "device": "iphone-18-pro",
+          "x": 0.71,
+          "y": 0.52,
+          "size": 0.44,
+          "rx": 0,
+          "ry": -14,
+          "rz": 0,
+          "style": "default",
+          "radius": "curved",
+          "shadow": {
+            "mode": "spread",
+            "opacity": 40
+          },
+          "gloss": 0,
+          "zoom": 1
+        }
+      ]
+    },
+    {
+      "format": "wide",
+      "w": 1920,
+      "h": 1080,
+      "overlay": "none",
+      "fx": {
+        "noise": 0,
+        "vignette": 0
+      },
+      "texts": [],
+      "mark": {
+        "image": null,
+        "pos": "br",
+        "size": 0.12,
+        "opacity": 0.85
+      },
+      "anim": {
+        "preset": "none",
+        "dur": 6
+      },
+      "id": "nx124-cascade",
+      "name": "Tablettes en cascade",
+      "layout": "cascade",
+      "bg": {
+        "type": "solid",
+        "preset": "glass",
+        "seed": 1,
+        "c1": "#eef1f6",
+        "c2": "#dfe4ee",
+        "angle": 135,
+        "color": "#eef1f6",
+        "blur": 0,
+        "dim": 0
+      },
+      "slots": [
+        {
+          "id": "nx124-s8",
+          "kind": "device",
+          "device": "ipad-pro-11",
+          "x": 0.3,
+          "y": 0.62,
+          "size": 0.62,
+          "rx": 12,
+          "ry": -24,
+          "rz": -6,
+          "style": "default",
+          "radius": "curved",
+          "shadow": {
+            "mode": "spread",
+            "opacity": 40
+          },
+          "gloss": 0,
+          "zoom": 1,
+          "z": 1
+        },
+        {
+          "id": "nx124-s9",
+          "kind": "device",
+          "device": "ipad-pro-11",
+          "x": 0.5,
+          "y": 0.5,
+          "size": 0.62,
+          "rx": 12,
+          "ry": -24,
+          "rz": -6,
+          "style": "default",
+          "radius": "curved",
+          "shadow": {
+            "mode": "spread",
+            "opacity": 40
+          },
+          "gloss": 0,
+          "zoom": 1,
+          "z": 2
+        },
+        {
+          "id": "nx124-s10",
+          "kind": "device",
+          "device": "ipad-pro-11",
+          "x": 0.7,
+          "y": 0.38,
+          "size": 0.62,
+          "rx": 12,
+          "ry": -24,
+          "rz": -6,
+          "style": "default",
+          "radius": "curved",
+          "shadow": {
+            "mode": "spread",
+            "opacity": 40
+          },
+          "gloss": 0,
+          "zoom": 1,
+          "z": 3
+        }
+      ]
+    }
+  ],
+  "studioMockupCur": "nx124-iphone",
+  "studioMockupMode": "libre"
+}

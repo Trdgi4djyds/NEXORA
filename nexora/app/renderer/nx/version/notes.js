@@ -17,6 +17,7 @@ export const NOTES = {
   // #120 : projets Laravel dans l'App Builder, compte mieux protégé, éditeurs plus rapides, Studio plus léger (v1.2.2-r10 ;
   // appareils connectés sans nom répété, v1.2.2-r11). #121 : lanceur 1.0.8, mosaïque de rendus et fenêtres réorganisées (v1.2.2-r12).
   // #122 : présentations du Studio redessinées, quatre styles de diapositives (v1.2.2-r13).
+  // #124 : vrais appareils 3D dans la composition libre des Maquettes, onglets actifs du Studio lisibles (v1.2.2-r14).
   '1.2.2': {
     title: 'NEXORA 1.2.2',
     intro: 'Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.',
@@ -43,6 +44,7 @@ export const NOTES = {
       { icon: 'cube', space: 'studio', title: 'NEXORA plus léger', text: 'Le Studio ne redessine plus sa scène quand rien ne bouge et ne tourne plus en arrière-plan une fois quitté : moins de processeur et de batterie dans tous les espaces.' },
       { icon: 'key', space: '', title: 'Lanceur 1.0.8', text: 'Le lanceur NEXORA Devs Toolbox s’ouvre sur la même mosaïque de rendus que la fenêtre de connexion, avec des fenêtres réorganisées : plus rien ne se chevauche, même avec un titre long ou un affichage agrandi. Il affiche « Chargement… » à l’ouverture et se met à jour tout seul avant d’installer cette version.' },
       { icon: 'present', space: 'studio', title: 'Présentations redessinées', text: 'Dans la Présentation du Studio, quatre nouveaux styles de diapositives : Violet, Nuit néon, Galerie et Marque (aux couleurs de votre marque). Chaque mise en page a sa composition : ordinateurs, tablettes et téléphones réalistes inclinés, socles brillants, halos et arcs lumineux, roches, grands titres et repères en pilule. Les écrans montrent votre site, sinon un écran d’exemple aux couleurs de votre marque ; le style d’origine reste proposé (« Classique »).' },
+      { icon: 'laptop', space: 'studio', title: 'Vrais appareils dans les Maquettes', text: 'Dans la composition libre des Maquettes, les téléphones, tablettes, ordinateurs portables et écrans sont de vrais modèles 3D (cadre en métal, clavier, charnière, pied) au lieu d’images à plat inclinées avec une fausse épaisseur ; « À plat (dessus) » montre bien l’appareil vu de dessus, les fenêtres de navigateur restent fines et « Deux côte à côte » ne les fait plus se chevaucher. Un écran vide affiche un fond d’écran, avec l’indication « Déposez une capture » dans l’aperçu seulement. Les onglets actifs du Studio sont de nouveau lisibles.' },
     ],
   },
   // NEXORA #106 : note de la 1.2.1, publiée depuis une autre session (A-063), reprise telle quelle du paquet publié.

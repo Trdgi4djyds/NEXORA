@@ -195,6 +195,11 @@ html body .seg { border-radius: var(--hz-pill); padding: 4px; background: var(--
 html body .seg > button { border-radius: var(--hz-pill); font-weight: 500; }
 html body .seg > button.on { background: var(--seg-on) !important; color: var(--hz-ink) !important; box-shadow: none !important; }
 html[data-contrast='high'] body .seg > button.on { color: inherit !important; }
+/* NEXORA #124 : le Studio redéfinit --seg-on pour lui seul (styles.css : blanc en clair, #2e2e2e en sombre) ; avec le
+   texte d'Horizon (--hz-ink), l'onglet actif devenait blanc sur blanc (« Maquettes », « Composition libre », « Uni »…)
+   ou presque noir sur gris foncé. On y remet la pilule d'Horizon : noire en clair, blanche en sombre. */
+html:not([data-contrast='high'])[data-theme='light'] :is(.studio, body[data-mode='studio'] #popover, body[data-mode='studio'] #sheet) { --seg-on: #0a0a0a; }
+html:not([data-contrast='high'])[data-theme='dark'] :is(.studio, body[data-mode='studio'] #popover, body[data-mode='studio'] #sheet) { --seg-on: #ffffff; }
 
 /* ------------------------------------------------------------------ interrupteurs et cases */
 html:not([data-contrast='high']) body .tog-row input:checked + .tog { background: var(--accent); }

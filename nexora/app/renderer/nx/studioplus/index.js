@@ -17,6 +17,8 @@ import * as DEV from './devices.js';
 import * as OUTLINE from './outline.js';
 import * as STAGE from './stagings.js';
 import * as SLIDES from './slides.js';
+// NEXORA #124 : vrais appareils 3D dans la composition libre des Maquettes (crochets du moteur, aucun bouton).
+import './maquettes3d.js';
 
 const DECISION = { approve: 'approuvé', changes: 'changements demandés', comment: 'commentaire' };
 const fmtT = (t) => `${(Math.round(t * 100) / 100).toString().replace('.', ',')} s`;
