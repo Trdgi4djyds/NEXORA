@@ -154,6 +154,10 @@ STUDIO 3D & MOTION
 - Versions de la scène, bibliothèque d'équipe 3D.
 - Présentations : 5 styles (Violet, Nuit néon, Galerie, Marque, Classique) et
   7 mises en page.
+- Maquettes : vos captures dans de vrais appareils 3D (iPhone, Galaxy, iPad, MacBook,
+  écran 27 pouces) inclinés à volonté, mises en page toutes prêtes (incliné, à plat vu de
+  dessus, côte à côte, trio, cascade, ordinateur et téléphone, navigateur, grille), fonds,
+  textes et logo ; export en image ou en vidéo animée.
 
 NEX-DESIGN
 ----------
