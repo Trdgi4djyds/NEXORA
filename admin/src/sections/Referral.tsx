@@ -1,7 +1,8 @@
 // NEXORA #090 : NEXORA REFERRAL, programme de parrainage lié à l'abonnement Pro (migration 20261108000007_parrainage.sql).
-// Les parrains sont créés ici seulement : adresse e-mail, nom, puis un lien d'invitation et un code d'accès qui change
-// chaque mois, à leur transmettre (de préférence par deux canaux différents). Le parrain ouvre le lien (/referral/), se
-// connecte avec son adresse e-mail et saisit le code. Onglets : bilan (encaissé, remises, commissions, part de NEXORA),
+// Les parrains sont créés ici seulement : adresse e-mail et nom. NEXORA #127 (migration 20261116000001) : l'invitation
+// part aussitôt par e-mail (bouton d'activation vers /referral/ avec le code déjà rempli, code d'accès du mois, étapes),
+// un nouveau lien ou un nouveau code est envoyé dès sa création, et le code de chaque mois part tout seul (tâche
+// quotidienne). Le lien et le code restent affichés ici, en secours. Onglets : bilan (encaissé, remises, commissions, part de NEXORA),
 // parrains, codes du mois, filleuls (paiement reçu hors ligne, rattachement), commissions, retraits, réglages.
 // Toutes les actions passent par les fonctions nx_admin_* (droits vérifiés par la base) ; lectures réservées aux
 // administrateurs (RLS).
@@ -17,8 +18,10 @@ type Recurring = { payers: number; commission_cents: number; gross_cents: number
 type Partner = {
   id: string; email: string; name: string; user_id: string | null; status: "invited" | "active" | "suspended"; invite_token: string | null; note: string
   payout_method: string; payout_details: string; failed_attempts: number; locked_until: string | null; created_at: string; activated_at: string | null; last_seen_at: string | null
-  month_code: string; month_code_used_at: string | null; unlocked: boolean; codes: number; referrals: number; recurring: Recurring; balance: Balance
+  month_code: string; month_code_used_at: string | null; month_code_mailed_at?: string | null; unlocked: boolean; codes: number; referrals: number; recurring: Recurring; balance: Balance
 }
+/** NEXORA #127 : résultat d'un envoi par la base (nx_partner_mail). */
+type Mail = { sent: boolean; reason?: "config" | "quota" | "error" | "suspended" | "partner"; message?: string; to?: string; kind?: "invite" | "code"; link?: string }
 type Referral = { user_id: string; email: string; partner_id: string; partner: string; code: string; source: string; since: string; active: boolean; billing: string | null; period: string | null; payments: number; paid_cents: number; commission_cents: number }
 type Commission = { id: number; partner_id: string; user_id: string | null; source: string; period: string; paid_cents: number; list_cents: number; rate: number; amount_cents: number; status: string; available_at: string; note: string; created_at: string }
 type Payout = { id: string; partner_id: string; amount_cents: number; method: string; details: string; status: string; reference: string; admin_note: string; requested_at: string; processed_at: string | null }
@@ -40,8 +43,19 @@ const METHOD: Record<string, string> = { paypal: "PayPal", bank: "Virement banca
 const PARTNER_STATE: Record<string, [string, string]> = { invited: ["Invité", "warn"], active: ["Actif", "ok"], suspended: ["Suspendu", "bad"] }
 const PAYOUT_STATE: Record<string, [string, string]> = { requested: ["Demandé", "warn"], approved: ["Approuvé", "info"], paid: ["Versé", "ok"], rejected: ["Refusé", "bad"], canceled: ["Annulé par le parrain", ""] }
 const SOURCE: Record<string, string> = { link: "Lien", code: "Code promo", admin: "Rattaché par l’équipe" }
-const PORTAL = `${NEXORA_WEB_URL}referral/`
-const inviteLink = (token: string) => `${PORTAL}#/invitation/${token}`
+// NEXORA #127 : l'espace des parrains est à la racine du domaine (/referral/), pas sous NEXORA web (/studio/referral/ : 404).
+const PORTAL = new URL("/referral/", NEXORA_WEB_URL).href
+const inviteLink = (token: string, code?: string) => `${PORTAL}#/invitation/${token}${code ? `/${code}` : ""}`
+/** État d'un envoi en une phrase, avec son ton (ok, warn, bad). */
+function mailState(m: Mail | null | undefined, what: string): [string, string] {
+  const e = what === "Invitation" ? "e" : "" // accord : « Invitation envoyée », « Nouveau code envoyé »
+  if (!m) return ["warn", `${what} : envoi automatique pas encore disponible. Appliquez la migration 20261116000001 (section Supabase → « Tout appliquer »), puis renvoyez ; en attendant, transmettez le lien et le code ci-dessous.`]
+  if (m.sent) return ["ok", `${what} envoyé${e} à ${m.to}.`]
+  if (m.reason === "config") return ["bad", `${what} non envoyé${e} : les e-mails ne sont pas configurés (section Supabase → E-mails (Brevo) : clé API et expéditeur).`]
+  if (m.reason === "quota") return ["warn", `${what} non envoyé${e} : quota d’e-mails du jour atteint. ${e ? "Elle" : "Il"} partira automatiquement demain matin.`]
+  if (m.reason === "suspended") return ["bad", "Parrain suspendu : rien n’a été envoyé."]
+  return ["bad", `${what} non envoyé${e}${m.message ? ` : ${m.message}` : ""}.`]
+}
 const monthName = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" })
 /** Dernier jour du mois en cours (UTC) : jour de fin de validité des codes du mois. */
 const endOfMonth = () => {
@@ -186,7 +200,7 @@ function PartnersTab({ q, refresh }: { q: string; refresh: number }) {
         return (
           <>
             <div className="toolbar">
-              <span className="muted small">{plural(shown.length, "parrain")} · inscription uniquement depuis le back office</span>
+              <span className="muted small">{plural(shown.length, "parrain")} · inscription uniquement depuis le back office, invitation envoyée par e-mail</span>
               <span className="grow" />
               <button className="btn primary" onClick={() => setInviting(true)}>
                 <Icon name="plus" size={14} /> Inviter un parrain
@@ -222,33 +236,49 @@ function PartnersTab({ q, refresh }: { q: string; refresh: number }) {
   )
 }
 
-type Created = { invite_token: string; code: string; month: string; expires_at: string; partner: { name: string; email: string } }
+type Created = { invite_token: string; code: string; month: string; expires_at: string; partner: { id: string; name: string; email: string }; link?: string; email?: Mail }
 
 function InviteModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
   const act = useAction()
   const [created, setCreated] = useState<Created | null>(null)
+  const [mail, setMail] = useState<Mail | null | undefined>(undefined)
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const f = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>
     let out: Created | null = null
     const ok = await act.run(async () => {
       out = must(await sb.rpc("nx_admin_partner_create", { p_email: f.email.trim(), p_name: f.name.trim(), p_note: f.note || "" })) as Created
-    }, "Parrain invité.")
+    })
     if (ok && out) {
       setCreated(out)
+      setMail((out as Created).email ?? null)
       onDone()
     }
   }
+  async function resend() {
+    if (!created) return
+    let out: Mail | null = null
+    if (await act.run(async () => { out = must(await sb.rpc("nx_admin_partner_send", { p_partner: created.partner.id })) as Mail })) setMail(out)
+  }
   if (created) {
+    const [tone, text] = mailState(mail, "Invitation")
+    const first = created.partner.name.split(" ")[0]
     return (
       <Modal title={`Invitation de ${created.partner.name}`} onClose={onClose} width={620}>
-        <p className="muted">Transmettez ces deux informations à {created.partner.email}, de préférence par deux canaux différents (le lien par e-mail, le code par SMS ou WhatsApp). Le parrain ouvre le lien, se connecte avec son adresse e-mail, puis saisit le code.</p>
-        <Secret label="Lien d’invitation" value={inviteLink(created.invite_token)} hint="Valable jusqu’à son utilisation ; vous pouvez en créer un nouveau tant que le parrain n’a pas activé son accès." />
-        <Secret label={`Code d’accès de ${monthName.format(new Date(created.month))}`} value={created.code} code hint={`Valable jusqu’au ${fmtDate(endOfMonth())} : un nouveau code est demandé chaque mois (onglet « Codes du mois »).`} />
+        <div className={`rf-mail ${tone}`} role="status">
+          <Icon name={tone === "ok" ? "check" : "mail"} size={16} />
+          <span>
+            <b>{text}</b>
+            {tone === "ok" && <small>{first} y trouve le bouton « Activer mon espace de parrain » (code déjà rempli), son code d’accès de {monthName.format(new Date(created.month))} et les étapes. Les codes des mois suivants lui seront envoyés automatiquement.</small>}
+          </span>
+        </div>
+        <details className="rf-fallback" open={tone !== "ok"}>
+          <summary>Lien et code, en secours</summary>
+          <Secret label="Lien d’invitation" value={created.link || inviteLink(created.invite_token, created.code)} hint="Valable jusqu’à son utilisation ; le code y est déjà rempli." />
+          <Secret label={`Code d’accès de ${monthName.format(new Date(created.month))}`} value={created.code} code hint={`Valable jusqu’au ${fmtDate(endOfMonth())}.`} />
+        </details>
         <div className="actions">
-          <a className="btn" href={`mailto:${created.partner.email}?subject=${encodeURIComponent("Votre accès à NEXORA REFERRAL")}&body=${encodeURIComponent(`Bonjour ${created.partner.name.split(" ")[0]},\n\nVous êtes invité au programme de parrainage NEXORA REFERRAL. Ouvrez ce lien, puis connectez-vous avec cette adresse e-mail :\n${inviteLink(created.invite_token)}\n\nVotre code d’accès vous est envoyé séparément.\n\nL’équipe NEXORA`)}`}>
-            <Icon name="mail" size={14} /> Préparer l’e-mail (lien seulement)
-          </a>
+          <button className="btn" disabled={act.busy} onClick={resend}><Icon name="mail" size={14} /> Renvoyer l’e-mail</button>
           <button className="btn primary" onClick={onClose}>Terminé</button>
         </div>
       </Modal>
@@ -257,12 +287,12 @@ function InviteModal({ onClose, onDone }: { onClose: () => void; onDone: () => v
   return (
     <Modal title="Inviter un parrain" onClose={onClose} width={560}>
       <form className="form" onSubmit={submit}>
-        <label className="field"><span>Adresse e-mail du parrain</span><input className="input" name="email" type="email" required placeholder="prenom@exemple.com" autoFocus /><small>Il se connectera avec cette adresse : un compte NEXORA est créé à sa première connexion s’il n’en a pas.</small></label>
+        <label className="field"><span>Adresse e-mail du parrain</span><input className="input" name="email" type="email" required placeholder="prenom@exemple.com" autoFocus /><small>L’invitation y est envoyée aussitôt (bouton d’activation, code d’accès, étapes). Il se connectera avec cette adresse : un compte NEXORA est créé à sa première connexion s’il n’en a pas.</small></label>
         <label className="field"><span>Nom</span><input className="input" name="name" required minLength={2} maxLength={80} placeholder="Prénom Nom" /><small>Son prénom apparaît sur le site quand un client utilise son code.</small></label>
         <label className="field"><span>Note (visible ici seulement)</span><input className="input" name="note" maxLength={500} placeholder="Influenceur, partenaire, école…" /></label>
         <div className="actions">
           <button type="button" className="btn" onClick={onClose}>Annuler</button>
-          <button className="btn primary" disabled={act.busy}>Créer l’invitation</button>
+          <button className="btn primary" disabled={act.busy}><Icon name="mail" size={14} /> Inviter et envoyer l’e-mail</button>
         </div>
       </form>
     </Modal>
@@ -293,13 +323,35 @@ function PartnerDrawer({ p, onClose, onChanged }: { p: Partner; onClose: () => v
   const [note, setNote] = useState(p.note)
   const locked = Boolean(p.locked_until && new Date(p.locked_until).getTime() > Date.now())
 
+  /** NEXORA #127 : résultat d'un envoi montré en notification. */
+  function report(m: Mail | null | undefined, what: string) {
+    const [tone, text] = mailState(m, what)
+    ui.toast(text, tone === "ok" ? undefined : "bad")
+  }
   async function newLink() {
-    if (!(await ui.confirm({ title: "Créer un nouveau lien d’invitation ?", body: "L’ancien lien ne fonctionnera plus.", confirm: "Nouveau lien" }))) return
-    await act.run(async () => setToken((must(await sb.rpc("nx_admin_partner_invite_reset", { p_partner: p.id })) as { invite_token: string }).invite_token), "Nouveau lien créé.")
+    if (!(await ui.confirm({ title: "Créer un nouveau lien d’invitation ?", body: `L’ancien lien ne fonctionnera plus ; le nouveau est envoyé aussitôt à ${p.email}.`, confirm: "Nouveau lien" }))) return
+    let out: { invite_token: string; email?: Mail } | null = null
+    if (await act.run(async () => { out = must(await sb.rpc("nx_admin_partner_invite_reset", { p_partner: p.id })) as { invite_token: string; email?: Mail } }) && out) {
+      setToken((out as { invite_token: string }).invite_token)
+      report((out as { email?: Mail }).email, "Nouveau lien")
+      onChanged()
+    }
   }
   async function newCode() {
-    if (!(await ui.confirm({ title: "Créer un nouveau code du mois ?", body: `${p.name} devra saisir le nouveau code à sa prochaine visite ; l’ancien ne marche plus. À faire si le code a pu être vu par quelqu’un d’autre.`, confirm: "Nouveau code" }))) return
-    if (await act.run(async () => setCode((must(await sb.rpc("nx_admin_partner_code", { p_partner: p.id, p_regenerate: true })) as { code: string }).code), "Nouveau code créé.")) onChanged()
+    if (!(await ui.confirm({ title: "Créer un nouveau code du mois ?", body: `L’ancien code ne marche plus ; le nouveau est envoyé aussitôt à ${p.email}. À faire si le code a pu être vu par quelqu’un d’autre.`, confirm: "Nouveau code" }))) return
+    let out: { code: string; email?: Mail } | null = null
+    if (await act.run(async () => { out = must(await sb.rpc("nx_admin_partner_code", { p_partner: p.id, p_regenerate: true })) as { code: string; email?: Mail } }) && out) {
+      setCode((out as { code: string }).code)
+      report((out as { email?: Mail }).email, "Nouveau code")
+      onChanged()
+    }
+  }
+  async function send() {
+    let out: Mail | null = null
+    if (await act.run(async () => { out = must(await sb.rpc("nx_admin_partner_send", { p_partner: p.id })) as Mail })) {
+      report(out, p.status === "invited" ? "Invitation" : "Code du mois")
+      onChanged()
+    }
   }
   async function update(args: Record<string, unknown>, ok: string) {
     if (await act.run(async () => must(await sb.rpc("nx_admin_partner_update", { p_partner: p.id, ...args })), ok)) onChanged()
@@ -324,12 +376,22 @@ function PartnerDrawer({ p, onClose, onChanged }: { p: Partner; onClose: () => v
           <Kpi icon="star" label="Disponible" value={usdFloor(p.balance.available_cents)} hint={`${usdTotal(p.balance.paid_cents)} versés`} />
           <Kpi icon="sync" label="Récurrent" value={usdTotal(p.recurring.commission_cents)} hint={`par mois · ${plural(p.recurring.payers, "filleul payant", "filleuls payants")}`} />
         </div>
+        {p.status !== "suspended" && (
+          <div className="rf-mail info">
+            <Icon name="mail" size={16} />
+            <span className="grow">
+              <b>{p.status === "invited" ? "Invitation envoyée par e-mail" : "Code du mois envoyé par e-mail"}</b>
+              <small>{p.month_code_mailed_at ? `Dernier envoi le ${fmtDateTime(p.month_code_mailed_at)} à ${p.email}.` : `Pas encore envoyé ce mois-ci à ${p.email}.`} Les codes des mois suivants partent automatiquement.</small>
+            </span>
+            <button className="btn sm" disabled={act.busy} onClick={send}>{p.status === "invited" ? "Renvoyer l’invitation" : "Envoyer le code"}</button>
+          </div>
+        )}
         {p.status === "invited" && token && (
-          <Secret label="Lien d’invitation" value={inviteLink(token)} hint={<>Pas encore utilisé. <button type="button" className="link-btn" onClick={newLink} disabled={act.busy}>Créer un nouveau lien</button></>} />
+          <Secret label="Lien d’invitation (en secours)" value={inviteLink(token, code)} hint={<>Pas encore utilisé ; le code y est déjà rempli. <button type="button" className="link-btn" onClick={newLink} disabled={act.busy}>Créer et envoyer un nouveau lien</button></>} />
         )}
         {p.status !== "suspended" && (
           <Secret label={`Code d’accès de ${monthName.format(new Date())}`} value={code} code
-            hint={<>{p.unlocked ? "Déjà saisi ce mois-ci." : "Pas encore saisi ce mois-ci."} Valable jusqu’au {fmtDate(endOfMonth())}. <button type="button" className="link-btn" onClick={newCode} disabled={act.busy}>Nouveau code</button></>} />
+            hint={<>{p.unlocked ? "Déjà saisi ce mois-ci." : "Pas encore saisi ce mois-ci."} Valable jusqu’au {fmtDate(endOfMonth())}. <button type="button" className="link-btn" onClick={newCode} disabled={act.busy}>Créer et envoyer un nouveau code</button></>} />
         )}
         {locked && (
           <div className="alert row">
@@ -361,18 +423,40 @@ function PartnerDrawer({ p, onClose, onChanged }: { p: Partner; onClose: () => v
 
 function CodesTab({ refresh }: { refresh: number }) {
   const ui = useUi()
+  const act = useAction()
   const data = usePartners(refresh)
+  // NEXORA #127 : envoi de tous les codes pas encore envoyés ni saisis (la même chose part chaque jour à 6 h UTC).
+  async function sendAll() {
+    let out: { sent: number; stopped?: string | null; left: number } | null = null
+    if (await act.run(async () => { out = must(await sb.rpc("nx_admin_referral_mail_month")) as { sent: number; stopped?: string | null; left: number } }) && out) {
+      const r = out as { sent: number; stopped?: string | null; left: number }
+      ui.toast(r.stopped === "config" ? "Les e-mails ne sont pas configurés (section Supabase → E-mails (Brevo))." : `${plural(r.sent, "e-mail envoyé", "e-mails envoyés")}${r.left ? ` · ${plural(r.left, "restant")} (quota du jour)` : ""}.`, r.stopped === "config" ? "bad" : undefined)
+      data.reload()
+    }
+  }
+  async function sendOne(p: Partner) {
+    let out: Mail | null = null
+    if (await act.run(async () => { out = must(await sb.rpc("nx_admin_partner_send", { p_partner: p.id })) as Mail })) {
+      const [tone, text] = mailState(out, p.status === "invited" ? "Invitation" : "Code du mois")
+      ui.toast(text, tone === "ok" ? undefined : "bad")
+      data.reload()
+    }
+  }
   return (
     <Loaded q={data}>
       {(rows) => {
         const live = rows.filter((p) => p.status !== "suspended")
+        const unsent = live.filter((p) => !p.unlocked && !p.month_code_mailed_at).length
         return (
           <>
             <div className="toolbar">
               <span className="muted small">
-                Codes de {monthName.format(new Date())}, valables jusqu’au {fmtDate(endOfMonth())}. Un nouveau code est créé le 1ᵉʳ de chaque mois : transmettez-le à chaque parrain.
+                Codes de {monthName.format(new Date())}, valables jusqu’au {fmtDate(endOfMonth())}. Chaque parrain reçoit son code par e-mail au début du mois (envoi automatique tous les jours à 6 h UTC pour ceux qui ne l’ont pas encore reçu).
               </span>
               <span className="grow" />
+              <button className="btn primary" disabled={act.busy || !unsent} onClick={sendAll}>
+                <Icon name="mail" size={14} /> {unsent ? `Envoyer maintenant (${unsent})` : "Tous les codes sont envoyés"}
+              </button>
               <button className="btn" disabled={!live.length} onClick={() => downloadCsv(`codes-parrains-${new Date().toISOString().slice(0, 7)}`, live.map((p) => ({ nom: p.name, email: p.email, code: p.month_code, saisi: p.unlocked ? "oui" : "non" })))}>
                 <Icon name="download" size={14} /> Exporter
               </button>
@@ -382,8 +466,14 @@ function CodesTab({ refresh }: { refresh: number }) {
                 <tr key={p.id}>
                   <td><b>{p.name}</b><div className="muted small">{p.email}</div></td>
                   <td><code className="rf-code-cell">{p.month_code}</code></td>
-                  <td className="nowrap">{p.unlocked ? <Tag tone="ok">Saisi{p.month_code_used_at ? ` le ${fmtDate(p.month_code_used_at)}` : ""}</Tag> : <Tag tone="warn">À transmettre</Tag>}</td>
-                  <td className="nowrap"><button className="btn sm" onClick={() => copy(p.month_code, ui, `Code de ${p.name}`)}><Icon name="copy" size={13} /> Copier</button></td>
+                  <td className="nowrap">
+                    {p.unlocked ? <Tag tone="ok">Saisi{p.month_code_used_at ? ` le ${fmtDate(p.month_code_used_at)}` : ""}</Tag> : p.month_code_mailed_at ? <Tag tone="info">Envoyé le {fmtDate(p.month_code_mailed_at)}</Tag> : <Tag tone="warn">Pas encore envoyé</Tag>}
+                    {p.status === "invited" && <div className="muted small">invitation en attente</div>}
+                  </td>
+                  <td className="nowrap">
+                    <button className="btn sm" disabled={act.busy} onClick={() => sendOne(p)}><Icon name="mail" size={13} /> {p.status === "invited" ? "Renvoyer l’invitation" : "Renvoyer"}</button>{" "}
+                    <button className="btn sm" onClick={() => copy(p.month_code, ui, `Code de ${p.name}`)}><Icon name="copy" size={13} /> Copier</button>
+                  </td>
                 </tr>
               ))}
             </Table>

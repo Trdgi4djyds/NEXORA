@@ -55,7 +55,6 @@ const CTA_LINKS: [string, string][] = [
   ["Tarifs", "/tarifs"],
   ["Télécharger", "/telecharger"],
   ["Ma licence", "/licence"],
-  ["Nouveautés", "/nouveautes"],
   ["Pour qui ?", "/pour-qui"],
 ]
 

@@ -8,7 +8,6 @@ import { SpacePage } from "./pages/SpacePage"
 import { SpacesIndex } from "./pages/SpacesIndex"
 import { Pricing } from "./pages/Pricing"
 import { Download } from "./pages/Download"
-import { News } from "./pages/News"
 import { Licence } from "./pages/Licence"
 import { NotFound } from "./pages/NotFound"
 import { PersonasIndex } from "./pages/PersonasIndex"
@@ -41,7 +40,6 @@ function page(route: Route): { key: string; node: ReactNode } {
   if (a === "telecharger") return { key: "telecharger", node: <Download /> }
   // NEXORA #076 : licence (compte, clé, appareils, abonnement) et vérification publique d'une clé.
   if (a === "licence") return { key: "licence", node: <Licence query={route.query} /> }
-  if (a === "nouveautes") return { key: "nouveautes", node: <News /> }
   return { key: "introuvable", node: <NotFound /> }
 }
 

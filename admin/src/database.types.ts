@@ -3286,6 +3286,45 @@ export type Database = {
         Args: { p_id: number; p_note?: string }
         Returns: Json
       }
+      nx_admin_data_cols: {
+        Args: { p_rel: unknown; p_values: Json }
+        Returns: string[]
+      }
+      nx_admin_data_delete: {
+        Args: { p_key: Json; p_table: string }
+        Returns: Json
+      }
+      nx_admin_data_guard: { Args: { p_table: string }; Returns: undefined }
+      nx_admin_data_insert: {
+        Args: { p_table: string; p_values: Json }
+        Returns: Json
+      }
+      nx_admin_data_key: { Args: { p_rel: unknown }; Returns: string[] }
+      nx_admin_data_log: {
+        Args: { p_action: string; p_meta: Json; p_table: string }
+        Returns: undefined
+      }
+      nx_admin_data_rel: { Args: { p_table: string }; Returns: unknown }
+      nx_admin_data_rows: {
+        Args: {
+          p_desc?: boolean
+          p_limit?: number
+          p_offset?: number
+          p_order?: string
+          p_search?: string
+          p_table: string
+        }
+        Returns: Json
+      }
+      nx_admin_data_tables: { Args: never; Returns: Json }
+      nx_admin_data_update: {
+        Args: { p_key: Json; p_table: string; p_values: Json }
+        Returns: Json
+      }
+      nx_admin_data_where: {
+        Args: { p_key: Json; p_rel: unknown }
+        Returns: string
+      }
       nx_admin_device_unlink: {
         Args: { p_device: string; p_user: string }
         Returns: Json

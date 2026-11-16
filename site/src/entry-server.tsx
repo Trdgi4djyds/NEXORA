@@ -9,7 +9,7 @@ export { headFor, PAGES, SITE_URL, STUDIO_URL, OG_IMAGE, LOCALE, SITE_NAME } fro
 export { SPACES } from "./data/spaces"
 export { FAQ } from "./data/content"
 export { PERSONAS } from "./data/personas"
-export { APP_VERSION, DEVICE_COUNT, RELEASES } from "./lib/product"
+export { APP_VERSION, DEVICE_COUNT } from "./lib/product"
 
 export function render(path: string): string {
   setServerPath(path)

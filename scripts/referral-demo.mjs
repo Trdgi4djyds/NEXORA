@@ -149,7 +149,9 @@ export function referralRpc(name, args = {}) {
       return c ? { valid: true, code, partner: P.find((p) => p.id === c.partner_id).name.split(" ")[0], ...RULES } : { valid: false }
     }
     // ---- espace des parrains
-    case "nx_partner_invite_info": return { valid: true, email: mask(P[3].email), name: "Yao", expires_at: monthEnd() }
+    case "nx_partner_invite_info": return { valid: true, email: mask(P[3].email), address: P[3].email, name: "Yao", expires_at: monthEnd() }
+    // NEXORA #127 : code ou invitation renvoyés par e-mail.
+    case "nx_partner_code_mail": return { sent: true, to: mask(kofi.email) }
     case "nx_partner_me": return me()
     case "nx_partner_activate":
     case "nx_partner_unlock": demoReferral.state = "actif"; return { ok: true, ...me() }
@@ -200,6 +202,8 @@ export function referralRpc(name, args = {}) {
     }
     case "nx_admin_partners":
       return P.map((p) => ({ ...strip(p), month_code: p.status === "suspended" ? "" : p._src.code, month_code_used_at: p._src.unlocked ? ago(new Date().getUTCDate() - 1) : null,
+        // NEXORA #127 : codes du mois envoyés automatiquement le 1er, sauf un parrain (envoi encore à faire).
+        month_code_mailed_at: p.status === "suspended" || p === P[2] ? null : ago(new Date().getUTCDate() - 1),
         unlocked: p._src.unlocked, codes: p._src.codes.length, referrals: referrals.filter((r) => r.partner_id === p.id).length, recurring: recurringOf(p.id), balance: balanceOf(p.id, payouts) }))
     case "nx_admin_referrals":
       return referrals.sort((a, b) => Date.parse(b.since) - Date.parse(a.since)).map((r) => {
@@ -208,10 +212,17 @@ export function referralRpc(name, args = {}) {
           billing: active(r) ? "active" : r.kind === "stopped" ? "canceled" : null, period: r.kind === "year" ? "year" : r.kind === "signed" ? null : "month",
           payments: c.length, paid_cents: sum(c, (x) => x.paid_cents), commission_cents: sum(c, (x) => x.amount_cents) }
       })
-    case "nx_admin_partner_create":
-      return { partner: { id: uid(4999), email: String(args.p_email || "").toLowerCase(), name: args.p_name, status: "invited" }, invite_token: hex(4242, 64), code: "W4KT-9BNE", month: m0, expires_at: monthEnd() }
-    case "nx_admin_partner_code": return { code: args.p_regenerate ? "N6QA-3RZE" : (P.find((p) => p.id === args.p_partner) || kofi)._src.code, month: m0, used_at: null, expires_at: monthEnd() }
-    case "nx_admin_partner_invite_reset": return { invite_token: hex(4343, 64) }
+    case "nx_admin_partner_create": {
+      const email = String(args.p_email || "").toLowerCase()
+      const link = `https://nexoradevs.online/referral/#/invitation/${hex(4242, 64)}/W4KT-9BNE`
+      return { partner: { id: uid(4999), email, name: args.p_name, status: "invited" }, invite_token: hex(4242, 64), code: "W4KT-9BNE", month: m0, expires_at: monthEnd(),
+        link, email: { sent: true, to: email, kind: "invite", link } }
+    }
+    case "nx_admin_partner_code": return { code: args.p_regenerate ? "N6QA-3RZE" : (P.find((p) => p.id === args.p_partner) || kofi)._src.code, month: m0, used_at: null, expires_at: monthEnd(),
+      email: args.p_regenerate ? { sent: true, to: (P.find((p) => p.id === args.p_partner) || kofi).email, kind: "code" } : undefined }
+    case "nx_admin_partner_invite_reset": return { invite_token: hex(4343, 64), email: { sent: true, to: (P.find((p) => p.id === args.p_partner) || P[3]).email, kind: "invite" } }
+    case "nx_admin_partner_send": { const p = P.find((x) => x.id === args.p_partner) || kofi; return { sent: true, to: p.email, kind: p.status === "invited" ? "invite" : "code" } }
+    case "nx_admin_referral_mail_month": return { sent: 1, stopped: null, left: 0 }
     case "nx_admin_partner_update":
     case "nx_admin_payout_update":
     case "nx_admin_commission_cancel":

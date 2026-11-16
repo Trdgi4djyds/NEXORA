@@ -447,5 +447,115 @@ insert into public.nx_private_config values ('invoice_issuer', '{"name":"NEXORA"
   ok(pro.price_month_cents === 2500, "Vouvoiement : prix des offres inchangés", pro)
 }
 
+// ---------- #127 : e-mails automatiques des parrains (migration 20261116000001) ----------
+{
+  await db.exec(`
+create or replace function nx_html(p text) returns text language sql immutable as $$
+  select replace(replace(replace(replace(coalesce(p, ''), '&', '&amp;'), '<', '&lt;'), '>', '&gt;'), '"', '&quot;') $$;
+create table if not exists mails_html (to_addr text, to_name text, subject text, html text, txt text, tag text, at timestamptz default clock_timestamp());
+create or replace function nx_brevo_post(p_to text, p_to_name text, p_subject text, p_html text, p_text text, p_tag text, p_attachments jsonb default null)
+returns bigint language plpgsql as $$ begin
+  if current_setting('nx.brevo_off', true) = '1' then return null; end if;
+  insert into mails_html (to_addr, to_name, subject, html, txt, tag) values (p_to, p_to_name, p_subject, p_html, p_text, p_tag);
+  return 77; end $$;
+create or replace function nx_email_quota(p_needed integer) returns integer language plpgsql as $$ begin
+  if current_setting('nx.quota_off', true) = '1' then raise exception 'Quota Brevo du jour atteint'; end if; return 100; end $$;
+`)
+  const hasLog = (await q("select to_regclass('public.nx_email_log') as t"))[0].t
+  if (!hasLog) await db.exec("create table nx_email_log (id bigserial primary key, user_id uuid, request_id bigint, kind text not null default 'alerte', to_email text, created_at timestamptz not null default now())")
+  // Colonnes ajoutées en production par 20261104000006 (absente de cette chaîne d'essai).
+  await db.exec("alter table nx_email_log add column if not exists to_email text; alter table nx_email_log alter column user_id drop not null")
+  const ME = mig("20261116000001_parrainage_emails.sql")
+  await db.exec(ME)
+  await db.exec(ME)
+  ok(true, "Migration 20261116000001 (e-mails des parrains) rejouée deux fois sans erreur")
+  const mails = async (to) => q("select * from mails_html where to_addr = $1 order by at", [to])
+  const tutoie127 = /\b(?:tu|te|toi|ton|ta|tes)\b|\bt['’]/i
+
+  // Invitation : créée puis envoyée aussitôt, lien vers /referral/ avec le code déjà rempli.
+  await db.exec(`insert into auth.users values ('${id(9)}', 'awa.marraine@exemple.ci'); insert into profiles (id, email, app_role) values ('${id(9)}', 'awa.marraine@exemple.ci', 'user');`)
+  const inv = await one(1, "select nx_admin_partner_create($1, $2, $3) as r", ["Awa.Marraine@exemple.ci", "Awa Koné", "École"])
+  const m1 = await mails("awa.marraine@exemple.ci")
+  const linkRe = new RegExp(`^https://nexoradevs\\.online/referral/#/invitation/${inv.invite_token}/${inv.code}$`)
+  ok(inv.email?.sent === true && inv.email.kind === "invite" && linkRe.test(inv.link) && inv.email.link === inv.link,
+    "Invitation : parrain créé et e-mail envoyé aussitôt, lien vers /referral/ (jeton et code déjà remplis)", inv)
+  ok(m1.length === 1 && m1[0].subject === "Votre invitation au programme de parrainage NEXORA" && m1[0].html.includes(inv.link.replace(/&/g, "&amp;")) && m1[0].html.includes(inv.code)
+    && /30 % de remise/.test(m1[0].html) && /25 % de ce qu’ils paient/.test(m1[0].html) && !/\/studio\//.test(m1[0].html) && m1[0].txt.includes(inv.code) && m1[0].tag === "parrainage" && m1[0].to_name === "Awa Koné",
+    "Invitation : e-mail avec le bouton, le code du mois, les règles du programme et les étapes (HTML et texte)", m1[0] && { subject: m1[0].subject, txt: m1[0].txt.slice(0, 300) })
+  ok(!tutoie127.test(m1[0].txt), "Invitation : texte au vouvoiement", m1[0].txt)
+  ok((await q("select count(*)::int as n from nx_email_log where kind = 'parrainage-invitation' and to_email = 'awa.marraine@exemple.ci'"))[0].n === 1
+    && (await q("select mailed_at from nx_partner_access_codes where partner_id = $1", [inv.partner.id]))[0].mailed_at, "Invitation : envoi journalisé, code du mois marqué envoyé")
+  const info127 = await one(null, "select nx_partner_invite_info($1) as r", [inv.invite_token])
+  ok(info127.valid && info127.address === "awa.marraine@exemple.ci" && info127.email !== info127.address, "Lien d'invitation : adresse complète pour pré-remplir la connexion", info127)
+
+  // Renvoi, nouveau lien, droits.
+  const again = await one(1, "select nx_admin_partner_send($1) as r", [inv.partner.id])
+  ok(again.sent === true && again.kind === "invite" && (await mails("awa.marraine@exemple.ci")).length === 2, "Back office : invitation renvoyée", again)
+  ok(/administrateurs/.test(await fails_(4, "select nx_admin_partner_send($1) as r", [inv.partner.id])), "Back office : renvoi réservé aux administrateurs")
+  const reset = await one(1, "select nx_admin_partner_invite_reset($1) as r", [inv.partner.id])
+  const m3 = (await mails("awa.marraine@exemple.ci")).at(-1)
+  ok(reset.invite_token !== inv.invite_token && reset.email.sent && m3.html.includes(reset.invite_token) && !m3.html.includes(inv.invite_token) && /renouvelé/.test(m3.txt),
+    "Nouveau lien : l'ancien ne marche plus, le nouveau part aussitôt par e-mail", reset)
+  ok(/permission denied/i.test(await fails_(null, "select nx_partner_mail($1) as r", [inv.partner.id])) && /permission denied/i.test(await fails_(4, "select nx_partner_mail($1) as r", [inv.partner.id]))
+    && /permission denied/i.test(await fails_(4, "select nx_referral_month_mail() as r")) && /permission denied/i.test(await fails_(null, "select nx_partner_code_mail() as r")),
+    "Droits : fonctions d'envoi internes fermées aux comptes, renvoi du code réservé aux comptes connectés")
+
+  // « Recevoir mon code par e-mail » : invité connecté avec l'adresse invitée, une fois toutes les 5 minutes.
+  ok((await one(4, "select nx_partner_code_mail() as r")).reason === "partner", "Code par e-mail : refusé à un compte sans accès parrain")
+  await db.exec("update nx_partner_access_codes set mailed_at = now() - interval '10 minutes' where partner_id = '" + inv.partner.id + "'")
+  const self1 = await one(9, "select nx_partner_code_mail() as r")
+  const self2 = await one(9, "select nx_partner_code_mail() as r")
+  ok(self1.sent === true && self1.to === "aw•••@exemple.ci" && self2.sent === false && self2.reason === "recent", "Code par e-mail : envoyé à l'adresse du parrain (masquée à l'écran), au plus une fois toutes les 5 minutes", [self1, self2])
+  const code9 = (await q("select code from nx_partner_access_codes where partner_id = $1 and month = nx_month_start()", [inv.partner.id]))[0].code
+  const act9 = await one(9, "select nx_partner_activate($1, $2) as r", [reset.invite_token, code9])
+  ok(act9.ok === true && act9.status === "active", "Activation avec le lien et le code reçus par e-mail", act9)
+
+  // Nouveau code : envoyé aussitôt, lien vers l'espace avec le code déjà rempli.
+  const newCode = await one(1, "select nx_admin_partner_code($1, true) as r", [inv.partner.id])
+  const m4 = (await mails("awa.marraine@exemple.ci")).at(-1)
+  ok(newCode.email.sent && newCode.email.kind === "code" && newCode.code !== code9 && m4.html.includes(`/referral/#/code/${newCode.code}`) && /nouveau code/i.test(m4.txt) && /^Votre code d’accès NEXORA REFERRAL de /.test(m4.subject),
+    "Nouveau code du mois : envoyé aussitôt (lien vers l'espace, code déjà rempli)", { newCode, subject: m4.subject })
+
+  // Tâche quotidienne : codes du mois pas encore envoyés ni saisis ; rien en double ; parrains suspendus exclus.
+  await db.exec("update nx_partner_access_codes set mailed_at = null; update nx_partners set unlocked_month = null")
+  const live = (await q("select count(*)::int as n from nx_partners where status <> 'suspended'"))[0].n
+  await one(1, "select nx_admin_partner_update($1, 'suspended') as r", [created.partner.id])
+  const before127 = (await q("select count(*)::int as n from mails_html"))[0].n
+  const run1 = (await q("select nx_referral_month_mail() as r"))[0].r
+  const run2 = (await q("select nx_referral_month_mail() as r"))[0].r
+  const kofiMails = (await q("select count(*)::int as n from mails_html where to_addr = 'kofi.partenaire@exemple.ci'"))[0].n
+  ok(run1.sent === live - 1 && run1.left === 0 && run2.sent === 0 && (await q("select count(*)::int as n from mails_html"))[0].n === before127 + live - 1 && kofiMails === 0,
+    "Codes du mois : envoyés une fois à chaque parrain non suspendu, rien en double au passage suivant", { live, run1, run2, kofiMails })
+  await one(1, "select nx_admin_partner_update($1, 'active') as r", [created.partner.id])
+  await db.exec("update nx_partner_access_codes set mailed_at = null where partner_id = '" + inv.partner.id + "'; update nx_partners set unlocked_month = nx_month_start() where id = '" + inv.partner.id + "'")
+  const awaBefore = (await mails("awa.marraine@exemple.ci")).length
+  const run3 = (await q("select nx_referral_month_mail() as r"))[0].r
+  ok(run3.sent === 1 && (await mails("awa.marraine@exemple.ci")).length === awaBefore && (await mails("kofi.partenaire@exemple.ci")).length === 1,
+    "Codes du mois : un parrain qui a déjà saisi son code n'en reçoit pas ; le parrain réactivé reçoit le sien", { run3, awaBefore })
+
+  // Brevo non réglé, quota atteint : parrain créé quand même, envoi signalé ; la tâche s'arrête.
+  await db.exec("select set_config('nx.brevo_off', '1', false)")
+  const noMail = await one(1, "select nx_admin_partner_create($1, $2) as r", ["sans.mail@exemple.ci", "Sans Mail"])
+  const stop = (await q("select nx_referral_month_mail() as r"))[0].r
+  await db.exec("select set_config('nx.brevo_off', '0', false); select set_config('nx.quota_off', '1', false)")
+  const quota = await one(1, "select nx_admin_partner_send($1) as r", [noMail.partner.id])
+  await db.exec("select set_config('nx.quota_off', '0', false)")
+  ok(noMail.partner.status === "invited" && noMail.email.sent === false && noMail.email.reason === "config" && stop.stopped === "config" && stop.left >= 1 && quota.sent === false && quota.reason === "quota",
+    "Sans Brevo ou au-delà du quota : parrain créé, envoi signalé (« config », « quota »), la tâche reprendra au passage suivant", { noMail: noMail.email, stop, quota })
+  const later = (await q("select nx_referral_month_mail() as r"))[0].r
+  ok(later.sent >= 1 && (await mails("sans.mail@exemple.ci")).length === 1, "Codes du mois : l'invitation qui n'avait pas pu partir est envoyée au passage suivant", later)
+  // NX_MAIL_HTML=<dossier> : invitation et code du mois écrits dans leur cadre réel (nx_email_frame), pour les regarder.
+  if (process.env.NX_MAIL_HTML) {
+    fs.mkdirSync(process.env.NX_MAIL_HTML, { recursive: true })
+    const all = await mails("awa.marraine@exemple.ci")
+    for (const [name, m] of [["invitation", all[0]], ["code-du-mois", all.find((x) => /^Votre code/.test(x.subject))]]) {
+      const framed = (await q("select nx_email_frame($1) as h", [m.html]))[0].h
+      fs.writeFileSync(path.join(process.env.NX_MAIL_HTML, `${name}.html`), framed)
+    }
+  }
+  const partners127 = await one(1, "select nx_admin_partners() as r")
+  ok(partners127.every((p) => "month_code_mailed_at" in p), "Back office : date d'envoi du code du mois dans la liste des parrains")
+}
+
 console.log(`\n${count} vérifications, ${fails ? `${fails} échec(s)` : "aucun échec"}.`)
 process.exit(fails ? 1 : 0)

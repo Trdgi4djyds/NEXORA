@@ -1,6 +1,9 @@
 // NEXORA #090 : parcours d'accès des parrains. Le back office crée le parrain et lui transmet un lien d'invitation
 // (#/invitation/<jeton>) et un code d'accès qui change chaque mois. Accès : lien de connexion reçu à l'adresse invitée
 // (Supabase Auth), puis code (activation au premier passage, puis une fois par mois). Ensuite : l'espace (Portal).
+// NEXORA #127 : tout arrive par e-mail (migration 20261116000001) : le lien de l'invitation porte le code
+// (#/invitation/<jeton>/<code>), celui du code du mois aussi (#/code/<code>) ; adresse et code sont pré-remplis, et
+// « Recevoir mon code par e-mail » renvoie le code à l'adresse du parrain.
 import { useEffect, useState, type FormEvent, type ReactNode } from "react"
 import type { Session } from "@supabase/supabase-js"
 import { Portal } from "./Portal"
@@ -9,30 +12,44 @@ import { Brand, DEFAULT_RULES, fmtTime, Icon, lastDay, pct, Spinner } from "./ui
 
 const INVITE_KEY = "nexora-referral-invite"
 const TOKEN_RE = /^[0-9a-f]{64}$/
+const CODE_RE = /^[A-Z0-9]{4}-?[A-Z0-9]{4}$/i
 
-/** Jeton d'invitation : celui de l'adresse (#/invitation/…), sinon celui gardé avant l'envoi du lien de connexion. */
-function readInvite(): string {
-  const m = /^#\/invitation\/([0-9a-f]{64})/.exec(location.hash)
-  if (m) {
-    try { localStorage.setItem(INVITE_KEY, JSON.stringify({ token: m[1], at: Date.now() })) } catch { /* stockage refusé */ }
-    return m[1]
+type Link = { token: string; code: string }
+/** Jeton d'invitation et code reçus par e-mail : ceux de l'adresse (#/invitation/<jeton>[/<code>], #/code/<code>),
+ * sinon ceux gardés avant l'envoi du lien de connexion (le retour du lien de connexion n'a plus le #). */
+function readInvite(): Link {
+  const inv = /^#\/invitation\/([0-9a-f]{64})(?:\/([A-Za-z0-9-]{8,9}))?/.exec(location.hash)
+  const only = /^#\/code\/([A-Za-z0-9-]{8,9})/.exec(location.hash)
+  const found: Link | null = inv ? { token: inv[1], code: inv[2] || "" } : only ? { token: "", code: only[1] } : null
+  if (found) {
+    if (!CODE_RE.test(found.code)) found.code = ""
+    try { localStorage.setItem(INVITE_KEY, JSON.stringify({ ...found, at: Date.now() })) } catch { /* stockage refusé */ }
+    return found
   }
   try {
-    const saved = JSON.parse(localStorage.getItem(INVITE_KEY) || "null") as { token?: string; at?: number } | null
-    if (saved && saved.token && TOKEN_RE.test(saved.token) && Date.now() - Number(saved.at || 0) < 7 * 86400000) return saved.token
+    const saved = JSON.parse(localStorage.getItem(INVITE_KEY) || "null") as (Partial<Link> & { at?: number }) | null
+    if (saved && Date.now() - Number(saved.at || 0) < 7 * 86400000) {
+      return { token: saved.token && TOKEN_RE.test(saved.token) ? saved.token : "", code: saved.code && CODE_RE.test(saved.code) ? saved.code : "" }
+    }
   } catch { /* valeur illisible */ }
-  return ""
+  return { token: "", code: "" }
 }
 function forgetInvite() {
   try { localStorage.removeItem(INVITE_KEY) } catch { /* sans effet */ }
-  if (location.hash.startsWith("#/invitation/")) history.replaceState(null, "", `${location.pathname}#/`)
+  if (/^#\/(invitation|code)\//.test(location.hash)) history.replaceState(null, "", `${location.pathname}#/`)
+}
+/** Code au format XXXX-XXXX. */
+const fmtCode = (v: string) => {
+  const raw = v.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8)
+  return raw.length > 4 ? `${raw.slice(0, 4)}-${raw.slice(4)}` : raw
 }
 
 export function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
   const [me, setMe] = useState<Me | null>(null)
   const [err, setErr] = useState("")
-  const [invite] = useState(readInvite)
+  const [link] = useState(readInvite)
+  const invite = link.token
 
   useEffect(() => {
     sb.auth.getSession().then(({ data }) => setSession(data.session))
@@ -57,7 +74,7 @@ export function App() {
   if (!me) return <Splash />
   const signOut = () => sb.auth.signOut()
   if (!me.partner) {
-    if (invite) return <CodeStep mode="activate" token={invite} email={session.user.email || ""} onDone={(m) => { forgetInvite(); setMe(m) }} onSignOut={signOut} />
+    if (invite) return <CodeStep mode="activate" token={invite} initial={link.code} email={session.user.email || ""} onDone={(m) => { forgetInvite(); setMe(m) }} onSignOut={signOut} />
     return <NotPartner me={me} onSignOut={signOut} />
   }
   if (me.status === "suspended") {
@@ -71,8 +88,8 @@ export function App() {
       </Frame>
     )
   }
-  if (me.needs_code) return <CodeStep mode="unlock" email={session.user.email || ""} me={me} onDone={setMe} onSignOut={signOut} />
-  if (invite) forgetInvite()
+  if (me.needs_code) return <CodeStep mode="unlock" initial={link.code} email={session.user.email || ""} me={me} onDone={(m) => { forgetInvite(); setMe(m) }} onSignOut={signOut} />
+  if (invite || link.code) forgetInvite()
   return <Portal me={me} onMe={setMe} onSignOut={signOut} />
 }
 
@@ -104,7 +121,7 @@ function Steps({ at }: { at: 1 | 2 }) {
   )
 }
 
-type Invite = { valid: boolean; reason?: string; email?: string; name?: string; expires_at?: string }
+type Invite = { valid: boolean; reason?: string; email?: string; address?: string; name?: string; expires_at?: string }
 
 function SignIn({ invite }: { invite: string }) {
   const [info, setInfo] = useState<Invite | null>(null)
@@ -115,7 +132,11 @@ function SignIn({ invite }: { invite: string }) {
   const [wait, setWait] = useState(0)
   useEffect(() => {
     if (!invite) return
-    rpc<Invite>("nx_partner_invite_info", { p_token: invite }).then(setInfo, () => setInfo({ valid: false, reason: "server" }))
+    rpc<Invite>("nx_partner_invite_info", { p_token: invite }).then((i) => {
+      setInfo(i)
+      // NEXORA #127 : adresse invitée pré-remplie (un clic pour recevoir le lien de connexion).
+      if (i.valid && i.address) setEmail((e) => e || i.address || "")
+    }, () => setInfo({ valid: false, reason: "server" }))
   }, [invite])
   useEffect(() => {
     if (!wait) return
@@ -148,7 +169,7 @@ function SignIn({ invite }: { invite: string }) {
           <ul className="pitch-list">
             <li><Icon name="link" size={16} />Créez vos codes promo et vos liens de parrainage</li>
             <li><Icon name="sync" size={16} />Suivez vos revenus récurrents, filleul par filleul</li>
-            <li><Icon name="download" size={16} />Demande vos retraits : PayPal, virement ou Mobile Money</li>
+            <li><Icon name="download" size={16} />Demandez vos retraits : PayPal, virement ou Mobile Money</li>
           </ul>
         </section>
         <section className="panel">
@@ -156,13 +177,13 @@ function SignIn({ invite }: { invite: string }) {
           {invalid ? (
             <>
               <h2>Lien d’invitation expiré</h2>
-              <p className="muted">{info?.reason === "suspended" ? "Cet accès de parrain est suspendu." : "Ce lien a déjà servi ou a été remplacé. Si votre accès est déjà activé, connectez-vous avec votre adresse e-mail ; sinon, demande un nouveau lien à l’équipe NEXORA."}</p>
+              <p className="muted">{info?.reason === "suspended" ? "Cet accès de parrain est suspendu." : "Ce lien a déjà servi ou a été remplacé par un plus récent, envoyé par e-mail. Si votre accès est déjà activé, connectez-vous avec votre adresse e-mail ; sinon, ouvrez le dernier e-mail d’invitation reçu."}</p>
             </>
           ) : sent ? (
             <>
               <span className="big-ic"><Icon name="mail" size={22} /></span>
               <h2>Vérifiez votre boîte de réception</h2>
-              <p className="muted">Un lien de connexion vient d’être envoyé à <b>{sent}</b>. Ouvrez-le <b>sur cet appareil</b>{invite ? " : vous saisirez ensuite votre code d’accès" : ""}. Il expire dans une heure.</p>
+              <p className="muted">Un lien de connexion vient d’être envoyé à <b>{sent}</b>. Ouvrez-le <b>sur cet appareil</b>{invite ? " : votre code d’accès sera déjà rempli" : ""}. Il expire dans une heure ; pensez à regarder dans les courriers indésirables.</p>
               <div className="row">
                 <button className="btn" disabled={busy || wait > 0} onClick={() => send()}>{wait > 0 ? `Renvoyer dans ${wait} s` : "Renvoyer le lien"}</button>
                 <button className="btn ghost" onClick={() => { setSent(""); setErr("") }}>Changer d’adresse</button>
@@ -190,8 +211,10 @@ function SignIn({ invite }: { invite: string }) {
 }
 
 /** Code d'accès : activation (lien d'invitation + code) ou code du mois. */
-function CodeStep({ mode, token, email, me, onDone, onSignOut }: { mode: "activate" | "unlock"; token?: string; email: string; me?: Me; onDone: (m: Me) => void; onSignOut: () => void }) {
-  const [code, setCode] = useState("")
+function CodeStep({ mode, token, initial, email, me, onDone, onSignOut }: { mode: "activate" | "unlock"; token?: string; initial?: string; email: string; me?: Me; onDone: (m: Me) => void; onSignOut: () => void }) {
+  const [code, setCode] = useState(() => fmtCode(initial || ""))
+  const [mailMsg, setMailMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [mailing, setMailing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState("")
   const [wrongMail, setWrongMail] = useState("")
@@ -199,8 +222,24 @@ function CodeStep({ mode, token, email, me, onDone, onSignOut }: { mode: "activa
   const month = new Intl.DateTimeFormat("fr-FR", { month: "long" }).format(new Date())
 
   function onInput(v: string) {
-    const raw = v.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8)
-    setCode(raw.length > 4 ? `${raw.slice(0, 4)}-${raw.slice(4)}` : raw)
+    setCode(fmtCode(v))
+  }
+  // NEXORA #127 : code renvoyé à l'adresse du parrain (une fois toutes les 5 minutes).
+  async function mailCode() {
+    setMailing(true)
+    setMailMsg(null)
+    try {
+      const r = await rpc<{ sent: boolean; reason?: string; to?: string }>("nx_partner_code_mail")
+      if (r.sent) setMailMsg({ ok: true, text: `Code envoyé à ${r.to}. Ouvrez l’e-mail et cliquez sur le bouton : le code sera rempli pour vous.` })
+      else if (r.reason === "recent") setMailMsg({ ok: true, text: `Un e-mail vient déjà de partir vers ${r.to} : regardez votre boîte de réception et les courriers indésirables.` })
+      else if (r.reason === "partner") setMailMsg({ ok: false, text: "Ce compte n’a pas d’accès parrain : connectez-vous avec l’adresse qui a reçu l’invitation." })
+      else if (r.reason === "suspended") setMailMsg({ ok: false, text: "Votre accès de parrain est suspendu." })
+      else setMailMsg({ ok: false, text: "L’e-mail n’a pas pu partir pour l’instant : réessayez dans quelques minutes." })
+    } catch (x) {
+      setMailMsg({ ok: false, text: x instanceof Error ? x.message : errText(x) })
+    } finally {
+      setMailing(false)
+    }
   }
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -213,7 +252,7 @@ function CodeStep({ mode, token, email, me, onDone, onSignOut }: { mode: "activa
       if (r.reason === "email") setWrongMail(r.expected || "")
       else if (r.reason === "locked") setErr(`Trop de codes faux : réessayez après ${fmtTime(r.until)}.`)
       else if (r.reason === "code") setErr(`Code incorrect${r.left != null ? ` : encore ${r.left} essai${(r.left || 0) > 1 ? "s" : ""} avant un blocage de 30 minutes` : ""}.`)
-      else if (r.reason === "invite") setErr("Ce lien d’invitation n’est plus valable : demande un nouveau lien à l’équipe NEXORA.")
+      else if (r.reason === "invite") setErr("Ce lien d’invitation n’est plus valable : ouvrez le dernier e-mail d’invitation reçu, un lien plus récent a pu le remplacer.")
       else if (r.reason === "already") setErr("Ce compte est déjà lié à un autre accès de parrain.")
       else setErr("Le code n’a pas pu être vérifié.")
     } catch (x) {
@@ -231,8 +270,8 @@ function CodeStep({ mode, token, email, me, onDone, onSignOut }: { mode: "activa
         <h2>{mode === "activate" ? "Saisissez votre code d’accès" : `Code d’accès de ${month}`}</h2>
         <p className="muted">
           {mode === "activate"
-            ? <>Connecté avec <b>{email}</b>. Saisissez le code de 8 caractères transmis par l’équipe NEXORA avec votre invitation.</>
-            : <>Pour votre sécurité, l’accès change chaque mois. Saisissez le code de {month} transmis par l’équipe NEXORA{me?.code_expires_at ? ` (valable jusqu’au ${lastDay(me.code_expires_at)})` : ""}.</>}
+            ? <>Connecté avec <b>{email}</b>. {initial ? "Votre code, reçu avec l’invitation, est déjà rempli : activez votre accès." : "Saisissez le code de 8 caractères reçu par e-mail avec votre invitation."}</>
+            : <>Pour votre sécurité, l’accès change chaque mois. {initial ? `Votre code de ${month}, reçu par e-mail, est déjà rempli.` : `Saisissez le code de ${month} reçu par e-mail`}{!initial && me?.code_expires_at ? ` (valable jusqu’au ${lastDay(me.code_expires_at)})` : ""}{initial ? "" : "."}</>}
         </p>
         {wrongMail ? (
           <div className="stack">
@@ -249,7 +288,9 @@ function CodeStep({ mode, token, email, me, onDone, onSignOut }: { mode: "activa
             {locked && <p className="msg bad" role="alert">Trop de codes faux : réessayez après {fmtTime(locked)}.</p>}
             {err && <p className="msg bad" role="alert">{err}</p>}
             <button className="btn primary block" disabled={busy || Boolean(locked)}>{busy ? "Vérification…" : mode === "activate" ? "Activer mon accès" : "Ouvrir mon espace"}</button>
-            <p className="fine">Pas de code ? Demandez-le à l’équipe NEXORA : il n’est jamais envoyé automatiquement.</p>
+            {mailMsg && <p className={`msg ${mailMsg.ok ? "ok" : "bad"}`} role="status">{mailMsg.text}</p>}
+            <button type="button" className="btn ghost block" disabled={mailing} onClick={mailCode}><Icon name="mail" size={14} /> {mailing ? "Envoi…" : "Recevoir mon code par e-mail"}</button>
+            <p className="fine">Votre code vous est envoyé par e-mail au début de chaque mois.</p>
           </form>
         )}
       </section>
@@ -258,6 +299,22 @@ function CodeStep({ mode, token, email, me, onDone, onSignOut }: { mode: "activa
 }
 
 function NotPartner({ me, onSignOut }: { me: Me; onSignOut: () => void }) {
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+  // NEXORA #127 : invitation renvoyée à l'adresse invitée (lien d'activation avec le code déjà rempli).
+  async function resend() {
+    setBusy(true)
+    try {
+      const r = await rpc<{ sent: boolean; reason?: string; to?: string }>("nx_partner_code_mail")
+      setMsg(r.sent || r.reason === "recent"
+        ? { ok: true, text: `Invitation envoyée à ${r.to} : ouvrez l’e-mail sur cet appareil et cliquez sur « Activer mon espace de parrain ».` }
+        : { ok: false, text: "L’e-mail n’a pas pu partir pour l’instant : réessayez dans quelques minutes." })
+    } catch (x) {
+      setMsg({ ok: false, text: x instanceof Error ? x.message : errText(x) })
+    } finally {
+      setBusy(false)
+    }
+  }
   return (
     <Frame onSignOut={onSignOut}>
       <section className="panel narrow center">
@@ -265,9 +322,15 @@ function NotPartner({ me, onSignOut }: { me: Me; onSignOut: () => void }) {
         <h2>{me.invited ? "Ouvrez votre lien d’invitation" : "Pas d’accès parrain"}</h2>
         <p className="muted">
           {me.invited
-            ? <>Une invitation attend <b>{me.email}</b>. Ouvrez le lien d’invitation reçu de l’équipe NEXORA sur cet appareil pour saisir votre code d’accès.</>
+            ? <>Une invitation attend <b>{me.email}</b>. Ouvrez sur cet appareil l’e-mail d’invitation de NEXORA et cliquez sur « Activer mon espace de parrain » : votre code sera déjà rempli.</>
             : <>Le compte <b>{me.email}</b> n’est pas parrain. L’accès au programme se fait sur invitation de l’équipe NEXORA.</>}
         </p>
+        {me.invited && (
+          <>
+            {msg && <p className={`msg ${msg.ok ? "ok" : "bad"}`} role="status">{msg.text}</p>}
+            <button className="btn primary" disabled={busy} onClick={resend}><Icon name="mail" size={14} /> {busy ? "Envoi…" : "Recevoir de nouveau mon invitation"}</button>
+          </>
+        )}
       </section>
     </Frame>
   )

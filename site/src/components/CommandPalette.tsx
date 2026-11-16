@@ -31,7 +31,6 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       { id: "tarifs", group: "Pages", label: "Tarifs", icon: "star", href: "/tarifs", words: "prix offres abonnement" },
       { id: "comparatif", group: "Pages", label: "Comparatif détaillé", icon: "nxTable", href: "/tarifs/comparatif", words: "fonctions limites offres" },
       { id: "telecharger", group: "Pages", label: "Télécharger NEXORA", hint: "Windows 10 et 11", icon: "download", href: "/telecharger", words: "installer zip portable" },
-      { id: "nouveautes", group: "Pages", label: "Nouveautés", icon: "sparkle", href: "/nouveautes", words: "version" },
       ...SPACES.map((s) => ({ id: s.id, group: "Espaces", label: s.name, hint: s.subtitle, icon: s.icon, space: s.id, href: spaceHref(s), words: `${s.tagline} ${s.need}` })),
       // #117 : les 9 profils « Pour qui ? ».
       ...PERSONAS.map((p) => ({ id: `profil-${p.slug}`, group: "Pour qui ?", label: p.name, hint: p.tagline, icon: p.icon, href: personaHref(p), words: p.quote })),

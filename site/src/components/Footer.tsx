@@ -58,9 +58,6 @@ export function Footer() {
           <a href="/pour-qui" className={link}>
             Pour qui ?
           </a>
-          <a href="/nouveautes" className={link}>
-            Nouveautés
-          </a>
         </nav>
         <nav className={col} aria-label="Commencer">
           <h2 className={head}>Commencer</h2>

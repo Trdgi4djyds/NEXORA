@@ -5,7 +5,6 @@ import { DeviceGallery, DeviceWall } from "../components/DeviceWall"
 import { Faq } from "../components/Faq"
 import { Hero } from "../components/Hero"
 import { Marquee } from "../components/Marquee"
-import { NewsCards } from "../components/NewsCards"
 import { Personas } from "../components/Personas"
 import { Platforms } from "../components/Platforms"
 import { SectionHead } from "../components/SectionHead"
@@ -18,7 +17,7 @@ import { Trust } from "../components/Trust"
 import { FAQ, HOME_SHIFTS } from "../data/content"
 import { Icon } from "../lib/icons"
 import { Reveal } from "../lib/motion"
-import { RELEASES, WEB_URL } from "../lib/product"
+import { WEB_URL } from "../lib/product"
 import { useRemote } from "../lib/remote"
 
 /**
@@ -29,7 +28,6 @@ import { useRemote } from "../lib/remote"
  * section des tarifs sur l'accueil (offres réservées à /tarifs, /tarifs/comparatif et /licence).
  */
 export function Home() {
-  const latest = RELEASES[0]
   const { supportEmail } = useRemote()
   const arrow = <Icon name="nxArrowUpRight" size={13} stroke={2} />
   return (
@@ -91,19 +89,6 @@ export function Home() {
       <AiSection />
       <Personas />
       <Trust />
-      {latest && (
-        <section className="section light" data-capture="nouveautes">
-          <div className="wrap">
-            <SectionHead eyebrow={`nouveautés ${latest[0]}`} title={[`${latest[1].title} :`, "ce qui change."]} lead={latest[1].intro} />
-            <NewsCards items={latest[1].items} limit={6} />
-            <Reveal className="mt-10 flex justify-center">
-              <a className="link-arrow" href="/nouveautes">
-                Toutes les versions de NEXORA {arrow}
-              </a>
-            </Reveal>
-          </div>
-        </section>
-      )}
       <section className="section" id="faq" data-capture="faq">
         <div className="wrap grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
           {/* Un moyen de joindre l'équipe sous le titre (mêmes adresses que le pied de page). */}

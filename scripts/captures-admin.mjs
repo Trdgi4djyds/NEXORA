@@ -9,7 +9,8 @@
 //                         facture-brouillon, parrainage, parrainage-parrains, parrainage-codes, parrainage-filleuls,
 //                         parrainage-commissions, parrainage-retraits, parrainage-reglages, parrain-invitation,
 //                         parrain-connexion, parrain-code, parrain-tableau, parrain-codes, parrain-filleuls, parrain-gains,
-//                         parrain-retraits (#090 : espace des parrains, /referral/) (défaut : tous)
+//                         parrain-retraits (#090 : espace des parrains, /referral/), parrainage-invitation,
+//                         parrainage-fiche, parrain-code-lien (#127 : envois par e-mail) (défaut : tous)
 //   --label <nom>         série rangée dans captures/AAAA-MM-JJ-<nom>/ (défaut : « admin »)
 //   --theme sombre        thème sombre (défaut : clair)
 //   --taille 1440x900     taille de la fenêtre
@@ -89,9 +90,33 @@ const SCREENS = [
   ["parrain-filleuls", "Espace des parrains : filleuls", "@referral:#/filleuls"],
   ["parrain-gains", "Espace des parrains : gains", "@referral:#/gains"],
   ["parrain-retraits", "Espace des parrains : retraits", "@referral:#/retraits"],
+  // NEXORA #127 : invitation envoyée par e-mail (formulaire rempli puis validé), fiche d'un parrain (envoi du code),
+  // espace des parrains ouvert depuis l'e-mail du code du mois (code déjà rempli). 4ᵉ élément : action avant la capture.
+  ["parrainage-invitation", "Parrainage : invitation envoyée", "referral/partners", async (page) => {
+    await clickText(page, "Inviter un parrain")
+    await page.type('input[name="email"]', "awa.kone@exemple.ci")
+    await page.type('input[name="name"]', "Awa Koné")
+    await clickText(page, "Inviter et envoyer l’e-mail")
+    await sleep(900)
+  }],
+  ["parrainage-fiche", "Parrainage : fiche d’un parrain", "referral/partners", async (page) => {
+    await clickText(page, "Gérer")
+    await sleep(700)
+  }],
+  ["parrain-code-lien", "Espace des parrains : code reçu par e-mail", "@referral-code:#/code/N6QA-3RZE"],
 ]
 const CHROMIUM = process.env.CHROME_PATH || "/usr/bin/chromium"
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+/** NEXORA #127 : clic sur le premier bouton (ou lien) dont le texte contient « text ». */
+async function clickText(page, text) {
+  const ok = await page.evaluate((t) => {
+    const el = [...document.querySelectorAll("button, a")].find((b) => b.textContent && b.textContent.includes(t))
+    if (el) el.click()
+    return Boolean(el)
+  }, text)
+  if (!ok) throw new Error(`bouton « ${text} » introuvable`)
+  await sleep(400)
+}
 
 function parseArgs(argv) {
   const opts = {
@@ -270,7 +295,7 @@ async function main() {
     }
     const dir = outputDir(opts.label)
     const theme = opts.theme === "sombre" ? "dark" : "light"
-    for (const [index, [slug, label, route]] of opts.list.entries()) {
+    for (const [index, [slug, label, route, act]] of opts.list.entries()) {
       where = label
       if (route && route.startsWith("@referral")) {
         // #090 : espace des parrains, session gardée sous sa propre clé.
@@ -310,6 +335,7 @@ async function main() {
         timeout: 30000,
       })
       await settle(page)
+      if (act) await act(page)
       await page.removeScriptToEvaluateOnNewDocument(init.identifier)
       const file = path.join(
         dir,

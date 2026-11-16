@@ -90,12 +90,13 @@ const SITE_SHOTS = [
   ["site-pixel", "/espaces/responsive", 427, 952, 2],
   ["site-pliable", "/espaces", 692, 717, 2],
   ["site-ipad", "/", 1024, 1366, 1],
-  ["site-tablette", "/nouveautes", 1280, 800, 1],
+  ["site-tablette", "/pour-qui", 1280, 800, 1], // #127 : page des nouveautés retirée du site
   ["site-macbook", "/", 1536, 960, 1],
   ["site-tv", "/", 1920, 1080, 1],
   ["site-voiture", "/espaces/securite", 1024, 768, 1],
   ["site-bureau", "/", 1440, 900, 1],
 ]
+const ANNONCE = /const MARK = "([^"]+)"/.exec(fs.readFileSync(path.join(ROOT, "site/src/components/Announcement.tsx"), "utf8"))?.[1] || ""
 async function siteShots() {
   const browser = await puppeteer.launch({ executablePath: CHROMIUM, headless: true, args: ["--no-sandbox", "--disable-gpu"] })
   try {
@@ -103,7 +104,8 @@ async function siteShots() {
       const page = await browser.newPage()
       await page.setViewport({ width: w, height: h, deviceScaleFactor: scale })
       await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }])
-      await page.evaluateOnNewDocument(() => localStorage.setItem("nexora-site-annonce", "076-toolbox"))
+      // #127 : bandeau d'annonce en cours masqué (marque lue dans le site ; « 076-toolbox » ne masquait plus rien).
+      await page.evaluateOnNewDocument((m) => localStorage.setItem("nexora-site-annonce", m), ANNONCE)
       const res = await page.goto(`${WEB}${route.slice(1)}`, { waitUntil: "networkidle0", timeout: 60000 }).catch(() => null)
       // #099 : une page absente ne doit jamais devenir un écran de la vitrine.
       if (!res || !res.ok()) throw new Error(`${name} : ${route} a répondu ${res ? res.status() : "sans réponse"}`)

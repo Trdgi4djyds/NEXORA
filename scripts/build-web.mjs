@@ -151,7 +151,8 @@ fs.writeFileSync(
 // l'aperçu (app.html) redirigées pour de bon ; la partie après # suit la redirection et le site la convertit.
 fs.writeFileSync(
   path.join(OUT_DIR, "_redirects"),
-  ["/site / 301", "/site/ / 301", "/site/* /:splat 301", "/app.html /studio/ 301", ""].join("\n"),
+  // NEXORA #127 : plus de page des nouveautés sur le site (exigence de l'utilisateur) : l'ancienne adresse mène à l'accueil.
+  ["/site / 301", "/site/ / 301", "/site/* /:splat 301", "/app.html /studio/ 301", "/nouveautes / 301", "/nouveautes/ / 301", ""].join("\n"),
 )
 
 // L'environnement Figma Make peut définir NODE_ENV=development : le back office publié est assemblé

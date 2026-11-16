@@ -13,8 +13,10 @@ const readRoute = (): Route => {
 }
 /** Lien de parrainage : site vitrine de NEXORA, page des tarifs, code mémorisé par le site. */
 export function referralLink(code: string) {
-  const site = location.pathname.replace(/referral\/?.*$/, "site/")
-  return `${location.origin}${site}?parrain=${encodeURIComponent(code)}#/tarifs`
+  // NEXORA #127 : site vitrine à la racine du domaine depuis le #096 (l'ancienne adresse /site/…#/tarifs passait par une
+  // redirection) ; l'aperçu de Figma Make le sert encore sous /site/.
+  const site = import.meta.env.DEV ? location.pathname.replace(/referral\/?.*$/, "site/") : "/"
+  return `${location.origin}${site}tarifs?parrain=${encodeURIComponent(code)}`
 }
 
 export function Portal({ me, onMe, onSignOut }: { me: Me; onMe: (m: Me) => void; onSignOut: () => void }) {

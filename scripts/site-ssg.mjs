@@ -236,7 +236,6 @@ ${urls
 - [Pour qui ?](${SITE}/pour-qui) : 9 profils, ce qui les freine, ce que NEXORA change et leur parcours.
 - [Tarifs](${SITE}/tarifs) : offres, prix et comparatif complet des fonctions.
 - [Télécharger](${SITE}/telecharger) : installation sur Windows 10 et 11, configuration requise.
-- [Nouveautés](${SITE}/nouveautes) : notes de version.
 
 ## Espaces
 
@@ -252,7 +251,6 @@ ${m.PERSONAS.map((p) => `- [${p.name}](${persona(p)}) : ${p.tagline}`).join("\n"
 - [Plan du site](${SITE}/sitemap.xml)
 `,
   )
-  const latest = m.RELEASES[0]
   fs.writeFileSync(
     path.join(OUT_DIR, "llms-full.txt"),
     `# NEXORA — texte complet du site (${SITE})
@@ -287,17 +285,7 @@ ${p.steps.map((st, i) => `${i + 1}. ${st.title} (${m.SPACES.find((s) => s.id ===
 ## Questions fréquentes
 
 ${m.FAQ.map((f) => `### ${f.q}\n\n${f.a}`).join("\n\n")}
-${
-  latest
-    ? `
-## Nouveautés de la version ${latest[0]} : ${latest[1].title}
-
-${latest[1].intro}
-
-${latest[1].items.map((it) => `- ${it.title} : ${it.text}`).join("\n")}
-`
-    : ""
-}`,
+`,
   )
 
   // Manifeste de l'application web (critères de PWABuilder et de Chromium, 2026).

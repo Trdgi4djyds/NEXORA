@@ -151,9 +151,6 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
           <a className={navLink} href="/tarifs" aria-current={current("tarifs")} onMouseEnter={track}>
             Tarifs
           </a>
-          <a className={navLink} href="/nouveautes" aria-current={current("nouveautes")} onMouseEnter={track}>
-            Nouveautés
-          </a>
           <a className={navLink} href="/telecharger" aria-current={current("telecharger")} onMouseEnter={track}>
             Télécharger
           </a>
@@ -206,8 +203,8 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
               <a href="/espaces" className="link-arrow">
                 Voir les 9 espaces <Icon name="nxArrowRight" size={15} stroke={2} />
               </a>
-              <a href="/nouveautes" className="inline-flex items-center gap-2 text-[13px] text-muted-foreground transition hover:text-foreground">
-                <Icon name="sparkle" size={15} /> Nouveautés de la version {APP_VERSION}
+              <a href="/telecharger" className="inline-flex items-center gap-2 text-[13px] text-muted-foreground transition hover:text-foreground">
+                <Icon name="download" size={15} /> NEXORA {APP_VERSION} pour Windows
               </a>
             </div>
           </div>
@@ -232,7 +229,6 @@ export function Header({ route, onSearch }: { route: Route; onSearch: () => void
               {[
                 ["/pour-qui", "Pour qui ?"],
                 ["/tarifs", "Tarifs"],
-                ["/nouveautes", "Nouveautés"],
                 ["/telecharger", "Télécharger"],
                 ["/licence", "Ma licence"],
               ].map(([href, label]) => (

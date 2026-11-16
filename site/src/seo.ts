@@ -5,7 +5,7 @@ import { CONTACT_EMAIL, FALLBACK } from "../../nexora/app/renderer/nx/offres/cat
 import { FAQ, PRICING_FAQ } from "./data/content"
 import { PERSONAS, personaBySlug } from "./data/personas"
 import { SPACES, spaceBySlug } from "./data/spaces"
-import { APP_VERSION, DEVICE_COUNT, RELEASES } from "./lib/product"
+import { APP_VERSION, DEVICE_COUNT } from "./lib/product"
 
 /** Domaine principal (fichier de configuration de l'utilisateur, #096) : site vitrine à la racine, NEXORA web à /studio/. */
 export const SITE_URL = "https://nexoradevs.online"
@@ -43,7 +43,6 @@ export const PAGES: PageEntry[] = [
   { path: "/tarifs", sitemap: true, priority: 0.9, changefreq: "monthly" },
   { path: "/tarifs/comparatif", sitemap: false, priority: 0.5, changefreq: "monthly" },
   { path: "/telecharger", sitemap: true, priority: 0.9, changefreq: "monthly" },
-  { path: "/nouveautes", sitemap: true, priority: 0.7, changefreq: "weekly" },
   { path: "/licence", sitemap: false, priority: 0.3, changefreq: "monthly" },
   { path: "/licence/verifier", sitemap: false, priority: 0.3, changefreq: "monthly" },
 ]
@@ -273,34 +272,6 @@ export function headFor(path: string): Head {
       canonical: canonical("/telecharger"),
       robots: INDEX,
       jsonLd: graph(organisation(), application(), webPage("/telecharger", title, description), breadcrumb([["Accueil", "/"], ["Télécharger", "/telecharger"]])),
-    }
-  }
-  if (a === "nouveautes") {
-    const title = "Nouveautés de NEXORA — notes de version"
-    const latest = RELEASES[0]
-    const description = cut(latest ? `NEXORA ${latest[0]} : ${latest[1].intro}` : "Toutes les nouveautés de NEXORA, version par version.")
-    return {
-      ...base,
-      title,
-      description,
-      canonical: canonical("/nouveautes"),
-      robots: INDEX,
-      ogType: "article",
-      jsonLd: graph(
-        organisation(),
-        webPage("/nouveautes", title, description),
-        breadcrumb([["Accueil", "/"], ["Nouveautés", "/nouveautes"]]),
-        ...RELEASES.slice(0, 5).map(([version, note]) => ({
-          "@type": "TechArticle",
-          headline: `NEXORA ${version} : ${note.title}`,
-          description: cut(note.intro),
-          url: `${SITE_URL}/nouveautes#v${version}`,
-          inLanguage: "fr-FR",
-          author: { "@id": ORG_ID },
-          publisher: { "@id": ORG_ID },
-          about: { "@id": APP_ID },
-        })),
-      ),
     }
   }
   if (a === "licence") {
