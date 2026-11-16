@@ -7,6 +7,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -43,6 +44,8 @@ var (
 	pMessageBox  = user32.NewProc("MessageBoxW")
 	pCreateMutex = kernel32.NewProc("CreateMutexW")
 	pCloseHandle = kernel32.NewProc("CloseHandle")
+	// NEXORA #126 : place libre du disque d'installation.
+	pGetDiskFreeSpaceEx = kernel32.NewProc("GetDiskFreeSpaceExW")
 
 	pRegCreateKeyEx = advapi32.NewProc("RegCreateKeyExW")
 	pRegSetValueEx  = advapi32.NewProc("RegSetValueExW")
@@ -422,4 +425,24 @@ func userDataDirs() DataDirs {
 
 func machineGUID() string {
 	return strings.ToLower(strings.TrimSpace(regRead(syscall.HKEY_LOCAL_MACHINE, `SOFTWARE\Microsoft\Cryptography`, "MachineGuid")))
+}
+
+// NEXORA #126 : octets disponibles pour l'utilisateur sur le disque du dossier (quotas compris).
+func diskFree(dir string) (uint64, error) {
+	p, err := syscall.UTF16PtrFromString(existingDir(dir))
+	if err != nil {
+		return 0, err
+	}
+	var avail, total, totalFree uint64
+	r, _, e := pGetDiskFreeSpaceEx.Call(uintptr(unsafe.Pointer(p)), uintptr(unsafe.Pointer(&avail)), uintptr(unsafe.Pointer(&total)), uintptr(unsafe.Pointer(&totalFree)))
+	if r == 0 {
+		return 0, e
+	}
+	return avail, nil
+}
+
+// isDiskFull : écriture refusée faute de place (ERROR_HANDLE_DISK_FULL 39, ERROR_DISK_FULL 112).
+func isDiskFull(err error) bool {
+	var en syscall.Errno
+	return errors.As(err, &en) && (en == 39 || en == 112)
 }

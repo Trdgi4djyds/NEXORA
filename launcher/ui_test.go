@@ -28,7 +28,7 @@ func TestUISpecs(t *testing.T) {
 	if len(u.options) != 3 || u.buttons[len(u.buttons)-1].style != "danger" || u.cancel != "cancel" || u.steps[u.step] != "Confirmation" {
 		t.Fatalf("désinstallation : %+v", u)
 	}
-	for _, wp := range []wizPage{welcomePage("x", false), installDonePage(false), uninstallDonePage("x"), uninstallBusyPage(), installErrorPage("offline", "Connexion perdue", secActions("offline"))} {
+	for _, wp := range []wizPage{welcomePage("x", false), installDonePage(false), uninstallDonePage("x"), uninstallBusyPage(), installErrorPage("offline", "Connexion perdue", "", secActions("offline"))} {
 		if wp.icon != "" {
 			if _, ok := lucide[wp.icon]; !ok {
 				t.Fatalf("icône inconnue : %q", wp.icon)

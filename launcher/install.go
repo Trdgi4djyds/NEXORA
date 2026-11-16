@@ -119,13 +119,18 @@ func InstallRelease(ctx context.Context, c *http.Client, l Layout, st *State, re
 	if err := os.MkdirAll(l.Downloads, 0o755); err != nil {
 		return err
 	}
+	// NEXORA #126 : place vérifiée (et reprise) avant de télécharger ; un disque plein n'est plus pris pour un
+	// fichier refusé.
+	if err := ensureSpace(l, st, m); err != nil {
+		return err
+	}
 	zipPath := filepath.Join(l.Downloads, m.Package.Name)
 	p.Set(0.02, fmt.Sprintf("Téléchargement de NEXORA %s…", m.Version))
 	err := Download(ctx, c, a.URL, zipPath, m.Package, func(got, total int64) {
 		p.Set(0.02+0.68*float64(got)/float64(max64(total, 1)), fmt.Sprintf("Téléchargement : %d / %d Mo", got>>20, total>>20))
 	}, p.Cancelled)
 	if err != nil {
-		return err
+		return spaceErr(l, m, err) // le fichier partiel est gardé : le téléchargement reprendra
 	}
 	p.Set(0.71, "Vérification…")
 	staging := l.versionDir(m.Version) + ".staging"
@@ -137,16 +142,19 @@ func InstallRelease(ctx context.Context, c *http.Client, l Layout, st *State, re
 		if errors.Is(err, errCancelled) {
 			return err
 		}
+		if isDiskFull(err) {
+			return spaceErr(l, m, err) // paquet vérifié gardé : rien à retélécharger après avoir fait de la place
+		}
 		os.Remove(zipPath) // paquet refusé : il sera retéléchargé
 		return err
 	}
 	if err := os.WriteFile(filepath.Join(staging, "resources", manifestName), rel.Raw, 0o644); err != nil {
 		os.RemoveAll(staging)
-		return err
+		return spaceErr(l, m, err)
 	}
 	if err := os.WriteFile(filepath.Join(staging, "resources", signatureName), []byte(rel.Sig+"\n"), 0o644); err != nil {
 		os.RemoveAll(staging)
-		return err
+		return spaceErr(l, m, err)
 	}
 	final := l.versionDir(m.Version)
 	if err := os.RemoveAll(final); err != nil {
@@ -172,6 +180,108 @@ func InstallRelease(ctx context.Context, c *http.Client, l Layout, st *State, re
 	os.Remove(zipPath)
 	Prune(l, *st)
 	return nil
+}
+
+// NEXORA #126 : place disque. Une mise à jour demande le paquet (s'il n'est pas déjà téléchargé), tous les fichiers
+// extraits à côté de la version en place, et une marge.
+const spaceMargin = 128 << 20
+
+// freeSpace : octets disponibles sur le disque d'un dossier (remplaçable dans les essais).
+var freeSpace = diskFree
+
+// SpaceError : place insuffisante pour installer, même après avoir repris ce qui pouvait l'être.
+type SpaceError struct {
+	Need, Free uint64
+	Dir        string
+}
+
+func (e *SpaceError) Error() string {
+	return fmt.Sprintf("espace disque insuffisant : %s nécessaires, %s disponibles", sizeText(e.Need), sizeText(e.Free))
+}
+
+// sizeText : taille lisible (« 640 Mo », « 1,2 Go »).
+func sizeText(n uint64) string {
+	if n < 1000<<20 {
+		return fmt.Sprintf("%d Mo", (n+(1<<20)-1)>>20)
+	}
+	return strings.Replace(fmt.Sprintf("%.1f Go", float64(n)/float64(1<<30)), ".", ",", 1)
+}
+
+// installNeed : place demandée par l'installation de m (téléchargement déjà fait ou commencé déduit).
+func installNeed(l Layout, m *Manifest) uint64 {
+	var need uint64 = spaceMargin
+	for _, f := range m.Files {
+		need += uint64(max64(f.Size, 0))
+	}
+	zipPath := filepath.Join(l.Downloads, m.Package.Name)
+	pkg := max64(m.Package.Size, 0)
+	if fi, err := os.Stat(zipPath); err == nil && fi.Size() == m.Package.Size {
+		pkg = 0
+	} else if fi, err := os.Stat(zipPath + ".part"); err == nil && fi.Size() < pkg {
+		pkg -= fi.Size()
+	}
+	return need + uint64(pkg)
+}
+
+// existingDir : premier dossier existant en remontant (le dossier d'installation n'existe pas encore au premier
+// lancement).
+func existingDir(dir string) string {
+	for d := filepath.Clean(dir); ; d = filepath.Dir(d) {
+		if fi, err := os.Stat(d); err == nil && fi.IsDir() {
+			return d
+		}
+		if filepath.Dir(d) == d {
+			return d
+		}
+	}
+}
+
+// ensureSpace : vérifie la place ; si elle manque, reprend d'abord ce qui ne sert plus (paquets d'autres versions,
+// installations interrompues, versions que Prune supprimerait), puis la copie de retour arrière (version
+// précédente) seulement si elle empêche la mise à jour. Mesure impossible : l'installation est tentée.
+func ensureSpace(l Layout, st *State, m *Manifest) error {
+	need := installNeed(l, m)
+	free, err := freeSpace(l.Root)
+	if err != nil || free >= need {
+		return nil
+	}
+	if entries, err := os.ReadDir(l.Downloads); err == nil {
+		for _, e := range entries {
+			if n := e.Name(); n != m.Package.Name && n != m.Package.Name+".part" {
+				os.RemoveAll(filepath.Join(l.Downloads, n))
+			}
+		}
+	}
+	if entries, err := os.ReadDir(l.AppDir); err == nil {
+		for _, e := range entries {
+			if n := e.Name(); e.IsDir() && n != st.Current && n != st.Previous && n != m.Version {
+				os.RemoveAll(filepath.Join(l.AppDir, n))
+			}
+		}
+	}
+	if free, err = freeSpace(l.Root); err != nil || free >= need {
+		return nil
+	}
+	if p := st.Previous; p != "" && p != st.Current && p != m.Version {
+		if os.RemoveAll(l.versionDir(p)) == nil {
+			journal(l, "space", "version précédente "+p+" retirée pour faire de la place à NEXORA "+m.Version)
+			st.Previous = ""
+			_ = saveState(l, *st)
+		}
+		if free, err = freeSpace(l.Root); err != nil || free >= need {
+			return nil
+		}
+	}
+	return &SpaceError{Need: need, Free: free, Dir: l.Root}
+}
+
+// spaceErr : erreur d'écriture due à un disque plein → SpaceError (place mesurée) ; autre erreur inchangée.
+func spaceErr(l Layout, m *Manifest, err error) error {
+	if err == nil || !isDiskFull(err) {
+		return err
+	}
+	free, _ := freeSpace(l.Root)
+	return &SpaceError{Need: installNeed(l, m), Free: free, Dir: l.Root}
 }
 
 // Prune garde la version courante et la précédente (retour arrière) ; les autres sont supprimées.

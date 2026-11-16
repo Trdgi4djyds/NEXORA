@@ -56,7 +56,7 @@ func init() {
 	case "assistant-termine":
 		page(installDonePage(false))
 	case "assistant-erreur":
-		page(installErrorPage("offline", secTitle("offline"), secActions("offline")))
+		page(installErrorPage("offline", secTitle("offline"), "", secActions("offline")))
 	case "desinstallation":
 		page(uninstallPage(root), true, false, true)
 	case "assistant-long": // #121 : page trop haute pour 520 pixels : la fenêtre doit grandir, sans chevauchement
@@ -79,6 +79,10 @@ func init() {
 		securityScreen("offline", secTitle("offline"), "", secActions("offline"))
 	case "version":
 		securityScreen("outdated", secTitle("outdated"), "", secActions("outdated"))
+	case "espace": // #126 : disque plein pendant une mise à jour, version installée ouvrable
+		f := &SecFail{Kind: "space", Fallback: &Manifest{Version: "1.2.2"}}
+		f.Message = spaceMessage(&SpaceError{Need: 690 << 20, Free: 212 << 20, Dir: `C:\Users\vous\AppData\Local\Programs\NEXORA Devs Toolbox`}, "1.2.3", f.Fallback)
+		securityScreen(f.Kind, secTitle(f.Kind), f.Message, failActions(f))
 	case "manifeste":
 		securityScreen("manifest", secTitle("manifest"), "", secActions("manifest"))
 	case "erreur":

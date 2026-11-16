@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 )
@@ -314,5 +315,92 @@ func TestLauncherSelfUpdate(t *testing.T) {
 	w.publish("1.2.0")
 	if _, err := w.check(l, &st, false); errors.As(err, &lu) {
 		t.Fatal("mise à jour du lanceur demandée alors qu'il est à jour")
+	}
+}
+
+// NEXORA #126 : disque plein pendant une mise à jour : « Espace disque insuffisant » (et non plus « Installation non
+// authentifiée »), place reprise d'abord, version installée ouvrable tant qu'elle reste autorisée.
+func TestDiskSpace(t *testing.T) {
+	w := newWorld(t)
+	l := newLayout(t.TempDir())
+	st := loadState(l)
+	if _, err := w.check(l, &st, false); err != nil {
+		t.Fatalf("installation : %v", err)
+	}
+	t.Cleanup(func() { freeSpace = diskFree })
+	freeSpace = func(string) (uint64, error) { return 0, nil }
+
+	// Plus de place : écran dédié, version en place intacte et proposée.
+	w.publish("1.3.0")
+	_, err := w.check(l, &st, false)
+	f, ok := err.(*SecFail)
+	if !ok || f.Kind != "space" || f.Fallback == nil || f.Fallback.Version != "1.2.0" || st.Current != "1.2.0" ||
+		!strings.Contains(f.Message, "Libérez de la place") || !strings.Contains(f.Message, "ouvrir NEXORA 1.2.0") {
+		t.Fatalf("disque plein : %v %+v", err, f)
+	}
+	if a := strings.Join(failActions(f), ","); a != "open,retry,quit" {
+		t.Fatalf("boutons : %s", a)
+	}
+	if _, err := Installed(l, "1.2.0", w.f.pub, true); err != nil {
+		t.Fatalf("version en place abîmée : %v", err)
+	}
+	// Place reprise d'abord (installation interrompue, paquet d'une autre version), puis mise à jour.
+	stale := filepath.Join(l.AppDir, "0.9.0.staging")
+	os.MkdirAll(stale, 0o755)
+	os.WriteFile(filepath.Join(l.Downloads, "NEXORA-0.9.0-win-x64.zip"), []byte("ancien"), 0o644)
+	freeSpace = func(string) (uint64, error) {
+		if _, err := os.Stat(stale); err == nil {
+			return 0, nil
+		}
+		return 1 << 40, nil
+	}
+	if m, err := w.check(l, &st, false); err != nil || m.Version != "1.3.0" || st.Previous != "1.2.0" {
+		t.Fatalf("place reprise : %v %+v", err, st)
+	}
+	if _, err := os.Stat(filepath.Join(l.Downloads, "NEXORA-0.9.0-win-x64.zip")); !os.IsNotExist(err) {
+		t.Fatal("paquet d'une autre version gardé")
+	}
+	// Copie de retour arrière (version précédente) retirée seulement si elle empêche la mise à jour.
+	w.publish("1.4.0")
+	prev := l.versionDir("1.2.0")
+	freeSpace = func(string) (uint64, error) {
+		if _, err := os.Stat(prev); err == nil {
+			return 0, nil
+		}
+		return 1 << 40, nil
+	}
+	if m, err := w.check(l, &st, false); err != nil || m.Version != "1.4.0" || st.Previous != "1.3.0" {
+		t.Fatalf("version précédente : %v %+v", err, st)
+	}
+	if b, _ := os.ReadFile(filepath.Join(l.Root, "journal-securite.txt")); !strings.Contains(string(b), "version précédente 1.2.0 retirée") {
+		t.Fatal("retrait de la version précédente non consigné")
+	}
+	// Mise à jour exigée par le service (numéro de manifeste minimal) : aucune version à ouvrir.
+	w.publish("1.5.0")
+	w.minManifest = manifestNumber("1.5.0")
+	freeSpace = func(string) (uint64, error) { return 0, nil }
+	if _, err := w.check(l, &st, false); kindOf(err) != "space" || err.(*SecFail).Fallback != nil {
+		t.Fatalf("mise à jour exigée : %v", err)
+	}
+	w.minManifest = 0
+	// Disque plein reconnu pendant l'écriture (erreur du système) ; autre erreur inchangée.
+	m := &Manifest{Package: Asset{Name: "p.zip", Size: 10}, Files: map[string]FileEntry{"a": {Size: 5}}}
+	if _, ok := spaceErr(l, m, &os.PathError{Op: "write", Path: "x", Err: syscall.ENOSPC}).(*SpaceError); !ok {
+		t.Fatal("disque plein non reconnu")
+	}
+	if err := spaceErr(l, m, errors.New("autre")); err == nil || err.Error() != "autre" {
+		t.Fatal("autre erreur transformée")
+	}
+	// Écran : texte avec les tailles, Quitter à gauche, « Ouvrir NEXORA » (action principale) à droite.
+	s := securitySpec("space", secTitle("space"), f.Message, failActions(f))
+	if s.body != f.Message || s.icon != "hardDrive" || len(s.buttons) != 3 || s.buttons[0].id != "quit" ||
+		s.buttons[1].id != "retry" || s.buttons[2].id != "open" || s.buttons[2].style != "primary" {
+		t.Fatalf("écran espace : %+v", s)
+	}
+	if sizeText(690<<20) != "690 Mo" || sizeText(3<<29) != "1,5 Go" {
+		t.Fatalf("tailles : %s %s", sizeText(690<<20), sizeText(3<<29))
+	}
+	if secTitle("space") != "Espace disque insuffisant" {
+		t.Fatal("titre de l'écran espace")
 	}
 }

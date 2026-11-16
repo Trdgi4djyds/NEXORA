@@ -49,27 +49,40 @@ func securitySpec(kind, title, msg string, actions []string) uiSpec {
 		icon = "fileWarning"
 	case "outdated":
 		tone, icon = "brand", "arrowUpCircle"
+	case "space":
+		icon = "hardDrive"
 	}
 	body := securityBodies[kind]
+	// NEXORA #126 : place nécessaire et disponible (tailles seulement, aucun détail technique) écrite par le lanceur.
+	if kind == "space" && msg != "" {
+		body = msg
+	}
 	if body == "" {
 		body = "NEXORA ne peut pas s’ouvrir pour le moment. Réessayez dans un instant."
 	}
-	_ = msg // message détaillé : journal seulement
+	// Autres écrans : message détaillé dans le journal seulement.
 	// #121 : surtitres affichés en repère « / … » à contour, comme sur l'écran de connexion de NEXORA.
-	s := uiSpec{tone: tone, icon: icon, kicker: "Vérification de la licence", title: title, body: body, cancel: "quit", width: 480}
-	primary := true
+	kicker := "Vérification de la licence"
+	if kind == "space" {
+		kicker = "Mise à jour de NEXORA"
+	}
+	s := uiSpec{tone: tone, icon: icon, kicker: kicker, title: title, body: body, cancel: "quit", width: 480}
+	// Quitter à gauche, action principale (la première demandée) à droite, les autres entre les deux.
+	var main *uiButton
 	for _, a := range actions {
 		if a == "quit" {
 			continue
 		}
-		style := "secondary"
-		if primary {
-			style, primary = "primary", false
+		if main == nil {
+			main = &uiButton{a, actionLabels[a], "primary"}
+			continue
 		}
-		s.buttons = append(s.buttons, uiButton{a, actionLabels[a], style})
+		s.buttons = append(s.buttons, uiButton{a, actionLabels[a], "secondary"})
 	}
-	// Quitter à gauche, action principale à droite.
 	s.buttons = append([]uiButton{{"quit", actionLabels["quit"], "secondary"}}, s.buttons...)
+	if main != nil {
+		s.buttons = append(s.buttons, *main)
+	}
 	return s
 }
 
@@ -78,6 +91,7 @@ var actionLabels = map[string]string{
 	"repair": "Réparer",
 	"update": "Mettre à jour",
 	"quit":   "Quitter",
+	"open":   "Ouvrir NEXORA",
 }
 
 // ---------------------------------------------------------------- assistants (installation, désinstallation)
@@ -135,8 +149,8 @@ func installProgressPage(update bool) wizPage {
 		progress: true, buttons: []uiButton{{"cancel", "Annuler", "secondary"}}, cancel: "cancel"}
 }
 
-func installErrorPage(kind, title string, actions []string) wizPage {
-	sp := securitySpec(kind, title, "", actions)
+func installErrorPage(kind, title, msg string, actions []string) wizPage {
+	sp := securitySpec(kind, title, msg, actions)
 	return wizPage{step: 1, steps: installSteps, tone: sp.tone, icon: sp.icon, title: title, body: sp.body, buttons: sp.buttons, cancel: "quit"}
 }
 

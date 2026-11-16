@@ -78,7 +78,9 @@ func runInstaller(e installEnv) error {
 		if errors.As(err, &f) {
 			journal(l, f.Kind, f.Message+" "+f.Detail)
 			Report(e.client, f, st.Current)
-			switch a, _ := wz.Page(installErrorPage(f.Kind, secTitle(f.Kind), secActions(f.Kind))); a {
+			switch a, _ := wz.Page(installErrorPage(f.Kind, secTitle(f.Kind), f.Message, failActions(f))); a {
+			case "open": // NEXORA #126 : version installée, vérifiée et autorisée (mise à jour impossible faute de place)
+				return e.launch(l, st, f.Fallback)
 			case "retry", "update":
 				repair = false
 				continue

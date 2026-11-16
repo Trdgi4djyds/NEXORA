@@ -8,7 +8,7 @@ import (
 
 // NEXORA #083 : moteur de dessin des fenêtres (sans Windows). NX_PAINT_PNG=<fichier> écrit la planche pour la regarder.
 func TestPaintSheet(t *testing.T) {
-	names := []string{"shieldCheck", "shieldAlert", "wifiOff", "serverOff", "fileWarning", "arrowUpCircle", "trash", "x", "check", "info", "alert", "circleX", "download", "refresh"}
+	names := []string{"shieldCheck", "shieldAlert", "wifiOff", "serverOff", "fileWarning", "arrowUpCircle", "trash", "x", "check", "info", "alert", "circleX", "download", "refresh", "hardDrive"}
 	c := newCanvas(80+len(names)*56, 200)
 	c.fill(colBg)
 	c.image(logoImage(64), 8, 8)

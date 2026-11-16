@@ -4,11 +4,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -91,3 +93,14 @@ func (autoWizard) Page(p wizPage) (string, []bool) {
 }
 func (autoWizard) Progress(p wizPage) Progress { fmt.Println(p.title); return &consoleProgress{} }
 func (autoWizard) Close()                      {}
+
+// NEXORA #126 : octets disponibles sur le disque du dossier ; écriture refusée faute de place.
+func diskFree(dir string) (uint64, error) {
+	var s syscall.Statfs_t
+	if err := syscall.Statfs(existingDir(dir), &s); err != nil {
+		return 0, err
+	}
+	return uint64(s.Bavail) * uint64(s.Bsize), nil
+}
+
+func isDiskFull(err error) bool { return errors.Is(err, syscall.ENOSPC) }

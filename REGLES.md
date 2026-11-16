@@ -7,7 +7,7 @@ Ces règles s'appliquent à **chaque demande, sans exception**, dans toutes les 
 - **R1.** Lire `REGLES.md`, puis dans `SUIVI.md` : « État actuel », « Anomalies relevées », « Idées et suites » et les trois dernières entrées du journal.
 - **R2.** Reformuler la demande en une phrase et repérer les espaces, fichiers et canaux IPC concernés. Si la demande est ambiguë et qu'un choix a des conséquences, demander avant de modifier.
 - **R3.** Attribuer le numéro d'entrée suivant du journal (`#NNN`).
-- **R4.** Changement visible dans l'interface : capturer d'abord l'état « avant » des écrans concernés (`pnpm captures <écrans> --label NNN-avant`).
+- **R4.** Changement visible dans l'interface : capturer d'abord l'état « avant » des écrans concernés (`pnpm captures <écrans> --label NNN-avant --upload`).
 
 ## 2. Pendant la modification
 
@@ -31,7 +31,7 @@ Ces règles s'appliquent à **chaque demande, sans exception**, dans toutes les 
 ## 4. Captures d'écran dans le chat
 
 - **R18.** Chaque mise à jour est montrée dans le chat avec ses captures : « après » toujours, « avant » pour tout changement visuel. Les images sont envoyées par `--upload` et affichées avec `![Légende](figma-blob://…)`.
-- **R19.** Les captures sont rangées dans `captures/AAAA-MM-JJ-NNN-<sujet>/`, citées dans l'entrée du journal et jamais supprimées.
+- **R19.** Les captures ne sont **plus gardées dans le dépôt** (exigence de l'utilisateur, #126 : place de stockage) : `pnpm captures` les écrit dans `captures/AAAA-MM-JJ-NNN-<sujet>/`, dossier ignoré par Git (absent des versions Make et de GitHub), que l'on peut vider à tout moment ; `--upload` les envoie dans le chat, seul endroit où elles restent. L'entrée du journal cite le nom de la série et ce que montrent les images. Les séries antérieures, citées par les entrées jusqu'au #125, ont été supprimées au #126 (elles restent dans l'historique Git et dans celui du dépôt privé, jusqu'au commit `adedda7ab9`).
 - **R20.** Configuration standard : 1440×900, thème clair, réglages d'un PC neuf avec le premier lancement passé. Toute autre configuration (thème sombre, autre taille, clics) est indiquée dans la légende.
 
 ## 5. Suivi et versions
@@ -51,7 +51,7 @@ Ces règles s'appliquent à **chaque demande, sans exception**, dans toutes les 
   5. **Envoi sur GitHub, obligatoire** : `pnpm github:push --essai`, `pnpm github:push`, puis vérification « Workers Builds: nexora » réussie et `pnpm valider --label NNN-en-ligne --sans-build`.
   Les contrôles de R26 restent faits à chaque fois : un bloquant **introduit** par la modification est corrigé avant l'envoi (jamais d'envoi en laissant une régression, jamais de demande terminée sans envoi) ; un bloquant antérieur dépendant de l'utilisateur ne retarde pas l'envoi. Toute étape impossible dans l'environnement est signalée avec sa cause et la commande à lancer ailleurs (R16, R17). L'entrée du journal donne, pour chaque étape, le résultat (taille du ZIP, nombre de fichiers web, tag du lanceur, commit GitHub).
 - **R28.** **Rien ne reste en local ni en suspens** (exigence de l'utilisateur, #106) : une demande n'est terminée que lorsque sa version finale, reconstruite, est publiée et vérifiée en ligne.
-  1. **Dépôt privé** `Trdgi4djyds/NEXORA` identique à l'espace de travail : sources, logiciel reconstruit (`app.asar`, `NEXORA-portable.zip`, `NEXORA.exe`), journal, rapports de `validations/` et captures. Ce qui est écrit après le premier envoi (entrée du journal, rapport en ligne) part par un second `pnpm github:push` ; la demande se clôt sur `pnpm github:push --essai` qui répond « déjà à jour » et sur « Workers Builds: nexora » réussi pour le dernier commit.
+  1. **Dépôt privé** `Trdgi4djyds/NEXORA` identique à l'espace de travail : sources, logiciel reconstruit (`app.asar`, `NEXORA-portable.zip`, `NEXORA.exe`), journal et rapports de `validations/` (les captures ne sont plus gardées, R19). Ce qui est écrit après le premier envoi (entrée du journal, rapport en ligne) part par un second `pnpm github:push` ; la demande se clôt sur `pnpm github:push --essai` qui répond « déjà à jour » et sur « Workers Builds: nexora » réussi pour le dernier commit.
   2. **Dépôt public** `Trdgi4djyds/NEXORA-portable` : la publication signée de la version de l'espace de travail est marquée « Latest », vérifiée par les liens stables (`releases/latest/download/nexora.manifest.json` et `NEXORA-Devs-Toolbox.exe`, empreintes de `SHA256SUMS.txt`) et par le service de sécurité (`/security/manifest` : statut `ok`, même version, même tag, même numéro et même empreinte de manifeste) ; aucune branche `publication-v…` ne reste.
   3. **Reprise** : un envoi ou une publication interrompus (session coupée, espace de travail restauré) sont vérifiés et terminés avant tout autre travail ; des sources perdues sont retrouvées à partir de ce qui est publié (paquet, manifeste, `app.asar`) et contrôlées par reconstruction, jamais réécrites de mémoire.
   4. Une étape impossible dans l'environnement est signalée avec sa cause et la commande à lancer ailleurs (R16, R17) : rien n'est laissé sans mention dans le compte rendu.
@@ -100,7 +100,7 @@ Ces règles s'appliquent à **chaque demande, sans exception**, dans toutes les 
 - **Fichiers :** …
 - **Vérifications :** `pnpm check` … ; `pnpm captures …` (exceptions : 0) ; …
 - **Mise en production :** rapports `validations/…` (verdict), contrôles manuels menés, bloquants restants, retour arrière
-- **Captures :** `captures/AAAA-MM-JJ-NNN-sujet/` (avant / après)
+- **Captures :** séries `AAAA-MM-JJ-NNN-sujet` montrées dans le chat (avant / après ; non gardées dans le dépôt, R19)
 - **Limites, à tester sur Windows :** …
 - **Version Make :** n
 ```

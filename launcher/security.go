@@ -11,6 +11,8 @@
 //
 // Réactions : réseau ou serveur injoignable → « Connexion perdue » ; fichiers → « Échec du contrôle d'intégrité —
 // Installation non authentifiée » ; version → « Version non autorisée » ; manifeste → « expiré ou incohérent ».
+// NEXORA #126 : disque plein pendant une mise à jour → « Espace disque insuffisant » (et non plus « Installation non
+// authentifiée ») ; la version installée, vérifiée et toujours autorisée, peut alors être ouverte.
 // Chaque refus est écrit dans journal-securite.txt et envoyé au service (sans donnée personnelle).
 package main
 
@@ -41,6 +43,9 @@ var serverBase = "https://nexoradevs.online"
 // SecFail : refus de sécurité montré à l'utilisateur (écran dédié) et consigné.
 type SecFail struct {
 	Kind, Message, Detail string
+	// NEXORA #126 : version installée, vérifiée et autorisée, que l'utilisateur peut ouvrir malgré l'échec
+	// (mise à jour impossible faute de place) ; nil sinon.
+	Fallback *Manifest
 }
 
 func (e *SecFail) Error() string { return e.Message }
@@ -56,6 +61,7 @@ var secTitles = map[string]string{
 	"integrity": "Échec du contrôle d’intégrité — Installation non authentifiée",
 	"manifest":  "Manifeste de sécurité expiré ou incohérent",
 	"outdated":  "Version non autorisée",
+	"space":     "Espace disque insuffisant",
 }
 
 func secTitle(kind string) string {
@@ -74,6 +80,28 @@ func secActions(kind string) []string {
 	default:
 		return []string{"retry", "quit"}
 	}
+}
+
+// failActions : boutons d'un refus ; « Ouvrir NEXORA » en premier quand la version installée peut servir.
+func failActions(f *SecFail) []string {
+	a := secActions(f.Kind)
+	if f.Fallback != nil {
+		a = append([]string{"open"}, a...)
+	}
+	return a
+}
+
+// spaceMessage : texte de l'écran « Espace disque insuffisant » (aucun détail technique).
+func spaceMessage(se *SpaceError, target string, fallback *Manifest) string {
+	disk := "sur le disque"
+	if v := filepath.VolumeName(se.Dir); v != "" {
+		disk += " " + v
+	}
+	msg := fmt.Sprintf("Il faut %s libres %s pour installer NEXORA %s ; il reste %s. Libérez de la place (Corbeille, Téléchargements, fichiers temporaires), puis cliquez sur Réessayer.", sizeText(se.Need), disk, target, sizeText(se.Free))
+	if fallback != nil {
+		msg += fmt.Sprintf(" Vous pouvez aussi ouvrir NEXORA %s, déjà installé et vérifié.", fallback.Version)
+	}
+	return msg
 }
 
 type Latest struct {
@@ -210,6 +238,17 @@ func StartupCheck(ctx context.Context, c *http.Client, l Layout, st *State, relK
 			}
 			if errors.Is(err, errOffline) {
 				return nil, &SecFail{Kind: "offline", Message: "Connexion perdue pendant le téléchargement de NEXORA. Réessayez : le téléchargement reprendra où il s’est arrêté.", Detail: err.Error()}
+			}
+			var se *SpaceError
+			if errors.As(err, &se) {
+				f := &SecFail{Kind: "space", Detail: err.Error()}
+				// Version en place vérifiée (tous les fichiers) et toujours autorisée par le service de sécurité.
+				if cur != nil && cerr == nil && cur.ManifestVersion >= stmt.MinManifestVersion &&
+					!(stmt.BlockOutdated && CompareVersions(cur.Version, stmt.MinVersion) < 0) {
+					f.Fallback = cur
+				}
+				f.Message = spaceMessage(se, m.Version, f.Fallback)
+				return nil, f
 			}
 			return nil, &SecFail{Kind: "integrity", Message: "Le téléchargement de NEXORA a été refusé au contrôle : " + err.Error(), Detail: err.Error()}
 		}

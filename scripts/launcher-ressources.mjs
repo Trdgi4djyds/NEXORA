@@ -42,6 +42,7 @@ const NAMES = {
   shieldCheck: "shield-check", shieldAlert: "shield-alert", wifiOff: "wifi-off", serverOff: "server-off",
   fileWarning: "file-warning", arrowUpCircle: "circle-arrow-up", trash: "trash-2", x: "x", check: "check",
   info: "info", alert: "triangle-alert", circleX: "circle-x", circleCheck: "circle-check", download: "download", refresh: "refresh-cw",
+  hardDrive: "hard-drive", // NEXORA #126 : écran « Espace disque insuffisant »
 }
 const require = createRequire(import.meta.url)
 let SET

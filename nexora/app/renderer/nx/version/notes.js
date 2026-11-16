@@ -19,6 +19,18 @@ export const NOTES = {
   // #122 : présentations du Studio redessinées, quatre styles de diapositives (v1.2.2-r13).
   // #124 : vrais appareils 3D dans la composition libre des Maquettes, onglets actifs du Studio lisibles (v1.2.2-r14).
   // #125 : travail en équipe retiré (logiciel, offres), boutons choisis lisibles en clair et en sombre (v1.2.2-r15).
+  // NEXORA #126 : version suivante demandée par l'utilisateur ; lanceur 1.0.9 (disque plein reconnu, place reprise,
+  // version installée ouvrable). Les nouveautés du #125 (publiées en v1.2.2-r15) y sont rappelées : beaucoup de PC
+  // sont restés sur une publication 1.2.2 plus ancienne, faute de place pour la mise à jour.
+  '1.2.3': {
+    title: 'NEXORA 1.2.3',
+    intro: 'Des mises à jour qui vous disent clairement ce qui manque, et un espace par compte.',
+    items: [
+      { icon: 'download', space: '', title: 'Mise à jour avec un disque presque plein', text: 'Quand la place manque, NEXORA Devs Toolbox l’indique (« Espace disque insuffisant », avec la place nécessaire et celle qui reste) au lieu d’annoncer une installation modifiée. Il libère d’abord ce qui ne sert plus (téléchargements interrompus, anciennes versions) et vous laisse ouvrir la version déjà installée en attendant.' },
+      { icon: 'user', space: '', title: 'Un espace par compte', text: 'Le travail en équipe est retiré de NEXORA : plus d’onglet Équipe dans Mon compte, ni de bibliothèques d’équipe ou de coédition dans NEX-DESIGN et le Studio. Vos projets, documents et commentaires restent dans votre espace personnel ; la validation par vos clients ne change pas.' },
+      { icon: 'pen', space: '', title: 'Boutons choisis toujours lisibles', text: 'Le texte d’un bouton choisi ne disparaît plus, en thème clair comme en thème sombre : taille de fenêtre du Desktop Builder, messages de l’assistant IA, bandeau du haut de Mon compte, choix de la frise du Studio.' },
+    ],
+  },
   '1.2.2': {
     title: 'NEXORA 1.2.2',
     intro: 'Une interface entièrement redessinée, plus sobre, et des appareils réalistes dans le Studio.',

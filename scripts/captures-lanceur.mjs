@@ -16,7 +16,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { ROOT } from "../preview/server.mjs"
 
-const ALL = ["assistant-bienvenue", "assistant-mise-a-jour", "assistant-installation", "assistant-termine", "assistant-erreur", "demarrage", "chargement", "telechargement", "integrite", "connexion", "version", "desinstallation", "desinstallation-progression", "desinstallation-ouvert", "desinstallation-terminee", "erreur"]
+const ALL = ["assistant-bienvenue", "assistant-mise-a-jour", "assistant-installation", "assistant-termine", "assistant-erreur", "demarrage", "chargement", "telechargement", "integrite", "espace", "connexion", "version", "desinstallation", "desinstallation-progression", "desinstallation-ouvert", "desinstallation-terminee", "erreur"]
 const args = process.argv.slice(2)
 const opt = (n) => (args.includes(n) ? args[args.indexOf(n) + 1] : "")
 const label = opt("--label") || "lanceur"

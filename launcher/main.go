@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-var version = "1.0.8" // remplacé à la construction : -ldflags "-X main.version=…" (1.0.3 : assistants d’installation et de désinstallation, #084 ; 1.0.5 : fenêtres « Horizon » du #103, publié au-dessus du 1.0.4 de la v1.2.1, #106 ; 1.0.6 : vouvoiement, #115 ; 1.0.7 : « Chargement… » à l’ouverture, #119 ; 1.0.8 : mosaïque de rendus et fenêtres réorganisées, #121)
+var version = "1.0.9" // remplacé à la construction : -ldflags "-X main.version=…" (1.0.3 : assistants d’installation et de désinstallation, #084 ; 1.0.5 : fenêtres « Horizon » du #103, publié au-dessus du 1.0.4 de la v1.2.1, #106 ; 1.0.6 : vouvoiement, #115 ; 1.0.7 : « Chargement… » à l’ouverture, #119 ; 1.0.8 : mosaïque de rendus et fenêtres réorganisées, #121 ; 1.0.9 : disque plein reconnu, « Espace disque insuffisant » au lieu de « Installation non authentifiée », place reprise avant une mise à jour, version installée ouvrable, #126)
 
 func main() {
 	args := os.Args[1:]
@@ -153,7 +153,9 @@ func run(update, repair bool, pass []string) error {
 		}
 		journal(l, f.Kind, f.Message+" "+f.Detail)
 		Report(c, f, st.Current)
-		switch securityScreen(f.Kind, secTitle(f.Kind), f.Message, secActions(f.Kind)) {
+		switch securityScreen(f.Kind, secTitle(f.Kind), f.Message, failActions(f)) {
+		case "open": // NEXORA #126 : version installée, vérifiée et autorisée (mise à jour impossible faute de place)
+			return launch(l, st, f.Fallback, pass)
 		case "retry", "update":
 			repair = false
 		case "repair":

@@ -160,7 +160,9 @@ const manifest = {
   // #115 : 1.0.6 (textes vouvoyés) : les lanceurs 1.0.5 se mettent à jour avant d'installer la 1.2.2-r6.
   // #119 : 1.0.7 (« Chargement… » à l'ouverture) : les lanceurs 1.0.6 se mettent à jour avant d'installer la 1.2.2-r9.
   // #121 : 1.0.8 (mosaïque de rendus, fenêtres réorganisées) : les lanceurs 1.0.7 se mettent à jour avant la 1.2.2-r12.
-  min_launcher: "1.0.8",
+  // #126 : 1.0.9 (disque plein reconnu, place reprise, version installée ouvrable) : les lanceurs 1.0.8 se mettent à
+  // jour avant d'installer la 1.2.3 (sinon un disque plein y serait encore montré comme « Installation non authentifiée »).
+  min_launcher: "1.0.9",
   package: pkg,
   ...(launcher ? { launcher } : {}),
   files,
