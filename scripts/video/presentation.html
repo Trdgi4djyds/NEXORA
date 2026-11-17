@@ -1,0 +1,442 @@
+<!doctype html>
+<!--
+  NEXORA #128 : vidéo de présentation de NEXORA en motion design (1920 × 1080), direction « Horizon » du site
+  (noir, monochrome, Urbanist, repères « /tag », pilules). Chaque image ne dépend que du temps : window.seek(t)
+  place toutes les animations (Web Animations en pause) et les effets calculés (compteurs, dérives, zooms), ce qui
+  permet à scripts/video-presentation.mjs de l'enregistrer image par image. Captures réelles de NEXORA et du site
+  de démonstration Kora (site/src/assets/), icônes Lucide de NEXORA. Aucun son.
+-->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>NEXORA — vidéo de présentation</title>
+<link rel="icon" href="data:,">
+<style>
+@font-face { font-family: "Urbanist"; src: url("/site/src/assets/fonts/urbanist-var.woff2") format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Mono"; src: url("/site/src/assets/fonts/jetbrains-mono-normal.woff2") format("woff2"); }
+:root { --bg: #050505; --raised: #111111; --line: #262626; --text: #f4f4f4; --muted: #8b8b8b; --dim: #5c5c5c; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); }
+#stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: var(--text); font-family: "Urbanist", sans-serif; -webkit-font-smoothing: antialiased; }
+.layer { position: absolute; inset: 0; }
+.scene { position: absolute; inset: 0; opacity: 0; }
+.hide { opacity: 0; }
+/* Décor : grille fine estompée et colonnes de lumière, comme le haut du site. */
+.grid { background-image: linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
+  background-size: 120px 120px; background-position: -1px -1px; -webkit-mask-image: radial-gradient(ellipse 70% 65% at 50% 50%, #000 30%, transparent 100%); opacity: 0; }
+.beam { position: absolute; top: -10%; width: 220px; height: 120%; background: linear-gradient(180deg, transparent, rgba(255,255,255,.07) 35%, rgba(255,255,255,.02) 70%, transparent); filter: blur(30px); opacity: 0; }
+.vignette { background: radial-gradient(ellipse 85% 80% at 50% 50%, transparent 55%, rgba(0,0,0,.75) 100%); pointer-events: none; }
+/* Typographie */
+.pill { display: inline-flex; align-items: center; gap: 10px; padding: 9px 20px; border: 1px solid #383838; border-radius: 999px; font-size: 22px; font-weight: 500; color: #d2d2d2; background: rgba(255,255,255,.02); white-space: nowrap; }
+.pill::before { content: "/"; color: #6f6f6f; }
+.title { font-weight: 300; letter-spacing: -.025em; line-height: 1.04; margin: 0; }
+.tone { color: #767676; }
+.w { display: inline-block; opacity: 0; will-change: transform, opacity; }
+.mono { font-family: "Mono", monospace; }
+.btn { display: inline-flex; align-items: center; gap: 18px; padding: 10px 10px 10px 34px; border-radius: 999px; background: #fff; color: #0a0a0a; font-size: 30px; font-weight: 600; }
+.btn .orb { width: 58px; height: 58px; border-radius: 50%; background: #0a0a0a; color: #fff; display: grid; place-items: center; }
+svg.ic { width: 1em; height: 1em; stroke-width: 1.6; }
+/* Fenêtre de NEXORA */
+.win { position: absolute; border-radius: 18px; overflow: hidden; background: #0b0b0b; border: 1px solid #2c2c2c;
+  box-shadow: 0 60px 120px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03) inset; transform-style: preserve-3d; opacity: 0; }
+.win .bar { height: 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px 0 18px; background: #0e0e0e; border-bottom: 1px solid #1f1f1f; font-size: 14px; color: #8a8a8a; }
+.win .ctl { display: flex; gap: 22px; color: #9a9a9a; font-size: 13px; letter-spacing: .02em; }
+.win .shot { position: relative; width: 100%; height: calc(100% - 34px); overflow: hidden; }
+.win .shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top left; will-change: transform; }
+/* Appareils */
+.dev { position: absolute; opacity: 0; }
+.dev img.frame { position: relative; display: block; width: 100%; height: auto; z-index: 2; }
+.dev .scr { position: absolute; overflow: hidden; z-index: 1; background: #000; }
+.dev.over .scr { z-index: 3; }
+.dev .scr img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+/* Tuiles des espaces */
+.tile { position: absolute; width: 400px; height: 188px; border-radius: 26px; background: #0e0e0e; border: 1px solid #262626; padding: 28px 30px; opacity: 0; }
+.tile .ic { font-size: 40px; color: #fff; }
+.tile b { display: block; margin-top: 18px; font-size: 31px; font-weight: 500; letter-spacing: -.01em; }
+.tile small { display: block; margin-top: 6px; font-size: 19px; color: #7f7f7f; }
+.chip { position: absolute; padding: 14px 26px; border-radius: 999px; border: 1px solid #333; background: #0d0d0d; font-size: 28px; color: #cfcfcf; white-space: nowrap; opacity: 0; }
+.seg { position: absolute; bottom: 64px; height: 3px; background: #262626; border-radius: 3px; overflow: hidden; opacity: 0; }
+.seg i { position: absolute; inset: 0; background: #fff; transform-origin: left; transform: scaleX(0); }
+.node { position: absolute; width: 230px; text-align: center; opacity: 0; }
+.node .dot { width: 96px; height: 96px; margin: 0 auto; border-radius: 50%; border: 1px solid #3a3a3a; background: #0e0e0e; display: grid; place-items: center; font-size: 40px; color: #fff; }
+.node b { display: block; margin-top: 20px; font-size: 30px; font-weight: 500; }
+.node small { display: block; margin-top: 4px; font-size: 19px; color: #7d7d7d; }
+.end { position: absolute; display: inline-flex; align-items: center; gap: 14px; padding: 16px 28px; border-radius: 999px; background: #fff; color: #0a0a0a; font-size: 28px; font-weight: 600; opacity: 0; }
+/* Browser Lab dessiné : page et outils d'inspection */
+.dt { position: absolute; inset: 0; display: grid; grid-template-columns: 1.15fr 1fr; background: #0b0b0b; }
+.dt .page { position: relative; overflow: hidden; border-right: 1px solid #1f1f1f; }
+.dt .page img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+.dt .hl { position: absolute; border: 2px solid #fff; background: rgba(255,255,255,.08); border-radius: 6px; opacity: 0; }
+.dt .tools { padding: 18px 20px; font-family: "Mono", monospace; font-size: 14px; color: #9a9a9a; }
+.dt .tabs { display: flex; gap: 8px; margin-bottom: 18px; font-family: "Urbanist"; font-size: 15px; }
+.dt .tabs span { padding: 6px 14px; border-radius: 999px; border: 1px solid #2a2a2a; }
+.dt .tabs span.on { background: #fff; color: #0a0a0a; border-color: #fff; font-weight: 600; }
+.dt .row { display: grid; grid-template-columns: 150px 52px 1fr; gap: 10px; align-items: center; height: 26px; opacity: 0; }
+.dt .row .bar2 { height: 9px; border-radius: 5px; background: #e9e9e9; transform-origin: left; transform: scaleX(0); }
+.dt .row.slow .bar2 { background: #8a8a8a; }
+.dt .cons { margin-top: 20px; border-top: 1px solid #1f1f1f; padding-top: 14px; }
+.dt .cons div { opacity: 0; line-height: 1.9; }
+.dt .cons .warn { color: #e2e2e2; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="layer grid" id="grid"></div>
+  <div class="beam" id="b1" style="left: 18%"></div>
+  <div class="beam" id="b2" style="left: 47%; width: 300px"></div>
+  <div class="beam" id="b3" style="left: 74%"></div>
+  <div id="scenes" class="layer"></div>
+  <div class="layer vignette"></div>
+</div>
+<script type="module">
+import { LUCIDE } from "/nexora/app/renderer/nx/icons/lucide.js"
+
+const A_ = "/site/src/assets"
+const LOGO = "/site/public/icons/icon-512.png"
+const stage = document.getElementById("scenes")
+const anims = []
+const ticks = []
+const EASE = "cubic-bezier(.16,.84,.24,1)"
+const IN_OUT = "cubic-bezier(.65,0,.35,1)"
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v))
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3)
+const inOut = (x) => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2 }
+
+/** Animation en pause, placée par seek() ; « forwards » : avant son début, l'élément garde son style CSS. */
+function A(el, frames, start, dur, easing = EASE) {
+  const a = el.animate(frames, { duration: dur * 1000, delay: start * 1000, fill: "forwards", easing })
+  a.pause()
+  anims.push(a)
+  return a
+}
+function h(tag, cls, html, style) {
+  const e = document.createElement(tag)
+  if (cls) e.className = cls
+  if (html != null) e.innerHTML = html
+  if (style) Object.assign(e.style, style)
+  return e
+}
+const icon = (name) => `<svg class="ic" viewBox="0 0 24 24">${LUCIDE[name] || ""}</svg>`
+/** Texte découpé en mots (span.w) pour les apparitions en cascade ; « | » sépare la partie blanche de la partie grise. */
+function words(el, text, br = false) {
+  const [a, b] = text.split("|")
+  const make = (t, tone) => t.trim().split(/\s+/).map((w) => `<span class="w${tone ? " tone" : ""}">${w}</span>`).join(" ")
+  el.innerHTML = make(a, false) + (b ? (br ? "<br>" : " ") + make(b, true) : "")
+  return [...el.querySelectorAll(".w")]
+}
+function revealWords(ws, start, step = .055, dur = .7) {
+  ws.forEach((w, i) => A(w, [{ opacity: 0, transform: "translateY(38px)", filter: "blur(8px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }], start + i * step, dur))
+}
+function fadeIn(el, start, dur = .6, from = "translateY(24px)") { A(el, [{ opacity: 0, transform: from }, { opacity: 1, transform: "none" }], start, dur) }
+function scene(start, end, exit = .5) {
+  const s = h("section", "scene")
+  stage.appendChild(s)
+  A(s, [{ opacity: 0 }, { opacity: 1 }], start, .01)
+  A(s, [{ opacity: 1 }, { opacity: 0 }], end - exit, exit, IN_OUT)
+  return s
+}
+const at = (el, css) => Object.assign(el.style, { position: "absolute", ...css })
+
+// ---------------------------------------------------------------- décor permanent
+A(document.getElementById("grid"), [{ opacity: 0 }, { opacity: 1 }], 0, 1.6)
+for (const [i, id] of ["b1", "b2", "b3"].entries()) A(document.getElementById(id), [{ opacity: 0 }, { opacity: 1 }], .2 + i * .25, 2)
+ticks.push((t) => {
+  document.getElementById("b1").style.transform = `translateX(${Math.sin(t * .35) * 60}px)`
+  document.getElementById("b2").style.transform = `translateX(${Math.sin(t * .27 + 1) * 80}px)`
+  document.getElementById("b3").style.transform = `translateX(${Math.sin(t * .31 + 2) * 70}px)`
+  document.getElementById("grid").style.backgroundPosition = `${-1 - t * 6}px ${-1 - t * 3}px`
+})
+
+// ---------------------------------------------------------------- 1. Ouverture (0 → 5,2 s)
+{
+  const s = scene(0, 5.2, .6)
+  const glow = h("div", "", null, { position: "absolute", left: "760px", top: "170px", width: "400px", height: "400px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,.22), transparent 65%)", opacity: 0 })
+  const logo = h("img", "", null, { position: "absolute", left: "870px", top: "280px", width: "180px", height: "180px", borderRadius: "40px", opacity: 0 })
+  logo.src = LOGO
+  const mark = h("div", "", null, { position: "absolute", left: 0, right: 0, top: "500px", textAlign: "center", fontSize: "132px", fontWeight: 600, letterSpacing: ".3em", paddingLeft: ".3em" })
+  mark.innerHTML = [..."NEXORA"].map((c) => `<span class="w">${c}</span>`).join("")
+  const pill = h("div", "", '<span class="pill">Devs Toolbox</span>', { position: "absolute", left: 0, right: 0, top: "700px", textAlign: "center", opacity: 0 })
+  const tag = h("p", "title", null, { position: "absolute", left: 0, right: 0, top: "790px", textAlign: "center", fontSize: "44px", color: "#bdbdbd" })
+  const tw = words(tag, "Créez, testez et publiez|vos sites et applications.")
+  s.append(glow, logo, mark, pill, tag)
+  A(glow, [{ opacity: 0, transform: "scale(.6)" }, { opacity: 1, transform: "scale(1)" }], .3, 1.6)
+  A(logo, [{ opacity: 0, transform: "scale(.72)", filter: "blur(18px)" }, { opacity: 1, transform: "scale(1)", filter: "blur(0)" }], .35, 1.1)
+  ;[...mark.children].forEach((c, i) => A(c, [{ opacity: 0, transform: "translateY(60px)", filter: "blur(10px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }], 1.0 + i * .07, .8))
+  fadeIn(pill, 1.85, .6)
+  revealWords(tw, 2.35, .07)
+  A(s, [{ transform: "scale(1)" }, { transform: "scale(1.06)" }], 4.4, .8, IN_OUT)
+}
+
+// ---------------------------------------------------------------- 2. Le problème (5,2 → 11,6 s)
+{
+  const T = 5.2
+  const s = scene(T, 11.6, .6)
+  const title = h("h2", "title", null, { position: "absolute", left: "160px", right: "160px", top: "380px", textAlign: "center", fontSize: "86px" })
+  const tw = words(title, "Un site, une application, des visuels…|et un outil pour chaque étape.", true)
+  s.appendChild(title)
+  revealWords(tw, T + .25, .06)
+  A(title, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-40px)" }], T + 3.1, .5, IN_OUT)
+  const labels = ["Maquettes", "Code", "Terminal", "Tests sur mobile", "Débogage", "Application Android", "Logiciel Windows", "Rendus 3D", "Vidéos", "Audit de sécurité", "Supervision", "Mise en ligne"]
+  const pos = [[170, 130], [640, 90], [1200, 120], [1600, 220], [60, 630], [1580, 630], [190, 760], [600, 880], [1120, 900], [1560, 780], [380, 250], [1000, 240]]
+  labels.forEach((l, i) => {
+    const c = h("div", "chip", l)
+    at(c, { left: pos[i][0] + "px", top: pos[i][1] + "px" })
+    s.appendChild(c)
+    A(c, [{ opacity: 0, transform: "scale(.8)" }, { opacity: 1, transform: "scale(1)" }], T + 1.2 + i * .1, .6)
+    const dx = 960 - (pos[i][0] + c.offsetWidth / 2), dy = 540 - (pos[i][1] + c.offsetHeight / 2)
+    A(c, [{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: `translate(${dx}px, ${dy}px) scale(.25)`, opacity: 0 }], T + 3.35 + (i % 4) * .05, .75, "cubic-bezier(.7,0,.3,1)")
+    ticks.push((t) => { if (t < T + 3.3) c.style.translate = `${Math.sin(t * .9 + i) * 10}px ${Math.cos(t * .8 + i * 1.7) * 8}px`; else c.style.translate = "0 0" })
+  })
+  const ring = h("div", "", null, { position: "absolute", left: "860px", top: "290px", width: "200px", height: "200px", borderRadius: "50%", border: "2px solid rgba(255,255,255,.6)", opacity: 0 })
+  const logo = h("img", "", null, { position: "absolute", left: "900px", top: "330px", width: "120px", height: "120px", borderRadius: "28px", opacity: 0 })
+  logo.src = LOGO
+  const one = h("h2", "title", null, { position: "absolute", left: 0, right: 0, top: "520px", textAlign: "center", fontSize: "112px" })
+  const ow = words(one, "Un seul logiciel.")
+  const p2 = h("div", "", '<span class="pill">9 espaces, un même projet</span>', { position: "absolute", left: 0, right: 0, top: "690px", textAlign: "center", opacity: 0 })
+  s.append(ring, logo, one, p2)
+  A(logo, [{ opacity: 0, transform: "scale(.4)" }, { opacity: 1, transform: "scale(1)" }], T + 3.95, .7, "cubic-bezier(.34,1.56,.64,1)")
+  A(ring, [{ opacity: .9, transform: "scale(.5)" }, { opacity: 0, transform: "scale(2.6)" }], T + 4.0, 1.1)
+  revealWords(ow, T + 4.35, .09, .8)
+  fadeIn(p2, T + 4.9, .6)
+}
+
+// ---------------------------------------------------------------- 3. Les 9 espaces (11,6 → 16,2 s)
+const SPACES = [
+  ["home", "Accueil", "Un projet relie tout"],
+  ["display", "Responsive Lab", "Votre site sur tous les écrans"],
+  ["globe", "Browser Lab", "Trouvez ce qui cloche"],
+  ["code", "Dev Lab", "Codez sans rien installer"],
+  ["android", "App Builder", "Votre site devient une app"],
+  ["cube", "Studio 3D & Motion", "Présentez en 3D et en vidéo"],
+  ["pen", "NEX-DESIGN", "Créez vos visuels"],
+  ["shield", "Sécurité", "Sécurisez et surveillez"],
+  ["laptop", "Desktop Builder", "Un vrai logiciel Windows"],
+]
+{
+  const T = 11.6
+  const s = scene(T, 16.2, .5)
+  const head = h("div", "", null, { position: "absolute", left: 0, right: 0, top: "92px", textAlign: "center" })
+  const pill = h("span", "pill", "9 espaces")
+  const title = h("h2", "title", null, { fontSize: "72px", marginTop: "22px" })
+  const tw = words(title, "Neuf espaces,|un même projet.")
+  const pw = h("div", "", null, { opacity: 0 })
+  pw.appendChild(pill)
+  head.append(pw, title)
+  s.appendChild(head)
+  fadeIn(pw, T + .1, .5)
+  revealWords(tw, T + .25, .06)
+  SPACES.forEach(([ic, name, card], i) => {
+    const t = h("div", "tile", `<span class="ic">${icon(ic)}</span><b>${name}</b><small>${card}</small>`)
+    at(t, { left: 312 + (i % 3) * 432 + "px", top: 330 + Math.floor(i / 3) * 214 + "px" })
+    s.appendChild(t)
+    A(t, [{ opacity: 0, transform: "translateY(40px) scale(.94)" }, { opacity: 1, transform: "none" }], T + .7 + i * .09, .7)
+    // Chaque tuile s'éclaire tour à tour, comme un balayage.
+    ticks.push((tt) => {
+      const k = clamp(1 - Math.abs(tt - (T + 2.1 + i * .17)) / .35)
+      t.style.borderColor = `rgba(255,255,255,${.15 + k * .75})`
+      t.style.background = `rgb(${14 + k * 16},${14 + k * 16},${14 + k * 16})`
+    })
+  })
+  A(s, [{ transform: "scale(1)" }, { transform: "scale(1.08)" }], 15.6, .6, IN_OUT)
+}
+
+// ---------------------------------------------------------------- 4. Les espaces en action (16,2 → 45,8 s)
+const SHOWS = [
+  { name: "Responsive Lab", title: "Votre site|sur tous les écrans.", text: "182 modèles d’appareils côte à côte : ce qui déborde ou devient illisible se voit tout de suite.", img: "responsive-sombre.webp", focus: "35% 40%" },
+  { name: "Browser Lab", title: "Trouvez ce qui cloche,|et pourquoi.", text: "Éléments, réseau, console, tests et audits, présentés clairement.", custom: "browser" },
+  { name: "Dev Lab", title: "Codez sans rien|installer à la main.", text: "Éditeur, terminal, Git, tests, débogueur et aperçu en direct.", img: "dev-sombre.webp", focus: "40% 30%" },
+  { name: "App Builder", title: "Votre site|devient une app.", text: "Application Android signée, notifications push, fiche Play Store.", img: "apps-sombre.webp", focus: "70% 45%" },
+  { name: "Studio 3D & Motion", title: "Présentez en 3D|et en vidéo.", text: "Appareils réalistes, mouvements de caméra, rendus et vidéos.", img: "studio-sombre.webp", focus: "50% 40%" },
+  { name: "NEX-DESIGN", title: "Créez vos visuels,|du croquis au code.", text: "Maquettes, prototypes, animation et export de code, dans le même atelier.", img: "design-sombre.webp", focus: "45% 50%" },
+  { name: "Sécurité", title: "Sécurisez|et surveillez.", text: "Audits du site, du domaine et du code, supervision 24 h/24 et alertes.", img: "securite-sombre.webp", focus: "50% 45%" },
+  { name: "Desktop Builder", title: "Un vrai logiciel|Windows.", text: "Installateur, version portable, MSI, signature et mises à jour.", img: "desktop-sombre.webp", focus: "45% 35%" },
+]
+const S4 = 16.2, DUR = 3.7
+function browserPanel(shot, T) {
+  const dt = h("div", "dt")
+  const page = h("div", "page")
+  const img = h("img")
+  img.src = `${A_}/ecrans/kora-bureau.webp`
+  const hl = h("div", "hl", null, { left: "7%", top: "38%", width: "52%", height: "20%" })
+  page.append(img, hl)
+  const tools = h("div", "tools")
+  tools.innerHTML = `<div class="tabs"><span>Éléments</span><span class="on">Réseau</span><span>Console</span><span>Tests</span><span>Audit</span></div>`
+  const rows = [["document", "200", .2, 0], ["styles.css", "200", .3, .12], ["app.js", "200", .45, .2], ["hero.webp", "200", .72, .3], ["fonts.woff2", "200", .38, .26], ["api/produits", "500", .9, .42], ["analytics.js", "200", .55, .5]]
+  rows.forEach(([n, code, w, off], i) => {
+    const r = h("div", `row${code === "500" ? " slow" : ""}`, `<span>${n}</span><span>${code}</span><span style="position:relative"><span class="bar2" style="display:block;margin-left:${off * 100}%;width:${w * 70}%"></span></span>`)
+    tools.appendChild(r)
+    A(r, [{ opacity: 0 }, { opacity: 1 }], T + .5 + i * .12, .3)
+    A(r.querySelector(".bar2"), [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], T + .6 + i * .12, .6)
+  })
+  const cons = h("div", "cons", `<div>› GET /api/produits</div><div class="warn">✕ 500 : réponse du serveur en 2,4 s</div><div>› Image non optimisée : hero.webp</div>`)
+  tools.appendChild(cons)
+  ;[...cons.children].forEach((d, i) => A(d, [{ opacity: 0, transform: "translateX(-10px)" }, { opacity: 1, transform: "none" }], T + 1.6 + i * .22, .35))
+  A(hl, [{ opacity: 0 }, { opacity: 1 }], T + 1.2, .4)
+  dt.append(page, tools)
+  shot.appendChild(dt)
+}
+SHOWS.forEach((sp, i) => {
+  const T = S4 + i * DUR
+  const s = scene(T, T + DUR, .45)
+  const col = h("div", "", null, { position: "absolute", left: "120px", top: "320px", width: "580px" })
+  const idx = h("div", "mono", `${String(i + 1).padStart(2, "0")} <span style="color:#555">/ 08</span>`, { fontSize: "20px", color: "#9a9a9a", opacity: 0 })
+  const pw = h("div", "", `<span class="pill">${sp.name}</span>`, { marginTop: "22px", opacity: 0 })
+  const title = h("h2", "title", null, { fontSize: "58px", marginTop: "26px" })
+  const tw = words(title, sp.title, true)
+  const text = h("p", "", sp.text, { fontSize: "25px", lineHeight: 1.45, color: "#9b9b9b", marginTop: "26px", opacity: 0 })
+  col.append(idx, pw, title, text)
+  const win = h("div", "win", `<div class="bar"><span>NEXORA · ${sp.name}</span><span class="ctl"><span>—</span><span>☐</span><span>✕</span></span></div><div class="shot"></div>`)
+  at(win, { left: "700px", top: "196px", width: "1120px", height: "734px" })
+  const shot = win.querySelector(".shot")
+  if (sp.custom) browserPanel(shot, T)
+  else {
+    const img = h("img")
+    img.src = `${A_}/ecrans/${sp.img}`
+    img.style.transformOrigin = sp.focus
+    shot.appendChild(img)
+    ticks.push((t) => { const k = clamp((t - T) / DUR); img.style.transform = `scale(${1.02 + .1 * inOut(k)})` })
+  }
+  s.append(col, win)
+  fadeIn(idx, T + .05, .5)
+  fadeIn(pw, T + .12, .5)
+  revealWords(tw, T + .2, .05, .65)
+  fadeIn(text, T + .55, .6)
+  A(win, [{ opacity: 0, transform: "perspective(1800px) translateX(260px) rotateY(-26deg) scale(.96)" }, { opacity: 1, transform: "perspective(1800px) translateX(0) rotateY(-8deg) scale(1)" }], T + .05, .85)
+  A(win, [{ opacity: 1, transform: "perspective(1800px) translateX(0) rotateY(-8deg) scale(1)" }, { opacity: 0, transform: "perspective(1800px) translateX(-120px) rotateY(4deg) scale(.97)" }], T + DUR - .5, .5, IN_OUT)
+  A(col, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-26px)" }], T + DUR - .5, .45, IN_OUT)
+})
+// Repère de progression des 8 espaces.
+{
+  const box = h("div", "layer")
+  stage.appendChild(box)
+  SHOWS.forEach((sp, i) => {
+    const seg = h("div", "seg", "<i></i>")
+    at(seg, { left: 120 + i * 214 + "px", width: "196px" })
+    box.appendChild(seg)
+    A(seg, [{ opacity: 0 }, { opacity: 1 }], S4 + .2, .5)
+    A(seg, [{ opacity: 1 }, { opacity: 0 }], S4 + 8 * DUR - .5, .5)
+    const fill = seg.querySelector("i")
+    ticks.push((t) => { fill.style.transform = `scaleX(${clamp((t - (S4 + i * DUR)) / DUR)})` })
+  })
+}
+
+// ---------------------------------------------------------------- 5. 182 appareils (45,8 → 52,3 s)
+function device(spec, screen, css) {
+  const d = h("div", `dev ${spec.layer}`)
+  const f = h("img", "frame")
+  f.src = `${A_}/appareils/${spec.frame}`
+  const sc = h("div", "scr")
+  Object.assign(sc.style, { left: (spec.x / spec.w) * 100 + "%", top: (spec.y / spec.h) * 100 + "%", width: (spec.sw / spec.w) * 100 + "%", height: (spec.sh / spec.h) * 100 + "%" })
+  if (spec.r) sc.style.borderRadius = `${(spec.r / spec.w) * 100}% / ${(spec.r / spec.h) * 100}%`
+  const im = h("img")
+  im.src = `${A_}/ecrans/${screen}`
+  sc.appendChild(im)
+  d.append(sc, f)
+  at(d, css)
+  return d
+}
+{
+  const T = 45.8
+  const s = scene(T, 52.3, .55)
+  const num = h("div", "", "0", { position: "absolute", left: "120px", top: "250px", fontSize: "240px", fontWeight: 200, letterSpacing: "-.04em", lineHeight: 1, opacity: 0 })
+  const lab = h("h2", "title", null, { position: "absolute", left: "128px", top: "520px", width: "560px", fontSize: "52px" })
+  const lw = words(lab, "modèles d’appareils,|côte à côte.", true)
+  const sub = h("p", "", "iPhone, Galaxy, Pixel, pliables, tablettes, ordinateurs, téléviseurs, montres et voitures : 21 familles.", { position: "absolute", left: "128px", top: "680px", width: "540px", fontSize: "24px", lineHeight: 1.5, color: "#9a9a9a", opacity: 0 })
+  s.append(num, lab, sub)
+  fadeIn(num, T + .1, .5)
+  ticks.push((t) => { num.textContent = String(Math.round(182 * ease((t - T - .15) / 1.6))) })
+  revealWords(lw, T + .35, .06)
+  fadeIn(sub, T + .9, .6)
+  const mac = device({ frame: "macbook-pro-16.webp", w: 3910, h: 2241, x: 419, y: 98, sw: 3072, sh: 1920, layer: "under" }, "kora-bureau.webp", { left: "760px", top: "230px", width: "980px" })
+  const fold = device({ frame: "pixel-10-pro-fold.webp", w: 2201, h: 2268, x: 62, y: 58, sw: 2076, sh: 2152, r: 133, layer: "over" }, "kora-pliable.webp", { left: "690px", top: "560px", width: "330px" })
+  const phone = device({ frame: "iphone-17-pro.webp", w: 1350, h: 2760, x: 72, y: 69, sw: 1206, sh: 2622, layer: "under" }, "kora-mobile.webp", { left: "1590px", top: "470px", width: "230px" })
+  s.append(mac, fold, phone)
+  ;[[mac, .3, 0], [fold, .6, 1.3], [phone, .75, 2.1]].forEach(([d, delay, ph]) => {
+    A(d, [{ opacity: 0, transform: "translateY(120px)" }, { opacity: 1, transform: "none" }], T + delay, 1)
+    ticks.push((t) => { d.style.translate = `0 ${Math.sin(t * 1.1 + ph) * 7}px` })
+  })
+  A(s, [{ transform: "scale(1)" }, { transform: "scale(1.04)" }], T, 6.5, "linear")
+}
+
+// ---------------------------------------------------------------- 6. De l'idée à la publication (52,3 → 57,6 s)
+{
+  const T = 52.3
+  const s = scene(T, 57.6, .55)
+  const head = h("div", "", null, { position: "absolute", left: 0, right: 0, top: "150px", textAlign: "center" })
+  const title = h("h2", "title", null, { fontSize: "76px" })
+  const tw = words(title, "De l’idée|à la publication.")
+  head.appendChild(title)
+  s.appendChild(head)
+  revealWords(tw, T + .1, .06)
+  const steps = [["pen", "Concevoir", "NEX-DESIGN"], ["code", "Coder", "Dev Lab"], ["display", "Tester", "Responsive et Browser Lab"], ["shield", "Sécuriser", "Sécurité"], ["rocket", "Publier", "Web, Android, Windows"]]
+  const X0 = 210, GAP = 330, Y = 430
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+  svg.setAttribute("width", "1920"); svg.setAttribute("height", "1080")
+  Object.assign(svg.style, { position: "absolute", left: 0, top: 0 })
+  const mk = (d) => { const p = document.createElementNS("http://www.w3.org/2000/svg", "path"); p.setAttribute("d", d); p.setAttribute("fill", "none"); p.setAttribute("stroke", "rgba(255,255,255,.55)"); p.setAttribute("stroke-width", "2"); svg.appendChild(p); return p }
+  const line = mk(`M ${X0 + 115} ${Y + 48} H ${X0 + 4 * GAP + 115}`)
+  const cx = X0 + 4 * GAP + 115
+  const branches = [560, 960, 1360].map((x) => mk(`M ${cx} ${Y + 206} C ${cx} ${Y + 330}, ${x} ${Y + 250}, ${x} ${Y + 384}`))
+  s.appendChild(svg)
+  for (const p of [line, ...branches]) { const L = p.getTotalLength(); p.style.strokeDasharray = `${L}px`; p.style.strokeDashoffset = `${L}px`; p.dataset.len = `${L}px` }
+  A(line, [{ strokeDashoffset: line.dataset.len }, { strokeDashoffset: "0px" }], T + .7, 2.2, IN_OUT)
+  branches.forEach((b, i) => A(b, [{ strokeDashoffset: b.dataset.len }, { strokeDashoffset: "0px" }], T + 2.75 + i * .1, .9, IN_OUT))
+  steps.forEach(([ic, n, sub], i) => {
+    const nd = h("div", "node", `<div class="dot">${icon(ic)}</div><b>${n}</b><small>${sub}</small>`)
+    at(nd, { left: X0 + i * GAP + "px", top: Y + "px" })
+    s.appendChild(nd)
+    A(nd, [{ opacity: 0, transform: "translateY(26px)" }, { opacity: 1, transform: "none" }], T + .55 + i * .5, .6)
+    const dot = nd.querySelector(".dot")
+    A(dot, [{ backgroundColor: "#0e0e0e", color: "#ffffff", borderColor: "#3a3a3a" }, { backgroundColor: "#ffffff", color: "#0a0a0a", borderColor: "#ffffff" }], T + .9 + i * .5, .35)
+  })
+  ;[["globe", "Sur le web", 560], ["android", "Sur Android", 960], ["laptop", "Sur Windows", 1360]].forEach(([ic, n, x], i) => {
+    const e = h("div", "end", `<span style="font-size:30px;display:inline-flex">${icon(ic)}</span>${n}`)
+    s.appendChild(e)
+    at(e, { left: x + "px", top: Y + 384 + "px" })
+    e.style.transform = "translateX(-50%)"
+    A(e, [{ opacity: 0, transform: "translateX(-50%) scale(.8)" }, { opacity: 1, transform: "translateX(-50%) scale(1)" }], T + 3.45 + i * .14, .55, "cubic-bezier(.34,1.56,.64,1)")
+  })
+}
+
+// ---------------------------------------------------------------- 7. Conclusion (57,6 → 64 s)
+{
+  const T = 57.6
+  const s = scene(T, 64, .01)
+  const glow = h("div", "", null, { position: "absolute", left: "710px", top: "120px", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,.2), transparent 65%)", opacity: 0 })
+  const logo = h("img", "", null, { position: "absolute", left: "885px", top: "250px", width: "150px", height: "150px", borderRadius: "34px", opacity: 0 })
+  logo.src = LOGO
+  const mark = h("div", "", null, { position: "absolute", left: 0, right: 0, top: "432px", textAlign: "center", fontSize: "104px", fontWeight: 600, letterSpacing: ".3em", paddingLeft: ".3em" })
+  mark.innerHTML = [..."NEXORA"].map((c) => `<span class="w">${c}</span>`).join("")
+  const line = h("p", "title", null, { position: "absolute", left: 0, right: 0, top: "590px", textAlign: "center", fontSize: "44px" })
+  const lw = words(line, "Tout pour créer, tester et publier,|dans un seul logiciel.")
+  const cta = h("div", "", `<span class="btn">nexoradevs.online<span class="orb">${icon("nxArrowUpRight")}</span></span>`, { position: "absolute", left: 0, right: 0, top: "700px", textAlign: "center", opacity: 0 })
+  const small = h("p", "", "Pour Windows 10 et 11 · en français · aussi sur le web", { position: "absolute", left: 0, right: 0, top: "830px", textAlign: "center", fontSize: "24px", color: "#7d7d7d", opacity: 0 })
+  s.append(glow, logo, mark, line, cta, small)
+  A(glow, [{ opacity: 0, transform: "scale(.6)" }, { opacity: 1, transform: "scale(1)" }], T + .1, 1.4)
+  A(logo, [{ opacity: 0, transform: "scale(.7)", filter: "blur(16px)" }, { opacity: 1, transform: "scale(1)", filter: "blur(0)" }], T + .15, 1)
+  ;[...mark.children].forEach((c, i) => A(c, [{ opacity: 0, transform: "translateY(50px)", filter: "blur(10px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }], T + .6 + i * .06, .75))
+  revealWords(lw, T + 1.3, .06)
+  A(cta, [{ opacity: 0, transform: "translateY(24px) scale(.96)" }, { opacity: 1, transform: "none" }], T + 2.1, .7, "cubic-bezier(.34,1.56,.64,1)")
+  fadeIn(small, T + 2.6, .6)
+  const black = h("div", "layer", null, { background: "#000", opacity: 0 })
+  document.getElementById("stage").appendChild(black)
+  A(black, [{ opacity: 0 }, { opacity: 1 }], 63.2, .8, IN_OUT)
+}
+
+window.DURATION = 64
+window.seek = (t) => {
+  for (const a of anims) a.currentTime = t * 1000
+  for (const f of ticks) f(t)
+}
+// Prêt quand la police et toutes les images sont chargées et décodées.
+window.__ready = (async () => {
+  await document.fonts.load("300 40px Urbanist")
+  await document.fonts.load("600 40px Urbanist")
+  await document.fonts.load("20px Mono")
+  await Promise.all([...document.images].map((im) => im.decode().catch(() => { throw new Error(`image : ${im.src}`) })))
+  window.seek(0)
+  return true
+})()
+</script>
+</body>
+</html>

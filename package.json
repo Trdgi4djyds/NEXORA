@@ -37,6 +37,7 @@
     "indexnow": "node scripts/indexnow.mjs",
     "pwa:assets": "node scripts/pwa-assets.mjs",
     "captures:admin": "node scripts/captures-admin.mjs",
+    "video:presentation": "node scripts/video-presentation.mjs",
     "format": "oxfmt vite.config.ts preview scripts",
     "supabase": "node scripts/supabase.mjs",
     "android:shell": "node scripts/build-android-shell.mjs",
