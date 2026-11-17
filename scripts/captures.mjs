@@ -19,6 +19,8 @@
 //   --theme sombre        thème sombre de NEXORA (défaut : clair)
 //   --scroll <sélecteur>  après les clics, fait défiler jusqu'à l'élément visé (CSS), centré (#041)
 //   --taille 1440x900     taille de la fenêtre capturée
+//   --echelle <n>         NEXORA #129 : densité de pixels de la capture (2 : image deux fois plus grande, textes nets
+//                         dans les zooms de la vidéo de présentation ; défaut : 1)
 //   --licence <état>      NEXORA #077 : état de licence simulé de l'aperçu (JSON, ex. {"status":"integrity",
 //                         "reason":"modified","file":"resources/app.asar"}) : écran de sécurité de NEXORA
 //   --reglages <fichier>  réglages de départ de NEXORA fusionnés à ceux d'un PC neuf (JSON ; #073 : application
@@ -122,6 +124,7 @@ function parseArgs(argv) {
     wait: 0,
     theme: "clair",
     size: [1440, 900],
+    scale: 1,
     upload: false,
     url: null,
     demo: false,
@@ -181,6 +184,9 @@ function parseArgs(argv) {
       const m = /^(\d{3,4})x(\d{3,4})$/.exec(value())
       if (!m) throw new Error("--taille attend une valeur comme 1440x900.")
       opts.size = [Number(m[1]), Number(m[2])]
+    } else if (arg === "--echelle") {
+      opts.scale = Number(value())
+      if (!(opts.scale >= 1 && opts.scale <= 3)) throw new Error("--echelle attend une valeur de 1 à 3.")
     } else if (arg.startsWith("--")) throw new Error(`Option inconnue : ${arg}`)
     else opts.screens.push(arg)
   }
@@ -407,7 +413,7 @@ async function main() {
   const issues = []
   try {
     const page = await browser.newPage()
-    await page.setViewport({ width, height })
+    await page.setViewport({ width, height, deviceScaleFactor: opts.scale })
     // Réglages de départ : thème demandé, et premier lancement déjà passé sauf s'il faut le capturer.
     const theme = opts.theme === "sombre" ? { appTheme: "dark" } : {}
     const seed = opts.firstRun ? theme : { ...theme, ...SETUP_DONE, ...(opts.settings || {}) }

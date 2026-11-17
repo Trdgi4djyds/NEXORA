@@ -1,0 +1,38 @@
+{
+  "_": "NEXORA #129 : voix off de la vidéo de présentation. « texte » : ce qui est dit (sous-titres) ; « dit » : orthographe donnée à la synthèse vocale quand elle diffère (« guite », « nexora dèvz ») ; « debut » : instant de départ dans la vidéo (secondes) ; « mots » : instant de mots repères dans la réplique, mesuré sur la voix enregistrée (pauses détectées par ffmpeg silencedetect), pour caler l'image et les bruitages. Voix régénérée par `pnpm video:presentation --voix` ; une voix enregistrée par un comédien peut remplacer les fichiers de scripts/video/audio/voix/ (mêmes noms), en revérifiant « mots ».",
+  "voix": {
+    "modele": "fr_FR-siwis-medium",
+    "source": "https://huggingface.co/rhasspy/piper-voices/tree/main/fr/fr_FR/siwis/medium",
+    "licence": "CC BY 4.0 (voix entraînée sur la base SIWIS French Speech Synthesis, Université d'Édimbourg)",
+    "moteur": "Piper 1.8 (paquet Python piper-tts, GPL-3.0, installé hors du dépôt à la demande)",
+    "length_scale": 1.06,
+    "noise_scale": 0.5,
+    "noise_w_scale": 0.333
+  },
+  "repliques": [
+    { "id": "v01", "debut": 0.8, "texte": "Votre site est réussi…", "dit": "Votre site est réussi..." },
+    { "id": "v01b", "debut": 2.85, "texte": "sur votre écran." },
+    { "id": "v02", "debut": 4.6, "texte": "Mais sur le téléphone de vos visiteurs, tout déborde.", "mots": { "deborde": 2.33 } },
+    { "id": "v03", "debut": 8.3, "texte": "Alors vous empilez les outils : design, code, tests, sécurité, publication…", "dit": "Alors vous empilez les outils : design, code, tests, sécurité, publication...", "mots": { "design": 1.91, "code": 2.68, "tests": 3.16, "securite": 3.53, "publication": 4.82 } },
+    { "id": "v04", "debut": 14.45, "texte": "Des heures à tout installer, à tout relier. Et un projet éparpillé.", "mots": { "relier": 1.64, "eparpille": 2.71 } },
+    { "id": "v05", "debut": 18.9, "texte": "Une erreur apparaît ? Impossible de savoir d’où elle vient.", "dit": "Une erreur apparaît ? Impossible de savoir d'où elle vient.", "mots": { "impossible": 1.43 } },
+    { "id": "v06", "debut": 22.55, "texte": "Et pour une application Android, ou un logiciel Windows ? Des mois, et un vrai budget.", "mots": { "windows": 2.65, "mois": 4.51, "budget": 5.29 } },
+    { "id": "v07", "debut": 29.65, "texte": "Et si tout tenait dans un seul logiciel ?", "mots": { "tout": 0.56 } },
+    { "id": "v08", "debut": 32.7, "texte": "Voici NEXORA.", "mots": { "nexora": 0.55 } },
+    { "id": "v09", "debut": 38.7, "texte": "Dessinez vos maquettes, vos logos et vos visuels, dans le même atelier que votre code.", "mots": { "logos": 1.63, "atelier": 3.09 } },
+    { "id": "v10", "debut": 44.1, "texte": "Codez tout de suite : les outils s’installent pour vous.", "dit": "Codez tout de suite : les outils s'installent pour vous.", "mots": { "outils": 1.53 } },
+    { "id": "v11", "debut": 47.7, "texte": "Testez votre site sur 182 modèles d’appareils, côte à côte.", "dit": "Testez votre site sur cent quatre-vingt-deux modèles d'appareils, côte à côte.", "mots": { "nombre": 1.0, "cote": 3.24 } },
+    { "id": "v12", "debut": 52.5, "texte": "Repérez ce qui ralentit ou casse votre page, et ce qu’il faut corriger.", "dit": "Repérez ce qui ralentit ou casse votre page, et ce qu'il faut corriger.", "mots": { "casse": 1.75, "corriger": 3.24 } },
+    { "id": "v13", "debut": 57.9, "texte": "Auditez sa sécurité, et surveillez-le jour et nuit : vous êtes alerté avant vos clients.", "mots": { "surveillez": 1.63, "alerte": 3.66 } },
+    { "id": "v14", "debut": 63.9, "texte": "Transformez-le en application Android, ou en logiciel Windows à installer.", "mots": { "windows": 2.98 } },
+    { "id": "v15", "debut": 69.9, "texte": "Et présentez-le en 3D, avec des vidéos prêtes pour les réseaux.", "mots": { "videos": 1.76 } },
+    { "id": "v16", "debut": 74.7, "texte": "Concevoir." },
+    { "id": "v17", "debut": 76.0, "texte": "Coder." },
+    { "id": "v18", "debut": 77.2, "texte": "Tester." },
+    { "id": "v19", "debut": 78.4, "texte": "Sécuriser." },
+    { "id": "v20", "debut": 79.8, "texte": "Publier." },
+    { "id": "v21", "debut": 81.2, "texte": "Tout se passe dans le même projet." },
+    { "id": "v22", "debut": 84.2, "texte": "NEXORA. Tout pour créer, tester et publier, dans un seul logiciel.", "mots": { "tout": 1.25, "tester": 2.4, "publier": 2.97, "logiciel": 3.78 } },
+    { "id": "v23", "debut": 89.85, "texte": "Rendez-vous sur nexoradevs.online.", "dit": "Rendez-vous sur nexora dèvz point online.", "mots": { "adresse": 1.72 } }
+  ]
+}

@@ -1,0 +1,81 @@
+1
+00:00:01,050 --> 00:00:02,073
+NEXORA.
+
+2
+00:00:02,300 --> 00:00:06,228
+Créez, testez et publiez vos
+sites et vos applications.
+
+3
+00:00:06,950 --> 00:00:11,600
+Un site web, une application, des visuels…
+et un outil différent pour chaque étape.
+
+4
+00:00:11,600 --> 00:00:13,909
+Et si tout tenait dans un seul logiciel ?
+
+5
+00:00:15,350 --> 00:00:18,318
+Neuf espaces, réunis
+autour d’un même projet.
+
+6
+00:00:20,100 --> 00:00:23,680
+Le Responsive Lab montre votre
+site sur tous les écrans.
+
+7
+00:00:24,300 --> 00:00:27,530
+Le Browser Lab trouve ce qui
+cloche, et vous dit pourquoi.
+
+8
+00:00:28,500 --> 00:00:32,501
+Le Dev Lab : codez, testez et
+déboguez, sans rien installer.
+
+9
+00:00:32,700 --> 00:00:36,223
+L’App Builder transforme votre
+site en application Android.
+
+10
+00:00:36,900 --> 00:00:40,453
+Le Studio met vos projets en
+scène, en 3D et en vidéo.
+
+11
+00:00:41,100 --> 00:00:43,763
+NEX-DESIGN crée vos
+maquettes et vos visuels.
+
+12
+00:00:45,300 --> 00:00:49,026
+La Sécurité analyse et surveille
+votre site, jour et nuit.
+
+13
+00:00:49,500 --> 00:00:53,356
+Et le Desktop Builder le transforme
+en vrai logiciel Windows.
+
+14
+00:00:53,650 --> 00:00:57,493
+Cent quatre-vingt-deux modèles
+d’appareils, pour vérifier chaque détail.
+
+15
+00:01:00,900 --> 00:01:05,522
+De l’idée à la publication : sur le
+web, sur Android et sur Windows.
+
+16
+00:01:08,350 --> 00:01:13,278
+NEXORA. Tout pour créer, tester et
+publier, dans un seul logiciel.
+
+17
+00:01:13,500 --> 00:01:16,449
+Rendez-vous sur nexoradevs.online.

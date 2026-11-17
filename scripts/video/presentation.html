@@ -1,10 +1,14 @@
 <!doctype html>
 <!--
-  NEXORA #128 : vidéo de présentation de NEXORA en motion design (1920 × 1080), direction « Horizon » du site
-  (noir, monochrome, Urbanist, repères « /tag », pilules). Chaque image ne dépend que du temps : window.seek(t)
-  place toutes les animations (Web Animations en pause) et les effets calculés (compteurs, dérives, zooms), ce qui
-  permet à scripts/video-presentation.mjs de l'enregistrer image par image. Captures réelles de NEXORA et du site
-  de démonstration Kora (site/src/assets/), icônes Lucide de NEXORA. Aucun son.
+  NEXORA #128, #129 : vidéo de présentation de NEXORA en motion design (1920 × 1080, 77,4 s), direction « Horizon »
+  du site (noir, monochrome, Urbanist, repères « /tag », pilules). Chaque image ne dépend que du temps :
+  window.seek(t) place toutes les animations (Web Animations en pause) et les effets calculés (particules, compteur,
+  curseurs, impulsions), ce qui permet à scripts/video-presentation.mjs de l'enregistrer image par image.
+  #129 : minutage commun avec la bande son (scripts/video/timeline.mjs : scènes, phrases de la voix off, instants
+  des mots) : les textes apparaissent quand la voix les prononce ; particules et éclats, flashs et balayages
+  lumineux, travelling avant, tuiles en 3D aux icônes dessinées, curseur qui clique dans chaque espace, annotations,
+  grands numéros, compteur à rouleaux, matrice des 182 appareils, sol en perspective, impulsion sur le parcours.
+  Captures réelles de NEXORA et du site de démonstration Kora (site/src/assets/), icônes Lucide de NEXORA.
 -->
 <html lang="fr">
 <head>
@@ -20,35 +24,64 @@ html, body { margin: 0; background: var(--bg); }
 #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: var(--text); font-family: "Urbanist", sans-serif; -webkit-font-smoothing: antialiased; }
 .layer { position: absolute; inset: 0; }
 .scene { position: absolute; inset: 0; opacity: 0; }
-.hide { opacity: 0; }
+canvas#fx { position: absolute; inset: 0; }
 /* Décor : grille fine estompée et colonnes de lumière, comme le haut du site. */
 .grid { background-image: linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
   background-size: 120px 120px; background-position: -1px -1px; -webkit-mask-image: radial-gradient(ellipse 70% 65% at 50% 50%, #000 30%, transparent 100%); opacity: 0; }
 .beam { position: absolute; top: -10%; width: 220px; height: 120%; background: linear-gradient(180deg, transparent, rgba(255,255,255,.07) 35%, rgba(255,255,255,.02) 70%, transparent); filter: blur(30px); opacity: 0; }
 .vignette { background: radial-gradient(ellipse 85% 80% at 50% 50%, transparent 55%, rgba(0,0,0,.75) 100%); pointer-events: none; }
+/* Effets de lumière : éclair des impacts, bande oblique des changements de scène, anneaux, reflets, traits. */
+.flash, .sweep { position: absolute; pointer-events: none; mix-blend-mode: screen; opacity: 0; }
+.flash { inset: 0; }
+.sweep { top: -30%; height: 160%; left: 0; width: 380px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.1) 38%, rgba(255,255,255,.28) 50%, rgba(255,255,255,.1) 62%, transparent); filter: blur(8px); }
+.ring { position: absolute; border-radius: 50%; border: 2px solid rgba(255,255,255,.7); opacity: 0; }
+.uline { position: absolute; height: 2px; background: linear-gradient(90deg, transparent, #fff 22%, #fff 78%, transparent); transform: scaleX(0); }
+.glare { position: absolute; top: -20%; bottom: -20%; left: 0; width: 28%; pointer-events: none; z-index: 6;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.09) 42%, rgba(255,255,255,.2) 50%, rgba(255,255,255,.09) 58%, transparent); transform: translateX(-130%) skewX(-12deg); }
+.pulse { position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border-radius: 50%; background: #fff; opacity: 0; z-index: 3;
+  box-shadow: 0 0 18px 6px rgba(255,255,255,.55), 0 0 60px 18px rgba(255,255,255,.18); }
+/* Sol en perspective : plan horizontal posé au bas de l'image, qui file vers le point de fuite (perspective-origin). */
+.floorbox { position: absolute; inset: 0; overflow: hidden; perspective: 600px; perspective-origin: 50% 46%; opacity: 0; }
+.floor { position: absolute; left: -2400px; right: -2400px; top: 1080px; height: 3600px; transform-origin: 50% 0; transform: rotateX(-90deg);
+  background-image: linear-gradient(rgba(255,255,255,.2) 2px, transparent 2px), linear-gradient(90deg, rgba(255,255,255,.2) 2px, transparent 2px); background-size: 120px 120px;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 18%, transparent 75%); }
 /* Typographie */
 .pill { display: inline-flex; align-items: center; gap: 10px; padding: 9px 20px; border: 1px solid #383838; border-radius: 999px; font-size: 22px; font-weight: 500; color: #d2d2d2; background: rgba(255,255,255,.02); white-space: nowrap; }
 .pill::before { content: "/"; color: #6f6f6f; }
 .title { font-weight: 300; letter-spacing: -.025em; line-height: 1.04; margin: 0; }
 .tone { color: #767676; }
 .w { display: inline-block; opacity: 0; will-change: transform, opacity; }
+.wm { display: inline-block; overflow: hidden; vertical-align: top; padding: 0 .05em .14em; margin: 0 -.05em -.14em; }
+.mark { position: absolute; left: 0; right: 0; text-align: center; font-weight: 600; letter-spacing: .3em; padding-left: .3em; }
 .mono { font-family: "Mono", monospace; }
-.btn { display: inline-flex; align-items: center; gap: 18px; padding: 10px 10px 10px 34px; border-radius: 999px; background: #fff; color: #0a0a0a; font-size: 30px; font-weight: 600; }
+.btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 18px; padding: 10px 10px 10px 34px; border-radius: 999px; background: #fff; color: #0a0a0a; font-size: 30px; font-weight: 600; }
 .btn .orb { width: 58px; height: 58px; border-radius: 50%; background: #0a0a0a; color: #fff; display: grid; place-items: center; }
 svg.ic { width: 1em; height: 1em; stroke-width: 1.6; }
+.bigidx { position: absolute; left: 70px; top: 40px; font-size: 420px; font-weight: 200; line-height: 1; letter-spacing: -.05em; color: transparent; -webkit-text-stroke: 1.5px rgba(255,255,255,.11); font-variant-numeric: tabular-nums; opacity: 0; }
 /* Fenêtre de NEXORA */
 .win { position: absolute; border-radius: 18px; overflow: hidden; background: #0b0b0b; border: 1px solid #2c2c2c;
   box-shadow: 0 60px 120px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03) inset; transform-style: preserve-3d; opacity: 0; }
 .win .bar { height: 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px 0 18px; background: #0e0e0e; border-bottom: 1px solid #1f1f1f; font-size: 14px; color: #8a8a8a; }
 .win .ctl { display: flex; gap: 22px; color: #9a9a9a; font-size: 13px; letter-spacing: .02em; }
 .win .shot { position: relative; width: 100%; height: calc(100% - 34px); overflow: hidden; }
-.win .shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top left; will-change: transform; }
+.win .shot > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top left; will-change: transform; }
+/* Curseur, onde du clic, annotations */
+.cursor { position: absolute; left: 0; top: 0; width: 28px; height: 38px; z-index: 9; opacity: 0; transform-origin: 3px 2px; filter: drop-shadow(0 6px 10px rgba(0,0,0,.65)); }
+.ripple { position: absolute; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%; border: 2px solid #fff; background: rgba(255,255,255,.08); opacity: 0; z-index: 8; }
+.callout { position: absolute; display: inline-flex; align-items: center; gap: 12px; padding: 10px 22px 10px 10px; border-radius: 999px; background: #131313; border: 1px solid #3a3a3a;
+  font-size: 22px; font-weight: 500; color: #e8e8e8; white-space: nowrap; box-shadow: 0 24px 50px -14px rgba(0,0,0,.85); opacity: 0; z-index: 7; }
+.callout .ci { width: 40px; height: 40px; border-radius: 50%; background: #fff; color: #0a0a0a; display: grid; place-items: center; font-size: 21px; }
 /* Appareils */
 .dev { position: absolute; opacity: 0; }
 .dev img.frame { position: relative; display: block; width: 100%; height: auto; z-index: 2; }
 .dev .scr { position: absolute; overflow: hidden; z-index: 1; background: #000; }
 .dev.over .scr { z-index: 3; }
 .dev .scr img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.odo { height: 1em; overflow: hidden; }
+.odo span { display: flex; flex-direction: column; }
+.odo b { display: block; height: 1em; line-height: 1; font-weight: 200; text-align: right; }
+.dots { position: absolute; display: grid; grid-template-columns: repeat(26, 10px); gap: 10px; opacity: 0; }
+.dots i { width: 10px; height: 10px; border-radius: 3px; background: #1f1f1f; }
 /* Tuiles des espaces */
 .tile { position: absolute; width: 400px; height: 188px; border-radius: 26px; background: #0e0e0e; border: 1px solid #262626; padding: 28px 30px; opacity: 0; }
 .tile .ic { font-size: 40px; color: #fff; }
@@ -67,6 +100,7 @@ svg.ic { width: 1em; height: 1em; stroke-width: 1.6; }
 .dt .page { position: relative; overflow: hidden; border-right: 1px solid #1f1f1f; }
 .dt .page img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
 .dt .hl { position: absolute; border: 2px solid #fff; background: rgba(255,255,255,.08); border-radius: 6px; opacity: 0; }
+.dt .hltag { position: absolute; left: -2px; top: -30px; padding: 4px 9px; border-radius: 5px; background: #fff; color: #0a0a0a; font: 600 13px "Mono", monospace; white-space: nowrap; }
 .dt .tools { padding: 18px 20px; font-family: "Mono", monospace; font-size: 14px; color: #9a9a9a; }
 .dt .tabs { display: flex; gap: 8px; margin-bottom: 18px; font-family: "Urbanist"; font-size: 15px; }
 .dt .tabs span { padding: 6px 14px; border-radius: 999px; border: 1px solid #2a2a2a; }
@@ -85,24 +119,44 @@ svg.ic { width: 1em; height: 1em; stroke-width: 1.6; }
   <div class="beam" id="b1" style="left: 18%"></div>
   <div class="beam" id="b2" style="left: 47%; width: 300px"></div>
   <div class="beam" id="b3" style="left: 74%"></div>
+  <canvas id="fx" width="1920" height="1080"></canvas>
   <div id="scenes" class="layer"></div>
+  <div id="overlay" class="layer"></div>
   <div class="layer vignette"></div>
 </div>
 <script type="module">
 import { LUCIDE } from "/nexora/app/renderer/nx/icons/lucide.js"
+import { DURATION, SC, SHOW, word } from "/scripts/video/timeline.mjs"
+
+// Polices chargées avant de construire les scènes : la largeur des étiquettes et la place du bouton final en dépendent.
+await Promise.all(["200 40px Urbanist", "300 40px Urbanist", "500 40px Urbanist", "600 40px Urbanist", "20px Mono"].map((f) => document.fonts.load(f)))
 
 const A_ = "/site/src/assets"
 const LOGO = "/site/public/icons/icon-512.png"
-const stage = document.getElementById("scenes")
+const $ = (id) => document.getElementById(id)
+const stage = $("scenes")
+const overlay = $("overlay")
 const anims = []
 const ticks = []
 const EASE = "cubic-bezier(.16,.84,.24,1)"
 const IN_OUT = "cubic-bezier(.65,0,.35,1)"
+const SPRING = "cubic-bezier(.34,1.56,.64,1)"
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v))
 const ease = (x) => 1 - Math.pow(1 - clamp(x), 3)
 const inOut = (x) => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2 }
+/** Tirage pseudo-aléatoire à graine fixe : les mêmes particules à chaque rendu. */
+function prng(seed) {
+  let a = seed >>> 0
+  return () => {
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
 
-/** Animation en pause, placée par seek() ; « forwards » : avant son début, l'élément garde son style CSS. */
+/** Animation en pause, placée par seek() ; « forwards » : avant son début, l'élément garde son style CSS.
+ *  Plusieurs animations d'une même propriété sur un même élément doivent être créées dans l'ordre chronologique. */
 function A(el, frames, start, dur, easing = EASE) {
   const a = el.animate(frames, { duration: dur * 1000, delay: start * 1000, fill: "forwards", easing })
   a.pause()
@@ -116,91 +170,259 @@ function h(tag, cls, html, style) {
   if (style) Object.assign(e.style, style)
   return e
 }
+const at = (el, css) => Object.assign(el.style, { position: "absolute", ...css })
 const icon = (name) => `<svg class="ic" viewBox="0 0 24 24">${LUCIDE[name] || ""}</svg>`
-/** Texte découpé en mots (span.w) pour les apparitions en cascade ; « | » sépare la partie blanche de la partie grise. */
-function words(el, text, br = false) {
+/** Icône qui se dessine trait par trait (les formes pleines apparaissent en fondu). */
+function drawIcon(svg, start, dur = .9) {
+  svg.querySelectorAll("path, circle, rect, line, polyline, polygon, ellipse").forEach((el, k) => {
+    if (getComputedStyle(el).stroke === "none") {
+      el.style.opacity = "0"
+      A(el, [{ opacity: 0 }, { opacity: 1 }], start + dur * .45, dur * .55)
+      return
+    }
+    el.setAttribute("pathLength", "1")
+    el.style.strokeDasharray = "1px 1px"
+    el.style.strokeDashoffset = "1px"
+    A(el, [{ strokeDashoffset: "1px" }, { strokeDashoffset: "0px" }], start + k * .06, dur, IN_OUT)
+  })
+}
+/** Texte découpé en mots (span.w) ; « | » sépare la partie blanche de la partie grise ; mask : mots qui montent derrière un cache. */
+function words(el, text, br = false, mask = false) {
   const [a, b] = text.split("|")
-  const make = (t, tone) => t.trim().split(/\s+/).map((w) => `<span class="w${tone ? " tone" : ""}">${w}</span>`).join(" ")
+  const make = (t, tone) => t.trim().split(/\s+/).map((w) => {
+    const s = `<span class="w${tone ? " tone" : ""}">${w}</span>`
+    return mask ? `<span class="wm">${s}</span>` : s
+  }).join(" ")
   el.innerHTML = make(a, false) + (b ? (br ? "<br>" : " ") + make(b, true) : "")
   return [...el.querySelectorAll(".w")]
 }
-function revealWords(ws, start, step = .055, dur = .7) {
-  ws.forEach((w, i) => A(w, [{ opacity: 0, transform: "translateY(38px)", filter: "blur(8px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }], start + i * step, dur))
+const RISE = [{ opacity: 0, transform: "translateY(38px)", filter: "blur(8px)" }, { opacity: 1, transform: "none", filter: "blur(0px)" }]
+function revealWords(ws, start, step = .055, dur = .7) { ws.forEach((w, i) => A(w, RISE, start + i * step, dur)) }
+/** Mots qui apparaissent quand la voix les prononce (instants de timeline.mjs), un dixième de seconde avant. */
+function revealAt(ws, timeOf, dur = .6) { ws.forEach((w, i) => A(w, RISE, timeOf(i) - .1, dur)) }
+function revealMask(ws, start, step = .06, dur = .75) {
+  ws.forEach((w, i) => A(w, [{ opacity: 0, transform: "translateY(108%)" }, { opacity: 1, offset: .25 }, { opacity: 1, transform: "none" }], start + i * step, dur))
 }
 function fadeIn(el, start, dur = .6, from = "translateY(24px)") { A(el, [{ opacity: 0, transform: from }, { opacity: 1, transform: "none" }], start, dur) }
-function scene(start, end, exit = .5) {
-  const s = h("section", "scene")
-  stage.appendChild(s)
-  A(s, [{ opacity: 0 }, { opacity: 1 }], start, .01)
-  A(s, [{ opacity: 1 }, { opacity: 0 }], end - exit, exit, IN_OUT)
+/** Scène : enveloppe qui entre (mise au point) et sort (flou, recul ou travelling avant) ; renvoie le calque intérieur. */
+function scene(start, end, { enter = .45, exit = .5, out = "soft" } = {}) {
+  const wrap = h("section", "scene"), s = h("div", "layer")
+  wrap.appendChild(s)
+  stage.appendChild(wrap)
+  if (enter > .02) A(wrap, [{ opacity: 0, transform: "scale(1.04)", filter: "blur(10px)" }, { opacity: 1, transform: "none", filter: "none" }], start, enter)
+  else A(wrap, [{ opacity: 0 }, { opacity: 1 }], start, .01)
+  const to = { soft: "scale(.97)", zoom: "scale(2.4)" }[out]
+  if (exit > .02) A(wrap, [{ opacity: 1, transform: "none", filter: "none" }, { opacity: 0, transform: to, filter: "blur(14px)" }], end - exit, exit, IN_OUT)
+  // Hors de sa plage, la scène n'est pas affichée du tout : avec « visibility », Chromium peignait parfois encore
+  // le sol en perspective (calque 3D) d'une scène masquée.
+  ticks.push((t) => { wrap.style.display = t >= start - .02 && t <= end + .02 ? "" : "none" })
   return s
 }
-const at = (el, css) => Object.assign(el.style, { position: "absolute", ...css })
-
-// ---------------------------------------------------------------- décor permanent
-A(document.getElementById("grid"), [{ opacity: 0 }, { opacity: 1 }], 0, 1.6)
-for (const [i, id] of ["b1", "b2", "b3"].entries()) A(document.getElementById(id), [{ opacity: 0 }, { opacity: 1 }], .2 + i * .25, 2)
-ticks.push((t) => {
-  document.getElementById("b1").style.transform = `translateX(${Math.sin(t * .35) * 60}px)`
-  document.getElementById("b2").style.transform = `translateX(${Math.sin(t * .27 + 1) * 80}px)`
-  document.getElementById("b3").style.transform = `translateX(${Math.sin(t * .31 + 2) * 70}px)`
-  document.getElementById("grid").style.backgroundPosition = `${-1 - t * 6}px ${-1 - t * 3}px`
-})
-
-// ---------------------------------------------------------------- 1. Ouverture (0 → 5,2 s)
-{
-  const s = scene(0, 5.2, .6)
-  const glow = h("div", "", null, { position: "absolute", left: "760px", top: "170px", width: "400px", height: "400px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,.22), transparent 65%)", opacity: 0 })
-  const logo = h("img", "", null, { position: "absolute", left: "870px", top: "280px", width: "180px", height: "180px", borderRadius: "40px", opacity: 0 })
-  logo.src = LOGO
-  const mark = h("div", "", null, { position: "absolute", left: 0, right: 0, top: "500px", textAlign: "center", fontSize: "132px", fontWeight: 600, letterSpacing: ".3em", paddingLeft: ".3em" })
-  mark.innerHTML = [..."NEXORA"].map((c) => `<span class="w">${c}</span>`).join("")
-  const pill = h("div", "", '<span class="pill">Devs Toolbox</span>', { position: "absolute", left: 0, right: 0, top: "700px", textAlign: "center", opacity: 0 })
-  const tag = h("p", "title", null, { position: "absolute", left: 0, right: 0, top: "790px", textAlign: "center", fontSize: "44px", color: "#bdbdbd" })
-  const tw = words(tag, "Créez, testez et publiez|vos sites et applications.")
-  s.append(glow, logo, mark, pill, tag)
-  A(glow, [{ opacity: 0, transform: "scale(.6)" }, { opacity: 1, transform: "scale(1)" }], .3, 1.6)
-  A(logo, [{ opacity: 0, transform: "scale(.72)", filter: "blur(18px)" }, { opacity: 1, transform: "scale(1)", filter: "blur(0)" }], .35, 1.1)
-  ;[...mark.children].forEach((c, i) => A(c, [{ opacity: 0, transform: "translateY(60px)", filter: "blur(10px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }], 1.0 + i * .07, .8))
-  fadeIn(pill, 1.85, .6)
-  revealWords(tw, 2.35, .07)
-  A(s, [{ transform: "scale(1)" }, { transform: "scale(1.06)" }], 4.4, .8, IN_OUT)
+/** Éclair blanc des impacts. */
+function flash(t, peak = .5, dur = .7, y = "34%") {
+  const f = h("div", "flash", null, { background: `radial-gradient(circle at 50% ${y}, rgba(255,255,255,.95), rgba(255,255,255,.25) 22%, transparent 60%)` })
+  overlay.appendChild(f)
+  A(f, [{ opacity: 0 }, { opacity: peak, offset: .1 }, { opacity: 0 }], t - .05, dur, "linear")
+}
+/** Bande de lumière oblique qui traverse l'image (changements de scène). */
+function sweep(t, strength = 1, dur = .8) {
+  const b = h("div", "sweep")
+  overlay.appendChild(b)
+  A(b, [{ opacity: 0, transform: "translateX(-600px) rotate(14deg)" }, { opacity: strength, offset: .3 }, { opacity: strength, offset: .7 }, { opacity: 0, transform: "translateX(2300px) rotate(14deg)" }], t, dur, "cubic-bezier(.45,.05,.55,.95)")
+}
+/** Anneaux qui s'élargissent autour d'un point (onde de choc). */
+function rings(s, cx, cy, size, t, n = 2) {
+  for (let k = 0; k < n; k += 1) {
+    const r = h("div", "ring")
+    at(r, { left: cx - size / 2 + "px", top: cy - size / 2 + "px", width: size + "px", height: size + "px" })
+    s.appendChild(r)
+    A(r, [{ opacity: .9, transform: "scale(.5)" }, { opacity: 0, transform: `scale(${3 + k})` }], t + k * .13, 1.3, "cubic-bezier(.1,.7,.3,1)")
+  }
+}
+/** Sol en perspective qui avance vers le spectateur. */
+function floor(s, T, peak = 1, speed = 70) {
+  const box = h("div", "floorbox"), f = h("div", "floor")
+  box.appendChild(f)
+  s.appendChild(box)
+  A(box, [{ opacity: 0 }, { opacity: peak }], T + .1, 1.4)
+  ticks.push((t) => { f.style.backgroundPosition = `0px ${-(((t - T) * speed) % 120)}px` })
+}
+const CURSOR = `<svg viewBox="0 0 28 38" width="28" height="38"><path d="M3 2 L3 30 L9.6 24 L14 34.6 L18.8 32.6 L14.4 22.2 L23.4 22.2 Z" fill="#fff" stroke="#0a0a0a" stroke-width="1.6" stroke-linejoin="round"/></svg>`
+/** Curseur qui glisse depuis `from` vers pos(t) (pixels du parent), clique à `click` (onde), puis s'écarte un peu. */
+function pointer(parent, { show, click, from, pos }) {
+  const cur = h("div", "cursor", CURSOR), rip = h("div", "ripple")
+  parent.append(rip, cur)
+  A(cur, [{ opacity: 0 }, { opacity: 1 }], show, .3)
+  A(rip, [{ opacity: .9, transform: "scale(.15)" }, { opacity: 0, transform: "scale(1.5)" }], click, .65)
+  ticks.push((t) => {
+    const [tx, ty] = pos(t)
+    const k = inOut((t - show) / (click - .1 - show))
+    let x = from[0] + (tx - from[0]) * k, y = from[1] + (ty - from[1]) * k - Math.sin(k * Math.PI) * 50
+    if (t > click + .15) { const d = t - click - .15; x += d * 16; y += d * 10 }
+    const press = clamp(1 - Math.abs(t - click) / .09)
+    cur.style.transform = `translate(${x - 3}px, ${y - 2}px) scale(${1 - .18 * press})`
+    rip.style.left = `${tx}px`
+    rip.style.top = `${ty}px`
+  })
+}
+const NS = "http://www.w3.org/2000/svg"
+function svgLayer() {
+  const svg = document.createElementNS(NS, "svg")
+  svg.setAttribute("width", "1920"); svg.setAttribute("height", "1080")
+  Object.assign(svg.style, { position: "absolute", left: 0, top: 0, overflow: "visible" })
+  return svg
+}
+function svgPath(svg, d, stroke = "rgba(255,255,255,.55)", width = 2) {
+  const p = document.createElementNS(NS, "path")
+  p.setAttribute("d", d); p.setAttribute("fill", "none"); p.setAttribute("stroke", stroke); p.setAttribute("stroke-width", String(width))
+  svg.appendChild(p)
+  const L = p.getTotalLength()
+  p.style.strokeDasharray = `${L}px ${L}px`
+  p.style.strokeDashoffset = `${L}px`
+  p.len = L
+  return p
+}
+/** Trait qui se dessine de t0 à t1, suivi d'un point lumineux (même progression, calculée image par image). */
+function drawWithPulse(s, p, t0, t1, f = (x) => x) {
+  const d = h("div", "pulse")
+  s.appendChild(d)
+  ticks.push((t) => {
+    const k = (t - t0) / (t1 - t0), e = f(clamp(k))
+    p.style.strokeDashoffset = `${p.len * (1 - e)}px`
+    d.style.opacity = k <= 0 ? "0" : k < 1 ? "1" : String(clamp(1 - (k - 1) / .25))
+    const q = p.getPointAtLength(p.len * e)
+    d.style.transform = `translate(${q.x}px, ${q.y}px)`
+  })
 }
 
-// ---------------------------------------------------------------- 2. Le problème (5,2 → 11,6 s)
+// ---------------------------------------------------------------- décor permanent
+A($("grid"), [{ opacity: 0 }, { opacity: 1 }], 0, 1.6)
+for (const [i, id] of ["b1", "b2", "b3"].entries()) A($(id), [{ opacity: 0 }, { opacity: 1 }], .2 + i * .25, 2)
+ticks.push((t) => {
+  $("b1").style.transform = `translateX(${Math.sin(t * .35) * 60}px)`
+  $("b2").style.transform = `translateX(${Math.sin(t * .27 + 1) * 80}px)`
+  $("b3").style.transform = `translateX(${Math.sin(t * .31 + 2) * 70}px)`
+  $("grid").style.backgroundPosition = `${-1 - t * 6}px ${-1 - t * 3}px`
+})
+// Poussière lumineuse, traits aspirés de l'ouverture, éclats des impacts (canevas redessiné à chaque image).
 {
-  const T = 5.2
-  const s = scene(T, 11.6, .6)
-  const title = h("h2", "title", null, { position: "absolute", left: "160px", right: "160px", top: "380px", textAlign: "center", fontSize: "86px" })
-  const tw = words(title, "Un site, une application, des visuels…|et un outil pour chaque étape.", true)
+  const ctx = $("fx").getContext("2d")
+  const r = prng(129)
+  const DUST = Array.from({ length: 110 }, () => ({ x: r() * 1920, y: r() * 1080, z: .25 + r() * .75, ph: r() * 6.283, s: .7 + r() * 1.5 }))
+  const STREAKS = Array.from({ length: 40 }, () => ({ a: r() * 6.283, d: r(), len: 140 + r() * 280, w: .6 + r() * 1.4 }))
+  const BURSTS = [[.9, 960, 370], [SC.probleme + 5.55, 960, 390], [SC.fin + .15, 960, 325]].map(([t, x, y]) => ({ t, x, y,
+    parts: Array.from({ length: 64 }, () => ({ a: r() * 6.283, v: 240 + r() * 560, s: .8 + r() * 2.2, life: .8 + r() })) }))
+  ticks.push((t) => {
+    ctx.clearRect(0, 0, 1920, 1080)
+    ctx.fillStyle = "#fff"
+    ctx.strokeStyle = "#fff"
+    const fade = clamp(t / 1.5) * clamp((DURATION - .6 - t) / .8)
+    for (const p of DUST) {
+      const x = (((p.x + t * 14 * p.z + Math.sin(t * .4 + p.ph) * 18) % 1920) + 1920) % 1920
+      const y = (((p.y - t * 9 * p.z + Math.cos(t * .3 + p.ph) * 12) % 1080) + 1080) % 1080
+      ctx.globalAlpha = (.1 + .28 * p.z) * fade * (.65 + .35 * Math.sin(t * 1.3 + p.ph * 3))
+      ctx.beginPath(); ctx.arc(x, y, p.s * p.z, 0, 6.283); ctx.fill()
+    }
+    if (t < 1) for (const s of STREAKS) {
+      const k = clamp((t - .05 - s.d * .3) / (.8 - s.d * .3))
+      if (k <= 0 || k >= 1) continue
+      const r0 = (1 - ease(k)) * 1150 + 30, r1 = r0 + s.len * (1 - k)
+      ctx.globalAlpha = Math.sin(k * Math.PI) * .75
+      ctx.lineWidth = s.w
+      ctx.beginPath(); ctx.moveTo(960 + Math.cos(s.a) * r0, 370 + Math.sin(s.a) * r0); ctx.lineTo(960 + Math.cos(s.a) * r1, 370 + Math.sin(s.a) * r1); ctx.stroke()
+    }
+    for (const b of BURSTS) {
+      const dt = t - b.t
+      if (dt < 0 || dt > 2) continue
+      for (const p of b.parts) {
+        if (dt > p.life) continue
+        const k = dt / p.life, d = (p.v * (1 - Math.exp(-dt * 3.2))) / 3.2
+        ctx.globalAlpha = Math.pow(1 - k, 1.6) * .9
+        ctx.beginPath(); ctx.arc(b.x + Math.cos(p.a) * d, b.y + Math.sin(p.a) * d * .8, p.s * (1 - k * .5), 0, 6.283); ctx.fill()
+      }
+    }
+    ctx.globalAlpha = 1
+  })
+}
+
+// ---------------------------------------------------------------- 1. Ouverture
+{
+  const s = scene(SC.intro, SC.probleme, { enter: 0, exit: .6, out: "zoom" })
+  const glow = h("div", "", null, { position: "absolute", left: "760px", top: "170px", width: "400px", height: "400px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,.22), transparent 65%)", opacity: 0 })
+  s.appendChild(glow)
+  rings(s, 960, 370, 200, .9)
+  const box = h("div", "", null, { position: "absolute", left: "870px", top: "280px", width: "180px", height: "180px", borderRadius: "40px", overflow: "hidden", opacity: 0 })
+  const logo = h("img", "", null, { width: "100%", height: "100%", display: "block" })
+  logo.src = LOGO
+  const shine = h("div", "glare")
+  box.append(logo, shine)
+  const mark = h("div", "mark", null, { top: "500px", fontSize: "132px" })
+  mark.innerHTML = [..."NEXORA"].map((c) => `<span class="w">${c}</span>`).join("")
+  const ul = h("div", "uline", null, { left: "610px", width: "700px", top: "672px" })
+  const pill = h("div", "", '<span class="pill">Devs Toolbox</span>', { position: "absolute", left: 0, right: 0, top: "706px", textAlign: "center", opacity: 0 })
+  const tag = h("p", "title", null, { position: "absolute", left: 0, right: 0, top: "800px", textAlign: "center", fontSize: "44px", color: "#bdbdbd" })
+  const tw = words(tag, "Créez, testez et publiez|vos sites et vos applications.")
+  s.append(box, mark, ul, pill, tag)
+  A(glow, [{ opacity: 0, transform: "scale(.5)" }, { opacity: 1, transform: "scale(1)" }], .85, 1.4)
+  A(box, [{ opacity: 0, transform: "scale(.3)", filter: "blur(20px)" }, { opacity: 1, transform: "scale(1)", filter: "blur(0px)" }], .82, .8, SPRING)
+  A(shine, [{ transform: "translateX(-130%) skewX(-12deg)" }, { transform: "translateX(480%) skewX(-12deg)" }], 1.9, .9, IN_OUT)
+  A(mark, [{ letterSpacing: ".75em", paddingLeft: ".75em" }, { letterSpacing: ".3em", paddingLeft: ".3em" }], 1.0, 1.5)
+  ;[...mark.children].forEach((c, i) => A(c, [{ opacity: 0, transform: "translateY(60px) scale(.9)", filter: "blur(12px)" }, { opacity: 1, transform: "none", filter: "blur(0px)" }], 1.0 + i * .07, .8))
+  A(ul, [{ transform: "scaleX(0)", opacity: 1 }, { transform: "scaleX(1)", opacity: .5 }], 1.75, 1.1, IN_OUT)
+  fadeIn(pill, 2.0, .6)
+  revealAt(tw, (k) => word("02-creez", k))
+  A(s, [{ transform: "scale(1)" }, { transform: "scale(1.06)" }], 4.6, 1.4, IN_OUT)
+  flash(.9, .55)
+}
+
+// ---------------------------------------------------------------- 2. Le problème
+{
+  const T = SC.probleme
+  const s = scene(T, SC.espaces, { exit: .6 })
+  const title = h("h2", "title", null, { position: "absolute", left: "120px", right: "120px", top: "370px", textAlign: "center", fontSize: "78px" })
+  const tw = words(title, "Un site web, une application, des visuels…|et un outil différent pour chaque étape.", true)
   s.appendChild(title)
-  revealWords(tw, T + .25, .06)
-  A(title, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-40px)" }], T + 3.1, .5, IN_OUT)
+  revealAt(tw, (k) => word("03-un-site", k))
+  A(title, [{ opacity: 1, transform: "none", filter: "blur(0px)" }, { opacity: 0, transform: "translateY(-50px) scale(.96)", filter: "blur(10px)" }], T + 4.45, .5, IN_OUT)
   const labels = ["Maquettes", "Code", "Terminal", "Tests sur mobile", "Débogage", "Application Android", "Logiciel Windows", "Rendus 3D", "Vidéos", "Audit de sécurité", "Supervision", "Mise en ligne"]
   const pos = [[170, 130], [640, 90], [1200, 120], [1600, 220], [60, 630], [1580, 630], [190, 760], [600, 880], [1120, 900], [1560, 780], [380, 250], [1000, 240]]
+  const LX = 960, LY = 390
+  const svg = svgLayer()
+  s.appendChild(svg)
   labels.forEach((l, i) => {
     const c = h("div", "chip", l)
     at(c, { left: pos[i][0] + "px", top: pos[i][1] + "px" })
     s.appendChild(c)
-    A(c, [{ opacity: 0, transform: "scale(.8)" }, { opacity: 1, transform: "scale(1)" }], T + 1.2 + i * .1, .6)
-    const dx = 960 - (pos[i][0] + c.offsetWidth / 2), dy = 540 - (pos[i][1] + c.offsetHeight / 2)
-    A(c, [{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: `translate(${dx}px, ${dy}px) scale(.25)`, opacity: 0 }], T + 3.35 + (i % 4) * .05, .75, "cubic-bezier(.7,0,.3,1)")
-    ticks.push((t) => { if (t < T + 3.3) c.style.translate = `${Math.sin(t * .9 + i) * 10}px ${Math.cos(t * .8 + i * 1.7) * 8}px`; else c.style.translate = "0 0" })
+    const cx = pos[i][0] + c.offsetWidth / 2, cy = pos[i][1] + c.offsetHeight / 2
+    // Fils tendus vers le logo, puis aspirés avec les étiquettes.
+    const ln = svgPath(svg, `M ${cx} ${cy} L ${LX} ${LY}`, "rgba(255,255,255,.22)", 1)
+    A(ln, [{ strokeDashoffset: `${ln.len}px` }, { strokeDashoffset: "0px" }], T + 4.2 + i * .02, .45, IN_OUT)
+    A(ln, [{ strokeDashoffset: "0px" }, { strokeDashoffset: `${-ln.len}px` }], T + 4.8 + (i % 4) * .05, .75, "cubic-bezier(.7,0,.3,1)")
+    A(c, [{ opacity: 0, transform: "scale(.6) rotate(-8deg)" }, { opacity: 1, transform: "scale(1) rotate(0deg)" }], T + 1.2 + i * .1, .6, SPRING)
+    A(c, [{ opacity: 1, transform: "translate(0px, 0px) scale(1) rotate(0deg)", filter: "blur(0px)" }, { opacity: 0, transform: `translate(${LX - cx}px, ${LY - cy}px) scale(.2) rotate(0deg)`, filter: "blur(6px)" }],
+      T + 4.75 + (i % 4) * .05, .75, "cubic-bezier(.7,0,.3,1)")
+    ticks.push((t) => {
+      const k = clamp((T + 4.75 - t) / .4)
+      c.style.translate = `${Math.sin(t * .9 + i) * 10 * k}px ${Math.cos(t * .8 + i * 1.7) * 8 * k}px`
+    })
   })
-  const ring = h("div", "", null, { position: "absolute", left: "860px", top: "290px", width: "200px", height: "200px", borderRadius: "50%", border: "2px solid rgba(255,255,255,.6)", opacity: 0 })
+  rings(s, LX, LY, 200, T + 5.55)
   const logo = h("img", "", null, { position: "absolute", left: "900px", top: "330px", width: "120px", height: "120px", borderRadius: "28px", opacity: 0 })
   logo.src = LOGO
   const one = h("h2", "title", null, { position: "absolute", left: 0, right: 0, top: "520px", textAlign: "center", fontSize: "112px" })
   const ow = words(one, "Un seul logiciel.")
-  const p2 = h("div", "", '<span class="pill">9 espaces, un même projet</span>', { position: "absolute", left: 0, right: 0, top: "690px", textAlign: "center", opacity: 0 })
-  s.append(ring, logo, one, p2)
-  A(logo, [{ opacity: 0, transform: "scale(.4)" }, { opacity: 1, transform: "scale(1)" }], T + 3.95, .7, "cubic-bezier(.34,1.56,.64,1)")
-  A(ring, [{ opacity: .9, transform: "scale(.5)" }, { opacity: 0, transform: "scale(2.6)" }], T + 4.0, 1.1)
-  revealWords(ow, T + 4.35, .09, .8)
-  fadeIn(p2, T + 4.9, .6)
+  const ul = h("div", "uline", null, { left: "560px", width: "800px", top: "668px" })
+  const p2 = h("div", "", '<span class="pill">9 espaces, un même projet</span>', { position: "absolute", left: 0, right: 0, top: "712px", textAlign: "center", opacity: 0 })
+  s.append(logo, one, ul, p2)
+  A(logo, [{ opacity: 0, transform: "scale(.3)", filter: "blur(12px)" }, { opacity: 1, transform: "scale(1)", filter: "blur(0px)" }], T + 5.45, .7, SPRING)
+  flash(T + 5.55, .45, .7, "36%")
+  revealAt(ow, (k) => word("04-et-si", k), .75)
+  A(ul, [{ transform: "scaleX(0)", opacity: 1 }, { transform: "scaleX(1)", opacity: .45 }], word("04-et-si", 2) + .25, 1, IN_OUT)
+  fadeIn(p2, T + 6.7, .6)
+  A(s, [{ transform: "scale(1)" }, { transform: "scale(1.05)" }], T + 7.3, 1.1, IN_OUT)
 }
 
-// ---------------------------------------------------------------- 3. Les 9 espaces (11,6 → 16,2 s)
+// ---------------------------------------------------------------- 3. Les 9 espaces
 const SPACES = [
   ["home", "Accueil", "Un projet relie tout"],
   ["display", "Responsive Lab", "Votre site sur tous les écrans"],
@@ -212,52 +434,68 @@ const SPACES = [
   ["shield", "Sécurité", "Sécurisez et surveillez"],
   ["laptop", "Desktop Builder", "Un vrai logiciel Windows"],
 ]
+/** Ordre d'arrivée des tuiles : du centre vers les bords (mêmes instants que les « tics » de audio.mjs). */
+const TILE_ORDER = [4, 1, 3, 5, 7, 0, 2, 6, 8]
 {
-  const T = 11.6
-  const s = scene(T, 16.2, .5)
+  const T = SC.espaces
+  const s = scene(T, SC.action, { exit: .5, enter: .35 })
+  flash(T, .3, .6, "50%")
   const head = h("div", "", null, { position: "absolute", left: 0, right: 0, top: "92px", textAlign: "center" })
-  const pill = h("span", "pill", "9 espaces")
+  const pw = h("div", "", '<span class="pill">9 espaces</span>', { opacity: 0 })
   const title = h("h2", "title", null, { fontSize: "72px", marginTop: "22px" })
   const tw = words(title, "Neuf espaces,|un même projet.")
-  const pw = h("div", "", null, { opacity: 0 })
-  pw.appendChild(pill)
   head.append(pw, title)
   s.appendChild(head)
-  fadeIn(pw, T + .1, .5)
-  revealWords(tw, T + .25, .06)
+  fadeIn(pw, T + .05, .5)
+  revealAt(tw, (k) => word("05-neuf-espaces", k))
+  A(head, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-30px)" }], T + 4.25, .45, IN_OUT)
+  const P = "perspective(1200px)"
   SPACES.forEach(([ic, name, card], i) => {
+    const rank = TILE_ORDER.indexOf(i), col = i % 3, row = Math.floor(i / 3)
     const t = h("div", "tile", `<span class="ic">${icon(ic)}</span><b>${name}</b><small>${card}</small>`)
-    at(t, { left: 312 + (i % 3) * 432 + "px", top: 330 + Math.floor(i / 3) * 214 + "px" })
+    at(t, { left: 312 + col * 432 + "px", top: 330 + row * 214 + "px" })
     s.appendChild(t)
-    A(t, [{ opacity: 0, transform: "translateY(40px) scale(.94)" }, { opacity: 1, transform: "none" }], T + .7 + i * .09, .7)
+    A(t, [{ opacity: 0, transform: `${P} rotateX(-75deg) translate(0px, 50px) scale(.9)` }, { opacity: 1, transform: `${P} rotateX(0deg) translate(0px, 0px) scale(1)` }], T + .55 + rank * .07, .8)
+    drawIcon(t.querySelector("svg"), T + .8 + rank * .07)
     // Chaque tuile s'éclaire tour à tour, comme un balayage.
     ticks.push((tt) => {
       const k = clamp(1 - Math.abs(tt - (T + 2.1 + i * .17)) / .35)
       t.style.borderColor = `rgba(255,255,255,${.15 + k * .75})`
       t.style.background = `rgb(${14 + k * 16},${14 + k * 16},${14 + k * 16})`
     })
+    // Sortie : les tuiles s'écartent du centre, comme si l'on passait au travers.
+    A(t, [{ opacity: 1, transform: `${P} rotateX(0deg) translate(0px, 0px) scale(1)` }, { opacity: 0, transform: `${P} rotateX(0deg) translate(${(col - 1) * 300}px, ${(row - 1) * 220}px) scale(1.3)` }],
+      T + 4.25 + rank * .02, .55, IN_OUT)
   })
-  A(s, [{ transform: "scale(1)" }, { transform: "scale(1.08)" }], 15.6, .6, IN_OUT)
+  A(s, [{ transform: "scale(1)" }, { transform: "scale(1.04)" }], T + .5, 4.3, "linear")
 }
 
-// ---------------------------------------------------------------- 4. Les espaces en action (16,2 → 45,8 s)
+// ---------------------------------------------------------------- 4. Les espaces en action
 const SHOWS = [
-  { name: "Responsive Lab", title: "Votre site|sur tous les écrans.", text: "182 modèles d’appareils côte à côte : ce qui déborde ou devient illisible se voit tout de suite.", img: "responsive-sombre.webp", focus: "35% 40%" },
-  { name: "Browser Lab", title: "Trouvez ce qui cloche,|et pourquoi.", text: "Éléments, réseau, console, tests et audits, présentés clairement.", custom: "browser" },
-  { name: "Dev Lab", title: "Codez sans rien|installer à la main.", text: "Éditeur, terminal, Git, tests, débogueur et aperçu en direct.", img: "dev-sombre.webp", focus: "40% 30%" },
-  { name: "App Builder", title: "Votre site|devient une app.", text: "Application Android signée, notifications push, fiche Play Store.", img: "apps-sombre.webp", focus: "70% 45%" },
-  { name: "Studio 3D & Motion", title: "Présentez en 3D|et en vidéo.", text: "Appareils réalistes, mouvements de caméra, rendus et vidéos.", img: "studio-sombre.webp", focus: "50% 40%" },
-  { name: "NEX-DESIGN", title: "Créez vos visuels,|du croquis au code.", text: "Maquettes, prototypes, animation et export de code, dans le même atelier.", img: "design-sombre.webp", focus: "45% 50%" },
-  { name: "Sécurité", title: "Sécurisez|et surveillez.", text: "Audits du site, du domaine et du code, supervision 24 h/24 et alertes.", img: "securite-sombre.webp", focus: "50% 45%" },
-  { name: "Desktop Builder", title: "Un vrai logiciel|Windows.", text: "Installateur, version portable, MSI, signature et mises à jour.", img: "desktop-sombre.webp", focus: "45% 35%" },
+  { name: "Responsive Lab", title: "Votre site|sur tous les écrans.", text: "182 modèles d’appareils côte à côte : ce qui déborde ou devient illisible se voit tout de suite.", img: "responsive-sombre.webp",
+    focus: [.35, .4], target: [.1, .385], notes: [["display", "182 appareils"], ["fold", "Pliables"], ["camera", "Captures en un clic"]] },
+  { name: "Browser Lab", title: "Trouvez ce qui cloche,|et pourquoi.", text: "Éléments, réseau, console, tests et audits, présentés clairement.", custom: "browser",
+    target: [.18, .48], notes: [["nxChart", "Réseau"], ["terminal", "Console"], ["audit", "Audit"]] },
+  { name: "Dev Lab", title: "Codez sans rien|installer à la main.", text: "Éditeur, terminal, Git, tests, débogueur et aperçu en direct.", img: "dev-sombre.webp",
+    focus: [.4, .3], target: [.737, .09], notes: [["terminal", "Terminal"], ["nxNodes", "Git et GitHub"], ["eye", "Aperçu en direct"]] },
+  { name: "App Builder", title: "Votre site|devient une app.", text: "Application Android signée, notifications push, fiche Play Store.", img: "apps-sombre.webp",
+    focus: [.7, .45], target: [.869, .883], notes: [["android", "APK signé"], ["bell", "Notifications push"], ["rocket", "Play Store"]] },
+  { name: "Studio 3D & Motion", title: "Présentez en 3D|et en vidéo.", text: "Appareils réalistes, mouvements de caméra, rendus et vidéos.", img: "studio-sombre.webp",
+    focus: [.5, .4], target: [.48, .39], notes: [["cube", "Appareils réalistes"], ["camera", "Caméra animée"], ["film", "Export vidéo"]] },
+  { name: "NEX-DESIGN", title: "Créez vos visuels,|du croquis au code.", text: "Maquettes, prototypes, animation et export de code, dans le même atelier.", img: "design-sombre.webp",
+    focus: [.45, .5], target: [.745, .105], notes: [["pen", "Maquettes"], ["nxAnimate", "Animation"], ["code", "Export de code"]] },
+  { name: "Sécurité", title: "Sécurisez|et surveillez.", text: "Audits du site, du domaine et du code, supervision 24 h/24 et alertes.", img: "securite-sombre.webp",
+    focus: [.5, .45], target: [.87, .25], notes: [["shield", "Audit du site"], ["bell", "Alertes"], ["nxiPulse", "Supervision 24 h/24"]] },
+  { name: "Desktop Builder", title: "Un vrai logiciel|Windows.", text: "Installateur, version portable, MSI, signature et mises à jour.", img: "desktop-sombre.webp",
+    focus: [.45, .35], target: [.64, .59], notes: [["laptop", "Installateur"], ["nxZip", "Version portable"], ["key", "Signature"]] },
 ]
-const S4 = 16.2, DUR = 3.7
+const NOTE_POS = [{ left: "1450px", top: "128px" }, { left: "1560px", top: "560px" }, { left: "770px", top: "884px" }]
 function browserPanel(shot, T) {
   const dt = h("div", "dt")
   const page = h("div", "page")
   const img = h("img")
   img.src = `${A_}/ecrans/kora-bureau.webp`
-  const hl = h("div", "hl", null, { left: "7%", top: "38%", width: "52%", height: "20%" })
+  const hl = h("div", "hl", '<span class="hltag">section.hero · 612 × 140</span>', { left: "7%", top: "38%", width: "52%", height: "20%" })
   page.append(img, hl)
   const tools = h("div", "tools")
   tools.innerHTML = `<div class="tabs"><span>Éléments</span><span class="on">Réseau</span><span>Console</span><span>Tests</span><span>Audit</span></div>`
@@ -271,39 +509,64 @@ function browserPanel(shot, T) {
   const cons = h("div", "cons", `<div>› GET /api/produits</div><div class="warn">✕ 500 : réponse du serveur en 2,4 s</div><div>› Image non optimisée : hero.webp</div>`)
   tools.appendChild(cons)
   ;[...cons.children].forEach((d, i) => A(d, [{ opacity: 0, transform: "translateX(-10px)" }, { opacity: 1, transform: "none" }], T + 1.6 + i * .22, .35))
-  A(hl, [{ opacity: 0 }, { opacity: 1 }], T + 1.2, .4)
+  // L'élément est surligné quand le curseur clique dessus.
+  A(hl, [{ opacity: 0, transform: "scale(1.04)" }, { opacity: 1, transform: "scale(1)" }], T + 2.28, .35)
   dt.append(page, tools)
   shot.appendChild(dt)
 }
 SHOWS.forEach((sp, i) => {
-  const T = S4 + i * DUR
-  const s = scene(T, T + DUR, .45)
+  const T = SC.action + i * SHOW
+  const s = scene(T, T + SHOW, { exit: .45, enter: .35 })
+  const big = h("div", "bigidx", String(i + 1).padStart(2, "0"))
+  s.appendChild(big)
+  A(big, [{ opacity: 0, transform: "translateX(-90px)" }, { opacity: 1, transform: "translateX(0px)" }], T + .05, 1.1)
+  ticks.push((t) => { big.style.translate = `${-(t - T) * 14}px 0px` })
   const col = h("div", "", null, { position: "absolute", left: "120px", top: "320px", width: "580px" })
   const idx = h("div", "mono", `${String(i + 1).padStart(2, "0")} <span style="color:#555">/ 08</span>`, { fontSize: "20px", color: "#9a9a9a", opacity: 0 })
   const pw = h("div", "", `<span class="pill">${sp.name}</span>`, { marginTop: "22px", opacity: 0 })
   const title = h("h2", "title", null, { fontSize: "58px", marginTop: "26px" })
-  const tw = words(title, sp.title, true)
+  const tw = words(title, sp.title, true, true)
   const text = h("p", "", sp.text, { fontSize: "25px", lineHeight: 1.45, color: "#9b9b9b", marginTop: "26px", opacity: 0 })
   col.append(idx, pw, title, text)
   const win = h("div", "win", `<div class="bar"><span>NEXORA · ${sp.name}</span><span class="ctl"><span>—</span><span>☐</span><span>✕</span></span></div><div class="shot"></div>`)
   at(win, { left: "700px", top: "196px", width: "1120px", height: "734px" })
   const shot = win.querySelector(".shot")
+  s.append(col, win)
+  const f = sp.focus || [.5, .5]
+  const zoom = sp.custom ? () => 1 : (t) => 1.02 + .1 * inOut((t - T) / SHOW)
   if (sp.custom) browserPanel(shot, T)
   else {
     const img = h("img")
     img.src = `${A_}/ecrans/${sp.img}`
-    img.style.transformOrigin = sp.focus
+    img.style.transformOrigin = `${f[0] * 100}% ${f[1] * 100}%`
     shot.appendChild(img)
-    ticks.push((t) => { const k = clamp((t - T) / DUR); img.style.transform = `scale(${1.02 + .1 * inOut(k)})` })
+    ticks.push((t) => { img.style.transform = `scale(${zoom(t)})` })
   }
-  s.append(col, win)
+  const glare = h("div", "glare")
+  win.appendChild(glare)
+  // Curseur : il glisse vers l'endroit utile de la capture (qui suit le zoom) et clique.
+  const W = shot.clientWidth, H = shot.clientHeight
+  const pos = (t) => [(f[0] + (sp.target[0] - f[0]) * zoom(t)) * W, (f[1] + (sp.target[1] - f[1]) * zoom(t)) * H]
+  const [cx, cy] = pos(T + 2.25)
+  pointer(shot, { show: T + 1.1, click: T + 2.25, pos, from: [cx > W * .6 ? cx - 320 : cx + 300, cy > H * .6 ? cy - 220 : Math.min(H - 60, cy + 230)] })
+  sp.notes.forEach(([ic, label], k) => {
+    const n = h("div", "callout", `<span class="ci">${icon(ic)}</span>${label}`)
+    at(n, NOTE_POS[k])
+    s.appendChild(n)
+    A(n, [{ opacity: 0, transform: "translateY(16px) scale(.7)" }, { opacity: 1, transform: "none" }], T + 1.0 + k * .28, .6, SPRING)
+    ticks.push((t) => { n.style.translate = `${Math.sin(t * 1.2 + k * 2 + i) * 6}px ${Math.cos(t * 1.05 + k + i) * 7}px` })
+  })
   fadeIn(idx, T + .05, .5)
   fadeIn(pw, T + .12, .5)
-  revealWords(tw, T + .2, .05, .65)
+  revealMask(tw, T + .2, .06, .75)
   fadeIn(text, T + .55, .6)
-  A(win, [{ opacity: 0, transform: "perspective(1800px) translateX(260px) rotateY(-26deg) scale(.96)" }, { opacity: 1, transform: "perspective(1800px) translateX(0) rotateY(-8deg) scale(1)" }], T + .05, .85)
-  A(win, [{ opacity: 1, transform: "perspective(1800px) translateX(0) rotateY(-8deg) scale(1)" }, { opacity: 0, transform: "perspective(1800px) translateX(-120px) rotateY(4deg) scale(.97)" }], T + DUR - .5, .5, IN_OUT)
-  A(col, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-26px)" }], T + DUR - .5, .45, IN_OUT)
+  const P = "perspective(1800px)"
+  A(win, [{ opacity: 0, transform: `${P} translateX(260px) rotateY(-28deg) scale(.94)`, filter: "blur(8px)" }, { opacity: 1, transform: `${P} translateX(0px) rotateY(-8deg) scale(1)`, filter: "none" }], T + .05, .85)
+  A(win, [{ transform: `${P} translateX(0px) rotateY(-8deg) scale(1)` }, { transform: `${P} translateX(-20px) rotateY(-4deg) scale(1.01)` }], T + .9, SHOW - 1.4, "linear")
+  A(win, [{ opacity: 1, transform: `${P} translateX(-20px) rotateY(-4deg) scale(1.01)`, filter: "none" }, { opacity: 0, transform: `${P} translateX(-200px) rotateY(10deg) scale(.96)`, filter: "blur(10px)" }], T + SHOW - .5, .5, IN_OUT)
+  A(glare, [{ transform: "translateX(-130%) skewX(-12deg)" }, { transform: "translateX(480%) skewX(-12deg)" }], T + .75, 1.1, IN_OUT)
+  A(col, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-26px)" }], T + SHOW - .5, .45, IN_OUT)
+  if (i) sweep(T - .3, .5, .7)
 })
 // Repère de progression des 8 espaces.
 {
@@ -313,14 +576,14 @@ SHOWS.forEach((sp, i) => {
     const seg = h("div", "seg", "<i></i>")
     at(seg, { left: 120 + i * 214 + "px", width: "196px" })
     box.appendChild(seg)
-    A(seg, [{ opacity: 0 }, { opacity: 1 }], S4 + .2, .5)
-    A(seg, [{ opacity: 1 }, { opacity: 0 }], S4 + 8 * DUR - .5, .5)
+    A(seg, [{ opacity: 0 }, { opacity: 1 }], SC.action + .2, .5)
+    A(seg, [{ opacity: 1 }, { opacity: 0 }], SC.action + 8 * SHOW - .5, .5)
     const fill = seg.querySelector("i")
-    ticks.push((t) => { fill.style.transform = `scaleX(${clamp((t - (S4 + i * DUR)) / DUR)})` })
+    ticks.push((t) => { fill.style.transform = `scaleX(${clamp((t - (SC.action + i * SHOW)) / SHOW)})` })
   })
 }
 
-// ---------------------------------------------------------------- 5. 182 appareils (45,8 → 52,3 s)
+// ---------------------------------------------------------------- 5. 182 appareils
 function device(spec, screen, css) {
   const d = h("div", `dev ${spec.layer}`)
   const f = h("img", "frame")
@@ -336,103 +599,171 @@ function device(spec, screen, css) {
   return d
 }
 {
-  const T = 45.8
-  const s = scene(T, 52.3, .55)
-  const num = h("div", "", "0", { position: "absolute", left: "120px", top: "250px", fontSize: "240px", fontWeight: 200, letterSpacing: "-.04em", lineHeight: 1, opacity: 0 })
+  const T = SC.appareils
+  const s = scene(T, SC.parcours, { exit: .55, enter: .4 })
+  floor(s, T, .8)
+  // Compteur à rouleaux : 0 → 182 (les zéros de tête restent sombres).
+  const num = h("div", "", null, { position: "absolute", left: "112px", top: "250px", fontSize: "240px", letterSpacing: "-.04em", lineHeight: 1, display: "flex", opacity: 0 })
+  const cols = [0, 1, 2].map(() => {
+    const c = h("div", "odo", `<span>${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((d) => `<b>${d}</b>`).join("")}</span>`)
+    num.appendChild(c)
+    return c
+  })
+  const value = (t) => 182 * ease((t - T - .1) / 1.2)
+  ticks.push((t) => {
+    const v = value(t), u = v % 10, tens = Math.floor(v / 10), carry = Math.max(0, u - 9)
+    const rolls = [(Math.floor(v / 100) % 10) + (tens % 10 === 9 ? carry : 0), (tens % 10) + carry, u]
+    cols.forEach((c, j) => {
+      c.firstChild.style.transform = `translateY(${-rolls[j]}em)`
+      c.style.color = (j === 0 && v < 99) || (j === 1 && v < 9) ? "#2a2a2a" : "#f4f4f4"
+    })
+  })
   const lab = h("h2", "title", null, { position: "absolute", left: "128px", top: "520px", width: "560px", fontSize: "52px" })
   const lw = words(lab, "modèles d’appareils,|côte à côte.", true)
-  const sub = h("p", "", "iPhone, Galaxy, Pixel, pliables, tablettes, ordinateurs, téléviseurs, montres et voitures : 21 familles.", { position: "absolute", left: "128px", top: "680px", width: "540px", fontSize: "24px", lineHeight: 1.5, color: "#9a9a9a", opacity: 0 })
-  s.append(num, lab, sub)
-  fadeIn(num, T + .1, .5)
-  ticks.push((t) => { num.textContent = String(Math.round(182 * ease((t - T - .15) / 1.6))) })
+  const sub = h("p", "", "iPhone, Galaxy, Pixel, pliables, tablettes, ordinateurs, téléviseurs, montres et voitures : 21 familles.", { position: "absolute", left: "128px", top: "676px", width: "540px", fontSize: "24px", lineHeight: 1.5, color: "#9a9a9a", opacity: 0 })
+  // Matrice de 182 points : un par modèle, allumés au rythme du compteur.
+  const dots = h("div", "dots")
+  at(dots, { left: "128px", top: "830px" })
+  dots.innerHTML = "<i></i>".repeat(182)
+  s.append(num, lab, sub, dots)
+  const di = [...dots.children]
+  ticks.push((t) => {
+    const v = value(t)
+    di.forEach((d, k) => {
+      const lit = clamp(v - k)
+      const wave = t > T + 1.5 ? Math.pow(Math.max(0, Math.sin((t - T - 1.5) * 3 - (k % 26) * .3)), 8) : 0
+      const b = Math.round(31 + lit * (190 + 34 * wave))
+      d.style.background = `rgb(${b},${b},${b})`
+    })
+  })
+  fadeIn(num, T + .05, .5)
   revealWords(lw, T + .35, .06)
   fadeIn(sub, T + .9, .6)
+  fadeIn(dots, T + .2, .5, "translateY(12px)")
   const mac = device({ frame: "macbook-pro-16.webp", w: 3910, h: 2241, x: 419, y: 98, sw: 3072, sh: 1920, layer: "under" }, "kora-bureau.webp", { left: "760px", top: "230px", width: "980px" })
   const fold = device({ frame: "pixel-10-pro-fold.webp", w: 2201, h: 2268, x: 62, y: 58, sw: 2076, sh: 2152, r: 133, layer: "over" }, "kora-pliable.webp", { left: "690px", top: "560px", width: "330px" })
   const phone = device({ frame: "iphone-17-pro.webp", w: 1350, h: 2760, x: 72, y: 69, sw: 1206, sh: 2622, layer: "under" }, "kora-mobile.webp", { left: "1590px", top: "470px", width: "230px" })
   s.append(mac, fold, phone)
-  ;[[mac, .3, 0], [fold, .6, 1.3], [phone, .75, 2.1]].forEach(([d, delay, ph]) => {
-    A(d, [{ opacity: 0, transform: "translateY(120px)" }, { opacity: 1, transform: "none" }], T + delay, 1)
-    ticks.push((t) => { d.style.translate = `0 ${Math.sin(t * 1.1 + ph) * 7}px` })
+  ;[[mac, .3, 0], [fold, .6, 1.3], [phone, .75, 2.1]].forEach(([d, delay, ph], k) => {
+    A(d, [{ opacity: 0, transform: "perspective(1400px) translateY(140px) rotateX(28deg) scale(.92)", filter: "blur(8px)" }, { opacity: 1, transform: "perspective(1400px) translateY(0px) rotateX(0deg) scale(1)", filter: "none" }], T + delay, 1.05)
+    ticks.push((t) => { d.style.translate = `0px ${Math.sin(t * 1.1 + ph) * 7}px` })
+    const g = h("div", "glare")
+    d.querySelector(".scr").appendChild(g)
+    A(g, [{ transform: "translateX(-130%) skewX(-12deg)" }, { transform: "translateX(480%) skewX(-12deg)" }], T + 1.7 + k * .25, 1.1, IN_OUT)
   })
-  A(s, [{ transform: "scale(1)" }, { transform: "scale(1.04)" }], T, 6.5, "linear")
+  A(s, [{ transform: "scale(1)" }, { transform: "scale(1.04)" }], T, SC.parcours - T, "linear")
 }
 
-// ---------------------------------------------------------------- 6. De l'idée à la publication (52,3 → 57,6 s)
+// ---------------------------------------------------------------- 6. De l'idée à la publication
 {
-  const T = 52.3
-  const s = scene(T, 57.6, .55)
+  const T = SC.parcours
+  const s = scene(T, SC.fin, { exit: .55, enter: .4 })
   const head = h("div", "", null, { position: "absolute", left: 0, right: 0, top: "150px", textAlign: "center" })
   const title = h("h2", "title", null, { fontSize: "76px" })
   const tw = words(title, "De l’idée|à la publication.")
   head.appendChild(title)
   s.appendChild(head)
-  revealWords(tw, T + .1, .06)
+  revealAt(tw, (k) => word("15-parcours", k))
   const steps = [["pen", "Concevoir", "NEX-DESIGN"], ["code", "Coder", "Dev Lab"], ["display", "Tester", "Responsive et Browser Lab"], ["shield", "Sécuriser", "Sécurité"], ["rocket", "Publier", "Web, Android, Windows"]]
-  const X0 = 210, GAP = 330, Y = 430
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
-  svg.setAttribute("width", "1920"); svg.setAttribute("height", "1080")
-  Object.assign(svg.style, { position: "absolute", left: 0, top: 0 })
-  const mk = (d) => { const p = document.createElementNS("http://www.w3.org/2000/svg", "path"); p.setAttribute("d", d); p.setAttribute("fill", "none"); p.setAttribute("stroke", "rgba(255,255,255,.55)"); p.setAttribute("stroke-width", "2"); svg.appendChild(p); return p }
-  const line = mk(`M ${X0 + 115} ${Y + 48} H ${X0 + 4 * GAP + 115}`)
-  const cx = X0 + 4 * GAP + 115
-  const branches = [560, 960, 1360].map((x) => mk(`M ${cx} ${Y + 206} C ${cx} ${Y + 330}, ${x} ${Y + 250}, ${x} ${Y + 384}`))
+  const X0 = 210, GAP = 330, Y = 430, EX = [560, 960, 1360]
+  const svg = svgLayer()
   s.appendChild(svg)
-  for (const p of [line, ...branches]) { const L = p.getTotalLength(); p.style.strokeDasharray = `${L}px`; p.style.strokeDashoffset = `${L}px`; p.dataset.len = `${L}px` }
-  A(line, [{ strokeDashoffset: line.dataset.len }, { strokeDashoffset: "0px" }], T + .7, 2.2, IN_OUT)
-  branches.forEach((b, i) => A(b, [{ strokeDashoffset: b.dataset.len }, { strokeDashoffset: "0px" }], T + 2.75 + i * .1, .9, IN_OUT))
+  const line = svgPath(svg, `M ${X0 + 115} ${Y + 48} H ${X0 + 4 * GAP + 115}`)
+  const cx = X0 + 4 * GAP + 115
+  const branches = EX.map((x) => svgPath(svg, `M ${cx} ${Y + 206} C ${cx} ${Y + 330}, ${x} ${Y + 250}, ${x} ${Y + 384}`))
+  // Le trait relie les étapes à vitesse constante : chaque étape s'allume quand l'impulsion l'atteint (cloches de audio.mjs).
+  const L0 = T + .5, L1 = T + 1.9
+  drawWithPulse(s, line, L0, L1)
+  const said = [0, 1, 2].map((k) => word("15-parcours", 5 + k))
+  branches.forEach((b, k) => drawWithPulse(s, b, said[k] - .62, said[k] - .07, inOut))
   steps.forEach(([ic, n, sub], i) => {
     const nd = h("div", "node", `<div class="dot">${icon(ic)}</div><b>${n}</b><small>${sub}</small>`)
     at(nd, { left: X0 + i * GAP + "px", top: Y + "px" })
     s.appendChild(nd)
-    A(nd, [{ opacity: 0, transform: "translateY(26px)" }, { opacity: 1, transform: "none" }], T + .55 + i * .5, .6)
-    const dot = nd.querySelector(".dot")
-    A(dot, [{ backgroundColor: "#0e0e0e", color: "#ffffff", borderColor: "#3a3a3a" }, { backgroundColor: "#ffffff", color: "#0a0a0a", borderColor: "#ffffff" }], T + .9 + i * .5, .35)
+    const lit = L0 + (L1 - L0) * (i / 4)
+    A(nd, [{ opacity: 0, transform: "translateY(26px)" }, { opacity: 1, transform: "none" }], lit - .45, .6)
+    A(nd.querySelector(".dot"), [{ backgroundColor: "#0e0e0e", color: "#ffffff", borderColor: "#3a3a3a" }, { backgroundColor: "#ffffff", color: "#0a0a0a", borderColor: "#ffffff" }], lit - .05, .3)
+    const ring = h("div", "ring")
+    at(ring, { left: X0 + i * GAP + 67 + "px", top: Y + "px", width: "96px", height: "96px" })
+    s.appendChild(ring)
+    A(ring, [{ opacity: .8, transform: "scale(1)" }, { opacity: 0, transform: "scale(2.1)" }], lit, .8)
   })
-  ;[["globe", "Sur le web", 560], ["android", "Sur Android", 960], ["laptop", "Sur Windows", 1360]].forEach(([ic, n, x], i) => {
+  // Les trois sorties apparaissent quand la voix les nomme.
+  ;[["globe", "Sur le web"], ["android", "Sur Android"], ["laptop", "Sur Windows"]].forEach(([ic, n], k) => {
     const e = h("div", "end", `<span style="font-size:30px;display:inline-flex">${icon(ic)}</span>${n}`)
     s.appendChild(e)
-    at(e, { left: x + "px", top: Y + 384 + "px" })
+    at(e, { left: EX[k] + "px", top: Y + 384 + "px" })
     e.style.transform = "translateX(-50%)"
-    A(e, [{ opacity: 0, transform: "translateX(-50%) scale(.8)" }, { opacity: 1, transform: "translateX(-50%) scale(1)" }], T + 3.45 + i * .14, .55, "cubic-bezier(.34,1.56,.64,1)")
+    A(e, [{ opacity: 0, transform: "translateX(-50%) scale(.7)" }, { opacity: 1, transform: "translateX(-50%) scale(1)" }], said[k] - .08, .55, SPRING)
   })
+  A(s, [{ transform: "scale(1)" }, { transform: "scale(1.03)" }], T + 4.4, SC.fin - T - 4.4, "linear")
 }
 
-// ---------------------------------------------------------------- 7. Conclusion (57,6 → 64 s)
+// ---------------------------------------------------------------- 7. Conclusion
 {
-  const T = 57.6
-  const s = scene(T, 64, .01)
-  const glow = h("div", "", null, { position: "absolute", left: "710px", top: "120px", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,.2), transparent 65%)", opacity: 0 })
-  const logo = h("img", "", null, { position: "absolute", left: "885px", top: "250px", width: "150px", height: "150px", borderRadius: "34px", opacity: 0 })
+  const T = SC.fin
+  const s = scene(T, DURATION, { exit: 0, enter: .3 })
+  floor(s, T + .3, .6, 45)
+  const glow = h("div", "", null, { position: "absolute", left: "710px", top: "75px", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,255,255,.2), transparent 65%)", opacity: 0 })
+  s.appendChild(glow)
+  rings(s, 960, 325, 190, T + .15, 3)
+  // Pulsations lentes derrière le logo, jusqu'à la fin.
+  for (let k = 0; k < 5; k += 1) {
+    const r = h("div", "ring", null, { borderColor: "rgba(255,255,255,.22)", borderWidth: "1px" })
+    at(r, { left: "860px", top: "225px", width: "200px", height: "200px" })
+    s.appendChild(r)
+    A(r, [{ opacity: .7, transform: "scale(1)" }, { opacity: 0, transform: "scale(2.8)" }], T + 1.4 + k * 1.5, 2.4, "linear")
+  }
+  const box = h("div", "", null, { position: "absolute", left: "885px", top: "250px", width: "150px", height: "150px", borderRadius: "34px", overflow: "hidden", opacity: 0 })
+  const logo = h("img", "", null, { width: "100%", height: "100%", display: "block" })
   logo.src = LOGO
-  const mark = h("div", "", null, { position: "absolute", left: 0, right: 0, top: "432px", textAlign: "center", fontSize: "104px", fontWeight: 600, letterSpacing: ".3em", paddingLeft: ".3em" })
+  const shine = h("div", "glare")
+  box.append(logo, shine)
+  const mark = h("div", "mark", null, { top: "432px", fontSize: "104px" })
   mark.innerHTML = [..."NEXORA"].map((c) => `<span class="w">${c}</span>`).join("")
   const line = h("p", "title", null, { position: "absolute", left: 0, right: 0, top: "590px", textAlign: "center", fontSize: "44px" })
   const lw = words(line, "Tout pour créer, tester et publier,|dans un seul logiciel.")
-  const cta = h("div", "", `<span class="btn">nexoradevs.online<span class="orb">${icon("nxArrowUpRight")}</span></span>`, { position: "absolute", left: 0, right: 0, top: "700px", textAlign: "center", opacity: 0 })
+  const cta = h("div", "", `<span class="btn">nexoradevs.online<span class="orb">${icon("nxArrowUpRight")}</span><span class="glare"></span></span>`, { position: "absolute", left: 0, right: 0, top: "700px", textAlign: "center", opacity: 0 })
   const small = h("p", "", "Pour Windows 10 et 11 · en français · aussi sur le web", { position: "absolute", left: 0, right: 0, top: "830px", textAlign: "center", fontSize: "24px", color: "#7d7d7d", opacity: 0 })
-  s.append(glow, logo, mark, line, cta, small)
-  A(glow, [{ opacity: 0, transform: "scale(.6)" }, { opacity: 1, transform: "scale(1)" }], T + .1, 1.4)
-  A(logo, [{ opacity: 0, transform: "scale(.7)", filter: "blur(16px)" }, { opacity: 1, transform: "scale(1)", filter: "blur(0)" }], T + .15, 1)
-  ;[...mark.children].forEach((c, i) => A(c, [{ opacity: 0, transform: "translateY(50px)", filter: "blur(10px)" }, { opacity: 1, transform: "none", filter: "blur(0)" }], T + .6 + i * .06, .75))
-  revealWords(lw, T + 1.3, .06)
-  A(cta, [{ opacity: 0, transform: "translateY(24px) scale(.96)" }, { opacity: 1, transform: "none" }], T + 2.1, .7, "cubic-bezier(.34,1.56,.64,1)")
-  fadeIn(small, T + 2.6, .6)
+  s.append(box, mark, line, cta, small)
+  A(glow, [{ opacity: 0, transform: "scale(.5)" }, { opacity: 1, transform: "scale(1)" }], T + .1, 1.4)
+  A(box, [{ opacity: 0, transform: "scale(.3)", filter: "blur(16px)" }, { opacity: 1, transform: "scale(1)", filter: "blur(0px)" }], T + .08, .8, SPRING)
+  A(shine, [{ transform: "translateX(-130%) skewX(-12deg)" }, { transform: "translateX(480%) skewX(-12deg)" }], T + 1.3, .9, IN_OUT)
+  flash(T + .15, .6, .8, "30%")
+  const named = word("16-fin", 0) - .05
+  A(mark, [{ letterSpacing: ".7em", paddingLeft: ".7em" }, { letterSpacing: ".3em", paddingLeft: ".3em" }], named, 1.4)
+  ;[...mark.children].forEach((c, i) => A(c, [{ opacity: 0, transform: "translateY(50px)", filter: "blur(10px)" }, { opacity: 1, transform: "none", filter: "blur(0px)" }], named + i * .06, .75))
+  revealAt(lw, (k) => word("16-fin", k + 1))
+  // L'adresse : le bouton surgit quand la voix commence la phrase, le curseur clique quand elle la prononce.
+  const appear = word("17-adresse", 0) - .15, click = word("17-adresse", 2) + .15
+  const btn = cta.querySelector(".btn")
+  A(cta, [{ opacity: 0, transform: "translateY(24px) scale(.9)" }, { opacity: 1, transform: "none" }], appear, .7, SPRING)
+  A(btn, [{ transform: "scale(1)" }, { transform: "scale(.95)", offset: .3 }, { transform: "scale(1)" }], click - .05, .4, "linear")
+  A(btn.querySelector(".glare"), [{ transform: "translateX(-130%) skewX(-12deg)" }, { transform: "translateX(480%) skewX(-12deg)" }], click + .05, .9, IN_OUT)
+  fadeIn(small, appear + .6, .6)
+  const orb = btn.querySelector(".orb").getBoundingClientRect()
+  const target = [orb.left + orb.width / 2, orb.top + orb.height / 2]
+  pointer(s, { show: appear + .35, click, pos: () => target, from: [target[0] + 420, 1010] })
   const black = h("div", "layer", null, { background: "#000", opacity: 0 })
-  document.getElementById("stage").appendChild(black)
-  A(black, [{ opacity: 0 }, { opacity: 1 }], 63.2, .8, IN_OUT)
+  $("stage").appendChild(black)
+  A(black, [{ opacity: 0 }, { opacity: 1 }], DURATION - .8, .8, IN_OUT)
 }
 
-window.DURATION = 64
+// Balayages lumineux aux changements de scène.
+sweep(SC.probleme - .45)
+sweep(SC.espaces - .3)
+sweep(SC.action - .3)
+sweep(SC.appareils - .3)
+sweep(SC.parcours - .3)
+sweep(SC.fin - .25)
+
+window.DURATION = DURATION
 window.seek = (t) => {
   for (const a of anims) a.currentTime = t * 1000
   for (const f of ticks) f(t)
 }
 // Prêt quand la police et toutes les images sont chargées et décodées.
 window.__ready = (async () => {
-  await document.fonts.load("300 40px Urbanist")
-  await document.fonts.load("600 40px Urbanist")
-  await document.fonts.load("20px Mono")
   await Promise.all([...document.images].map((im) => im.decode().catch(() => { throw new Error(`image : ${im.src}`) })))
   window.seek(0)
   return true

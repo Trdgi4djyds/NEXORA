@@ -1,5 +1,7 @@
 // NEXORA #066 : écrans du site vitrine, tirés de la vraie interface de NEXORA (plus aucune reproduction).
 //   pnpm build && node scripts/ecrans-vitrine.mjs [espace…]
+//   #129 : --echelle <n> (densité de pixels, passée à scripts/captures.mjs) et --sortie <dossier> (autre dossier que
+//   site/src/assets/ecrans/) : écrans en double résolution de la vidéo de présentation (scripts/video/ecrans.mjs).
 // Sert dist/ (version web : les appareils affichent les sites dans des cadres) et le site de démonstration
 // « Kora » (scripts/vitrine/kora/, photos Unsplash), lance `scripts/captures.mjs` pour chaque espace avec un
 // compte de démonstration Pro, l'adresse du site saisie là où l'espace en a besoin et les notifications
@@ -15,7 +17,16 @@ import puppeteer from "puppeteer-core"
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const DIST = path.join(ROOT, "dist")
 const KORA = path.join(ROOT, "scripts", "vitrine", "kora")
-const OUT = path.join(ROOT, "site", "src", "assets", "ecrans")
+const argv = process.argv.slice(2)
+const optValue = (name) => {
+  const i = argv.indexOf(name)
+  if (i < 0) return null
+  const v = argv[i + 1]
+  argv.splice(i, 2)
+  return v
+}
+const SCALE = optValue("--echelle")
+const OUT = path.resolve(ROOT, optValue("--sortie") || path.join("site", "src", "assets", "ecrans"))
 const CHROMIUM = process.env.CHROME_PATH || "/usr/bin/chromium"
 const WEB = "http://localhost:4180/"
 const SITE = "http://localhost:4181/"
@@ -124,8 +135,8 @@ async function siteShots() {
 
 fs.mkdirSync(OUT, { recursive: true })
 // --sombre : mêmes écrans dans le thème sombre de NEXORA, fichiers « <espace>-sombre.webp » (#068).
-const dark = process.argv.includes("--sombre")
-const wanted = process.argv.slice(2).filter((a) => a !== "--sombre")
+const dark = argv.includes("--sombre")
+const wanted = argv.filter((a) => a !== "--sombre")
 // #085 : `kora` seul n'a pas besoin de la version web.
 const koraOnly = wanted.length > 0 && wanted.every((w) => w === "kora")
 if (!koraOnly && !fs.existsSync(path.join(DIST, "index.html"))) throw new Error("dist/ absent : lancer d'abord pnpm build.")
@@ -135,7 +146,7 @@ try {
   if (!dark && (!wanted.length || wanted.includes("kora"))) await koraShots()
   if (!dark && (!wanted.length || wanted.includes("site"))) await siteShots()
   for (const step of PLAN.filter((p) => !wanted.length || wanted.includes(p.name ?? p.slug))) {
-    const args = ["scripts/captures.mjs", step.slug, "--compte", "demo", "--taille", "1600x1000", "--sans-notifications", "--label", `vitrine-${step.name ?? step.slug}${dark ? "-sombre" : ""}`, ...(dark ? ["--theme", "sombre"] : []), ...(step.web ? ["--url", `${WEB}studio/`] : []), ...step.args]
+    const args = ["scripts/captures.mjs", step.slug, "--compte", "demo", "--taille", "1600x1000", "--sans-notifications", "--label", `vitrine-${step.name ?? step.slug}${dark ? "-sombre" : ""}`, ...(dark ? ["--theme", "sombre"] : []), ...(SCALE ? ["--echelle", SCALE] : []), ...(step.web ? ["--url", `${WEB}studio/`] : []), ...step.args]
     const res = await run("node", args, { ...process.env, NX_DEMO_OFFRE: "pro" })
     const png = /captures\/\S+\.png/.exec(res.stdout || "")?.[0]
     if (res.status !== 0 || !png) {
