@@ -1,7 +1,7 @@
 // NEXORA #129 : bande son de la vidéo de présentation (scripts/video/presentation.html), entièrement fabriquée ici :
-//   - voix off : phrases de VOICE (timeline.mjs) lues par Piper avec la voix française SIWIS (licence CC BY 4.0),
-//     enregistrées une fois dans scripts/video/voix/<id>.opus (--nouvelle-voix pour les refaire) ; un fichier du même
-//     nom, enregistré au micro, remplace la voix de synthèse ;
+//   - voix off : phrases de VOICE (timeline.mjs) lues par Kokoro avec la voix française ff_siwis (base SIWIS, licence
+//     CC BY 4.0) puis retouchées par Praat (#130, voir plus bas), enregistrées une fois dans scripts/video/voix/<id>.opus
+//     (--nouvelle-voix pour les refaire) ; un fichier du même nom, enregistré au micro, remplace la voix de synthèse ;
 //   - musique : nappes, basse, batterie et arpège synthétisés note par note (aucun échantillon ni morceau existant,
 //     donc aucun droit à céder), 100 battements par minute, calée sur les scènes ;
 //   - effets sonores : souffles, impacts, montées, clics, petits « pops », synthétisés aux instants des animations.
@@ -33,56 +33,106 @@ async function download(url, file) {
   fs.writeFileSync(file, Buffer.from(await r.arrayBuffer()))
 }
 
-// ---------------------------------------------------------------- voix (Piper, hors du dépôt)
-const PIPER_DIR = process.env.NEXORA_PIPER_DIR || path.join(os.tmpdir(), "nexora-piper")
-const MODEL_URL = "https://huggingface.co/rhasspy/piper-voices/resolve/main/fr/fr_FR/siwis/medium/"
-const MODEL_FILES = {
-  "fr_FR-siwis-medium.onnx": "b1d946fd68d0347155fa59bce0a018924abbef3c1561181db45ca463d83963ef",
-  "fr_FR-siwis-medium.onnx.json": "df814aa3dfedd00510a07144442cc0a220ff21e43d03c3b078444fc0be68fc37",
+// ---------------------------------------------------------------- voix (Kokoro et Praat, hors du dépôt)
+// #130 : voix plus vive et sans blanc, d'après la voix de référence de l'utilisateur (voix féminine de publicité :
+// hauteur médiane 258 Hz, mélodie ample, peu de pauses). Kokoro 82M (Apache 2.0, voix française ff_siwis tirée de la
+// base SIWIS, CC BY 4.0) lit le texte avec des pauses de phrase et de proposition minimales ; Praat (PSOLA, timbre
+// gardé) amène la hauteur médiane à VOICE_STYLE.f0 et élargit la mélodie (écarts à la médiane portés à la puissance
+// VOICE_STYLE.k) ; les silences d'au moins 80 ms sont vidés (aucun souffle), ceux de plus de 110 ms ramenés à 70 ms,
+// les bords coupés net.
+const TOOLS = process.env.NEXORA_VOIX_DIR || path.join(os.tmpdir(), "nexora-voix")
+const KOKORO_URL = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/"
+const KOKORO_FILES = {
+  "kokoro-v1.0.onnx": "7d5df8ecf7d4b1878015a32686053fd0eebe2bc377234608764cc0ef3636a6c5",
+  "voices-v1.0.bin": "bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d",
 }
-const PIPER_PY = `
-import sys, json, wave
-from piper import PiperVoice, SynthesisConfig
-voice = PiperVoice.load(sys.argv[1])
-for item in json.load(sys.stdin):
-    with wave.open(item["out"], "wb") as w:
-        voice.synthesize_wav(item["dit"], w, syn_config=SynthesisConfig(length_scale=1.0))
+export const VOICE_STYLE = { voice: "ff_siwis", speed: 1.08, f0: 245, k: 1.35, sentencePause: 0.06, clausePause: 0.03 }
+const VOICE_PY = String.raw`
+import sys, json, re, wave, numpy as np
+from kokoro_onnx import Kokoro
+import parselmouth
+from parselmouth.praat import call
+cfg = json.load(sys.stdin)
+st = cfg["style"]
+k = Kokoro(cfg["model"], cfg["voices"])
+def phon(text):
+    # Texte français phonétisé par espeak ; les passages [[…]] sont déjà en phonèmes (noms anglais).
+    out = []
+    for part in re.split(r"(\[\[.*?\]\])", text):
+        if not part.strip(): continue
+        out.append(part[2:-2].strip() if part.startswith("[[") else re.sub(r"\((en|fr)\)", "", k.tokenizer.phonemize(part, "fr-fr")))
+    return " ".join(out)
+def melody(y, sr):
+    snd = parselmouth.Sound(y.astype(np.float64), sampling_frequency=sr)
+    med = call(call(snd, "To Pitch", 0.01, 75, 500), "Get quantile", 0, 0, 0.5, "Hertz")
+    man = call(snd, "To Manipulation", 0.01, 75, 500)
+    tier = call(man, "Extract pitch tier")
+    call(tier, "Formula", "%f * (self / %f) ^ %f" % (st["f0"], med, st["k"]))
+    call([tier, man], "Replace pitch tier")
+    return call(man, "Get resynthesis (overlap-add)").values[0].astype(np.float32)
+def tighten(y, sr):
+    hop = int(sr * 0.01)
+    db = np.array([10 * np.log10(np.mean(y[i:i + hop] ** 2) + 1e-12) for i in range(0, len(y) - hop, hop)])
+    # Seuls les vrais silences (au moins 80 ms sous -45 dB du niveau de la parole) sont vidés ou raccourcis : les
+    # consonnes faibles (f, s, occlusives), plus courtes, restent intactes.
+    quiet = db < np.percentile(db, 95) - 45
+    env = np.ones(len(y), np.float32); keep = np.ones(len(y), bool)
+    i = 0
+    while i < len(quiet):
+        if not quiet[i]: i += 1; continue
+        j = i
+        while j < len(quiet) and quiet[j]: j += 1
+        a, b = i * hop, j * hop
+        if (b - a) / sr >= 0.08: env[a:b] = 0
+        if (b - a) / sr > 0.11: keep[a + int(0.035 * sr):b - int(0.035 * sr)] = False
+        i = j
+    f = int(0.008 * sr)
+    env = np.convolve(env, np.ones(f) / f, mode="same").astype(np.float32)
+    sp = np.where(~quiet)[0]
+    lo, hi = max(0, sp[0] * hop - int(0.01 * sr)), min(len(y), (sp[-1] + 1) * hop + int(0.03 * sr))
+    keep[:lo] = False; keep[hi:] = False
+    return (y * env)[keep]
+for it in cfg["items"]:
+    x, sr = k.create(phon(it["dit"]), voice=st["voice"], speed=st["speed"], lang="fr-fr", is_phonemes=True,
+                     sentence_pause=st["sentencePause"], clause_pause=st["clausePause"])
+    y = tighten(melody(np.asarray(x, np.float32), sr), sr)
+    y = y / max(1e-6, float(np.max(np.abs(y)))) * 0.89
+    with wave.open(it["out"], "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes((y * 32767).astype(np.int16).tobytes())
 `
-/** Installe Piper (paquet Python piper-tts 1.8.0) et la voix SIWIS dans un dossier temporaire, empreintes vérifiées. */
-async function ensurePiper() {
-  fs.mkdirSync(PIPER_DIR, { recursive: true })
-  const py = path.join(PIPER_DIR, "py")
-  if (!fs.existsSync(path.join(py, "piper", "__init__.py"))) {
-    const pip = path.join(PIPER_DIR, "pip")
+/** Installe Kokoro (kokoro-onnx 0.6.1) et Praat (praat-parselmouth 0.4.7) dans un dossier temporaire, modèles vérifiés. */
+async function ensureVoiceTools() {
+  fs.mkdirSync(TOOLS, { recursive: true })
+  const py = path.join(TOOLS, "py")
+  if (!fs.existsSync(path.join(py, "kokoro_onnx", "__init__.py")) || !fs.existsSync(path.join(py, "praat_parselmouth-0.4.7.dist-info"))) {
+    const pip = path.join(TOOLS, "pip")
     if (!fs.existsSync(path.join(pip, "pip"))) {
-      await download("https://bootstrap.pypa.io/get-pip.py", path.join(PIPER_DIR, "get-pip.py"))
-      run("python3", [path.join(PIPER_DIR, "get-pip.py"), "--target", pip, "-q"])
+      await download("https://bootstrap.pypa.io/get-pip.py", path.join(TOOLS, "get-pip.py"))
+      run("python3", [path.join(TOOLS, "get-pip.py"), "--target", pip, "-q"])
     }
-    console.log("Installation de Piper (piper-tts 1.8.0)…")
-    run("python3", ["-m", "pip", "install", "-q", "--target", py, "piper-tts==1.8.0"], { env: { ...process.env, PYTHONPATH: pip } })
+    console.log("Installation de Kokoro et de Praat…")
+    run("python3", ["-m", "pip", "install", "-q", "--target", py, "kokoro-onnx==0.6.1", "praat-parselmouth==0.4.7"], { env: { ...process.env, PYTHONPATH: pip } })
   }
-  for (const [name, sum] of Object.entries(MODEL_FILES)) {
-    const f = path.join(PIPER_DIR, name)
+  for (const [name, sum] of Object.entries(KOKORO_FILES)) {
+    const f = path.join(TOOLS, name)
     if (fs.existsSync(f) && sha256(f) === sum) continue
-    console.log(`Téléchargement de la voix : ${name}`)
-    await download(MODEL_URL + name, f)
+    console.log(`Téléchargement du modèle de voix : ${name}`)
+    await download(KOKORO_URL + name, f)
     if (sha256(f) !== sum) throw new Error(`empreinte inattendue pour ${name}`)
   }
-  return { py, model: path.join(PIPER_DIR, "fr_FR-siwis-medium.onnx") }
+  return { py, model: path.join(TOOLS, "kokoro-v1.0.onnx"), voices: path.join(TOOLS, "voices-v1.0.bin") }
 }
-/** Refait les fichiers de voix (tous, ou ceux qui manquent) : synthèse, silences du début et de la fin retirés, Opus. */
+/** Refait les fichiers de voix (tous, ou ceux qui manquent) : synthèse, mélodie, pauses resserrées, Opus. */
 export async function makeVoice({ all = false } = {}) {
   fs.mkdirSync(VOICE_DIR, { recursive: true })
   const todo = VOICE.filter((v) => all || !fs.existsSync(path.join(VOICE_DIR, `${v.id}.opus`)))
   if (!todo.length) return
-  const { py, model } = await ensurePiper()
+  const { py, model, voices } = await ensureVoiceTools()
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "nexora-voix-"))
   const items = todo.map((v) => ({ dit: v.dit, out: path.join(tmp, `${v.id}.wav`) }))
-  run("python3", ["-c", PIPER_PY, model], { input: JSON.stringify(items), env: { ...process.env, PYTHONPATH: py } })
-  const trim = "silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.02"
+  run("python3", ["-c", VOICE_PY], { input: JSON.stringify({ model, voices, style: VOICE_STYLE, items }), env: { ...process.env, PYTHONPATH: py } })
   for (const [k, v] of todo.entries()) {
-    run("ffmpeg", ["-y", "-loglevel", "error", "-i", items[k].out, "-af", `${trim},areverse,${trim},areverse,aresample=48000`,
-      "-ac", "1", "-c:a", "libopus", "-b:a", "64k", path.join(VOICE_DIR, `${v.id}.opus`)])
+    run("ffmpeg", ["-y", "-loglevel", "error", "-i", items[k].out, "-af", "aresample=48000", "-ac", "1", "-c:a", "libopus", "-b:a", "64k", path.join(VOICE_DIR, `${v.id}.opus`)])
     console.log(`  voix : ${v.id}.opus`)
   }
   fs.rmSync(tmp, { recursive: true, force: true })
@@ -364,7 +414,7 @@ export function cues() {
   add("impact", SC.espaces, { gain: 0.75, size: 0.9 })
   for (let i = 0; i < 9; i += 1) add("tick", SC.espaces + 0.55 + i * 0.07, { gain: 0.22, f: 2000 + i * 120, pan: ((i % 3) - 1) * 0.5 })
   add("shimmer", SC.espaces + 2.1, { gain: 0.4, notes: [76, 81, 83, 88] })
-  add("whoosh", SC.espaces + 4.2, { dur: 0.8, gain: 0.6 })
+  add("whoosh", SC.espaces + 4.2, { dur: 0.8, gain: 0.4 })
   // 8 espaces en action : fenêtre, annotations, clic du curseur.
   for (let i = 0; i < 8; i += 1) {
     const T = SC.action + i * SHOW
@@ -375,27 +425,28 @@ export function cues() {
   // Appareils : compteur, arrivée des appareils.
   add("whoosh", SC.appareils - 0.3, { dur: 0.7, gain: 0.6 })
   let last = 0
-  for (let t = 0; t <= 1.2; t += 1 / 120) {
-    const v = Math.floor((182 * (1 - Math.pow(1 - clamp(t / 1.2), 3))) / 7)
-    if (v > last) { add("tick", SC.appareils + 0.1 + t, { gain: 0.16, f: 2600 + v * 15 }); last = v }
+  const c0 = word("16-appareils", 0) - 0.05, c1 = word("16-appareils", 1) + 0.2 // compteur de presentation.html
+  for (let t = 0; t <= c1 - c0; t += 1 / 120) {
+    const v = Math.floor((182 * (1 - Math.pow(1 - clamp(t / (c1 - c0)), 3))) / 7)
+    if (v > last) { add("tick", c0 + t, { gain: 0.16, f: 2600 + v * 15 }); last = v }
   }
-  add("shimmer", SC.appareils + 1.35, { gain: 0.45, notes: [76, 81, 84, 88] })
+  add("shimmer", c1, { gain: 0.45, notes: [76, 81, 84, 88] })
   for (const [d, g] of [[0.3, 0.5], [0.6, 0.4], [0.75, 0.35]]) add("impact", SC.appareils + d + 0.35, { gain: g * 0.6, size: 0.4 })
   add("riser", SC.appareils + 5.6, { t1: SC.parcours, gain: 0.45 })
   // Parcours : étapes qui s'allument, branches, trois sorties.
   add("impact", SC.parcours, { gain: 0.55, size: 0.7 })
-  ;[69, 72, 76, 79, 81].forEach((m, i) => add("bell", SC.parcours + 0.5 + i * 0.35, { m, gain: 0.32 }))
+  ;[69, 72, 76, 79, 81].forEach((m, i) => add("bell", word("17-parcours", i), { m, gain: 0.32 })) // étapes allumées sur les verbes
   for (let k = 0; k < 3; k += 1) {
-    const said = word("15-parcours", 5 + k)
+    const said = word("17-parcours", 5 + k)
     add("whoosh", said - 0.62, { dur: 0.6, gain: 0.3, lo: 500, hi: 2600, dir: k - 1 || 1 })
     add("pop", said - 0.08, { gain: 0.4, f: 640 + k * 110, pan: (k - 1) * 0.5 })
   }
   // Conclusion : impact du logo, lettres, bouton de l'adresse, clic du curseur quand la voix la prononce.
   add("impact", SC.fin + 0.15, { gain: 1, size: 1.2 })
   add("shimmer", SC.fin + 0.2, { gain: 0.9, notes: [77, 81, 84, 88, 91] })
-  for (let i = 0; i < 6; i += 1) add("tick", word("16-fin", 0) - 0.05 + i * 0.06, { gain: 0.22, f: 1900 + i * 150 })
-  add("pop", word("17-adresse", 0) - 0.15, { gain: 0.4, f: 520 })
-  add("click", word("17-adresse", 2) + 0.15, { gain: 0.6 })
+  for (let i = 0; i < 6; i += 1) add("tick", word("18-fin", 0) - 0.05 + i * 0.06, { gain: 0.22, f: 1900 + i * 150 })
+  add("pop", word("19-adresse", 0) - 0.15, { gain: 0.4, f: 520 })
+  add("click", word("19-adresse", 1) + 0.15, { gain: 0.6 })
   return C
 }
 
@@ -504,8 +555,9 @@ const db = (x) => Math.pow(10, x / 20)
 export async function buildAudio({ dir, withVoice = true, newVoice = false } = {}) {
   fs.mkdirSync(dir, { recursive: true })
   if (withVoice) await makeVoice({ all: newVoice })
-  // Voix : légère égalisation (moins de grave, plus de présence) et compression douce.
-  const vchain = "highpass=f=85,equalizer=f=230:t=q:w=1.2:g=-1.5,equalizer=f=3200:t=q:w=1.4:g=2.5,acompressor=threshold=0.1:ratio=2.5:attack=8:release=120:makeup=1.4"
+  // #130 : timbre plus chaud (référence : centre spectral 1 610 Hz), sifflantes adoucies ; aucune compression, pour
+  // garder le relief de la voix de référence (9,8 dB entre syllabes appuyées et médianes) : la musique baisse sous elle.
+  const vchain = "highpass=f=85,equalizer=f=220:t=q:w=1:g=1.5,equalizer=f=3500:t=q:w=1.2:g=-2,highshelf=f=7000:g=-3,deesser=i=0.4"
   const voice = bus(), spans = []
   if (withVoice) {
     for (const v of VOICE) {
@@ -527,7 +579,7 @@ export async function buildAudio({ dir, withVoice = true, newVoice = false } = {
   if (withVoice) writeWav(files.voice, voice)
   const levels = { music: loudness(files.music), sfx: loudness(files.sfx), voice: withVoice ? loudness(files.voice) : null }
   const g = { music: db(TARGET.music - levels.music.lufs), sfx: db(TARGET.sfx - levels.sfx.lufs), voice: withVoice ? db(TARGET.voice - levels.voice.lufs) : 0 }
-  // Musique sous la voix : -7,5 dB (montée et descente de 0,25 et 0,45 s) ; effets : -3 dB.
+  // Musique sous la voix : -7,5 dB (montée et descente de 0,25 et 0,45 s) ; effets : -6 dB (#130 : voix presque continue).
   const duck = new Float32Array(N)
   for (const s of spans) for (let i = Math.max(0, Math.round((s.t - 0.12) * SR)); i < Math.min(N, Math.round((s.end + 0.1) * SR)); i += 1) duck[i] = 1
   let e = 0
@@ -536,7 +588,7 @@ export async function buildAudio({ dir, withVoice = true, newVoice = false } = {
   const mix = bus()
   const fadeOut = (t) => clamp((DURATION - t) / 1.2)
   for (let i = 0; i < N; i += 1) {
-    const gm = g.music * (1 - 0.58 * duck[i]), gs = g.sfx * (1 - 0.3 * duck[i]), f = fadeOut(i / SR)
+    const gm = g.music * (1 - 0.58 * duck[i]), gs = g.sfx * (1 - 0.5 * duck[i]), f = fadeOut(i / SR)
     mix.L[i] = (music.L[i] * gm + sfx.L[i] * gs + voice.L[i] * g.voice) * f
     mix.R[i] = (music.R[i] * gm + sfx.R[i] * gs + voice.R[i] * g.voice) * f
   }

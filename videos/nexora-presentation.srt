@@ -1,81 +1,88 @@
 1
-00:00:01,050 --> 00:00:02,073
+00:00:01,000 --> 00:00:01,950
 NEXORA.
 
 2
-00:00:02,300 --> 00:00:06,228
-Créez, testez et publiez vos
-sites et vos applications.
+00:00:01,950 --> 00:00:04,210
+Vous créez des sites et des applications ?
 
 3
-00:00:06,950 --> 00:00:11,600
-Un site web, une application, des visuels…
-et un outil différent pour chaque étape.
+00:00:04,450 --> 00:00:06,040
+NEXORA est fait pour vous !
 
 4
-00:00:11,600 --> 00:00:13,909
-Et si tout tenait dans un seul logiciel ?
+00:00:06,600 --> 00:00:11,100
+Un site web, une application, des visuels…
+et un outil différent pour chaque étape ?
 
 5
-00:00:15,350 --> 00:00:18,318
-Neuf espaces, réunis
-autour d’un même projet.
+00:00:11,100 --> 00:00:13,250
+Et si tout tenait dans un seul logiciel ?
 
 6
-00:00:20,100 --> 00:00:23,680
-Le Responsive Lab montre votre
-site sur tous les écrans.
+00:00:13,250 --> 00:00:15,050
+Neuf espaces. Un même projet.
 
 7
-00:00:24,300 --> 00:00:27,530
-Le Browser Lab trouve ce qui
-cloche, et vous dit pourquoi.
+00:00:15,050 --> 00:00:19,800
+Du design au code, des tests à la sécurité,
+jusqu’à la publication : tout est là !
 
 8
-00:00:28,500 --> 00:00:32,501
-Le Dev Lab : codez, testez et
-déboguez, sans rien installer.
+00:00:19,920 --> 00:00:24,120
+Le Responsive Lab montre votre site
+sur tous les écrans, d’un coup d’œil.
 
 9
-00:00:32,700 --> 00:00:36,223
-L’App Builder transforme votre
-site en application Android.
+00:00:24,120 --> 00:00:28,320
+Un bug ? Le Browser Lab trouve tout de
+suite ce qui cloche, et vous dit pourquoi.
 
 10
-00:00:36,900 --> 00:00:40,453
-Le Studio met vos projets en
-scène, en 3D et en vidéo.
+00:00:28,320 --> 00:00:32,330
+Le Dev Lab : codez, testez et déboguez
+votre projet, sans rien installer.
 
 11
-00:00:41,100 --> 00:00:43,763
-NEX-DESIGN crée vos
-maquettes et vos visuels.
+00:00:32,520 --> 00:00:36,700
+L’App Builder transforme votre site
+en application Android signée.
 
 12
-00:00:45,300 --> 00:00:49,026
-La Sécurité analyse et surveille
-votre site, jour et nuit.
+00:00:36,720 --> 00:00:40,920
+Le Studio met vos projets en scène,
+avec des rendus 3D et des vidéos.
 
 13
-00:00:49,500 --> 00:00:53,356
-Et le Desktop Builder le transforme
-en vrai logiciel Windows.
+00:00:40,920 --> 00:00:44,770
+NEX-DESIGN crée vos maquettes et
+vos prototypes, du croquis au code.
 
 14
-00:00:53,650 --> 00:00:57,493
-Cent quatre-vingt-deux modèles
-d’appareils, pour vérifier chaque détail.
+00:00:45,120 --> 00:00:48,920
+La Sécurité analyse votre site et
+votre code, et veille jour et nuit.
 
 15
-00:01:00,900 --> 00:01:05,522
-De l’idée à la publication : sur le
-web, sur Android et sur Windows.
+00:00:49,320 --> 00:00:53,460
+Et le Desktop Builder en fait un
+vrai logiciel Windows, à installer !
 
 16
-00:01:08,350 --> 00:01:13,278
-NEXORA. Tout pour créer, tester et
-publier, dans un seul logiciel.
+00:00:53,550 --> 00:01:00,080
+Cent quatre-vingt-deux modèles d’appareils : iPhone, Galaxy,
+Pixel, pliables, tablettes, ordinateurs… côte à côte !
 
 17
-00:01:13,500 --> 00:01:16,449
-Rendez-vous sur nexoradevs.online.
+00:01:01,000 --> 00:01:06,330
+Concevez, codez, testez, sécurisez, et publiez
+: sur le web, sur Android et sur Windows !
+
+18
+00:01:07,850 --> 00:01:11,500
+NEXORA : tout pour créer, tester
+et publier, dans un seul logiciel.
+
+19
+00:01:11,500 --> 00:01:14,650
+Rejoignez NEXORA sur nexoradevs.online !

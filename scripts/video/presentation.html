@@ -126,7 +126,7 @@ svg.ic { width: 1em; height: 1em; stroke-width: 1.6; }
 </div>
 <script type="module">
 import { LUCIDE } from "/nexora/app/renderer/nx/icons/lucide.js"
-import { DURATION, SC, SHOW, word } from "/scripts/video/timeline.mjs"
+import { DURATION, SC, SHOW, voice, word } from "/scripts/video/timeline.mjs"
 
 // Polices chargées avant de construire les scènes : la largeur des étiquettes et la place du bouton final en dépendent.
 await Promise.all(["200 40px Urbanist", "300 40px Urbanist", "500 40px Urbanist", "600 40px Urbanist", "20px Mono"].map((f) => document.fonts.load(f)))
@@ -361,7 +361,7 @@ ticks.push((t) => {
   const ul = h("div", "uline", null, { left: "610px", width: "700px", top: "672px" })
   const pill = h("div", "", '<span class="pill">Devs Toolbox</span>', { position: "absolute", left: 0, right: 0, top: "706px", textAlign: "center", opacity: 0 })
   const tag = h("p", "title", null, { position: "absolute", left: 0, right: 0, top: "800px", textAlign: "center", fontSize: "44px", color: "#bdbdbd" })
-  const tw = words(tag, "Créez, testez et publiez|vos sites et vos applications.")
+  const tw = words(tag, "Vous créez des sites|et des applications&#8239;?")
   s.append(box, mark, ul, pill, tag)
   A(glow, [{ opacity: 0, transform: "scale(.5)" }, { opacity: 1, transform: "scale(1)" }], .85, 1.4)
   A(box, [{ opacity: 0, transform: "scale(.3)", filter: "blur(20px)" }, { opacity: 1, transform: "scale(1)", filter: "blur(0px)" }], .82, .8, SPRING)
@@ -370,7 +370,7 @@ ticks.push((t) => {
   ;[...mark.children].forEach((c, i) => A(c, [{ opacity: 0, transform: "translateY(60px) scale(.9)", filter: "blur(12px)" }, { opacity: 1, transform: "none", filter: "blur(0px)" }], 1.0 + i * .07, .8))
   A(ul, [{ transform: "scaleX(0)", opacity: 1 }, { transform: "scaleX(1)", opacity: .5 }], 1.75, 1.1, IN_OUT)
   fadeIn(pill, 2.0, .6)
-  revealAt(tw, (k) => word("02-creez", k))
+  revealAt(tw, (k) => word("02-vous-creez", k))
   A(s, [{ transform: "scale(1)" }, { transform: "scale(1.06)" }], 4.6, 1.4, IN_OUT)
   flash(.9, .55)
 }
@@ -382,7 +382,7 @@ ticks.push((t) => {
   const title = h("h2", "title", null, { position: "absolute", left: "120px", right: "120px", top: "370px", textAlign: "center", fontSize: "78px" })
   const tw = words(title, "Un site web, une application, des visuels…|et un outil différent pour chaque étape.", true)
   s.appendChild(title)
-  revealAt(tw, (k) => word("03-un-site", k))
+  revealAt(tw, (k) => word("04-un-site", k))
   A(title, [{ opacity: 1, transform: "none", filter: "blur(0px)" }, { opacity: 0, transform: "translateY(-50px) scale(.96)", filter: "blur(10px)" }], T + 4.45, .5, IN_OUT)
   const labels = ["Maquettes", "Code", "Terminal", "Tests sur mobile", "Débogage", "Application Android", "Logiciel Windows", "Rendus 3D", "Vidéos", "Audit de sécurité", "Supervision", "Mise en ligne"]
   const pos = [[170, 130], [640, 90], [1200, 120], [1600, 220], [60, 630], [1580, 630], [190, 760], [600, 880], [1120, 900], [1560, 780], [380, 250], [1000, 240]]
@@ -416,9 +416,10 @@ ticks.push((t) => {
   s.append(logo, one, ul, p2)
   A(logo, [{ opacity: 0, transform: "scale(.3)", filter: "blur(12px)" }, { opacity: 1, transform: "scale(1)", filter: "blur(0px)" }], T + 5.45, .7, SPRING)
   flash(T + 5.55, .45, .7, "36%")
-  revealAt(ow, (k) => word("04-et-si", k), .75)
-  A(ul, [{ transform: "scaleX(0)", opacity: 1 }, { transform: "scaleX(1)", opacity: .45 }], word("04-et-si", 2) + .25, 1, IN_OUT)
-  fadeIn(p2, T + 6.7, .6)
+  revealAt(ow, (k) => word("05-et-si", k), .75)
+  A(ul, [{ transform: "scaleX(0)", opacity: 1 }, { transform: "scaleX(1)", opacity: .45 }], word("05-et-si", 2) + .25, 1, IN_OUT)
+  // Le repère apparaît quand la voix dit « Neuf espaces, un même projet ».
+  fadeIn(p2, voice("06-neuf-espaces").t - .05, .6)
   A(s, [{ transform: "scale(1)" }, { transform: "scale(1.05)" }], T + 7.3, 1.1, IN_OUT)
 }
 
@@ -447,7 +448,7 @@ const TILE_ORDER = [4, 1, 3, 5, 7, 0, 2, 6, 8]
   head.append(pw, title)
   s.appendChild(head)
   fadeIn(pw, T + .05, .5)
-  revealAt(tw, (k) => word("05-neuf-espaces", k))
+  revealWords(tw, T + .25, .07)
   A(head, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-30px)" }], T + 4.25, .45, IN_OUT)
   const P = "perspective(1200px)"
   SPACES.forEach(([ic, name, card], i) => {
@@ -609,7 +610,9 @@ function device(spec, screen, css) {
     num.appendChild(c)
     return c
   })
-  const value = (t) => 182 * ease((t - T - .1) / 1.2)
+  // Le compteur atteint 182 quand la voix finit de dire « cent quatre-vingt-deux ».
+  const C0 = word("16-appareils", 0) - .05, C1 = word("16-appareils", 1) + .2
+  const value = (t) => 182 * ease((t - C0) / (C1 - C0))
   ticks.push((t) => {
     const v = value(t), u = v % 10, tens = Math.floor(v / 10), carry = Math.max(0, u - 9)
     const rolls = [(Math.floor(v / 100) % 10) + (tens % 10 === 9 ? carry : 0), (tens % 10) + carry, u]
@@ -663,7 +666,7 @@ function device(spec, screen, css) {
   const tw = words(title, "De l’idée|à la publication.")
   head.appendChild(title)
   s.appendChild(head)
-  revealAt(tw, (k) => word("15-parcours", k))
+  revealWords(tw, T + .1, .06)
   const steps = [["pen", "Concevoir", "NEX-DESIGN"], ["code", "Coder", "Dev Lab"], ["display", "Tester", "Responsive et Browser Lab"], ["shield", "Sécuriser", "Sécurité"], ["rocket", "Publier", "Web, Android, Windows"]]
   const X0 = 210, GAP = 330, Y = 430, EX = [560, 960, 1360]
   const svg = svgLayer()
@@ -671,22 +674,29 @@ function device(spec, screen, css) {
   const line = svgPath(svg, `M ${X0 + 115} ${Y + 48} H ${X0 + 4 * GAP + 115}`)
   const cx = X0 + 4 * GAP + 115
   const branches = EX.map((x) => svgPath(svg, `M ${cx} ${Y + 206} C ${cx} ${Y + 330}, ${x} ${Y + 250}, ${x} ${Y + 384}`))
-  // Le trait relie les étapes à vitesse constante : chaque étape s'allume quand l'impulsion l'atteint (cloches de audio.mjs).
-  const L0 = T + .5, L1 = T + 1.9
-  drawWithPulse(s, line, L0, L1)
-  const said = [0, 1, 2].map((k) => word("15-parcours", 5 + k))
+  // Chaque étape s'allume quand la voix prononce son verbe (« Concevez, codez, testez, sécurisez, et publiez ») :
+  // l'impulsion parcourt le trait d'une étape à l'autre à ces instants (cloches de audio.mjs).
+  const lit = [0, 1, 2, 3, 4].map((k) => word("17-parcours", k))
+  const L0 = lit[0], L1 = lit[4]
+  drawWithPulse(s, line, L0, L1, (k) => {
+    const t = L0 + k * (L1 - L0)
+    let i = 0
+    while (i < 3 && t > lit[i + 1]) i += 1
+    return (i + clamp((t - lit[i]) / (lit[i + 1] - lit[i]))) / 4
+  })
+  const said = [0, 1, 2].map((k) => word("17-parcours", 5 + k))
   branches.forEach((b, k) => drawWithPulse(s, b, said[k] - .62, said[k] - .07, inOut))
   steps.forEach(([ic, n, sub], i) => {
     const nd = h("div", "node", `<div class="dot">${icon(ic)}</div><b>${n}</b><small>${sub}</small>`)
     at(nd, { left: X0 + i * GAP + "px", top: Y + "px" })
     s.appendChild(nd)
-    const lit = L0 + (L1 - L0) * (i / 4)
-    A(nd, [{ opacity: 0, transform: "translateY(26px)" }, { opacity: 1, transform: "none" }], lit - .45, .6)
-    A(nd.querySelector(".dot"), [{ backgroundColor: "#0e0e0e", color: "#ffffff", borderColor: "#3a3a3a" }, { backgroundColor: "#ffffff", color: "#0a0a0a", borderColor: "#ffffff" }], lit - .05, .3)
+    const on = lit[i]
+    A(nd, [{ opacity: 0, transform: "translateY(26px)" }, { opacity: 1, transform: "none" }], Math.max(T + .3, on - .45), .6)
+    A(nd.querySelector(".dot"), [{ backgroundColor: "#0e0e0e", color: "#ffffff", borderColor: "#3a3a3a" }, { backgroundColor: "#ffffff", color: "#0a0a0a", borderColor: "#ffffff" }], on - .05, .3)
     const ring = h("div", "ring")
     at(ring, { left: X0 + i * GAP + 67 + "px", top: Y + "px", width: "96px", height: "96px" })
     s.appendChild(ring)
-    A(ring, [{ opacity: .8, transform: "scale(1)" }, { opacity: 0, transform: "scale(2.1)" }], lit, .8)
+    A(ring, [{ opacity: .8, transform: "scale(1)" }, { opacity: 0, transform: "scale(2.1)" }], on, .8)
   })
   // Les trois sorties apparaissent quand la voix les nomme.
   ;[["globe", "Sur le web"], ["android", "Sur Android"], ["laptop", "Sur Windows"]].forEach(([ic, n], k) => {
@@ -730,12 +740,12 @@ function device(spec, screen, css) {
   A(box, [{ opacity: 0, transform: "scale(.3)", filter: "blur(16px)" }, { opacity: 1, transform: "scale(1)", filter: "blur(0px)" }], T + .08, .8, SPRING)
   A(shine, [{ transform: "translateX(-130%) skewX(-12deg)" }, { transform: "translateX(480%) skewX(-12deg)" }], T + 1.3, .9, IN_OUT)
   flash(T + .15, .6, .8, "30%")
-  const named = word("16-fin", 0) - .05
+  const named = word("18-fin", 0) - .05
   A(mark, [{ letterSpacing: ".7em", paddingLeft: ".7em" }, { letterSpacing: ".3em", paddingLeft: ".3em" }], named, 1.4)
   ;[...mark.children].forEach((c, i) => A(c, [{ opacity: 0, transform: "translateY(50px)", filter: "blur(10px)" }, { opacity: 1, transform: "none", filter: "blur(0px)" }], named + i * .06, .75))
-  revealAt(lw, (k) => word("16-fin", k + 1))
+  revealAt(lw, (k) => word("18-fin", k + 1))
   // L'adresse : le bouton surgit quand la voix commence la phrase, le curseur clique quand elle la prononce.
-  const appear = word("17-adresse", 0) - .15, click = word("17-adresse", 2) + .15
+  const appear = word("19-adresse", 0) - .15, click = word("19-adresse", 1) + .15
   const btn = cta.querySelector(".btn")
   A(cta, [{ opacity: 0, transform: "translateY(24px) scale(.9)" }, { opacity: 1, transform: "none" }], appear, .7, SPRING)
   A(btn, [{ transform: "scale(1)" }, { transform: "scale(.95)", offset: .3 }, { transform: "scale(1)" }], click - .05, .4, "linear")
