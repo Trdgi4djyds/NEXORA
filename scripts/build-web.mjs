@@ -179,18 +179,21 @@ await build({
 // NEXORA #060, #096 : site vitrine à la racine, une page HTML pré-générée par adresse (scripts/site-ssg.mjs).
 // Politique de sécurité posée dans chaque page publiée (Vite en a besoin d'une plus large pendant le développement) :
 // fichiers du site, aucun script en ligne (les données structurées JSON-LD ne s'exécutent pas), lectures publiques sur
-// le serveur de NEXORA (offres, lien de téléchargement), aucune ressource tierce.
+// le serveur de NEXORA (offres, lien de téléchargement), aucune ressource tierce sauf les statistiques de Cloudflare.
+// #131 (A-064) : le domaine injecte le script Web Analytics de Cloudflare (balise externe, sans script en ligne) ;
+// autorisé seulement depuis static.cloudflareinsights.com, mesures envoyées à cloudflareinsights.com (ou /cdn-cgi/rum
+// du domaine, couvert par 'self').
 const { projectRef } = statusConfigRef()
 const siteCsp = [
   "default-src 'self'",
-  "script-src 'self'",
+  "script-src 'self' https://static.cloudflareinsights.com",
   "style-src 'self'",
   // #096 : attributs style des pages pré-générées (variables CSS des animations et des couleurs, posées par React) ;
   // aucune balise <style> ni script en ligne permis pour autant.
   "style-src-attr 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
-  `connect-src 'self' https://${projectRef}.supabase.co`,
+  `connect-src 'self' https://${projectRef}.supabase.co https://cloudflareinsights.com`,
   "worker-src 'self'",
   "manifest-src 'self'",
   "base-uri 'none'",
