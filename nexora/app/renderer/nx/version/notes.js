@@ -22,6 +22,8 @@ export const NOTES = {
   // NEXORA #126 : version suivante demandée par l'utilisateur ; lanceur 1.0.9 (disque plein reconnu, place reprise,
   // version installée ouvrable). Les nouveautés du #125 (publiées en v1.2.2-r15) y sont rappelées : beaucoup de PC
   // sont restés sur une publication 1.2.2 plus ancienne, faute de place pour la mise à jour.
+  // NEXORA #132 : « Prêt pour le Play Store » vérifie la suppression de compte et les fonctions propres à une application
+  // « site en ligne » ; bundletool épinglé et vérifié (republiée en v1.2.3-r1).
   '1.2.3': {
     title: 'NEXORA 1.2.3',
     intro: 'Des mises à jour qui vous disent clairement ce qui manque, et un espace par compte.',
@@ -29,6 +31,7 @@ export const NOTES = {
       { icon: 'download', space: '', title: 'Mise à jour avec un disque presque plein', text: 'Quand la place manque, NEXORA Devs Toolbox l’indique (« Espace disque insuffisant », avec la place nécessaire et celle qui reste) au lieu d’annoncer une installation modifiée. Il libère d’abord ce qui ne sert plus (téléchargements interrompus, anciennes versions) et vous laisse ouvrir la version déjà installée en attendant.' },
       { icon: 'user', space: '', title: 'Un espace par compte', text: 'Le travail en équipe est retiré de NEXORA : plus d’onglet Équipe dans Mon compte, ni de bibliothèques d’équipe ou de coédition dans NEX-DESIGN et le Studio. Vos projets, documents et commentaires restent dans votre espace personnel ; la validation par vos clients ne change pas.' },
       { icon: 'pen', space: '', title: 'Boutons choisis toujours lisibles', text: 'Le texte d’un bouton choisi ne disparaît plus, en thème clair comme en thème sombre : taille de fenêtre du Desktop Builder, messages de l’assistant IA, bandeau du haut de Mon compte, choix de la frise du Studio.' },
+      { icon: 'android', space: 'android', title: 'Prêt pour le Play Store plus complet', text: 'Dans l’App Builder, le contrôle avant publication vérifie deux règles de Google Play qui font souvent refuser une application : la suppression de compte (si votre site permet de créer un compte, indiquez le lien web où le supprimer) et, pour une application qui affiche un site en ligne, la présence de fonctions propres à l’application (notifications push, onglets, scanner, raccourcis…). L’outil du format Play Store est désormais vérifié avant d’être installé.' },
     ],
   },
   '1.2.2': {

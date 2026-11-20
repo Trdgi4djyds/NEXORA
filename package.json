@@ -21,6 +21,7 @@
     "test:motion": "node scripts/test-motion.mjs",
     "test:studio": "node scripts/test-studio.mjs",
     "test:appbuilder": "node scripts/test-appbuilder.mjs",
+    "test:android": "node scripts/test-android.mjs",
     "test:push": "node scripts/test-push.mjs",
     "test:modules": "node scripts/test-modules.mjs",
     "test:desktop": "node scripts/test-desktop.mjs",

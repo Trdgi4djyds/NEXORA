@@ -2,7 +2,7 @@ NEXORA 1.2.2
 FONCTIONNALITÉS ET FRAMEWORKS PRIS EN CHARGE
 ==========================================================================================
 
-Fiche établie le 15 novembre 2026 (entrée #123 du journal SUIVI.md, mise à jour au #125), d'après le code de
+Fiche établie le 15 novembre 2026 (entrée #123 du journal SUIVI.md, mise à jour au #125 et au #132), d'après le code de
 NEXORA 1.2.2 et non d'après la brochure :
   - nexora/app/src/frameworks.js         reconnaissance des projets
   - nexora/app/src/desktop/analyze.js    sources acceptées par le Desktop Builder
@@ -125,7 +125,10 @@ APP BUILDER (ANDROID)
   générés, paquet d'application web installable.
 - Fiche Play Store : textes par langue rédigés avec l'IA, captures habillées, icône
   512 x 512, bannière 1024 x 500, politique de confidentialité.
-- « Prêt pour le Play Store » : un score et chaque point à corriger.
+- « Prêt pour le Play Store » : un score et chaque point à corriger, dont (#132) la suppression
+  de compte exigée par Google (question sur les comptes, lien web en https) et, pour une
+  application « site en ligne », les fonctions propres à l'application (Google refuse les
+  applications qui ne font qu'afficher un site).
 - Tests fermés : les 12 testeurs pendant 14 jours exigés par Google Play.
 - Publication directe sur le Play Store, déploiement progressif.
 - Réglages à distance : proposer ou imposer la nouvelle version.
@@ -508,6 +511,9 @@ Projet Electron : fichier package.json (sinon electron-builder prend index.js)
   trouve le modèle public/index.html de ces projets et affiche quand même « index.html
   trouvé ». Cliquez d'abord sur « Construire » (ou lancez npm run build) : sinon l'APK
   afficherait une page blanche. Défaut noté dans SUIVI.md (A-078), pas encore corrigé.
-- Cette fiche décrit ce que fait le code : aucune application n'a été construite pour
-  l'établir (les outils Android et Windows ne sont pas disponibles dans l'environnement
-  de travail de Figma Make).
+- Cette fiche décrit ce que fait le code. Depuis le #132, l'essai pnpm test:android construit
+  dans l'environnement de travail une application « site en ligne », une Trusted Web Activity
+  et un projet intégré hors ligne (APK et AAB) avec le code de NEXORA, puis les fait contrôler
+  par les outils de Google (apksigner, jarsigner, bundletool) : signatures, Android 16 (API 36),
+  AAB valide et découpé en APK comme le fait Google Play. Restent non vérifiés ici :
+  l'installation sur un téléphone ou un émulateur, et la construction des logiciels Windows.

@@ -1,0 +1,24 @@
+{
+  "$comment": "NEXORA #132 : même application, comptes déclarés sans lien de suppression (contrôle bloquant).",
+  "android": {
+    "current": "nx-demo-php",
+    "section": "ready",
+    "apps": [
+      {
+        "id": "nx-demo-php",
+        "appName": "Boutique Kora",
+        "appId": "fr.boutiquekora.app",
+        "source": {
+          "kind": "url",
+          "url": "https://boutique-kora.fr/",
+          "dir": "",
+          "www": ""
+        },
+        "nxAccounts": {
+          "has": "yes",
+          "url": ""
+        }
+      }
+    ]
+  }
+}

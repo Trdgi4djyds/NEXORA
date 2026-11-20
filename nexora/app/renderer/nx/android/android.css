@@ -257,6 +257,11 @@
 .nxr-txt small { font-size: 11.5px; color: var(--text-2); line-height: 1.4; }
 .nxr-okline { display: flex; align-items: center; gap: 6px; }
 .nxr-okline svg { color: var(--ok, #30d158); flex: none; }
+/* NEXORA #132 : question sur les comptes et lien de suppression, dans la ligne du contrôle. */
+.nxr-extra { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 12px; margin-top: 8px; }
+.nxr-extra .nxr-field { display: flex; flex-direction: column; gap: 4px; margin: 0; }
+.nxr-extra .nxr-field span { font-size: 11.5px; color: var(--text-2); }
+.nxr-extra .input { width: 100%; min-width: 0; }
 .nxt-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .nxt-kpi { background: var(--info-bg, var(--fill)); border: 1px solid var(--info-edge, var(--border)); border-radius: var(--r-md, 10px); padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .nxt-kpi small { color: var(--text-2); font-size: 11.5px; }

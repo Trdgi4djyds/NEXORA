@@ -5,7 +5,7 @@
 import { api, esc, toast } from '../core.js';
 import { b as icon } from '../../dist/chunks/chunk-S4I2LXHS.js';
 import { readiness, practices } from './listing.js';
-import { closedTest, versionCheck, idProblem, REQUIRED } from './playready.js';
+import { closedTest, versionCheck, idProblem, REQUIRED, minimalCheck, accountDeletion } from './playready.js';
 
 export const SECTION = ['ready', 'Prêt pour le Play Store', 'nxCheckCircle', 'Contrôle avant publication'];
 
@@ -86,6 +86,32 @@ export function install(proto, SECTIONS) {
     rules.push(item(pr.length ? 'warn' : 'info', pr.length ? `Sécurité des données : ${pr.length} type(s) de données à déclarer` : 'Sécurité des données : rien à déclarer pour l’application elle-même',
       pr.length ? pr.map((p) => esc(p.cat)).join(', ') + '. Déclarez aussi ce que votre site collecte (comptes, formulaires, mesure d’audience).' : 'Déclarez seulement ce que votre site collecte (comptes, formulaires, commandes, mesure d’audience).', 'listing', 'Réponses'));
     if ((cfg.permissions || []).includes('location')) rules.push(item('warn', 'Position : expliquez son usage dans la fiche', 'Google vérifie que la description justifie chaque autorisation sensible.', 'native', 'Voir'));
+    // NEXORA #132 : fonctionnalité minimale (applications « site en ligne » seulement).
+    const mc = minimalCheck(cfg);
+    if (mc && !mc.ok) {
+      rules.push(item('warn', 'L’application affiche seulement votre site', `Google refuse les applications qui se contentent d’afficher un site (règles « Spam » et « Fonctionnalités limitées »). Ajoutez au moins une fonction propre à l’application : ${twa ? 'raccourcis de l’icône, liens profonds ou cible de partage' : 'notifications push, onglets de navigation, scanner de codes, raccourcis, liens profonds'}. Le site doit vous appartenir ou vous devez avoir l’accord de son propriétaire.`, twa ? 'links' : 'native', 'Ajouter'));
+    } else if (mc) {
+      rules.push(item('ok', `Fonctions propres à l’application : ${esc(mc.features.join(', '))}`, 'Elles montrent à Google que l’application apporte plus que le site. Vérifiez aussi que le site est pensé pour le mobile. Le site doit vous appartenir ou vous devez avoir l’accord de son propriétaire.', twa ? 'links' : 'native', 'Voir'));
+    }
+    // NEXORA #132 : suppression de compte (règlement « Données utilisateur »), réponse dans la carte même.
+    const ad = accountDeletion(cfg);
+    const acc0 = cfg.nxAccounts || {};
+    const accForm = `<div class="nxr-extra">
+        <label class="field nxr-field"><span>Votre site ou votre application permet-il de créer un compte ?</span>
+          <select class="input" data-k="nxAccounts.has">
+            <option value="" ${!acc0.has ? 'selected' : ''}>Choisissez</option>
+            <option value="yes" ${acc0.has === 'yes' ? 'selected' : ''}>Oui</option>
+            <option value="no" ${acc0.has === 'no' ? 'selected' : ''}>Non</option>
+          </select></label>
+        ${acc0.has === 'yes' ? `<label class="field nxr-field"><span>Lien web de suppression du compte (https)</span>
+          <input class="input" type="url" data-k="nxAccounts.url" value="${esc(acc0.url || '')}" placeholder="https://www.monsite.com/compte/supprimer"></label>` : ''}
+      </div>`;
+    const delItem = ad.state === 'none' ? item('ok', 'Suppression de compte : non exigée', 'Votre site ne permet pas de créer de compte. Répondez « Non » à la question sur les comptes du formulaire « Sécurité des données ».')
+      : ad.state === 'ok' ? item('ok', 'Suppression de compte : lien prêt', `${esc(ad.url)} : indiquez-le dans la Play Console (Contenu de l’application › Sécurité des données). La suppression doit aussi pouvoir se demander depuis l’application (page du compte ou menu).`)
+        : ad.state === 'missing' ? item('bad', 'Suppression de compte : lien web à fournir', `Google exige un lien web en https pour demander la suppression du compte et de ses données, et un chemin depuis l’application.${ad.url ? ' L’adresse saisie n’est pas un lien https valide.' : ''} Sans lui, Google refuse tout nouvel envoi.`)
+          : item('warn', 'Comptes utilisateurs : répondez à la question', 'Si votre site ou votre application permet de créer un compte, Google exige de pouvoir en demander la suppression depuis l’application et par un lien web.');
+    delItem.extra = accForm;
+    rules.push(delItem);
     if (cfg.billing && cfg.billing.enabled && cfg.engine !== 'twa') {
       const n = (cfg.billing.products || []).filter((p) => p && p.id).length;
       rules.push(item(n ? 'ok' : 'bad', n ? `Achats intégrés : ${n} produit(s)` : 'Achats intégrés activés sans produit', n ? 'Créez les mêmes identifiants dans la Play Console (Monétiser › Produits).' : 'Ajoutez au moins un produit ou désactivez les achats intégrés.', 'billing', 'Voir'));
@@ -123,6 +149,14 @@ export function install(proto, SECTIONS) {
 
   proto.form_ready = function formReady(cfg) {
     this.nxReadyLoad();
+    // NEXORA #132 : le lien de suppression de compte (champ texte) est relu à la fin de la saisie ; le choix
+    // Oui / Non l'est déjà par l'App Builder (liste déroulante). Écouteur posé après le sien : réglage déjà enregistré.
+    if (!this.nxReadyBound && this.el) {
+      this.nxReadyBound = true;
+      this.el.addEventListener('change', (e) => {
+        if (this.section === 'ready' && e.target && e.target.matches && e.target.matches('input[data-k="nxAccounts.url"]')) this.renderForm();
+      });
+    }
     const groups = this.nxReadyGroups(cfg);
     const all = groups.flatMap(([, g]) => g).filter((i) => i.state !== 'info');
     const ok = all.filter((i) => i.state === 'ok').length;
@@ -144,7 +178,7 @@ export function install(proto, SECTIONS) {
       <p class="ab-hint">Ce que Google vérifie avant de publier une application, d’après vos réglages. Chaque point mène à la section où le régler.</p>`);
     const body = groups.map(([name, list]) => this.card(name, `<ul class="nxr-list">${list.map((i) => `<li class="nxr-${i.state}">
         <span class="nxr-ic">${icon(STATE_ICON[i.state], 15)}</span>
-        <div class="nxr-txt"><b>${i.label}</b>${i.detail ? `<small>${i.detail}</small>` : ''}</div>
+        <div class="nxr-txt"><b>${i.label}</b>${i.detail ? `<small>${i.detail}</small>` : ''}${i.extra || ''}</div>
         ${i.sec ? `<button class="btn small" data-sec="${i.sec}">${esc(i.go)}</button>` : ''}
       </li>`).join('')}</ul>`)).join('');
     return head + body;

@@ -8,7 +8,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@zxing/library": "^0.23.0",
-    "isomorphic-git": "^1.29.0",
+    "isomorphic-git": "^1.44.17",
     "yauzl": "^3.4.0",
     "yazl": "^3.3.1"
   }

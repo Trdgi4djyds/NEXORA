@@ -1,0 +1,15 @@
+{
+  "$comment": "NEXORA #132 : application « site en ligne » (site PHP) ouverte sur la section « Prêt pour le Play Store », sans fonction propre à l'application ni réponse sur les comptes.",
+  "android": {
+    "current": "nx-demo-php",
+    "section": "ready",
+    "apps": [
+      {
+        "id": "nx-demo-php",
+        "appName": "Boutique Kora",
+        "appId": "fr.boutiquekora.app",
+        "source": { "kind": "url", "url": "https://boutique-kora.fr/", "dir": "", "www": "" }
+      }
+    ]
+  }
+}

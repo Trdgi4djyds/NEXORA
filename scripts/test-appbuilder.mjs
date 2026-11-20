@@ -63,5 +63,27 @@ ok(!P.versionCheck({ versionCode: 3, lastStore: { versionCode: 3 } }).ok && !P.v
 ok(P.idProblem("com.example.app") && P.idProblem("org.example") && P.idProblem("com.android.test") && P.idProblem(""), "Identifiants refusés (exemple, Android, vide)")
 ok(!P.idProblem("fr.boutique.awa") && !P.idProblem("com.examples.shop"), "Identifiants acceptés")
 
+// ---------- NEXORA #132 : fonctionnalité minimale ----------
+const site = { source: { kind: "url", url: "https://boutique.fr/" }, engine: "webview", permissions: ["vibrate", "notifications"], config: { tabs: [], menu: { enabled: false }, fab: { enabled: false }, offlinePage: true, pullToRefresh: true, scanner: false }, push: { enabled: false }, shortcuts: [], deepLinks: { enabled: false, hosts: [], scheme: "" } }
+let mc = P.minimalCheck(site)
+ok(mc && !mc.ok && mc.features.length === 0, "Site en ligne seul (réglages par défaut : vibration, notifications locales, page hors ligne) : à signaler", mc)
+ok(P.minimalCheck({ ...site, source: { kind: "project", dir: "C:\\p" } }) === null && P.minimalCheck({ ...site, source: { kind: "dir" } }) === null, "Projet intégré hors ligne : sans objet")
+mc = P.minimalCheck({ ...site, push: { enabled: true }, config: { ...site.config, scanner: true, tabs: [{ label: "Accueil" }] }, permissions: ["camera", "vibrate"] })
+ok(mc.ok && mc.features.join("|") === "notifications push|scanner de codes|onglets de navigation|appareil photo", "Fonctions propres reconnues (push, scanner, onglets, appareil photo)", mc)
+ok(P.nativeFeatures({ ...site, push: { enabled: true, messaging: true } })[0] === "notifications push et messagerie", "Messagerie reconnue avec les notifications push")
+ok(P.nativeFeatures({ ...site, shortcuts: [{ label: "", url: "/a" }, { label: "Panier", url: "" }], deepLinks: { enabled: true, hosts: [], scheme: "" } }).length === 0, "Raccourci incomplet et liens profonds sans domaine ignorés")
+mc = P.minimalCheck({ ...site, engine: "twa", push: { enabled: true }, config: { ...site.config, scanner: true } })
+ok(mc && !mc.ok, "Trusted Web Activity : notifications push et scanner ignorés (sans effet dans ce mode)", mc)
+ok(P.minimalCheck({ ...site, engine: "twa", twa: { shareTarget: { action: "/partage" } }, shortcuts: [{ label: "Panier", url: "/panier" }] }).features.join("|") === "raccourcis de l’icône|cible de partage", "Trusted Web Activity : raccourcis et cible de partage reconnus")
+ok(P.minimalCheck({}) === null && P.nativeFeatures().length === 0, "Réglages absents : aucune erreur")
+
+// ---------- NEXORA #132 : suppression de compte ----------
+ok(P.accountDeletion({}).state === "ask" && P.accountDeletion({ nxAccounts: { has: "" } }).state === "ask", "Comptes : pas encore répondu")
+ok(P.accountDeletion({ nxAccounts: { has: "no", url: "n'importe" } }).state === "none", "Comptes : aucun compte, lien ignoré")
+ok(P.accountDeletion({ nxAccounts: { has: "yes" } }).state === "missing", "Comptes : oui sans lien → à fournir")
+ok(["http://boutique.fr/supprimer", "boutique.fr/supprimer", "https://", "javascript:alert(1)"].every((url) => P.accountDeletion({ nxAccounts: { has: "yes", url } }).state === "missing"), "Comptes : lien non https ou invalide refusé")
+const del = P.accountDeletion({ nxAccounts: { has: "yes", url: "  https://boutique.fr/compte/supprimer  " } })
+ok(del.state === "ok" && del.url === "https://boutique.fr/compte/supprimer", "Comptes : lien https accepté, espaces retirés", del)
+
 console.log(`\n${count} vérifications, ${fails ? `${fails} échec(s)` : "aucun échec"}.`)
 process.exit(fails ? 1 : 0)

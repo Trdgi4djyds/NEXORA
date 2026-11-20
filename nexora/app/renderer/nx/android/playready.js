@@ -132,3 +132,58 @@ export function idProblem(appId) {
   if (/^(com|org|net)\.example(\.|$)/.test(id) || id.startsWith('com.android.') || id.startsWith('android.')) return 'Google Play refuse les identifiants d’exemple (com.example…) et ceux réservés à Android.';
   return '';
 }
+
+// NEXORA #132 : règles « Spam » et « Fonctionnalités limitées » de Google Play. Une application qui ne fait
+// qu'afficher un site est le premier motif de refus des applications « site en ligne » ; seules comptent ici
+// les fonctions que l'application ajoute au site (vibration et notifications locales, cochées d'office, et la
+// page hors ligne, active d'office, n'en font pas partie).
+const SENSITIVE = { camera: 'appareil photo', microphone: 'micro', location: 'localisation', biometric: 'empreinte et visage', contacts: 'contacts', nfc: 'NFC' };
+
+/* Fonctions propres à l'application, d'après ses réglages. Liste vide pour un projet intégré hors ligne :
+ * il n'est pas concerné (voir minimalCheck). */
+export function nativeFeatures(cfg = {}) {
+  const out = [];
+  const c = cfg.config || {};
+  const twa = cfg.engine === 'twa';
+  const on = (x) => Boolean(x && x.enabled);
+  if ((cfg.shortcuts || []).some((s) => s && s.label && s.url)) out.push('raccourcis de l’icône');
+  if (on(cfg.deepLinks) && ((cfg.deepLinks.hosts || []).length || cfg.deepLinks.scheme)) out.push('liens profonds');
+  if (twa) {
+    // Trusted Web Activity : l'application est le site dans le navigateur ; seules ces fonctions s'y ajoutent.
+    if (cfg.twa && cfg.twa.shareTarget) out.push('cible de partage');
+    return out;
+  }
+  if (on(cfg.push)) out.push(cfg.push.messaging || cfg.push.calls ? 'notifications push et messagerie' : 'notifications push');
+  if (on(cfg.onesignal)) out.push('notifications OneSignal');
+  if (on(cfg.billing)) out.push('achats intégrés');
+  if (c.scanner) out.push('scanner de codes');
+  if ((c.tabs || []).length) out.push('onglets de navigation');
+  if (on(c.menu)) out.push('menu');
+  if (on(c.fab)) out.push('bouton flottant');
+  if (on(c.onboarding)) out.push('écrans de bienvenue');
+  if (on(c.passcode)) out.push('code d’accès');
+  if (on(cfg.remote)) out.push('annonces et maintenance à distance');
+  for (const p of cfg.permissions || []) if (SENSITIVE[p]) out.push(SENSITIVE[p]);
+  return out;
+}
+
+/* null : sans objet (projet intégré hors ligne) ; sinon { ok, features }. */
+export function minimalCheck(cfg = {}) {
+  if (!cfg.source || cfg.source.kind !== 'url') return null;
+  const features = nativeFeatures(cfg);
+  return { ok: features.length > 0, features };
+}
+
+// NEXORA #132 : règlement « Données utilisateur » de Google Play. Si l'application permet de créer un compte,
+// elle doit permettre d'en demander la suppression depuis l'application et par un lien web, déclaré dans le
+// formulaire « Sécurité des données » (sinon tout nouvel envoi est refusé). Réponse gardée dans cfg.nxAccounts.
+export const isHttpsUrl = (u) => { try { const x = new URL(String(u || '').trim()); return x.protocol === 'https:' && Boolean(x.hostname); } catch { return false; } };
+
+/* state : 'ask' (pas encore répondu), 'none' (pas de compte), 'missing' (comptes sans lien valide), 'ok'. */
+export function accountDeletion(cfg = {}) {
+  const a = cfg.nxAccounts || {};
+  if (a.has === 'no') return { state: 'none' };
+  if (a.has !== 'yes') return { state: 'ask' };
+  const url = String(a.url || '').trim();
+  return isHttpsUrl(url) ? { state: 'ok', url } : { state: 'missing', url };
+}

@@ -38,6 +38,14 @@ const PINNED = {
 
 const SDK_LICENSE_URL = 'https://developer.android.com/studio/terms';
 
+// NEXORA #132 : bundletool (format AAB) épinglé et vérifié comme les autres outils : version fixe et empreinte
+// SHA-256 (identique à celle que GitHub publie pour ce fichier), au lieu de la « dernière version » sans contrôle.
+const BUNDLETOOL = {
+  version: '1.18.3',
+  url: 'https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar',
+  sha256: 'a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29',
+};
+
 function exists(p) { try { return fs.statSync(p).isFile(); } catch { return false; } }
 function isDir(p) { try { return fs.statSync(p).isDirectory(); } catch { return false; } }
 function run(file, args, opts = {}) {
@@ -227,16 +235,10 @@ class Toolchain {
         onStep({ part, label, progress: 1 });
       } else if (part === 'bundletool') {
         const label = 'bundletool (format AAB pour le Play Store)';
+        // NEXORA #115 : messages sans nom de service ni d'outil (affichés par NEX-OUTILS et l'App Builder) ;
+        // resumableDownload supprime le fichier et lève une erreur si l'empreinte diffère.
         // eslint-disable-next-line no-await-in-loop
-        const res = await this.fetch('https://api.github.com/repos/google/bundletool/releases/latest');
-        // NEXORA #115 : messages sans nom de service ni d'outil (affichés par NEX-OUTILS et l'App Builder).
-        if (!res.ok) throw new Error(`Service de téléchargement indisponible (${res.status}) : réessayez plus tard.`);
-        // eslint-disable-next-line no-await-in-loop
-        const rel = await res.json();
-        const asset = (rel.assets || []).find((a) => /^bundletool-all-.*\.jar$/.test(a.name));
-        if (!asset) throw new Error('Bibliothèque du format Play Store introuvable : réessayez plus tard.');
-        // eslint-disable-next-line no-await-in-loop
-        await this.download(asset.browser_download_url, path.join(this.home, 'bundletool.jar'), { onProgress: (p) => onStep({ part, label, progress: p }) });
+        await this.download(BUNDLETOOL.url, path.join(this.home, 'bundletool.jar'), { sha256: BUNDLETOOL.sha256, onProgress: (p) => onStep({ part, label, progress: p }) });
         onStep({ part, label, progress: 1 });
       }
     }
@@ -277,5 +279,5 @@ function parseRepository(xml, hostOs) {
 }
 
 module.exports = {
-  Toolchain, parseRepository, run, SDK_LICENSE_URL, TARGET_API, cmpVer,
+  Toolchain, parseRepository, run, SDK_LICENSE_URL, TARGET_API, cmpVer, BUNDLETOOL,
 };
